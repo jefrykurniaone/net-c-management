@@ -1,36 +1,161 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PB Net-C — Aplikasi Manajemen Komunitas Badminton
 
-## Getting Started
+Aplikasi web full-stack untuk mengelola komunitas badminton: sesi latihan, kehadiran anggota, pembayaran iuran, dan profil member.
 
-First, run the development server:
+---
 
+## Tech Stack
+
+### Frontend
+| Teknologi | Versi | Keterangan |
+|-----------|-------|-----------|
+| [Next.js](https://nextjs.org) | 16.2.6 | App Router, SSR, Turbopack |
+| [React](https://react.dev) | 19 | UI library |
+| [TypeScript](https://www.typescriptlang.org) | 5.x | Type safety |
+| [Tailwind CSS](https://tailwindcss.com) | v4 | Styling |
+| [shadcn/ui](https://ui.shadcn.com) | latest | Komponen UI (Radix + Tailwind) |
+| [Lucide React](https://lucide.dev) | latest | Icon library |
+| [Sonner](https://sonner.emilkowal.ski) | latest | Toast notifications |
+| [React Hook Form](https://react-hook-form.com) | latest | Form management |
+| [Zod](https://zod.dev) | latest | Schema validation |
+
+### Backend
+| Teknologi | Versi | Keterangan |
+|-----------|-------|-----------|
+| Next.js API Routes | 16.2.6 | REST API (App Router) |
+| [NextAuth.js](https://authjs.dev) | v5 beta | Autentikasi Google OAuth |
+| [Prisma ORM](https://prisma.io) | 7.x | Database ORM |
+| [@prisma/adapter-pg](https://www.prisma.io/docs/orm/overview/databases/postgresql) | latest | Driver adapter PostgreSQL |
+
+### Database & Storage
+| Teknologi | Keterangan |
+|-----------|-----------|
+| [Supabase](https://supabase.com) | PostgreSQL database + Storage bucket |
+| [Supabase Storage](https://supabase.com/storage) | Upload bukti pembayaran |
+
+---
+
+## Fitur
+
+- **Autentikasi** — Login via Google OAuth
+- **Onboarding** — Pengisian profil saat pertama kali login
+- **Dashboard Member** — Ringkasan sesi mendatang, kehadiran, dan status iuran
+- **Sesi Latihan** — Lihat dan daftar sesi, RSVP
+- **Pembayaran** — Upload bukti bayar iuran bulanan
+- **Admin Panel** — Kelola sesi, kehadiran, pembayaran, anggota, dan pengaturan komunitas
+
+---
+
+## Prasyarat
+
+- [Node.js](https://nodejs.org) v20+
+- Akun [Supabase](https://supabase.com) (database + storage bucket)
+- Akun Google Cloud (untuk OAuth credentials)
+
+---
+
+## Instalasi
+
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/jefrykurniaone/net-c-management.git
+   cd net-c-management
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Buat file environment**
+
+   Salin dari contoh:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Isi semua variabel di `.env.local`:
+   ```env
+   # Database (Supabase — gunakan Session mode pooler, port 5432)
+   DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-x-[region].pooler.supabase.com:5432/postgres"
+
+   # NextAuth
+   AUTH_SECRET="generate dengan: openssl rand -base64 32"
+   NEXTAUTH_URL="http://localhost:3000"
+
+   # Google OAuth (dari Google Cloud Console)
+   AUTH_GOOGLE_ID="xxx.apps.googleusercontent.com"
+   AUTH_GOOGLE_SECRET="GOCSPX-xxx"
+
+   # Supabase
+   NEXT_PUBLIC_SUPABASE_URL="https://[ref].supabase.co"
+   NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJ..."
+   SUPABASE_SERVICE_ROLE_KEY="eyJ..."
+   ```
+
+4. **Setup database**
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+
+5. **Setup Supabase Storage**
+
+   Buat bucket bernama `payment-proofs` di Supabase Dashboard → Storage.
+
+6. **Set role Admin** (pertama kali)
+
+   Login ke aplikasi terlebih dahulu via Google, lalu jalankan di SQL Editor Supabase:
+   ```sql
+   UPDATE "User" SET role = 'ADMIN' WHERE email = 'email-kamu@gmail.com';
+   ```
+
+---
+
+## Menjalankan Aplikasi
+
+### Development
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Buka [http://localhost:3000](http://localhost:3000)
+
+### Build Production
+```bash
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Lainnya
+```bash
+npx prisma studio   # GUI database
+npm run lint        # ESLint
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Struktur Project
 
-## Learn More
+```
+src/
+├── app/
+│   ├── (admin)/        # Halaman admin (dilindungi role ADMIN)
+│   ├── (main)/         # Halaman member (dashboard, sesi, pembayaran, profil)
+│   ├── api/            # API routes
+│   ├── auth/           # Halaman sign in & error
+│   └── onboarding/     # Halaman onboarding member baru
+├── components/
+│   ├── layout/         # Sidebar & mobile nav
+│   ├── sessions/       # Komponen RSVP
+│   └── ui/             # shadcn/ui components
+├── lib/
+│   ├── auth.ts         # Konfigurasi NextAuth
+│   ├── prisma.ts       # Prisma client singleton
+│   ├── supabase.ts     # Supabase admin client
+│   └── validations/    # Zod schemas
+└── types/              # TypeScript type augmentation
+prisma/
+└── schema.prisma       # Database schema
+prisma.config.ts        # Konfigurasi Prisma 7
+```
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
