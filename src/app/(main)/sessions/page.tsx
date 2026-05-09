@@ -2,21 +2,20 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { id as localeId, enUS } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-
-const STATUS_CONFIG = {
-  SCHEDULED: { label: "Terjadwal", variant: "secondary" as const },
-  ONGOING: { label: "Berlangsung", variant: "default" as const },
-  COMPLETED: { label: "Selesai", variant: "outline" as const },
-  CANCELLED: { label: "Dibatalkan", variant: "destructive" as const },
-};
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { sessionStatusVariant } from "@/lib/utils";
 
 export default async function SessionsPage() {
-  const session = await auth();
+  const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
+
+  const t = getDictionary(locale);
+  const dateLocale = locale === "id" ? localeId : enUS;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -38,22 +37,21 @@ export default async function SessionsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <CalendarDays className="w-6 h-6 text-green-600" />
-          Sesi Latihan
+          {t.sessions.title}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">Daftar sesi latihan yang akan datang</p>
+        <p className="text-sm text-gray-500 mt-1">{t.sessions.subtitle}</p>
       </div>
 
       {sessions.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
           <CalendarDays className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">Belum ada sesi yang dijadwalkan.</p>
+          <p className="text-gray-500">{t.sessions.noSessions}</p>
         </div>
       ) : (
         <div className="space-y-3">
           {sessions.map((s) => {
             const isRegistered = s.attendances.length > 0;
             const isFull = s._count.attendances >= s.maxPlayers;
-            const statusCfg = STATUS_CONFIG[s.status];
             return (
               <Link key={s.id} href={`/sessions/${s.id}`}>
                 <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 hover:border-green-200 hover:shadow-sm transition-all">
@@ -63,21 +61,25 @@ export default async function SessionsPage() {
                         <h3 className="font-semibold text-gray-900 dark:text-white">
                           {s.title}
                         </h3>
-                        <Badge variant={statusCfg.variant}>{statusCfg.label}</Badge>
+                        <Badge
+                          variant={sessionStatusVariant(s.status)}
+                        >
+                          {t.sessionStatus[s.status]}
+                        </Badge>
                         {isRegistered && (
                           <Badge variant="outline" className="text-green-600 border-green-200">
-                            ✓ Terdaftar
+                            {t.sessions.registered}
                           </Badge>
                         )}
                       </div>
                       <div className="space-y-1 text-sm text-gray-500">
                         <p>
-                          📅 {format(new Date(s.date), "EEEE, d MMMM yyyy", { locale: localeId })}
+                          📅 {format(new Date(s.date), "EEEE, d MMMM yyyy", { locale: dateLocale })}
                           &nbsp;·&nbsp;{s.startTime} – {s.endTime}
                         </p>
                         <p>📍 {s.location}</p>
                         {s.fee > 0 && (
-                          <p>💰 Rp {s.fee.toLocaleString("id-ID")}/orang</p>
+                          <p>💰 Rp {s.fee.toLocaleString("id-ID")}{t.sessions.feePerPerson}</p>
                         )}
                       </div>
                     </div>
@@ -85,9 +87,9 @@ export default async function SessionsPage() {
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {s._count.attendances}/{s.maxPlayers}
                       </p>
-                      <p className="text-xs text-gray-400">peserta</p>
+                      <p className="text-xs text-gray-400">{t.sessions.participants}</p>
                       {isFull && !isRegistered && (
-                        <Badge variant="secondary" className="mt-1 text-xs">Penuh</Badge>
+                        <Badge variant="secondary" className="mt-1 text-xs">{t.sessions.full}</Badge>
                       )}
                     </div>
                   </div>

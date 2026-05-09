@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { updateSessionSchema, type UpdateSessionFormData } from "@/lib/validations/session";
+import { buildUpdateSessionSchema, type UpdateSessionFormData } from "@/lib/validations/session";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -21,31 +21,35 @@ import { ArrowLeft, CheckCircle, XCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import type { BadmintonSession, Attendance, User } from "@prisma/client";
+import { useLocale } from "@/components/providers/locale-provider";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
 type SessionWithAttendances = BadmintonSession & { attendances: AttendanceWithUser[] };
 
-const STATUS_OPTIONS = [
-  { value: "SCHEDULED", label: "Terjadwal" },
-  { value: "ONGOING", label: "Berlangsung" },
-  { value: "COMPLETED", label: "Selesai" },
-  { value: "CANCELLED", label: "Dibatalkan" },
-];
-
-const ATTENDANCE_STATUS_OPTIONS = [
-  { value: "REGISTERED", label: "Terdaftar", icon: Clock, color: "text-yellow-500" },
-  { value: "PRESENT", label: "Hadir", icon: CheckCircle, color: "text-green-500" },
-  { value: "ABSENT", label: "Absen", icon: XCircle, color: "text-red-500" },
-];
-
 export function EditSessionForm({ session }: Readonly<{ session: SessionWithAttendances }>) {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = getDictionary(locale);
+
+  const STATUS_OPTIONS = [
+    { value: "SCHEDULED", label: t.sessionStatus.SCHEDULED },
+    { value: "ONGOING", label: t.sessionStatus.ONGOING },
+    { value: "COMPLETED", label: t.sessionStatus.COMPLETED },
+    { value: "CANCELLED", label: t.sessionStatus.CANCELLED },
+  ];
+
+  const ATTENDANCE_STATUS_OPTIONS = [
+    { value: "REGISTERED", label: t.attendanceStatus.REGISTERED, icon: Clock, color: "text-yellow-500" },
+    { value: "PRESENT", label: t.attendanceStatus.PRESENT, icon: CheckCircle, color: "text-green-500" },
+    { value: "ABSENT", label: t.attendanceStatus.ABSENT, icon: XCircle, color: "text-red-500" },
+  ];
   const [loading, setLoading] = useState(false);
   const [attendances, setAttendances] = useState<AttendanceWithUser[]>(session.attendances);
   const [attendanceLoading, setAttendanceLoading] = useState<string | null>(null);
 
   const form = useForm<UpdateSessionFormData>({
-    resolver: zodResolver(updateSessionSchema),
+    resolver: zodResolver(buildUpdateSessionSchema(t)),
     defaultValues: {
       title: session.title,
       date: format(new Date(session.date), "yyyy-MM-dd"),
@@ -69,29 +73,29 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? "Gagal menyimpan");
+        throw new Error(err.error ?? t.admin.sessionUpdateFailed);
       }
-      toast.success("Sesi berhasil diperbarui!");
+      toast.success(t.admin.sessionUpdated);
       router.push("/admin/sessions");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setLoading(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Yakin ingin menghapus sesi ini? Semua data absensi akan ikut terhapus.")) return;
+    if (!confirm(t.admin.confirmDelete)) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/sessions/${session.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Gagal menghapus sesi");
-      toast.success("Sesi dihapus");
+      if (!res.ok) throw new Error(t.admin.sessionDeleteFailed);
+      toast.success(t.admin.sessionDeleted);
       router.push("/admin/sessions");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setLoading(false);
     }
@@ -105,20 +109,20 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, status }),
       });
-      if (!res.ok) throw new Error("Gagal mengubah kehadiran");
+      if (!res.ok) throw new Error(t.admin.attendanceUpdateFailed);
       setAttendances((prev) =>
         prev.map((a) => (a.userId === userId ? { ...a, status } : a))
       );
-      toast.success("Status kehadiran diperbarui");
+      toast.success(t.admin.attendanceUpdated);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setAttendanceLoading(null);
     }
   }
 
   async function handleMarkAllPresent() {
-    if (!confirm("Tandai semua peserta sebagai Hadir?")) return;
+    if (!confirm(t.admin.confirmMarkAll)) return;
     setLoading(true);
     try {
       await Promise.all(
@@ -131,9 +135,9 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
         )
       );
       setAttendances((prev) => prev.map((a) => ({ ...a, status: "PRESENT" as const })));
-      toast.success("Semua peserta ditandai Hadir");
+      toast.success(t.admin.attendanceUpdated);
     } catch {
-      toast.error("Gagal menandai kehadiran");
+      toast.error(t.admin.attendanceUpdateFailed);
     } finally {
       setLoading(false);
     }
@@ -146,12 +150,12 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
       >
         <ArrowLeft className="w-4 h-4" />
-        Kembali
+        {t.admin.backToSessions}
       </Link>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-          Edit Sesi
+          {t.admin.editSessionTitle}
         </h1>
 
         <Form {...form}>
@@ -161,7 +165,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Judul Sesi</FormLabel>
+                  <FormLabel>{t.admin.formTitle}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -175,7 +179,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               name="status"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Status Sesi</FormLabel>
+                  <FormLabel>{t.admin.colStatus}</FormLabel>
                   <FormControl>
                     <select
                       {...field}
@@ -198,7 +202,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tanggal</FormLabel>
+                  <FormLabel>{t.admin.formDate}</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -213,7 +217,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                 name="startTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mulai</FormLabel>
+                    <FormLabel>{t.admin.formStartTime}</FormLabel>
                     <FormControl>
                       <Input type="time" {...field} />
                     </FormControl>
@@ -226,7 +230,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                 name="endTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Selesai</FormLabel>
+                    <FormLabel>{t.admin.formEndTime}</FormLabel>
                     <FormControl>
                       <Input type="time" {...field} />
                     </FormControl>
@@ -241,7 +245,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Lokasi</FormLabel>
+                  <FormLabel>{t.admin.formLocation}</FormLabel>
                   <FormControl>
                     <Input {...field} />
                   </FormControl>
@@ -256,7 +260,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                 name="maxPlayers"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Maks Peserta</FormLabel>
+                    <FormLabel>{t.admin.formMaxPlayers}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -274,7 +278,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                 name="fee"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Biaya (Rp)</FormLabel>
+                    <FormLabel>{t.admin.formFee}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -294,7 +298,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Catatan</FormLabel>
+                  <FormLabel>{t.admin.formNotes}</FormLabel>
                   <FormControl>
                     <Textarea rows={3} {...field} />
                   </FormControl>
@@ -309,7 +313,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 disabled={loading}
               >
-                {loading ? "Menyimpan..." : "Simpan Perubahan"}
+                {loading ? t.admin.updating : t.admin.updateBtn}
               </Button>
               <Button
                 type="button"
@@ -318,7 +322,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                 onClick={handleDelete}
                 disabled={loading}
               >
-                Hapus
+                {t.admin.deleteBtn}
               </Button>
             </div>
           </form>
@@ -330,7 +334,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Kehadiran Peserta ({attendances.length})
+              {t.admin.manualAttendance} ({attendances.length})
             </h2>
             <Button
               type="button"
@@ -340,7 +344,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               disabled={loading}
             >
               <CheckCircle className="w-4 h-4 mr-1" />
-              Tandai Semua Hadir
+              {t.admin.markAllPresent}
             </Button>
           </div>
           <div className="space-y-2">

@@ -1,41 +1,55 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import { AuthProvider } from "@/components/providers/auth-provider";
-import { Toaster } from "@/components/ui/sonner";
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
+import './globals.css';
+import { AuthProvider } from '@/components/providers/auth-provider';
+import { Toaster } from '@/components/ui/sonner';
+import { getSettings } from '@/lib/settings';
+import { getLocale } from '@/lib/i18n/locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
+import { LocaleProvider } from '@/components/providers/locale-provider';
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+    variable: '--font-geist-sans',
+    subsets: ['latin'],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+    variable: '--font-geist-mono',
+    subsets: ['latin'],
 });
 
-export const metadata: Metadata = {
-  title: "PB Net-C - Manajemen Komunitas Badminton",
-  description: "Sistem manajemen komunitas badminton PB Net-C",
-};
+export async function generateMetadata(): Promise<Metadata> {
+    const [{ communityName }, locale] = await Promise.all([
+        getSettings(),
+        getLocale(),
+    ]);
+    const t = getDictionary(locale);
+    return {
+        title: `${communityName} - ${t.auth.signInSubtitle}`,
+        description: `${t.auth.signInSubtitle} ${communityName}`,
+    };
+}
 
-export default function RootLayout({
-  children,
+export default async function RootLayout({
+    children,
 }: Readonly<{
-  children: React.ReactNode;
+    children: React.ReactNode;
 }>) {
-  return (
-    <html
-      lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
-      <body className="min-h-full flex flex-col">
-        <AuthProvider>
-          {children}
-          <Toaster richColors position="top-right" />
-        </AuthProvider>
-      </body>
-    </html>
-  );
+    const locale = await getLocale();
+
+    return (
+        <html
+            lang={locale}
+            className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+            suppressHydrationWarning>
+            <body className='min-h-full flex flex-col'>
+                <AuthProvider>
+                    <LocaleProvider initialLocale={locale}>
+                        {children}
+                        <Toaster richColors position='top-right' />
+                    </LocaleProvider>
+                </AuthProvider>
+            </body>
+        </html>
+    );
 }

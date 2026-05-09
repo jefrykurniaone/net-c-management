@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ExternalLink } from "lucide-react";
+import { useLocale } from "@/components/providers/locale-provider";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 interface Payment {
   id: string;
@@ -15,10 +17,12 @@ interface Payment {
 
 export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = getDictionary(locale);
   const [loading, setLoading] = useState(false);
 
   async function handleAction(action: "CONFIRMED" | "REJECTED") {
-    if (!confirm(`Yakin ingin ${action === "CONFIRMED" ? "mengkonfirmasi" : "menolak"} pembayaran ini?`)) return;
+    if (!confirm(action === "CONFIRMED" ? t.admin.confirmConfirm : t.admin.confirmReject)) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/payments/${payment.id}`, {
@@ -27,10 +31,10 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
         body: JSON.stringify({ status: action }),
       });
       if (!res.ok) throw new Error("Gagal memperbarui status");
-      toast.success(action === "CONFIRMED" ? "Pembayaran dikonfirmasi" : "Pembayaran ditolak");
+      toast.success(action === "CONFIRMED" ? t.admin.paymentConfirmed : t.admin.paymentRejected);
       router.refresh();
     } catch {
-      toast.error("Terjadi kesalahan");
+      toast.error(t.admin.paymentUpdateFailed);
     } finally {
       setLoading(false);
     }
@@ -46,7 +50,7 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
           className="text-xs text-blue-500 hover:underline flex items-center gap-1"
         >
           <ExternalLink className="w-3 h-3" />
-          Bukti
+          {t.admin.proof}
         </a>
       )}
       {payment.status === "PENDING" && (
@@ -58,7 +62,7 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
             onClick={() => handleAction("CONFIRMED")}
             disabled={loading}
           >
-            Konfirmasi
+            {t.admin.confirmBtn}
           </Button>
           <Button
             variant="outline"
@@ -67,7 +71,7 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
             onClick={() => handleAction("REJECTED")}
             disabled={loading}
           >
-            Tolak
+            {t.admin.rejectBtn}
           </Button>
         </>
       )}

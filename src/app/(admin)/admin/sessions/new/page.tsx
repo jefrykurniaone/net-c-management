@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createSessionSchema, type CreateSessionFormData } from "@/lib/validations/session";
+import { buildCreateSessionSchema, type CreateSessionFormData } from "@/lib/validations/session";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -19,13 +19,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useLocale } from "@/components/providers/locale-provider";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export default function NewSessionPage() {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = getDictionary(locale);
   const [loading, setLoading] = useState(false);
 
   const form = useForm<CreateSessionFormData>({
-    resolver: zodResolver(createSessionSchema),
+    resolver: zodResolver(buildCreateSessionSchema(t)),
     defaultValues: {
       title: "",
       date: "",
@@ -48,13 +52,13 @@ export default function NewSessionPage() {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? "Gagal membuat sesi");
+        throw new Error(err.error ?? t.admin.sessionCreateFailed);
       }
-      toast.success("Sesi berhasil dibuat!");
+      toast.success(t.admin.sessionCreated);
       router.push("/admin/sessions");
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setLoading(false);
     }
@@ -67,12 +71,12 @@ export default function NewSessionPage() {
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
       >
         <ArrowLeft className="w-4 h-4" />
-        Kembali ke daftar sesi
+        {t.admin.backToSessions}
       </Link>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
         <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-          Buat Sesi Baru
+          {t.admin.newSessionTitle}
         </h1>
 
         <Form {...form}>
@@ -82,9 +86,9 @@ export default function NewSessionPage() {
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Judul Sesi</FormLabel>
+                  <FormLabel>{t.admin.formTitle}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contoh: Latihan Rutin Minggu" {...field} />
+                    <Input placeholder={locale === 'id' ? 'Contoh: Latihan Rutin Minggu' : 'e.g. Weekly Training'} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,7 +100,7 @@ export default function NewSessionPage() {
               name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Tanggal</FormLabel>
+                  <FormLabel>{t.admin.formDate}</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -111,7 +115,7 @@ export default function NewSessionPage() {
                 name="startTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mulai</FormLabel>
+                    <FormLabel>{t.admin.formStartTime}</FormLabel>
                     <FormControl>
                       <Input type="time" {...field} />
                     </FormControl>
@@ -124,7 +128,7 @@ export default function NewSessionPage() {
                 name="endTime"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Selesai</FormLabel>
+                    <FormLabel>{t.admin.formEndTime}</FormLabel>
                     <FormControl>
                       <Input type="time" {...field} />
                     </FormControl>
@@ -139,9 +143,9 @@ export default function NewSessionPage() {
               name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Lokasi / GOR</FormLabel>
+                  <FormLabel>{t.admin.formLocation}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contoh: GOR Serbaguna Kelurahan X" {...field} />
+                    <Input placeholder={locale === 'id' ? 'Contoh: GOR Serbaguna Kelurahan X' : 'e.g. Community Sports Hall'} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -154,7 +158,7 @@ export default function NewSessionPage() {
                 name="maxPlayers"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Maks Peserta</FormLabel>
+                    <FormLabel>{t.admin.formMaxPlayers}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -172,7 +176,7 @@ export default function NewSessionPage() {
                 name="fee"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Biaya (Rp)</FormLabel>
+                    <FormLabel>{t.admin.formFee}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -192,10 +196,10 @@ export default function NewSessionPage() {
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Catatan (opsional)</FormLabel>
+                  <FormLabel>{t.admin.formNotes}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Info tambahan tentang sesi ini..."
+                      placeholder={locale === 'id' ? 'Info tambahan tentang sesi ini...' : 'Additional info about this session...'}
                       rows={3}
                       {...field}
                     />
@@ -210,7 +214,7 @@ export default function NewSessionPage() {
               className="w-full bg-green-600 hover:bg-green-700 text-white"
               disabled={loading}
             >
-              {loading ? "Menyimpan..." : "Buat Sesi"}
+              {loading ? t.admin.creating : t.admin.createBtn}
             </Button>
           </form>
         </Form>

@@ -5,26 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { MemberActions } from "./member-actions";
-
-const ROLE_LABELS = { ADMIN: "Admin", MEMBER: "Anggota" };
-const LEVEL_LABELS = {
-  BEGINNER: "Pemula",
-  INTERMEDIATE: "Menengah",
-  ADVANCED: "Mahir",
-};
-const POSITION_LABELS = {
-  SINGLE: "Tunggal",
-  DOUBLE: "Ganda",
-  BOTH: "Keduanya",
-};
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 export default async function AdminMembersPage({
   searchParams,
 }: Readonly<{
   searchParams: Promise<{ search?: string }>;
 }>) {
-  const session = await auth();
+  const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || session.user.role !== "ADMIN") redirect("/dashboard");
+
+  const t = getDictionary(locale);
 
   const sp = await searchParams;
   const search = sp.search ?? "";
@@ -61,10 +53,10 @@ export default async function AdminMembersPage({
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Users className="w-6 h-6 text-green-600" />
-            Kelola Anggota
+            {t.admin.membersTitle}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {users.length} anggota terdaftar
+            {users.length} {t.admin.membersRegistered}
           </p>
         </div>
       </div>
@@ -74,14 +66,14 @@ export default async function AdminMembersPage({
         <input
           name="search"
           defaultValue={search}
-          placeholder="Cari nama atau email..."
+          placeholder={t.admin.searchPlaceholder}
           className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900 w-full max-w-sm"
         />
         <button
           type="submit"
           className="border rounded-lg px-4 py-1.5 text-sm bg-white dark:bg-gray-900 hover:bg-gray-50"
         >
-          Cari
+          {t.admin.searchBtn}
         </button>
       </form>
 
@@ -90,12 +82,12 @@ export default async function AdminMembersPage({
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Anggota</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">Level</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">Sesi</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">Iuran</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">Status</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">Aksi</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colName}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colLevel}</th>
+                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colAttendance}</th>
+                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colPayments}</th>
+                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colMemberStatus}</th>
+                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colActions}</th>
               </tr>
             </thead>
             <tbody>
@@ -123,16 +115,16 @@ export default async function AdminMembersPage({
                           href={`/admin/members/${u.id}`}
                           className="font-medium text-gray-900 dark:text-white hover:underline"
                         >
-                          {u.name ?? "(Belum diisi)"}
+                          {u.name ?? `(${t.admin.profileIncomplete})`}
                         </Link>
                         <p className="text-xs text-gray-400">{u.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-500">
-                    <p>{u.playerLevel ? LEVEL_LABELS[u.playerLevel] : "-"}</p>
+                    <p>{u.playerLevel ? t.levels[u.playerLevel] : "-"}</p>
                     <p className="text-xs text-gray-400">
-                      {u.playPosition ? POSITION_LABELS[u.playPosition] : ""}
+                      {u.playPosition ? t.positions[u.playPosition] : ""}
                     </p>
                   </td>
                   <td className="px-4 py-3 text-center text-gray-500">
@@ -147,11 +139,11 @@ export default async function AdminMembersPage({
                         variant={u.role === "ADMIN" ? "default" : "secondary"}
                         className="text-xs"
                       >
-                        {ROLE_LABELS[u.role]}
+                        {t.roles[u.role]}
                       </Badge>
                       {!u.isActive && (
                         <Badge variant="outline" className="text-xs text-red-500 border-red-200">
-                          Non-aktif
+                          {t.admin.inactive2}
                         </Badge>
                       )}
                     </div>
@@ -164,7 +156,7 @@ export default async function AdminMembersPage({
               {users.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                    Tidak ada anggota ditemukan.
+                    {t.admin.noMembers}
                   </td>
                 </tr>
               )}

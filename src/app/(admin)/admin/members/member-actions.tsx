@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useLocale } from "@/components/providers/locale-provider";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 
 interface Member {
   id: string;
@@ -20,6 +22,8 @@ export function MemberActions({
   currentUserId: string;
 }>) {
   const router = useRouter();
+  const { locale } = useLocale();
+  const t = getDictionary(locale);
   const [loading, setLoading] = useState(false);
 
   async function patch(data: { role?: "ADMIN" | "MEMBER"; isActive?: boolean }) {
@@ -32,12 +36,12 @@ export function MemberActions({
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.error ?? "Gagal memperbarui");
+        throw new Error(err.error ?? t.admin.memberUpdateFailed);
       }
-      toast.success("Berhasil diperbarui");
+      toast.success(t.admin.memberUpdated);
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan");
+      toast.error(err instanceof Error ? err.message : t.common.error);
     } finally {
       setLoading(false);
     }
@@ -54,7 +58,7 @@ export function MemberActions({
         onClick={() => patch({ isActive: !member.isActive })}
         disabled={loading || isSelf}
       >
-        {member.isActive ? "Non-aktifkan" : "Aktifkan"}
+        {member.isActive ? t.admin.deactivateMember : t.admin.activateMember}
       </Button>
       {!isSelf && (
         <Button
@@ -66,7 +70,7 @@ export function MemberActions({
           }
           disabled={loading}
         >
-          {member.role === "ADMIN" ? "→ Anggota" : "→ Admin"}
+          {member.role === "ADMIN" ? t.admin.makeMember : t.admin.makeAdmin}
         </Button>
       )}
     </div>
