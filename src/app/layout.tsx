@@ -7,6 +7,7 @@ import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LocaleProvider } from '@/components/providers/locale-provider';
+import { Analytics } from '@vercel/analytics/next';
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -49,6 +50,7 @@ export default async function RootLayout({
                         <Toaster richColors position='top-right' />
                     </LocaleProvider>
                 </AuthProvider>
+                <Analytics />
             </body>
         </html>
     );
