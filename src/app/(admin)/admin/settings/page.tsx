@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Settings } from 'lucide-react';
+import { Settings, Upload } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
@@ -16,6 +17,7 @@ interface SettingsMap {
     defaultLocation?: string;
     adminWhatsapp?: string;
     maxPlayers?: string;
+    logoUrl?: string;
 }
 
 export default function AdminSettingsPage() {
@@ -24,12 +26,16 @@ export default function AdminSettingsPage() {
     const t = getDictionary(locale);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+    const logoInputRef = useRef<HTMLInputElement>(null);
     const [settings, setSettings] = useState<SettingsMap>({
         communityName: 'PB Net-C',
         defaultMonthlyFee: '50000',
         defaultLocation: '',
         adminWhatsapp: '',
         maxPlayers: '20',
+        logoUrl: '',
     });
 
     useEffect(() => {
@@ -45,6 +51,36 @@ export default function AdminSettingsPage() {
         }
         void loadSettings();
     }, []);
+
+    async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setLogoPreview(URL.createObjectURL(file));
+        setUploadingLogo(true);
+        try {
+            const form = new FormData();
+            form.append('file', file);
+            const res = await fetch('/api/settings/logo', {
+                method: 'POST',
+                body: form,
+            });
+            if (!res.ok) {
+                const data = (await res.json()) as { error?: string };
+                throw new Error(data.error ?? t.admin.logoFail);
+            }
+            const data = (await res.json()) as { logoUrl: string };
+            setSettings((prev) => ({ ...prev, logoUrl: data.logoUrl }));
+            toast.success(t.admin.logoSuccess);
+            router.refresh();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t.admin.logoFail);
+            setLogoPreview(null);
+        } finally {
+            setUploadingLogo(false);
+            if (logoInputRef.current) logoInputRef.current.value = '';
+        }
+    }
 
     async function handleSubmit(e: React.SyntheticEvent) {
         e.preventDefault();
@@ -69,9 +105,17 @@ export default function AdminSettingsPage() {
         setSettings((prev) => ({ ...prev, [key]: value }));
     }
 
+    function logoButtonLabel(): string {
+        if (uploadingLogo) return t.admin.logoUploading;
+        if (settings.logoUrl) return t.admin.logoChange;
+        return t.admin.logoUpload;
+    }
+
     if (loading) {
         return (
-            <div className='text-gray-400 text-sm'>{t.common.loadingSettings}</div>
+            <div className='text-gray-400 text-sm'>
+                {t.common.loadingSettings}
+            </div>
         );
     }
 
@@ -88,10 +132,56 @@ export default function AdminSettingsPage() {
                 </p>
             </div>
 
+            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6 space-y-5'>
+                {/* Logo upload */}
+                <div className='space-y-3'>
+                    <Label>{t.admin.logoLabel}</Label>
+                    <div className='flex items-center gap-4'>
+                        {(logoPreview ?? settings.logoUrl) ? (
+                            <Image
+                                src={
+                                    (logoPreview ?? settings.logoUrl) as string
+                                }
+                                alt='logo'
+                                width={64}
+                                height={64}
+                                className='w-16 h-16 rounded-full object-cover border border-gray-200'
+                            />
+                        ) : (
+                            <div className='w-16 h-16 rounded-full bg-green-100 flex items-center justify-center border border-gray-200'>
+                                <Upload className='w-6 h-6 text-green-600' />
+                            </div>
+                        )}
+                        <div className='space-y-1'>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                disabled={uploadingLogo}
+                                onClick={() => logoInputRef.current?.click()}>
+                                {logoButtonLabel()}
+                            </Button>
+                            <p className='text-xs text-gray-400'>
+                                {t.admin.logoHint}
+                            </p>
+                        </div>
+                    </div>
+                    <input
+                        ref={logoInputRef}
+                        type='file'
+                        accept='image/jpeg,image/png,image/webp'
+                        className='hidden'
+                        onChange={handleLogoUpload}
+                    />
+                </div>
+            </div>
+
             <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6'>
                 <form onSubmit={handleSubmit} className='space-y-5'>
                     <div className='space-y-1.5'>
-                        <Label htmlFor='communityName'>{t.admin.communityNameLabel}</Label>
+                        <Label htmlFor='communityName'>
+                            {t.admin.communityNameLabel}
+                        </Label>
                         <Input
                             id='communityName'
                             value={settings.communityName ?? ''}
@@ -122,7 +212,11 @@ export default function AdminSettingsPage() {
                         </Label>
                         <Input
                             id='defaultLocation'
-                            placeholder={locale === 'id' ? 'Contoh: GOR Serbaguna Kelurahan X' : 'e.g. Community Sports Hall'}
+                            placeholder={
+                                locale === 'id'
+                                    ? 'Contoh: GOR Serbaguna Kelurahan X'
+                                    : 'e.g. Community Sports Hall'
+                            }
                             value={settings.defaultLocation ?? ''}
                             onChange={(e) =>
                                 update('defaultLocation', e.target.value)
@@ -148,7 +242,9 @@ export default function AdminSettingsPage() {
                     </div>
 
                     <div className='space-y-1.5'>
-                        <Label htmlFor='maxPlayers'>{t.admin.maxPlayersLabel}</Label>
+                        <Label htmlFor='maxPlayers'>
+                            {t.admin.maxPlayersLabel}
+                        </Label>
                         <Input
                             id='maxPlayers'
                             type='number'

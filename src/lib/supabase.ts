@@ -23,6 +23,7 @@ export const supabaseAdmin = createClient(
 
 export const PAYMENT_PROOFS_BUCKET = 'payment-proofs';
 export const AVATARS_BUCKET = 'avatars';
+export const LOGOS_BUCKET = 'logos';
 
 /**
  * Upload a file to Supabase Storage and return the public URL.
@@ -86,6 +87,32 @@ export async function uploadAvatar(
 
     const { data: urlData } = supabaseAdmin.storage
         .from(AVATARS_BUCKET)
+        .getPublicUrl(path);
+
+    return urlData.publicUrl;
+}
+
+/**
+ * Upload a community logo to Supabase Storage and return the public URL.
+ * Always uploads to a fixed path so the old logo is replaced.
+ */
+export async function uploadLogo(
+    file: Buffer,
+    contentType: string,
+): Promise<string> {
+    const ext = contentType.split('/')[1] ?? 'png';
+    const path = `community-logo.${ext}`;
+
+    const { error } = await supabaseAdmin.storage
+        .from(LOGOS_BUCKET)
+        .upload(path, file, { contentType, upsert: true });
+
+    if (error) {
+        throw new Error(`Logo upload failed: ${error.message}`);
+    }
+
+    const { data: urlData } = supabaseAdmin.storage
+        .from(LOGOS_BUCKET)
         .getPublicUrl(path);
 
     return urlData.publicUrl;

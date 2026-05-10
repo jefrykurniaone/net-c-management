@@ -7,6 +7,7 @@ export interface AppSettings {
     defaultLocation: string;
     adminWhatsapp: string;
     maxPlayers: number;
+    logoUrl: string;
 }
 
 const DEFAULTS: AppSettings = {
@@ -15,6 +16,7 @@ const DEFAULTS: AppSettings = {
     defaultLocation: '',
     adminWhatsapp: '',
     maxPlayers: 20,
+    logoUrl: '',
 };
 
 /**
@@ -33,6 +35,7 @@ export async function getSettings(): Promise<AppSettings> {
         defaultLocation: map.defaultLocation ?? DEFAULTS.defaultLocation,
         adminWhatsapp: map.adminWhatsapp ?? DEFAULTS.adminWhatsapp,
         maxPlayers: Number(map.maxPlayers ?? DEFAULTS.maxPlayers),
+        logoUrl: map.logoUrl ?? DEFAULTS.logoUrl,
     };
 }
 

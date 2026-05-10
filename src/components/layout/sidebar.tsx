@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
@@ -21,7 +22,8 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 
 export function Sidebar({
     communityName,
-}: Readonly<{ communityName: string }>) {
+    logoUrl,
+}: Readonly<{ communityName: string; logoUrl?: string }>) {
     const pathname = usePathname();
     const { data: session } = useSession();
     const { locale } = useLocale();
@@ -44,8 +46,16 @@ export function Sidebar({
 
     const ADMIN_NAV = [
         { label: t.nav.adminDashboard, href: '/admin', icon: ShieldCheck },
-        { label: t.nav.adminSessions, href: '/admin/sessions', icon: CalendarDays },
-        { label: t.nav.adminPayments, href: '/admin/payments', icon: CreditCard },
+        {
+            label: t.nav.adminSessions,
+            href: '/admin/sessions',
+            icon: CalendarDays,
+        },
+        {
+            label: t.nav.adminPayments,
+            href: '/admin/payments',
+            icon: CreditCard,
+        },
         { label: t.nav.adminMembers, href: '/admin/members', icon: Users },
         { label: t.nav.adminSettings, href: '/admin/settings', icon: Settings },
     ];
@@ -54,11 +64,21 @@ export function Sidebar({
         <aside className='flex flex-col h-full w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700'>
             {/* Logo */}
             <div className='flex items-center gap-3 px-6 py-5 border-b border-gray-100 dark:border-gray-800'>
-                <div className='w-9 h-9 bg-green-600 rounded-full flex items-center justify-center shrink-0'>
-                    <span className='text-white font-bold text-sm'>
-                        {communityAbbr(communityName)}
-                    </span>
-                </div>
+                {logoUrl ? (
+                    <Image
+                        src={logoUrl}
+                        alt={communityName}
+                        width={36}
+                        height={36}
+                        className='w-9 h-9 rounded-full object-cover shrink-0'
+                    />
+                ) : (
+                    <div className='w-9 h-9 bg-green-600 rounded-full flex items-center justify-center shrink-0'>
+                        <span className='text-white font-bold text-sm'>
+                            {communityAbbr(communityName)}
+                        </span>
+                    </div>
+                )}
                 <div>
                     <p className='font-bold text-gray-900 dark:text-white text-sm leading-tight'>
                         {communityName}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
@@ -30,7 +31,12 @@ import { LanguageSwitcher } from '@/components/language-switcher';
 function NavLinks({
     onClose,
     communityName,
-}: Readonly<{ onClose?: () => void; communityName: string }>) {
+    logoUrl,
+}: Readonly<{
+    onClose?: () => void;
+    communityName: string;
+    logoUrl?: string;
+}>) {
     const pathname = usePathname();
     const { data: session } = useSession();
     const { locale } = useLocale();
@@ -52,8 +58,16 @@ function NavLinks({
 
     const ADMIN_NAV = [
         { label: t.nav.adminDashboard, href: '/admin', icon: ShieldCheck },
-        { label: t.nav.adminSessions, href: '/admin/sessions', icon: CalendarDays },
-        { label: t.nav.adminPayments, href: '/admin/payments', icon: CreditCard },
+        {
+            label: t.nav.adminSessions,
+            href: '/admin/sessions',
+            icon: CalendarDays,
+        },
+        {
+            label: t.nav.adminPayments,
+            href: '/admin/payments',
+            icon: CreditCard,
+        },
         { label: t.nav.adminMembers, href: '/admin/members', icon: Users },
         { label: t.nav.adminSettings, href: '/admin/settings', icon: Settings },
     ];
@@ -62,11 +76,21 @@ function NavLinks({
         <div className='flex flex-col h-full'>
             {/* Logo */}
             <div className='flex items-center gap-3 px-4 py-4 border-b border-gray-100'>
-                <div className='w-8 h-8 bg-green-600 rounded-full flex items-center justify-center'>
-                    <span className='text-white font-bold text-xs'>
-                        {communityAbbr(communityName)}
-                    </span>
-                </div>
+                {logoUrl ? (
+                    <Image
+                        src={logoUrl}
+                        alt={communityName}
+                        width={32}
+                        height={32}
+                        className='w-8 h-8 rounded-full object-cover'
+                    />
+                ) : (
+                    <div className='w-8 h-8 bg-green-600 rounded-full flex items-center justify-center'>
+                        <span className='text-white font-bold text-xs'>
+                            {communityAbbr(communityName)}
+                        </span>
+                    </div>
+                )}
                 <span className='font-bold text-gray-900'>{communityName}</span>
             </div>
 
@@ -151,7 +175,8 @@ function NavLinks({
 
 export function MobileNav({
     communityName,
-}: Readonly<{ communityName: string }>) {
+    logoUrl,
+}: Readonly<{ communityName: string; logoUrl?: string }>) {
     const [open, setOpen] = useState(false);
 
     return (
@@ -167,6 +192,7 @@ export function MobileNav({
                 <NavLinks
                     onClose={() => setOpen(false)}
                     communityName={communityName}
+                    logoUrl={logoUrl}
                 />
             </SheetContent>
         </Sheet>
