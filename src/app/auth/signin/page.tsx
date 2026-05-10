@@ -1,4 +1,5 @@
 import { signIn } from '@/lib/auth';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { getSettings } from '@/lib/settings';
 import { communityAbbr } from '@/lib/utils';
@@ -6,7 +7,7 @@ import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
 export default async function SignInPage() {
-    const [{ communityName }, locale] = await Promise.all([
+    const [{ communityName, logoUrl }, locale] = await Promise.all([
         getSettings(),
         getLocale(),
     ]);
@@ -16,11 +17,21 @@ export default async function SignInPage() {
             <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-sm flex flex-col items-center gap-6'>
                 {/* Logo / Branding */}
                 <div className='flex flex-col items-center gap-2'>
-                    <div className='w-16 h-16 bg-green-600 rounded-full flex items-center justify-center'>
-                        <span className='text-white font-bold text-2xl'>
-                            {communityAbbr(communityName)}
-                        </span>
-                    </div>
+                    {logoUrl ? (
+                        <Image
+                            src={logoUrl}
+                            alt={communityName}
+                            width={64}
+                            height={64}
+                            className='w-16 h-16 rounded-full object-cover'
+                        />
+                    ) : (
+                        <div className='w-16 h-16 bg-green-600 rounded-full flex items-center justify-center'>
+                            <span className='text-white font-bold text-2xl'>
+                                {communityAbbr(communityName)}
+                            </span>
+                        </div>
+                    )}
                     <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
                         {communityName}
                     </h1>
