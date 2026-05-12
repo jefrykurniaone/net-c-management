@@ -84,7 +84,7 @@ export default async function AdminPaymentsPage({
           defaultValue={String(filterYear ?? "")}
           className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900"
         >
-          <option value="">Semua Tahun</option>
+          <option value="">{t.admin.allYears}</option>
           {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
             <option key={y} value={y}>
               {y}

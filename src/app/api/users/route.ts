@@ -2,6 +2,9 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+const MAX_USER_LIMIT = 100;
+const DEFAULT_USER_LIMIT = 50;
+
 // GET /api/users — list all members (admin only)
 export async function GET(req: Request) {
     const session = await auth();
@@ -15,8 +18,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1'));
     const limit = Math.min(
-        100,
-        Math.max(1, Number.parseInt(searchParams.get('limit') ?? '50')),
+        MAX_USER_LIMIT,
+        Math.max(1, Number.parseInt(searchParams.get('limit') ?? String(DEFAULT_USER_LIMIT))),
     );
     const search = searchParams.get('search') ?? '';
     const skip = (page - 1) * limit;

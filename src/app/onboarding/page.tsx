@@ -42,7 +42,10 @@ export default function OnboardingPage() {
             .then((data: { communityName?: string }) => {
                 if (data.communityName) setCommunityName(data.communityName);
             })
-            .catch(() => undefined);
+            .catch((err) => {
+                console.error('[Onboarding] fetchSettings:', err);
+                return undefined;
+            });
     }, []);
 
     const form = useForm<OnboardingFormData>({

@@ -14,6 +14,7 @@ import {
     LogOut,
     ShieldCheck,
     Menu,
+    User,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -27,6 +28,7 @@ import { cn, communityAbbr } from '@/lib/utils';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 function NavLinks({
     onClose,
@@ -150,7 +152,7 @@ function NavLinks({
             <div className='border-t border-gray-100 p-4'>
                 <div className='flex items-center gap-3 mb-3'>
                     <Avatar className='w-8 h-8'>
-                        <AvatarImage src={session?.user?.image ?? ''} alt='' />
+                        <AvatarImage src={session?.user?.image ?? ''} alt={session?.user?.name ?? ''} />
                         <AvatarFallback className='bg-green-100 text-green-700 text-xs font-semibold'>
                             {initials}
                         </AvatarFallback>
@@ -162,6 +164,14 @@ function NavLinks({
                     </div>
                 </div>
                 <LanguageSwitcher />
+                <ThemeToggle />
+                <Link
+                    href='/profile'
+                    onClick={onClose}
+                    className='flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors w-full'>
+                    <User className='w-4 h-4 shrink-0' />
+                    {t.nav.profile}
+                </Link>
                 <button
                     onClick={() => signOut({ callbackUrl: '/' })}
                     className='flex items-center gap-2 text-sm text-red-500 hover:text-red-700 px-1 mt-1 w-full'>

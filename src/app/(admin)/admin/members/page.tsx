@@ -102,7 +102,7 @@ export default async function AdminMembersPage({
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={u.image}
-                          alt={u.name ?? ""}
+                          alt={u.name ?? t.admin.colName}
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (

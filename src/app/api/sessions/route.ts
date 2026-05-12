@@ -6,6 +6,9 @@ import { buildCreateSessionSchema } from '@/lib/validations/session';
 import { SessionStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
+const MAX_SESSION_LIMIT = 50;
+const DEFAULT_SESSION_LIMIT = 20;
+
 // GET /api/sessions — list sessions (all authenticated users)
 export async function GET(req: Request) {
     const session = await auth();
@@ -17,8 +20,8 @@ export async function GET(req: Request) {
     const upcoming = searchParams.get('upcoming') === 'true';
     const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1'));
     const limit = Math.min(
-        50,
-        Math.max(1, Number.parseInt(searchParams.get('limit') ?? '20')),
+        MAX_SESSION_LIMIT,
+        Math.max(1, Number.parseInt(searchParams.get('limit') ?? String(DEFAULT_SESSION_LIMIT))),
     );
     const skip = (page - 1) * limit;
 

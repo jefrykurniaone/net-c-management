@@ -5,6 +5,9 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildCreatePaymentSchema } from '@/lib/validations/payment';
 import { NextResponse } from 'next/server';
 
+const MAX_PAYMENT_LIMIT = 100;
+const DEFAULT_PAYMENT_LIMIT = 20;
+
 // GET /api/payments — list payments for current user (or all for admin)
 export async function GET(req: Request) {
     const session = await auth();
@@ -30,8 +33,8 @@ export async function GET(req: Request) {
         | null;
     const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1'));
     const limit = Math.min(
-        100,
-        Math.max(1, Number.parseInt(searchParams.get('limit') ?? '20')),
+        MAX_PAYMENT_LIMIT,
+        Math.max(1, Number.parseInt(searchParams.get('limit') ?? String(DEFAULT_PAYMENT_LIMIT))),
     );
     const skip = (page - 1) * limit;
 

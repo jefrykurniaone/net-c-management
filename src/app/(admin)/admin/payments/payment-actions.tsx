@@ -30,10 +30,11 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: action }),
       });
-      if (!res.ok) throw new Error("Gagal memperbarui status");
+      if (!res.ok) throw new Error(t.admin.paymentUpdateFailed);
       toast.success(action === "CONFIRMED" ? t.admin.paymentConfirmed : t.admin.paymentRejected);
       router.refresh();
-    } catch {
+    } catch (err) {
+      console.error('[PaymentActions] handleAction:', err);
       toast.error(t.admin.paymentUpdateFailed);
     } finally {
       setLoading(false);

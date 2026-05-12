@@ -13,12 +13,14 @@ import {
     LogOut,
     ChevronRight,
     ShieldCheck,
+    User,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, communityAbbr } from '@/lib/utils';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export function Sidebar({
     communityName,
@@ -170,10 +172,12 @@ export function Sidebar({
                 </div>
                 <Link
                     href='/profile'
-                    className='block text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 mb-2 px-1'>
+                    className='flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors w-full'>
+                    <User className='w-4 h-4 shrink-0' />
                     {t.nav.profile}
                 </Link>
                 <LanguageSwitcher />
+                <ThemeToggle />
                 <button
                     onClick={() => signOut({ callbackUrl: '/' })}
                     className='flex items-center gap-2 text-sm text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors px-1 py-1 mt-1 w-full rounded hover:bg-red-50 dark:hover:bg-red-900/20'>

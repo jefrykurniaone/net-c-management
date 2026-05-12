@@ -142,7 +142,7 @@ export default function AdminSettingsPage() {
                                 src={
                                     (logoPreview ?? settings.logoUrl) as string
                                 }
-                                alt='logo'
+                            alt={t.admin.logoLabel}
                                 width={64}
                                 height={64}
                                 className='w-16 h-16 rounded-full object-cover border border-gray-200'
@@ -212,11 +212,7 @@ export default function AdminSettingsPage() {
                         </Label>
                         <Input
                             id='defaultLocation'
-                            placeholder={
-                                locale === 'id'
-                                    ? 'Contoh: GOR Serbaguna Kelurahan X'
-                                    : 'e.g. Community Sports Hall'
-                            }
+                            placeholder={t.admin.defaultLocationPlaceholder}
                             value={settings.defaultLocation ?? ''}
                             onChange={(e) =>
                                 update('defaultLocation', e.target.value)

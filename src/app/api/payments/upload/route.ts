@@ -13,6 +13,7 @@ const ALLOWED_TYPES = new Set([
     'image/webp',
 ]);
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MIN_PAYMENT_YEAR = 2020;
 
 // POST /api/payments/upload — upload proof image + create/update payment record
 export async function POST(req: Request) {
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
             { status: 400 },
         );
     }
-    if (!month || month < 1 || month > 12 || !year || year < 2020) {
+    if (!month || month < 1 || month > 12 || !year || year < MIN_PAYMENT_YEAR) {
         return NextResponse.json(
             { error: t.validation.monthYearInvalid },
             { status: 400 },

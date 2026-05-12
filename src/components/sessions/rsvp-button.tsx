@@ -27,41 +27,35 @@ export function RSVPButton({
     const t = getDictionary(locale);
     const [loading, setLoading] = useState(false);
 
+    async function cancelRegistration(): Promise<void> {
+        const res = await fetch(`/api/sessions/${sessionId}/attendance`, { method: 'DELETE' });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error ?? t.sessions.toastCancelError);
+        }
+        toast.success(t.sessions.toastCancelSuccess);
+    }
+
+    async function registerForSession(): Promise<void> {
+        const res = await fetch(`/api/sessions/${sessionId}/attendance`, { method: 'POST' });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error ?? t.sessions.toastRegisterError);
+        }
+        toast.success(t.sessions.toastRegisterSuccess);
+    }
+
     async function handleRSVP() {
         setLoading(true);
         try {
             if (isRegistered) {
-                const res = await fetch(
-                    `/api/sessions/${sessionId}/attendance`,
-                    {
-                        method: 'DELETE',
-                    },
-                );
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(
-                        err.error ?? t.sessions.toastCancelError,
-                    );
-                }
-                toast.success(t.sessions.toastCancelSuccess);
+                await cancelRegistration();
             } else {
-                const res = await fetch(
-                    `/api/sessions/${sessionId}/attendance`,
-                    {
-                        method: 'POST',
-                    },
-                );
-                if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(err.error ?? t.sessions.toastRegisterError);
-                }
-                toast.success(t.sessions.toastRegisterSuccess);
+                await registerForSession();
             }
             router.refresh();
         } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : t.common.error,
-            );
+            toast.error(err instanceof Error ? err.message : t.common.error);
         } finally {
             setLoading(false);
         }

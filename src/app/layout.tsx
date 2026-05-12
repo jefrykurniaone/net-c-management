@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/components/providers/auth-provider';
+import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
@@ -44,12 +45,14 @@ export default async function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
             suppressHydrationWarning>
             <body className='min-h-full flex flex-col'>
-                <AuthProvider>
-                    <LocaleProvider initialLocale={locale}>
-                        {children}
-                        <Toaster richColors position='top-right' />
-                    </LocaleProvider>
-                </AuthProvider>
+                <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+                    <AuthProvider>
+                        <LocaleProvider initialLocale={locale}>
+                            {children}
+                            <Toaster richColors position='top-right' />
+                        </LocaleProvider>
+                    </AuthProvider>
+                </ThemeProvider>
                 <Analytics />
             </body>
         </html>
