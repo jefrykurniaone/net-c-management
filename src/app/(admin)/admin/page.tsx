@@ -18,6 +18,7 @@ export default async function AdminDashboardPage() {
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const [
         totalMembers,
@@ -33,7 +34,7 @@ export default async function AdminDashboardPage() {
         }),
         prisma.badmintonSession.count({
             where: {
-                date: { gte: now },
+                date: { gte: startOfToday },
                 status: { in: ['SCHEDULED', 'ONGOING'] },
             },
         }),
