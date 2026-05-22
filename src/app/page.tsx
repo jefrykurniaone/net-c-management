@@ -9,6 +9,7 @@ import { communityAbbr } from '@/lib/utils';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default async function LandingPage() {
     const [session, settings, locale] = await Promise.all([
@@ -58,10 +59,10 @@ export default async function LandingPage() {
                         {communityName}
                     </span>
                 </div>
-                <Link href='/auth/signin'>
-                    <Button variant='outline'>{t.landing.signIn}</Button>
-                </Link>
-                <LanguageSwitcher compact />
+                <div className='flex items-center gap-1'>
+                    <ThemeToggle compact />
+                    <LanguageSwitcher compact />
+                </div>
             </header>
 
             {/* Hero */}
