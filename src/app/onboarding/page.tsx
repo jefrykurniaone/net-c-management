@@ -32,7 +32,7 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 export default function OnboardingPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const [communityName, setCommunityName] = useState('PB Net-C');
+    const [communityName, setCommunityName] = useState('Xclub Badminton');
     const { locale } = useLocale();
     const t = getDictionary(locale);
 

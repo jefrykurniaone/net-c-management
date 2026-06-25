@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
+import { isAdminRole } from "@/lib/utils";
 import { EditSessionForm } from "./edit-form";
 
 export default async function EditSessionPage({
@@ -9,7 +10,7 @@ export default async function EditSessionPage({
   params: Promise<{ id: string }>;
 }>) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "ADMIN") redirect("/dashboard");
+  if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
 
   const { id } = await params;
   const badmintonSession = await prisma.badmintonSession.findUnique({

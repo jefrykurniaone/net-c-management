@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildCreateSessionSchema } from '@/lib/validations/session';
+import { isAdminRole } from '@/lib/utils';
 import { SessionStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (session.user.role !== 'ADMIN') {
+    if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

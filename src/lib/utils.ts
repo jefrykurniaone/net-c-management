@@ -1,8 +1,18 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { Role } from '@prisma/client';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
+}
+
+/**
+ * Whether a role has admin-level access. ADMIN and OWNER share the same
+ * privileges everywhere except Manage Members, where OWNER accounts are
+ * immutable (see docs/owner-role-immutability.md).
+ */
+export function isAdminRole(role: Role | string | null | undefined): boolean {
+    return role === 'ADMIN' || role === 'OWNER';
 }
 
 /**

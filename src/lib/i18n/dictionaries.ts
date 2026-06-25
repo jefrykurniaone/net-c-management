@@ -331,6 +331,7 @@ const en = {
     roles: {
         ADMIN: 'Admin',
         MEMBER: 'Member',
+        OWNER: 'Owner',
     },
     validation: {
         nameMin: 'Name must be at least 2 characters',
@@ -688,6 +689,7 @@ const id: typeof en = {
     roles: {
         ADMIN: 'Admin',
         MEMBER: 'Anggota',
+        OWNER: 'Owner',
     },
     validation: {
         nameMin: 'Nama minimal 2 karakter',

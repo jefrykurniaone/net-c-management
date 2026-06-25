@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { isAdminRole } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 const MAX_USER_LIMIT = 100;
@@ -11,7 +12,7 @@ export async function GET(req: Request) {
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (session.user.role !== 'ADMIN') {
+    if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -66,7 +67,7 @@ export async function PATCH(req: Request) {
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (session.user.role !== 'ADMIN') {
+    if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -87,6 +88,21 @@ export async function PATCH(req: Request) {
         return NextResponse.json(
             { error: 'Cannot demote yourself' },
             { status: 400 },
+        );
+    }
+
+    // OWNER accounts are immutable — nobody can change them
+    const target = await prisma.user.findUnique({
+        where: { id: body.id },
+        select: { role: true },
+    });
+    if (!target) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    if (target.role === 'OWNER') {
+        return NextResponse.json(
+            { error: 'Cannot modify an OWNER account' },
+            { status: 403 },
         );
     }
 

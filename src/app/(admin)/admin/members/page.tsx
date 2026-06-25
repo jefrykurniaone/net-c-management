@@ -7,6 +7,7 @@ import Link from "next/link";
 import { MemberActions } from "./member-actions";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { isAdminRole } from "@/lib/utils";
 
 export default async function AdminMembersPage({
   searchParams,
@@ -14,7 +15,7 @@ export default async function AdminMembersPage({
   searchParams: Promise<{ search?: string }>;
 }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
-  if (!session?.user?.id || session.user.role !== "ADMIN") redirect("/dashboard");
+  if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
 
   const t = getDictionary(locale);
 
@@ -137,7 +138,7 @@ export default async function AdminMembersPage({
                     <div className="flex items-center justify-center gap-1">
                       <Badge
                         variant={u.role === "ADMIN" ? "default" : "secondary"}
-                        className="text-xs"
+                        className={`text-xs${u.role === "OWNER" ? " bg-purple-600 text-white hover:bg-purple-700 border-transparent" : ""}`}
                       >
                         {t.roles[u.role]}
                       </Badge>

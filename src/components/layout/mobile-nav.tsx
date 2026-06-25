@@ -24,7 +24,7 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { cn, communityAbbr } from '@/lib/utils';
+import { cn, communityAbbr, isAdminRole } from '@/lib/utils';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
@@ -43,7 +43,7 @@ function NavLinks({
     const { data: session } = useSession();
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const isAdmin = session?.user?.role === 'ADMIN';
+    const isAdmin = isAdminRole(session?.user?.role);
     const initials =
         session?.user?.name
             ?.split(' ')
