@@ -3,22 +3,43 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { EkskulFilter } from "@/components/ekskul/ekskul-filter";
 import Link from "next/link";
 import { CreditCard, Upload, ExternalLink } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getUserEkskulIds } from "@/lib/ekskul";
 import { paymentStatusVariant } from "@/lib/utils";
 
-export default async function PaymentsPage() {
+export default async function PaymentsPage({
+  searchParams,
+}: Readonly<{ searchParams: Promise<{ ekskulId?: string }> }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
 
   const t = getDictionary(locale);
 
-  const payments = await prisma.payment.findMany({
-    where: { userId: session.user.id },
-    orderBy: [{ year: "desc" }, { month: "desc" }],
-  });
+  const myEkskulIds = await getUserEkskulIds(session.user.id);
+  const sp = await searchParams;
+  const selected =
+    sp.ekskulId && myEkskulIds.includes(sp.ekskulId) ? sp.ekskulId : undefined;
+
+  const [payments, myEkskuls] = await Promise.all([
+    prisma.payment.findMany({
+      where: {
+        userId: session.user.id,
+        ...(selected ? { ekskulId: selected } : {}),
+      },
+      orderBy: [{ year: "desc" }, { month: "desc" }],
+      include: { ekskul: { select: { id: true, name: true, color: true } } },
+    }),
+    prisma.ekskul.findMany({
+      where: { id: { in: myEkskulIds }, isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
 
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
@@ -36,12 +57,21 @@ export default async function PaymentsPage() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">{t.payments.subtitle}</p>
         </div>
-        <Link href="/payments/upload">
-          <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
-            <Upload className="w-4 h-4" />
-            {t.payments.uploadBtn}
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {myEkskuls.length > 1 && (
+            <EkskulFilter
+              ekskuls={myEkskuls}
+              selected={selected}
+              allLabel={t.ekskul.filterAll}
+            />
+          )}
+          <Link href="/payments/upload">
+            <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
+              <Upload className="w-4 h-4" />
+              {t.payments.uploadBtn}
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Current month status banner */}
@@ -83,9 +113,15 @@ export default async function PaymentsPage() {
             >
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {t.months[payment.month]} {payment.year}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {t.months[payment.month]} {payment.year}
+                    </p>
+                    <EkskulBadge
+                      name={payment.ekskul.name}
+                      color={payment.ekskul.color}
+                    />
+                  </div>
                   <p className="text-sm text-gray-500 mt-0.5">
                     Rp {payment.amount.toLocaleString("id-ID")}
                   </p>

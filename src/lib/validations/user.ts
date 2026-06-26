@@ -22,12 +22,13 @@ export function buildOnboardingSchema(t: Dictionary) {
             .min(9, t.validation.phoneMin)
             .max(15, t.validation.phoneMax)
             .regex(/^[0-9+]+$/, t.validation.phoneFormat),
-        playPosition: z.enum(playPositionValues, {
-            message: t.validation.playPositionRequired,
-        }),
-        playerLevel: z.enum(playerLevelValues, {
-            message: t.validation.playerLevelRequired,
-        }),
+        // Badminton-specific attributes — optional now that the app is multi-ekskul.
+        playPosition: z.enum(playPositionValues).optional(),
+        playerLevel: z.enum(playerLevelValues).optional(),
+        // At least one ekskul must be chosen to complete the profile.
+        ekskulIds: z
+            .array(z.string().min(1))
+            .min(1, t.validation.ekskulMembershipRequired),
     });
 }
 
@@ -40,6 +41,7 @@ export function buildUpdateProfileSchema(t: Dictionary) {
             .min(2, t.validation.nameMin)
             .max(100, t.validation.nameMax)
             .optional(),
+        ekskulIds: z.array(z.string().min(1)).optional(),
     });
 }
 

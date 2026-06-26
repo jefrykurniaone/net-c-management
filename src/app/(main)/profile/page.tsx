@@ -31,6 +31,8 @@ import { toast } from 'sonner';
 import { User } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { FormSkeleton } from '@/components/skeletons/page-skeletons';
+import { EkskulMemberships } from './ekskul-memberships';
 
 interface Profile {
     id: string;
@@ -138,7 +140,7 @@ export default function ProfilePage() {
     }
 
     if (loading) {
-        return <div className='text-gray-400 text-sm'>{t.common.loadingProfile}</div>;
+        return <FormSkeleton />;
     }
 
     return (
@@ -220,6 +222,8 @@ export default function ProfilePage() {
                     </div>
                 </div>
             )}
+
+            <EkskulMemberships />
 
             <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6'>
                 <h2 className='font-semibold text-gray-900 dark:text-white mb-5'>
@@ -329,8 +333,8 @@ export default function ProfilePage() {
                         <Button
                             type='submit'
                             className='w-full bg-green-600 hover:bg-green-700 text-white'
-                            disabled={saving}>
-                            {saving ? t.profile.saving : t.profile.save}
+                            loading={saving}>
+                            {t.profile.save}
                         </Button>
                     </form>
                 </Form>

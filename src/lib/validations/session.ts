@@ -9,6 +9,7 @@ const sessionStatusValues = Object.values(SessionStatus) as [
 
 export function buildCreateSessionSchema(t: Dictionary) {
     return z.object({
+        ekskulId: z.string().min(1, t.validation.ekskulRequired),
         title: z
             .string()
             .min(3, t.validation.sessionTitleMin)

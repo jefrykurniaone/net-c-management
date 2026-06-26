@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { isAdminRole } from "@/lib/utils";
@@ -47,6 +48,10 @@ export default async function MemberDetailPage({
   const member = await prisma.user.findUnique({
     where: { id },
     include: {
+      memberships: {
+        where: { isActive: true, ekskul: { isActive: true } },
+        include: { ekskul: { select: { id: true, name: true, color: true } } },
+      },
       attendances: {
         include: { session: true },
         orderBy: { session: { date: "desc" } },
@@ -104,6 +109,17 @@ export default async function MemberDetailPage({
                 </Badge>
               )}
             </div>
+            {member.memberships.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {member.memberships.map((m) => (
+                  <EkskulBadge
+                    key={m.ekskul.id}
+                    name={m.ekskul.name}
+                    color={m.ekskul.color}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
         {member.phone && (

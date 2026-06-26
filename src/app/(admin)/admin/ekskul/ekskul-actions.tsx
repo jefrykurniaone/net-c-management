@@ -1,0 +1,381 @@
+'use client';
+
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+import {
+    buildCreateEkskulSchema,
+    type CreateEkskulFormData,
+} from '@/lib/validations/ekskul';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+import { Plus, Pencil } from 'lucide-react';
+import { useLocale } from '@/components/providers/locale-provider';
+import { getDictionary } from '@/lib/i18n/dictionaries';
+
+export interface EkskulRow {
+    id: string;
+    name: string;
+    slug: string;
+    color: string;
+    description: string | null;
+    defaultFee: number;
+    defaultLocation: string;
+    maxPlayers: number;
+    adminWhatsapp: string;
+    isActive: boolean;
+}
+
+function slugify(value: string): string {
+    return value
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function EkskulFormDialog({
+    ekskul,
+    open,
+    onOpenChange,
+}: Readonly<{
+    ekskul?: EkskulRow;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}>) {
+    const router = useRouter();
+    const { locale } = useLocale();
+    const t = getDictionary(locale);
+    const [loading, setLoading] = useState(false);
+    const isEdit = !!ekskul;
+
+    const form = useForm<CreateEkskulFormData>({
+        resolver: zodResolver(buildCreateEkskulSchema(t)),
+        defaultValues: {
+            name: ekskul?.name ?? '',
+            slug: ekskul?.slug ?? '',
+            color: ekskul?.color ?? '#16a34a',
+            description: ekskul?.description ?? '',
+            defaultFee: ekskul?.defaultFee ?? 0,
+            defaultLocation: ekskul?.defaultLocation ?? '',
+            maxPlayers: ekskul?.maxPlayers ?? 20,
+            adminWhatsapp: ekskul?.adminWhatsapp ?? '',
+        },
+    });
+
+    async function onSubmit(data: CreateEkskulFormData) {
+        setLoading(true);
+        try {
+            const res = await fetch(
+                isEdit ? `/api/ekskul/${ekskul.id}` : '/api/ekskul',
+                {
+                    method: isEdit ? 'PATCH' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                },
+            );
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(
+                    err.error ??
+                        (isEdit
+                            ? t.admin.ekskulUpdateFailed
+                            : t.admin.ekskulCreateFailed),
+                );
+            }
+            toast.success(isEdit ? t.admin.ekskulUpdated : t.admin.ekskulCreated);
+            onOpenChange(false);
+            form.reset();
+            router.refresh();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t.common.error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-md'>
+                <DialogHeader>
+                    <DialogTitle>
+                        {isEdit ? t.admin.editEkskul : t.admin.newEkskul}
+                    </DialogTitle>
+                </DialogHeader>
+                <Form {...form}>
+                    <form
+                        onSubmit={form.handleSubmit(onSubmit)}
+                        className='space-y-4'>
+                        <FormField
+                            control={form.control}
+                            name='name'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t.admin.ekskulName}</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            placeholder='Badminton'
+                                            {...field}
+                                            onChange={(e) => {
+                                                field.onChange(e);
+                                                if (!isEdit) {
+                                                    form.setValue(
+                                                        'slug',
+                                                        slugify(e.target.value),
+                                                        { shouldValidate: true },
+                                                    );
+                                                }
+                                            }}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name='slug'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t.admin.ekskulSlug}</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder='badminton' {...field} />
+                                    </FormControl>
+                                    <FormDescription>
+                                        {t.admin.ekskulSlugHint}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name='color'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t.admin.ekskulColor}</FormLabel>
+                                    <div className='flex items-center gap-2'>
+                                        <FormControl>
+                                            <Input
+                                                type='color'
+                                                className='h-9 w-14 p-1'
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <Input
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder='#16a34a'
+                                            className='flex-1'
+                                        />
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className='grid grid-cols-2 gap-4'>
+                            <FormField
+                                control={form.control}
+                                name='defaultFee'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t.admin.ekskulFee}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type='number'
+                                                min={0}
+                                                {...field}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        Number.parseInt(
+                                                            e.target.value,
+                                                        ) || 0,
+                                                    )
+                                                }
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name='maxPlayers'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>
+                                            {t.admin.ekskulMaxPlayers}
+                                        </FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type='number'
+                                                min={2}
+                                                {...field}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        Number.parseInt(
+                                                            e.target.value,
+                                                        ) || 0,
+                                                    )
+                                                }
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name='defaultLocation'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t.admin.ekskulLocation}</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name='adminWhatsapp'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t.admin.ekskulWhatsapp}</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder='628...' {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name='description'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        {t.admin.ekskulDescription}
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Textarea rows={2} {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Button
+                            type='submit'
+                            className='w-full bg-green-600 hover:bg-green-700 text-white'
+                            loading={loading}>
+                            {isEdit
+                                ? t.admin.updateEkskulBtn
+                                : t.admin.createEkskulBtn}
+                        </Button>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export function NewEkskulButton() {
+    const { locale } = useLocale();
+    const t = getDictionary(locale);
+    const [open, setOpen] = useState(false);
+
+    return (
+        <>
+            <Button
+                className='bg-green-600 hover:bg-green-700 text-white gap-2'
+                onClick={() => setOpen(true)}>
+                <Plus className='w-4 h-4' />
+                {t.admin.newEkskul}
+            </Button>
+            {open && <EkskulFormDialog open={open} onOpenChange={setOpen} />}
+        </>
+    );
+}
+
+export function EkskulActions({ ekskul }: Readonly<{ ekskul: EkskulRow }>) {
+    const router = useRouter();
+    const { locale } = useLocale();
+    const t = getDictionary(locale);
+    const [editOpen, setEditOpen] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    async function toggleActive() {
+        const confirmMsg = ekskul.isActive
+            ? t.admin.confirmDeactivateEkskul
+            : t.admin.confirmActivateEkskul;
+        if (!confirm(confirmMsg)) return;
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/ekskul/${ekskul.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive: !ekskul.isActive }),
+            });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error ?? t.admin.ekskulUpdateFailed);
+            }
+            toast.success(
+                ekskul.isActive ? t.admin.ekskulDeleted : t.admin.ekskulUpdated,
+            );
+            router.refresh();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t.common.error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    return (
+        <div className='flex items-center justify-end gap-1'>
+            <Button
+                variant='outline'
+                size='sm'
+                className='h-7 text-xs gap-1'
+                onClick={() => setEditOpen(true)}>
+                <Pencil className='w-3 h-3' />
+                {t.admin.edit}
+            </Button>
+            <Button
+                variant='outline'
+                size='sm'
+                className='h-7 text-xs'
+                loading={loading}
+                onClick={toggleActive}>
+                {ekskul.isActive ? t.admin.deactivate : t.admin.activate}
+            </Button>
+            {editOpen && (
+                <EkskulFormDialog
+                    ekskul={ekskul}
+                    open={editOpen}
+                    onOpenChange={setEditOpen}
+                />
+            )}
+        </div>
+    );
+}

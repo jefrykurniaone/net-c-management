@@ -2,17 +2,20 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { MemberActions } from "./member-actions";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getEkskuls } from "@/lib/ekskul";
 import { isAdminRole } from "@/lib/utils";
+import type { Prisma } from "@prisma/client";
 
 export default async function AdminMembersPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; ekskulId?: string }>;
 }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
@@ -21,32 +24,47 @@ export default async function AdminMembersPage({
 
   const sp = await searchParams;
   const search = sp.search ?? "";
+  const ekskulId = sp.ekskulId ?? "";
 
-  const users = await prisma.user.findMany({
-    where: search
+  const where: Prisma.UserWhereInput = {
+    ...(search
       ? {
           OR: [
             { name: { contains: search, mode: "insensitive" } },
             { email: { contains: search, mode: "insensitive" } },
           ],
         }
-      : undefined,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-      role: true,
-      isActive: true,
-      isProfileComplete: true,
-      playPosition: true,
-      playerLevel: true,
-      phone: true,
-      createdAt: true,
-      _count: { select: { attendances: true, payments: true } },
-    },
-  });
+      : {}),
+    ...(ekskulId
+      ? { memberships: { some: { ekskulId, isActive: true } } }
+      : {}),
+  };
+
+  const [users, ekskuls] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        role: true,
+        isActive: true,
+        isProfileComplete: true,
+        playPosition: true,
+        playerLevel: true,
+        phone: true,
+        createdAt: true,
+        memberships: {
+          where: { isActive: true, ekskul: { isActive: true } },
+          select: { ekskul: { select: { id: true, name: true, color: true } } },
+        },
+        _count: { select: { attendances: true, payments: true } },
+      },
+    }),
+    getEkskuls(),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -62,14 +80,26 @@ export default async function AdminMembersPage({
         </div>
       </div>
 
-      {/* Search */}
-      <form className="flex gap-2" method="GET">
+      {/* Search + ekskul filter */}
+      <form className="flex flex-wrap gap-2" method="GET">
         <input
           name="search"
           defaultValue={search}
           placeholder={t.admin.searchPlaceholder}
           className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900 w-full max-w-sm"
         />
+        <select
+          name="ekskulId"
+          defaultValue={ekskulId}
+          className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900"
+        >
+          <option value="">{t.ekskul.filterAll}</option>
+          {ekskuls.map((e) => (
+            <option key={e.id} value={e.id}>
+              {e.name}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
           className="border rounded-lg px-4 py-1.5 text-sm bg-white dark:bg-gray-900 hover:bg-gray-50"
@@ -84,6 +114,7 @@ export default async function AdminMembersPage({
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
                 <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colName}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.ekskul.label}</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colLevel}</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colAttendance}</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colPayments}</th>
@@ -122,6 +153,21 @@ export default async function AdminMembersPage({
                       </div>
                     </div>
                   </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {u.memberships.length === 0 ? (
+                        <span className="text-xs text-gray-300">—</span>
+                      ) : (
+                        u.memberships.map((m) => (
+                          <EkskulBadge
+                            key={m.ekskul.id}
+                            name={m.ekskul.name}
+                            color={m.ekskul.color}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-gray-500">
                     <p>{u.playerLevel ? t.levels[u.playerLevel] : "-"}</p>
                     <p className="text-xs text-gray-400">
@@ -156,7 +202,7 @@ export default async function AdminMembersPage({
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
                     {t.admin.noMembers}
                   </td>
                 </tr>

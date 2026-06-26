@@ -108,8 +108,49 @@ model User {
   sessions    Session[]
   attendances Attendance[]
   payments    Payment[]
+  memberships Membership[]
 }
 
+// An extracurricular activity (ekskul) — e.g. Badminton, Music. Each piece of
+// activity data (sessions, payments, memberships) is scoped to one Ekskul.
+model Ekskul {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique // e.g. "badminton"
+  description     String?  @db.Text
+  color           String   @default("#16a34a") // badge color (inline style)
+  icon            String? // optional lucide icon name
+  defaultFee      Int      @default(0)
+  defaultLocation String   @default("")
+  maxPlayers      Int      @default(20)
+  adminWhatsapp   String   @default("")
+  logoUrl         String   @default("")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  memberships Membership[]
+  sessions    BadmintonSession[]
+  payments    Payment[]
+}
+
+// Many-to-many join between User and Ekskul. A member can join several ekskul.
+model Membership {
+  id       String   @id @default(cuid())
+  userId   String
+  ekskulId String
+  isActive Boolean  @default(true)
+  joinedAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ekskul Ekskul @relation(fields: [ekskulId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ekskulId])
+  @@index([ekskulId])
+}
+
+// Despite its name, this models a generic activity session scoped to an Ekskul.
+// (Kept as BadmintonSession to avoid a repo-wide rename — see plan out-of-scope.)
 model BadmintonSession {
   id          String        @id @default(cuid())
   title       String
@@ -121,10 +162,14 @@ model BadmintonSession {
   fee         Int           @default(0) // iuran per sesi, dalam Rupiah
   notes       String?       @db.Text
   status      SessionStatus @default(SCHEDULED)
+  ekskulId    String
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  ekskul      Ekskul       @relation(fields: [ekskulId], references: [id])
   attendances Attendance[]
+
+  @@index([ekskulId])
 }
 
 model Attendance {
@@ -145,6 +190,7 @@ model Attendance {
 model Payment {
   id          String        @id @default(cuid())
   userId      String
+  ekskulId    String
   amount      Int           // dalam Rupiah
   month       Int           // 1-12
   year        Int
@@ -157,9 +203,11 @@ model Payment {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ekskul Ekskul @relation(fields: [ekskulId], references: [id])
 
-  @@unique([userId, month, year])
+  @@unique([userId, ekskulId, month, year])
+  @@index([ekskulId])
 }
 
 model Settings {

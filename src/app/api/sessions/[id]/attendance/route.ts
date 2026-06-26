@@ -1,5 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { assertMembership } from "@/lib/ekskul";
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { NextResponse } from "next/server";
 
 // POST /api/sessions/[id]/attendance — RSVP / register attendance
@@ -21,6 +24,16 @@ export async function POST(
 
   if (!badmintonSession) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
+  }
+
+  // Only active members of the session's ekskul may register.
+  const isMember = await assertMembership(
+    session.user.id,
+    badmintonSession.ekskulId
+  );
+  if (!isMember) {
+    const t = getDictionary(await getLocale());
+    return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
   }
 
   if (badmintonSession.status === "CANCELLED") {

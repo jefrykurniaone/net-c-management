@@ -61,7 +61,7 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
             size="sm"
             className="h-7 text-xs border-green-200 text-green-600 hover:bg-green-50"
             onClick={() => handleAction("CONFIRMED")}
-            disabled={loading}
+            loading={loading}
           >
             {t.admin.confirmBtn}
           </Button>
@@ -70,7 +70,7 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
             size="sm"
             className="h-7 text-xs border-red-200 text-red-500 hover:bg-red-50"
             onClick={() => handleAction("REJECTED")}
-            disabled={loading}
+            loading={loading}
           >
             {t.admin.rejectBtn}
           </Button>

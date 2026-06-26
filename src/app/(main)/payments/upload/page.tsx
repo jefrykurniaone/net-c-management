@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ChangeEvent, type SubmitEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import type { EkskulOption } from '@/types/ekskul';
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
@@ -29,9 +30,34 @@ export default function UploadPaymentPage() {
     const [loading, setLoading] = useState(false);
     const [preview, setPreview] = useState<string | null>(null);
     const [file, setFile] = useState<File | null>(null);
+    const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
+    const [ekskulId, setEkskulId] = useState('');
     const [month, setMonth] = useState(String(currentMonth));
     const [year, setYear] = useState(String(currentYear));
     const [amount, setAmount] = useState('');
+
+    useEffect(() => {
+        fetch('/api/ekskul?mine=true')
+            .then((r) => r.json())
+            .then((data: { ekskuls?: EkskulOption[] }) => {
+                const list = data.ekskuls ?? [];
+                setEkskuls(list);
+                if (list.length === 1) {
+                    setEkskulId(list[0].id);
+                    if (!amount) setAmount(String(list[0].defaultFee || ''));
+                }
+            })
+            .catch(() => setEkskuls([]));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    function handleEkskulChange(id: string) {
+        setEkskulId(id);
+        const chosen = ekskuls.find((e) => e.id === id);
+        if (chosen && !amount && chosen.defaultFee) {
+            setAmount(String(chosen.defaultFee));
+        }
+    }
 
     function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
         const f = e.target.files?.[0];
@@ -43,6 +69,10 @@ export default function UploadPaymentPage() {
 
     async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
         e.preventDefault();
+        if (!ekskulId) {
+            toast.error(t.validation.ekskulRequired);
+            return;
+        }
         if (!file) {
             toast.error(t.payments.selectFile);
             return;
@@ -56,6 +86,7 @@ export default function UploadPaymentPage() {
         try {
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('ekskulId', ekskulId);
             formData.append('month', month);
             formData.append('year', year);
             formData.append('amount', amount);
@@ -103,6 +134,25 @@ export default function UploadPaymentPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className='space-y-5'>
+                    {/* Ekskul */}
+                    <div className='space-y-1.5'>
+                        <Label>{t.ekskul.label}</Label>
+                        <Select value={ekskulId} onValueChange={handleEkskulChange}>
+                            <SelectTrigger className='w-full'>
+                                <SelectValue
+                                    placeholder={t.ekskul.selectPlaceholder}
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {ekskuls.map((e) => (
+                                    <SelectItem key={e.id} value={e.id}>
+                                        {e.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     {/* Month & Year */}
                     <div className='grid grid-cols-2 gap-4'>
                         <div className='space-y-1.5'>
@@ -192,8 +242,8 @@ export default function UploadPaymentPage() {
                     <Button
                         type='submit'
                         className='w-full bg-green-600 hover:bg-green-700 text-white'
-                        disabled={loading}>
-                        {loading ? t.payments.submitting : t.payments.submit}
+                        loading={loading}>
+                        {t.payments.submit}
                     </Button>
                 </form>
             </div>

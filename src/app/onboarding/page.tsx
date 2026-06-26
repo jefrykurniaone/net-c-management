@@ -28,11 +28,13 @@ import {
 import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import type { EkskulOption } from '@/types/ekskul';
 
 export default function OnboardingPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [communityName, setCommunityName] = useState('Xclub Badminton');
+    const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
     const { locale } = useLocale();
     const t = getDictionary(locale);
 
@@ -46,6 +48,12 @@ export default function OnboardingPage() {
                 console.error('[Onboarding] fetchSettings:', err);
                 return undefined;
             });
+        fetch('/api/ekskul')
+            .then((r) => r.json())
+            .then((data: { ekskuls?: EkskulOption[] }) =>
+                setEkskuls(data.ekskuls ?? []),
+            )
+            .catch(() => setEkskuls([]));
     }, []);
 
     const form = useForm<OnboardingFormData>({
@@ -53,6 +61,7 @@ export default function OnboardingPage() {
         defaultValues: {
             name: '',
             phone: '',
+            ekskulIds: [],
         },
     });
 
@@ -139,6 +148,64 @@ export default function OnboardingPage() {
 
                         <FormField
                             control={form.control}
+                            name='ekskulIds'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        {t.onboarding.ekskulLabel}
+                                    </FormLabel>
+                                    <div className='flex flex-wrap gap-2'>
+                                        {ekskuls.map((e) => {
+                                            const selected =
+                                                field.value?.includes(e.id) ??
+                                                false;
+                                            return (
+                                                <button
+                                                    type='button'
+                                                    key={e.id}
+                                                    onClick={() =>
+                                                        field.onChange(
+                                                            selected
+                                                                ? field.value.filter(
+                                                                      (x) =>
+                                                                          x !==
+                                                                          e.id,
+                                                                  )
+                                                                : [
+                                                                      ...(field.value ??
+                                                                          []),
+                                                                      e.id,
+                                                                  ],
+                                                        )
+                                                    }
+                                                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                                                        selected
+                                                            ? 'border-transparent text-white'
+                                                            : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300'
+                                                    }`}
+                                                    style={
+                                                        selected
+                                                            ? {
+                                                                  backgroundColor:
+                                                                      e.color,
+                                                              }
+                                                            : undefined
+                                                    }>
+                                                    {e.name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className='text-xs text-gray-400'>
+                                        {t.onboarding.ekskulHint}
+                                    </p>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
                             name='playPosition'
                             render={({ field }) => (
                                 <FormItem>
@@ -190,8 +257,8 @@ export default function OnboardingPage() {
                         <Button
                             type='submit'
                             className='w-full'
-                            disabled={isLoading}>
-                            {isLoading ? t.onboarding.submitting : t.onboarding.submit}
+                            loading={isLoading}>
+                            {t.onboarding.submit}
                         </Button>
                     </form>
                 </Form>

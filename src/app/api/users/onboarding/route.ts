@@ -23,25 +23,42 @@ export async function PATCH(req: Request) {
         );
     }
 
-    const { name, phone, playPosition, playerLevel } = parsed.data;
+    const { name, phone, playPosition, playerLevel, ekskulIds } = parsed.data;
+    const userId = session.user.id;
 
-    const updated = await prisma.user.update({
-        where: { id: session.user.id },
-        data: {
-            name,
-            phone,
-            playPosition,
-            playerLevel,
-            isProfileComplete: true,
-        },
-        select: {
-            id: true,
-            name: true,
-            phone: true,
-            playPosition: true,
-            playerLevel: true,
-            isProfileComplete: true,
-        },
+    // Only allow joining ekskul that are active.
+    const validEkskuls = await prisma.ekskul.findMany({
+        where: { id: { in: ekskulIds }, isActive: true },
+        select: { id: true },
+    });
+    if (validEkskuls.length === 0) {
+        return NextResponse.json(
+            { error: t.validation.ekskulMembershipRequired },
+            { status: 400 },
+        );
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+        await tx.membership.createMany({
+            data: validEkskuls.map((e) => ({ userId, ekskulId: e.id })),
+            skipDuplicates: true,
+        });
+        return tx.user.update({
+            where: { id: userId },
+            data: {
+                name,
+                phone,
+                playPosition,
+                playerLevel,
+                isProfileComplete: true,
+            },
+            select: {
+                id: true,
+                name: true,
+                phone: true,
+                isProfileComplete: true,
+            },
+        });
     });
 
     return NextResponse.json(updated);

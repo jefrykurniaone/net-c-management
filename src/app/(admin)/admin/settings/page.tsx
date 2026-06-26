@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Settings, Upload } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { FormSkeleton } from '@/components/skeletons/page-skeletons';
 
 interface SettingsMap {
     communityName?: string;
@@ -106,17 +107,12 @@ export default function AdminSettingsPage() {
     }
 
     function logoButtonLabel(): string {
-        if (uploadingLogo) return t.admin.logoUploading;
         if (settings.logoUrl) return t.admin.logoChange;
         return t.admin.logoUpload;
     }
 
     if (loading) {
-        return (
-            <div className='text-gray-400 text-sm'>
-                {t.common.loadingSettings}
-            </div>
-        );
+        return <FormSkeleton fields={6} />;
     }
 
     return (
@@ -157,7 +153,7 @@ export default function AdminSettingsPage() {
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                disabled={uploadingLogo}
+                                loading={uploadingLogo}
                                 onClick={() => logoInputRef.current?.click()}>
                                 {logoButtonLabel()}
                             </Button>
@@ -255,8 +251,8 @@ export default function AdminSettingsPage() {
                     <Button
                         type='submit'
                         className='w-full bg-green-600 hover:bg-green-700 text-white'
-                        disabled={saving}>
-                        {saving ? t.admin.saving : t.admin.saveSettings}
+                        loading={saving}>
+                        {t.admin.saveSettings}
                     </Button>
                 </form>
             </div>

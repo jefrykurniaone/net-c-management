@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
 import { sessionStatusVariant } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { RSVPButton } from '@/components/sessions/rsvp-button';
@@ -36,6 +37,7 @@ export default async function SessionDetailPage({
     const badmintonSession = await prisma.badmintonSession.findUnique({
         where: { id },
         include: {
+            ekskul: { select: { id: true, name: true, color: true } },
             attendances: {
                 include: {
                     user: {
@@ -75,9 +77,15 @@ export default async function SessionDetailPage({
             {/* Header */}
             <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 space-y-4'>
                 <div className='flex items-start justify-between gap-3'>
-                    <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
-                        {badmintonSession.title}
-                    </h1>
+                    <div className='space-y-2'>
+                        <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
+                            {badmintonSession.title}
+                        </h1>
+                        <EkskulBadge
+                            name={badmintonSession.ekskul.name}
+                            color={badmintonSession.ekskul.color}
+                        />
+                    </div>
                     <Badge
                         variant={sessionStatusVariant(badmintonSession.status)}
                     >
