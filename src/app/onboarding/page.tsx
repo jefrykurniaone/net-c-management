@@ -190,8 +190,8 @@ export default function OnboardingPage() {
                         <Button
                             type='submit'
                             className='w-full'
-                            disabled={isLoading}>
-                            {isLoading ? t.onboarding.submitting : t.onboarding.submit}
+                            loading={isLoading}>
+                            {t.onboarding.submit}
                         </Button>
                     </form>
                 </Form>

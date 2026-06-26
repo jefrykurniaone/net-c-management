@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import type { BadmintonSession, Attendance, User } from "@prisma/client";
@@ -311,16 +311,16 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               <Button
                 type="submit"
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                disabled={loading}
+                loading={loading}
               >
-                {loading ? t.admin.updating : t.admin.updateBtn}
+                {t.admin.updateBtn}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 className="border-red-200 text-red-500 hover:bg-red-50"
                 onClick={handleDelete}
-                disabled={loading}
+                loading={loading}
               >
                 {t.admin.deleteBtn}
               </Button>
@@ -341,9 +341,9 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               size="sm"
               className="bg-green-600 hover:bg-green-700 text-white"
               onClick={handleMarkAllPresent}
-              disabled={loading}
+              loading={loading}
             >
-              <CheckCircle className="w-4 h-4 mr-1" />
+              {!loading && <CheckCircle className="w-4 h-4 mr-1" />}
               {t.admin.markAllPresent}
             </Button>
           </div>
@@ -356,8 +356,12 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                   className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
                 >
                   <div className="flex items-center gap-2">
-                    {currentOpt && (
-                      <currentOpt.icon className={`w-4 h-4 ${currentOpt.color}`} />
+                    {attendanceLoading === a.userId ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    ) : (
+                      currentOpt && (
+                        <currentOpt.icon className={`w-4 h-4 ${currentOpt.color}`} />
+                      )
                     )}
                     <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
                       {a.user.name ?? "—"}

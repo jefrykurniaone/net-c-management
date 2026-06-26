@@ -57,7 +57,8 @@ export function MemberActions({
         size="sm"
         className="h-7 text-xs"
         onClick={() => patch({ isActive: !member.isActive })}
-        disabled={loading || isSelf || isOwner}
+        loading={loading}
+        disabled={isSelf || isOwner}
       >
         {member.isActive ? t.admin.deactivateMember : t.admin.activateMember}
       </Button>
@@ -69,7 +70,7 @@ export function MemberActions({
           onClick={() =>
             patch({ role: member.role === "ADMIN" ? "MEMBER" : "ADMIN" })
           }
-          disabled={loading}
+          loading={loading}
         >
           {member.role === "ADMIN" ? t.admin.makeMember : t.admin.makeAdmin}
         </Button>

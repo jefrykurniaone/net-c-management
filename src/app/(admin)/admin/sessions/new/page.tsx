@@ -212,9 +212,9 @@ export default function NewSessionPage() {
             <Button
               type="submit"
               className="w-full bg-green-600 hover:bg-green-700 text-white"
-              disabled={loading}
+              loading={loading}
             >
-              {loading ? t.admin.creating : t.admin.createBtn}
+              {t.admin.createBtn}
             </Button>
           </form>
         </Form>

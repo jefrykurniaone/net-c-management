@@ -88,18 +88,16 @@ export function RSVPButton({
     return (
         <Button
             onClick={handleRSVP}
-            disabled={loading}
+            loading={loading}
             variant={isRegistered ? 'outline' : 'default'}
             className={
                 isRegistered
                     ? 'w-full border-red-200 text-red-500 hover:bg-red-50'
                     : 'w-full bg-green-600 hover:bg-green-700 text-white'
             }>
-            {(() => {
-                if (loading) return isRegistered ? t.sessions.cancelling : t.sessions.registering;
-                if (isRegistered) return t.sessions.cancelRegistration;
-                return t.sessions.register;
-            })()}
+            {isRegistered
+                ? t.sessions.cancelRegistration
+                : t.sessions.register}
         </Button>
     );
 }
