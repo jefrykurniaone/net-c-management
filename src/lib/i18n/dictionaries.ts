@@ -21,7 +21,7 @@ const en = {
         navigationMenu: 'Navigation Menu',
         toggleTheme: 'Toggle theme',
         lightMode: 'Light Mode',
-        darkMode: 'Dark Mode',
+        darkMode: 'Themes',
     },
     landing: {
         signIn: 'Sign In',
@@ -379,7 +379,7 @@ const id: typeof en = {
         navigationMenu: 'Menu Navigasi',
         toggleTheme: 'Ganti tema',
         lightMode: 'Mode Terang',
-        darkMode: 'Mode Gelap',
+        darkMode: 'Tema',
     },
     landing: {
         signIn: 'Masuk',
