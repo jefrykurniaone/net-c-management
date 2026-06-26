@@ -13,6 +13,7 @@ import {
     LogOut,
     ChevronRight,
     ShieldCheck,
+    Shapes,
     User,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -59,6 +60,7 @@ export function Sidebar({
             icon: CreditCard,
         },
         { label: t.nav.adminMembers, href: '/admin/members', icon: Users },
+        { label: t.nav.adminEkskul, href: '/admin/ekskul', icon: Shapes },
         { label: t.nav.adminSettings, href: '/admin/settings', icon: Settings },
     ];
 

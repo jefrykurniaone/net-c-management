@@ -4,6 +4,7 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 export function buildCreatePaymentSchema(t: Dictionary) {
     return z.object({
         userId: z.string().min(1, t.validation.userIdRequired),
+        ekskulId: z.string().min(1, t.validation.ekskulRequired),
         amount: z.number().int().min(1, t.validation.paymentAmountMin),
         month: z.number().int().min(1).max(12),
         year: z.number().int().min(2020).max(2100),

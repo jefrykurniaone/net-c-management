@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { uploadPaymentProof } from '@/lib/supabase';
+import { assertMembership } from '@/lib/ekskul';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { NextResponse } from 'next/server';
@@ -27,9 +28,24 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
+    const ekskulId = (formData.get('ekskulId') as string | null) ?? '';
     const month = Number.parseInt(formData.get('month') as string);
     const year = Number.parseInt(formData.get('year') as string);
     const amount = Number.parseInt(formData.get('amount') as string);
+
+    if (!ekskulId) {
+        return NextResponse.json(
+            { error: t.validation.ekskulRequired },
+            { status: 400 },
+        );
+    }
+    // Members may only pay dues for ekskul they actively belong to.
+    if (!(await assertMembership(session.user.id, ekskulId))) {
+        return NextResponse.json(
+            { error: t.ekskul.notMember },
+            { status: 403 },
+        );
+    }
 
     if (!file) {
         return NextResponse.json(
@@ -72,17 +88,19 @@ export async function POST(req: Request) {
         file.type,
     );
 
-    // Upsert payment record — one record per user per month/year
+    // Upsert payment record — one record per user per ekskul per month/year
     const payment = await prisma.payment.upsert({
         where: {
-            userId_month_year: {
+            userId_ekskulId_month_year: {
                 userId: session.user.id,
+                ekskulId,
                 month,
                 year,
             },
         },
         create: {
             userId: session.user.id,
+            ekskulId,
             amount,
             month,
             year,

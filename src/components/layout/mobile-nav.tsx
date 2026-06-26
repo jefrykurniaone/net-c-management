@@ -13,6 +13,7 @@ import {
     Settings,
     LogOut,
     ShieldCheck,
+    Shapes,
     Menu,
     User,
 } from 'lucide-react';
@@ -71,6 +72,7 @@ function NavLinks({
             icon: CreditCard,
         },
         { label: t.nav.adminMembers, href: '/admin/members', icon: Users },
+        { label: t.nav.adminEkskul, href: '/admin/ekskul', icon: Shapes },
         { label: t.nav.adminSettings, href: '/admin/settings', icon: Settings },
     ];
 

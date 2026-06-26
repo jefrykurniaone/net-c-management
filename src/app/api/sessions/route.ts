@@ -3,8 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildCreateSessionSchema } from '@/lib/validations/session';
+import { getUserEkskulIds } from '@/lib/ekskul';
 import { isAdminRole } from '@/lib/utils';
-import { SessionStatus } from '@prisma/client';
+import { Prisma, SessionStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 const MAX_SESSION_LIMIT = 50;
@@ -25,13 +26,26 @@ export async function GET(req: Request) {
         Math.max(1, Number.parseInt(searchParams.get('limit') ?? String(DEFAULT_SESSION_LIMIT))),
     );
     const skip = (page - 1) * limit;
+    const ekskulIdParam = searchParams.get('ekskulId') ?? undefined;
+    const isAdmin = isAdminRole(session.user.role);
 
-    const where = upcoming
+    const where: Prisma.BadmintonSessionWhereInput = upcoming
         ? {
               date: { gte: new Date() },
               status: { in: [SessionStatus.SCHEDULED, SessionStatus.ONGOING] },
           }
         : {};
+
+    // Members only see sessions of ekskul they belong to; admins see all.
+    if (!isAdmin) {
+        const memberEkskulIds = await getUserEkskulIds(session.user.id);
+        const scoped = ekskulIdParam
+            ? memberEkskulIds.filter((id) => id === ekskulIdParam)
+            : memberEkskulIds;
+        where.ekskulId = { in: scoped };
+    } else if (ekskulIdParam) {
+        where.ekskulId = ekskulIdParam;
+    }
 
     const [sessions, total] = await Promise.all([
         prisma.badmintonSession.findMany({
@@ -41,6 +55,7 @@ export async function GET(req: Request) {
             take: limit,
             include: {
                 _count: { select: { attendances: true } },
+                ekskul: { select: { id: true, name: true, color: true } },
                 attendances: {
                     where: { userId: session.user.id },
                     select: { id: true, status: true },

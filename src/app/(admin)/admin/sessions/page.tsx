@@ -5,14 +5,24 @@ import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
+import { EkskulFilter } from '@/components/ekskul/ekskul-filter';
 import Link from 'next/link';
 import { CalendarDays, Plus, ExternalLink } from 'lucide-react';
 import type { BadmintonSession } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getEkskuls } from '@/lib/ekskul';
 import { sessionStatusVariant, isAdminRole } from '@/lib/utils';
 
-export default async function AdminSessionsPage() {
+type SessionRow = BadmintonSession & {
+    _count: { attendances: number };
+    ekskul: { id: string; name: string; color: string };
+};
+
+export default async function AdminSessionsPage({
+    searchParams,
+}: Readonly<{ searchParams: Promise<{ ekskulId?: string }> }>) {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
     if (!session?.user?.id || !isAdminRole(session.user.role))
         redirect('/dashboard');
@@ -20,11 +30,21 @@ export default async function AdminSessionsPage() {
     const t = getDictionary(locale);
     const dateLocale = locale === 'id' ? localeId : enUS;
 
-    const sessions = await prisma.badmintonSession.findMany({
-        orderBy: { date: 'desc' },
-        take: 50,
-        include: { _count: { select: { attendances: true } } },
-    });
+    const sp = await searchParams;
+    const selected = sp.ekskulId || undefined;
+
+    const [sessions, ekskuls] = await Promise.all([
+        prisma.badmintonSession.findMany({
+            where: selected ? { ekskulId: selected } : {},
+            orderBy: { date: 'desc' },
+            take: 50,
+            include: {
+                _count: { select: { attendances: true } },
+                ekskul: { select: { id: true, name: true, color: true } },
+            },
+        }),
+        getEkskuls(),
+    ]);
 
     return (
         <div className='space-y-6'>
@@ -38,12 +58,19 @@ export default async function AdminSessionsPage() {
                         {t.admin.sessionsSubtitle}
                     </p>
                 </div>
-                <Link href='/admin/sessions/new'>
-                    <Button className='bg-green-600 hover:bg-green-700 text-white gap-2'>
-                        <Plus className='w-4 h-4' />
-                        {t.admin.newSession}
-                    </Button>
-                </Link>
+                <div className='flex items-center gap-2'>
+                    <EkskulFilter
+                        ekskuls={ekskuls}
+                        selected={selected}
+                        allLabel={t.ekskul.filterAll}
+                    />
+                    <Link href='/admin/sessions/new'>
+                        <Button className='bg-green-600 hover:bg-green-700 text-white gap-2'>
+                            <Plus className='w-4 h-4' />
+                            {t.admin.newSession}
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden'>
@@ -72,18 +99,20 @@ export default async function AdminSessionsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {sessions.map(
-                                (
-                                    s: BadmintonSession & {
-                                        _count: { attendances: number };
-                                    },
-                                ) => {
+                            {sessions.map((s: SessionRow) => {
                                     return (
                                         <tr
                                             key={s.id}
                                             className='border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'>
-                                            <td className='px-4 py-3 font-medium text-gray-900 dark:text-white max-w-50 truncate'>
-                                                {s.title}
+                                            <td className='px-4 py-3 font-medium text-gray-900 dark:text-white max-w-50'>
+                                                <span className='truncate block'>
+                                                    {s.title}
+                                                </span>
+                                                <EkskulBadge
+                                                    name={s.ekskul.name}
+                                                    color={s.ekskul.color}
+                                                    className='mt-1'
+                                                />
                                             </td>
                                             <td className='px-4 py-3 text-gray-500 whitespace-nowrap'>
                                                 {format(

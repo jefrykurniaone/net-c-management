@@ -5,12 +5,17 @@ import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { EkskulFilter } from "@/components/ekskul/ekskul-filter";
 import Link from "next/link";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getUserEkskulIds } from "@/lib/ekskul";
 import { sessionStatusVariant } from "@/lib/utils";
 
-export default async function SessionsPage() {
+export default async function SessionsPage({
+  searchParams,
+}: Readonly<{ searchParams: Promise<{ ekskulId?: string }> }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
 
@@ -20,26 +25,52 @@ export default async function SessionsPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const sessions = await prisma.badmintonSession.findMany({
-    where: { date: { gte: today }, status: { in: ["SCHEDULED", "ONGOING"] } },
-    orderBy: { date: "asc" },
-    include: {
-      _count: { select: { attendances: true } },
-      attendances: {
-        where: { userId: session.user.id },
-        select: { status: true },
+  const myEkskulIds = await getUserEkskulIds(session.user.id);
+  const sp = await searchParams;
+  const selected =
+    sp.ekskulId && myEkskulIds.includes(sp.ekskulId) ? sp.ekskulId : undefined;
+
+  const [sessions, myEkskuls] = await Promise.all([
+    prisma.badmintonSession.findMany({
+      where: {
+        date: { gte: today },
+        status: { in: ["SCHEDULED", "ONGOING"] },
+        ekskulId: selected ?? { in: myEkskulIds },
       },
-    },
-  });
+      orderBy: { date: "asc" },
+      include: {
+        _count: { select: { attendances: true } },
+        ekskul: { select: { id: true, name: true, color: true } },
+        attendances: {
+          where: { userId: session.user.id },
+          select: { status: true },
+        },
+      },
+    }),
+    prisma.ekskul.findMany({
+      where: { id: { in: myEkskulIds }, isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <CalendarDays className="w-6 h-6 text-green-600" />
-          {t.sessions.title}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">{t.sessions.subtitle}</p>
+      <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <CalendarDays className="w-6 h-6 text-green-600" />
+            {t.sessions.title}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">{t.sessions.subtitle}</p>
+        </div>
+        {myEkskuls.length > 1 && (
+          <EkskulFilter
+            ekskuls={myEkskuls}
+            selected={selected}
+            allLabel={t.ekskul.filterAll}
+          />
+        )}
       </div>
 
       {sessions.length === 0 ? (
@@ -61,6 +92,7 @@ export default async function SessionsPage() {
                         <h3 className="font-semibold text-gray-900 dark:text-white">
                           {s.title}
                         </h3>
+                        <EkskulBadge name={s.ekskul.name} color={s.ekskul.color} />
                         <Badge
                           variant={sessionStatusVariant(s.status)}
                         >

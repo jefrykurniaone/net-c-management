@@ -3,9 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, CalendarDays, CreditCard, TrendingUp } from 'lucide-react';
+import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getEkskuls } from '@/lib/ekskul';
 import { isAdminRole } from '@/lib/utils';
 
 export default async function AdminDashboardPage() {
@@ -28,6 +30,10 @@ export default async function AdminDashboardPage() {
         pendingPayments,
         confirmedPaymentsThisMonth,
         totalSessionsThisYear,
+        ekskuls,
+        membersByEkskul,
+        upcomingByEkskul,
+        pendingByEkskul,
     ] = await Promise.all([
         prisma.user.count(),
         prisma.user.count({
@@ -56,7 +62,34 @@ export default async function AdminDashboardPage() {
                 status: { not: 'CANCELLED' },
             },
         }),
+        getEkskuls(),
+        prisma.membership.groupBy({
+            by: ['ekskulId'],
+            where: { isActive: true },
+            _count: true,
+        }),
+        prisma.badmintonSession.groupBy({
+            by: ['ekskulId'],
+            where: {
+                date: { gte: startOfToday },
+                status: { in: ['SCHEDULED', 'ONGOING'] },
+            },
+            _count: true,
+        }),
+        prisma.payment.groupBy({
+            by: ['ekskulId'],
+            where: { status: 'PENDING' },
+            _count: true,
+        }),
     ]);
+
+    const countMap = (
+        rows: { ekskulId: string; _count: number }[],
+    ): Map<string, number> =>
+        new Map(rows.map((r) => [r.ekskulId, r._count]));
+    const memberCounts = countMap(membersByEkskul);
+    const upcomingCounts = countMap(upcomingByEkskul);
+    const pendingCounts = countMap(pendingByEkskul);
 
     const stats = [
         {
@@ -121,6 +154,54 @@ export default async function AdminDashboardPage() {
                     </Card>
                 ))}
             </div>
+
+            {/* Per-ekskul breakdown */}
+            {ekskuls.length > 0 && (
+                <div className='space-y-4'>
+                    <h2 className='text-lg font-semibold text-gray-900 dark:text-white'>
+                        {t.admin.perEkskulTitle}
+                    </h2>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+                        {ekskuls.map((e) => (
+                            <Card
+                                key={e.id}
+                                style={{ borderTop: `3px solid ${e.color}` }}>
+                                <CardHeader className='pb-2'>
+                                    <EkskulBadge name={e.name} color={e.color} />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className='grid grid-cols-3 gap-2 text-center'>
+                                        <div>
+                                            <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                                                {memberCounts.get(e.id) ?? 0}
+                                            </p>
+                                            <p className='text-xs text-gray-400'>
+                                                {t.admin.colMembers}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                                                {upcomingCounts.get(e.id) ?? 0}
+                                            </p>
+                                            <p className='text-xs text-gray-400'>
+                                                {t.admin.upcomingShort}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className='text-xl font-bold text-gray-900 dark:text-white'>
+                                                {pendingCounts.get(e.id) ?? 0}
+                                            </p>
+                                            <p className='text-xs text-gray-400'>
+                                                {t.admin.pendingShort}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

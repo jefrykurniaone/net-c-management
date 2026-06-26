@@ -32,6 +32,7 @@ export async function GET(req: Request) {
         | 'CONFIRMED'
         | 'REJECTED'
         | null;
+    const ekskulId = searchParams.get('ekskulId') ?? undefined;
     const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1'));
     const limit = Math.min(
         MAX_PAYMENT_LIMIT,
@@ -44,6 +45,7 @@ export async function GET(req: Request) {
         ...(month ? { month } : {}),
         ...(year ? { year } : {}),
         ...(status ? { status } : {}),
+        ...(ekskulId ? { ekskulId } : {}),
     };
 
     const [payments, total] = await Promise.all([
@@ -56,6 +58,7 @@ export async function GET(req: Request) {
                 user: {
                     select: { id: true, name: true, email: true, image: true },
                 },
+                ekskul: { select: { id: true, name: true, color: true } },
             },
         }),
         prisma.payment.count({ where }),

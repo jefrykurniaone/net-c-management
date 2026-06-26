@@ -32,6 +32,7 @@ import { User } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { FormSkeleton } from '@/components/skeletons/page-skeletons';
+import { EkskulMemberships } from './ekskul-memberships';
 
 interface Profile {
     id: string;
@@ -221,6 +222,8 @@ export default function ProfilePage() {
                     </div>
                 </div>
             )}
+
+            <EkskulMemberships />
 
             <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6'>
                 <h2 className='font-semibold text-gray-900 dark:text-white mb-5'>

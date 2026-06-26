@@ -21,15 +21,18 @@ export async function GET(req: Request) {
     const year = searchParams.get('year')
         ? Number.parseInt(searchParams.get('year')!)
         : undefined;
+    const ekskulId = searchParams.get('ekskulId') ?? undefined;
 
     const payments = await prisma.payment.findMany({
         where: {
             ...(month ? { month } : {}),
             ...(year ? { year } : {}),
+            ...(ekskulId ? { ekskulId } : {}),
         },
         orderBy: [{ year: 'desc' }, { month: 'desc' }, { createdAt: 'asc' }],
         include: {
             user: { select: { name: true, email: true, phone: true } },
+            ekskul: { select: { name: true } },
         },
     });
 
@@ -39,6 +42,7 @@ export async function GET(req: Request) {
             'Nama',
             'Email',
             'WhatsApp',
+            'Ekskul',
             'Bulan',
             'Tahun',
             'Jumlah (Rp)',
@@ -51,6 +55,7 @@ export async function GET(req: Request) {
             p.user.name ?? '',
             p.user.email ?? '',
             p.user.phone ?? '',
+            p.ekskul.name,
             String(p.month),
             String(p.year),
             String(p.amount),

@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { buildCreateSessionSchema, type CreateSessionFormData } from "@/lib/validations/session";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -21,16 +28,19 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import type { EkskulOption } from "@/types/ekskul";
 
 export default function NewSessionPage() {
   const router = useRouter();
   const { locale } = useLocale();
   const t = getDictionary(locale);
   const [loading, setLoading] = useState(false);
+  const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
 
   const form = useForm<CreateSessionFormData>({
     resolver: zodResolver(buildCreateSessionSchema(t)),
     defaultValues: {
+      ekskulId: "",
       title: "",
       date: "",
       startTime: "08:00",
@@ -41,6 +51,24 @@ export default function NewSessionPage() {
       notes: "",
     },
   });
+
+  useEffect(() => {
+    fetch("/api/ekskul")
+      .then((r) => r.json())
+      .then((data: { ekskuls?: EkskulOption[] }) => setEkskuls(data.ekskuls ?? []))
+      .catch(() => setEkskuls([]));
+  }, []);
+
+  function handleEkskulChange(id: string) {
+    form.setValue("ekskulId", id, { shouldValidate: true });
+    const chosen = ekskuls.find((e) => e.id === id);
+    if (!chosen) return;
+    form.setValue("fee", chosen.defaultFee);
+    form.setValue("maxPlayers", chosen.maxPlayers);
+    if (!form.getValues("location") && chosen.defaultLocation) {
+      form.setValue("location", chosen.defaultLocation);
+    }
+  }
 
   async function onSubmit(data: CreateSessionFormData) {
     setLoading(true);
@@ -81,6 +109,31 @@ export default function NewSessionPage() {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="ekskulId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t.ekskul.label}</FormLabel>
+                  <Select onValueChange={handleEkskulChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={t.ekskul.selectPlaceholder} />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {ekskuls.map((e) => (
+                        <SelectItem key={e.id} value={e.id}>
+                          {e.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="title"

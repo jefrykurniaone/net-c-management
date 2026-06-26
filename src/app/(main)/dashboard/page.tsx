@@ -3,19 +3,18 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
-import {
-    CalendarDays,
-    CreditCard,
-    TrendingUp,
-    CheckCircle,
-} from 'lucide-react';
+import { CalendarDays, CheckCircle, TrendingUp, Shapes } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getUserEkskulIds } from '@/lib/ekskul';
 import { sessionStatusVariant, paymentStatusVariant } from '@/lib/utils';
+
+const UPCOMING_PER_EKSKUL = 3;
 
 export default async function DashboardPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -30,45 +29,54 @@ export default async function DashboardPage() {
     today.setHours(0, 0, 0, 0);
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
+    const yearStart = new Date(`${currentYear}-01-01`);
+    const yearEnd = new Date(`${currentYear}-12-31`);
 
-    const [upcomingSessions, currentPayment, attendanceCount, totalSessions] =
+    const myEkskulIds = await getUserEkskulIds(userId);
+
+    const [myEkskuls, upcomingSessions, monthPayments, attendanceCount, totalSessions] =
         await Promise.all([
+            prisma.ekskul.findMany({
+                where: { id: { in: myEkskulIds }, isActive: true },
+                orderBy: { name: 'asc' },
+                select: { id: true, name: true, color: true },
+            }),
             prisma.badmintonSession.findMany({
                 where: {
+                    ekskulId: { in: myEkskulIds },
                     date: { gte: today },
                     status: { in: ['SCHEDULED', 'ONGOING'] },
                 },
                 orderBy: { date: 'asc' },
-                take: 5,
                 include: {
-                    attendances: {
-                        where: { userId },
-                        select: { status: true },
-                    },
+                    ekskul: { select: { id: true, name: true, color: true } },
+                    attendances: { where: { userId }, select: { status: true } },
                     _count: { select: { attendances: true } },
                 },
             }),
-            prisma.payment.findFirst({
-                where: { userId, month: currentMonth, year: currentYear },
+            prisma.payment.findMany({
+                where: {
+                    userId,
+                    month: currentMonth,
+                    year: currentYear,
+                    ekskulId: { in: myEkskulIds },
+                },
+                select: { ekskulId: true, status: true, amount: true },
             }),
             prisma.attendance.count({
                 where: {
                     userId,
                     status: 'PRESENT',
                     session: {
-                        date: {
-                            gte: new Date(`${currentYear}-01-01`),
-                            lte: new Date(`${currentYear}-12-31`),
-                        },
+                        ekskulId: { in: myEkskulIds },
+                        date: { gte: yearStart, lte: yearEnd },
                     },
                 },
             }),
             prisma.badmintonSession.count({
                 where: {
-                    date: {
-                        gte: new Date(`${currentYear}-01-01`),
-                        lte: new Date(`${currentYear}-12-31`),
-                    },
+                    ekskulId: { in: myEkskulIds },
+                    date: { gte: yearStart, lte: yearEnd },
                     status: { not: 'CANCELLED' },
                 },
             }),
@@ -78,6 +86,10 @@ export default async function DashboardPage() {
         totalSessions > 0
             ? Math.round((attendanceCount / totalSessions) * 100)
             : 0;
+    const paymentByEkskul = new Map(monthPayments.map((p) => [p.ekskulId, p]));
+    const paidCount = monthPayments.filter(
+        (p) => p.status === 'CONFIRMED',
+    ).length;
 
     return (
         <div className='space-y-6'>
@@ -92,45 +104,22 @@ export default async function DashboardPage() {
                 </p>
             </div>
 
-            {/* Stats cards */}
+            {/* Summary strip */}
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
                 <Card>
                     <CardHeader className='flex flex-row items-center justify-between pb-2'>
                         <CardTitle className='text-sm font-medium text-gray-500'>
-                            {t.dashboard.duesTitle}{' '}
-                            {t.months[currentMonth]}
+                            {t.dashboard.duesTitle} {t.months[currentMonth]}
                         </CardTitle>
-                        <CreditCard className='w-4 h-4 text-gray-400' />
+                        <Shapes className='w-4 h-4 text-gray-400' />
                     </CardHeader>
                     <CardContent>
-                        {currentPayment ? (
-                            <div>
-                                <Badge
-                                    variant={paymentStatusVariant(currentPayment.status)}>
-                                    {t.paymentStatus[currentPayment.status]}
-                                </Badge>
-                                <p className='text-xs text-gray-400 mt-1'>
-                                    Rp{' '}
-                                    {currentPayment.amount.toLocaleString(
-                                        'id-ID',
-                                    )}
-                                </p>
-                            </div>
-                        ) : (
-                            <div>
-                                <p className='text-lg font-semibold text-red-500'>
-                                    {t.dashboard.duesNotPaid}
-                                </p>
-                                <Link href='/payments/upload'>
-                                    <Button
-                                        size='sm'
-                                        variant='outline'
-                                        className='mt-2 text-xs h-7'>
-                                        {t.dashboard.uploadProof}
-                                    </Button>
-                                </Link>
-                            </div>
-                        )}
+                        <p className='text-2xl font-bold text-gray-900 dark:text-white'>
+                            {paidCount}
+                            <span className='text-sm font-normal text-gray-400'>
+                                /{myEkskuls.length}
+                            </span>
+                        </p>
                     </CardContent>
                 </Card>
 
@@ -172,87 +161,118 @@ export default async function DashboardPage() {
                 </Card>
             </div>
 
-            {/* Upcoming sessions */}
-            <div>
-                <div className='flex items-center justify-between mb-4'>
-                    <h2 className='text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2'>
-                        <CalendarDays className='w-5 h-5 text-green-600' />
-                        {t.dashboard.upcomingTitle}
-                    </h2>
+            {/* Per-ekskul sections */}
+            {myEkskuls.length === 0 ? (
+                <div className='text-center py-12 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800'>
+                    <Shapes className='w-10 h-10 text-gray-300 mx-auto mb-3' />
+                    <p className='text-gray-500 text-sm mb-3'>
+                        {t.ekskul.noneJoined}
+                    </p>
+                    <Link href='/profile'>
+                        <Button variant='outline' size='sm'>
+                            {t.ekskul.join}
+                        </Button>
+                    </Link>
+                </div>
+            ) : (
+                <div className='space-y-5'>
+                    {myEkskuls.map((ekskul) => {
+                        const sessions = upcomingSessions
+                            .filter((s) => s.ekskulId === ekskul.id)
+                            .slice(0, UPCOMING_PER_EKSKUL);
+                        const payment = paymentByEkskul.get(ekskul.id);
+                        return (
+                            <div
+                                key={ekskul.id}
+                                className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden'
+                                style={{ borderTop: `3px solid ${ekskul.color}` }}>
+                                <div className='flex items-center justify-between gap-3 p-4 border-b border-gray-50 dark:border-gray-800'>
+                                    <EkskulBadge
+                                        name={ekskul.name}
+                                        color={ekskul.color}
+                                    />
+                                    {payment ? (
+                                        <Badge
+                                            variant={paymentStatusVariant(
+                                                payment.status,
+                                            )}>
+                                            {t.paymentStatus[payment.status]}
+                                        </Badge>
+                                    ) : (
+                                        <Link href='/payments/upload'>
+                                            <Button
+                                                size='sm'
+                                                variant='outline'
+                                                className='h-7 text-xs text-red-500 border-red-200'>
+                                                {t.dashboard.duesNotPaid}
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
+                                <div className='p-4 space-y-2'>
+                                    <p className='text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1'>
+                                        <CalendarDays className='w-3.5 h-3.5' />
+                                        {t.dashboard.upcomingTitle}
+                                    </p>
+                                    {sessions.length === 0 ? (
+                                        <p className='text-sm text-gray-400 py-2'>
+                                            {t.dashboard.noUpcoming}
+                                        </p>
+                                    ) : (
+                                        sessions.map((s) => {
+                                            const isRegistered =
+                                                s.attendances.length > 0;
+                                            return (
+                                                <Link
+                                                    key={s.id}
+                                                    href={`/sessions/${s.id}`}
+                                                    className='flex items-center justify-between gap-3 rounded-lg border border-gray-100 dark:border-gray-800 p-3 hover:border-green-200 transition-colors'>
+                                                    <div className='min-w-0'>
+                                                        <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                                                            {s.title}
+                                                        </p>
+                                                        <p className='text-xs text-gray-400'>
+                                                            📅{' '}
+                                                            {format(
+                                                                new Date(s.date),
+                                                                'd MMM yyyy',
+                                                                {
+                                                                    locale: dateLocale,
+                                                                },
+                                                            )}{' '}
+                                                            · {s.startTime}
+                                                        </p>
+                                                    </div>
+                                                    {isRegistered ? (
+                                                        <Badge
+                                                            variant='outline'
+                                                            className='text-xs text-green-600 border-green-200 shrink-0'>
+                                                            {t.dashboard.registered}
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge
+                                                            variant={sessionStatusVariant(
+                                                                s.status,
+                                                            )}
+                                                            className='text-xs shrink-0'>
+                                                            {t.sessionStatus[s.status]}
+                                                        </Badge>
+                                                    )}
+                                                </Link>
+                                            );
+                                        })
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
                     <Link
                         href='/sessions'
-                        className='text-sm text-green-600 hover:underline'>
+                        className='inline-block text-sm text-green-600 hover:underline'>
                         {t.dashboard.viewAll}
                     </Link>
                 </div>
-
-                {upcomingSessions.length === 0 ? (
-                    <div className='text-center py-12 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800'>
-                        <CalendarDays className='w-10 h-10 text-gray-300 mx-auto mb-3' />
-                        <p className='text-gray-500 text-sm'>
-                            {t.dashboard.noUpcoming}
-                        </p>
-                    </div>
-                ) : (
-                    <div className='space-y-3'>
-                        {upcomingSessions.map((s) => {
-                            const isRegistered = s.attendances.length > 0;
-                            return (
-                                <Link key={s.id} href={`/sessions/${s.id}`}>
-                                    <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 hover:border-green-200 hover:shadow-sm transition-all cursor-pointer'>
-                                        <div className='flex items-start justify-between gap-3'>
-                                            <div className='flex-1 min-w-0'>
-                                                <div className='flex items-center gap-2 mb-1'>
-                                                    <h3 className='font-semibold text-gray-900 dark:text-white text-sm truncate'>
-                                                        {s.title}
-                                                    </h3>
-                                                    <Badge
-                                                        variant={sessionStatusVariant(s.status)}
-                                                        className='text-xs shrink-0'>
-                                                        {t.sessionStatus[s.status]}
-                                                    </Badge>
-                                                </div>
-                                                <p className='text-xs text-gray-400'>
-                                                    📅{' '}
-                                                    {format(
-                                                        new Date(s.date),
-                                                        'EEEE, d MMMM yyyy',
-                                                        { locale: dateLocale },
-                                                    )}
-                                                    &nbsp;·&nbsp;
-                                                    {s.startTime} – {s.endTime}
-                                                </p>
-                                                <p className='text-xs text-gray-400 mt-0.5'>
-                                                    📍 {s.location}
-                                                </p>
-                                            </div>
-                                            <div className='text-right shrink-0'>
-                                                <p className='text-xs text-gray-400'>
-                                                    {s._count.attendances}/
-                                                    {s.maxPlayers}
-                                                </p>
-                                                {isRegistered ? (
-                                                    <Badge
-                                                        variant='outline'
-                                                        className='text-xs text-green-600 border-green-200 mt-1'>
-                                                        {t.dashboard.registered}
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge
-                                                        variant='secondary'
-                                                        className='text-xs mt-1'>
-                                                        {t.sessions.register}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Link>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
+            )}
         </div>
     );
 }
