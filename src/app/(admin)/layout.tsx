@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Sidebar } from '@/components/layout/sidebar';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { getSettings } from '@/lib/settings';
-import { communityAbbr } from '@/lib/utils';
+import { communityAbbr, isAdminRole } from '@/lib/utils';
 
 export default async function AdminLayout({
     children,
@@ -21,7 +21,7 @@ export default async function AdminLayout({
         redirect('/onboarding');
     }
 
-    if (session.user.role !== 'ADMIN') {
+    if (!isAdminRole(session.user.role)) {
         redirect('/dashboard');
     }
 

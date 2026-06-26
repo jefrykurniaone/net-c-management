@@ -6,10 +6,11 @@ import { Users, CalendarDays, CreditCard, TrendingUp } from 'lucide-react';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { isAdminRole } from '@/lib/utils';
 
 export default async function AdminDashboardPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
-    if (!session?.user?.id || session.user.role !== 'ADMIN')
+    if (!session?.user?.id || !isAdminRole(session.user.role))
         redirect('/dashboard');
 
     const t = getDictionary(locale);

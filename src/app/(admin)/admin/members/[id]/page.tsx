@@ -6,6 +6,7 @@ import { id as localeId } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { isAdminRole } from "@/lib/utils";
 
 const STATUS_LABELS = {
   REGISTERED: "Terdaftar",
@@ -40,7 +41,7 @@ export default async function MemberDetailPage({
   params: Promise<{ id: string }>;
 }>) {
   const session = await auth();
-  if (!session?.user?.id || session.user.role !== "ADMIN") redirect("/dashboard");
+  if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
 
   const { id } = await params;
   const member = await prisma.user.findUnique({
@@ -91,7 +92,10 @@ export default async function MemberDetailPage({
             </h1>
             <p className="text-sm text-gray-500">{member.email}</p>
             <div className="flex gap-2 mt-1">
-              <Badge variant={member.role === "ADMIN" ? "default" : "secondary"}>
+              <Badge
+                variant={member.role === "ADMIN" ? "default" : "secondary"}
+                className={member.role === "OWNER" ? "bg-purple-600 text-white hover:bg-purple-700 border-transparent" : undefined}
+              >
                 {member.role}
               </Badge>
               {!member.isActive && (

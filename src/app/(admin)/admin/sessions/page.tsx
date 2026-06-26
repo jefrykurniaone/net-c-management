@@ -10,11 +10,11 @@ import { CalendarDays, Plus, ExternalLink } from 'lucide-react';
 import type { BadmintonSession } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { sessionStatusVariant } from '@/lib/utils';
+import { sessionStatusVariant, isAdminRole } from '@/lib/utils';
 
 export default async function AdminSessionsPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
-    if (!session?.user?.id || session.user.role !== 'ADMIN')
+    if (!session?.user?.id || !isAdminRole(session.user.role))
         redirect('/dashboard');
 
     const t = getDictionary(locale);

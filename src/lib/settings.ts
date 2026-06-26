@@ -11,7 +11,7 @@ export interface AppSettings {
 }
 
 const DEFAULTS: AppSettings = {
-    communityName: 'PB Net-C',
+    communityName: 'Xclub Badminton',
     defaultMonthlyFee: 50000,
     defaultLocation: '',
     adminWhatsapp: '',

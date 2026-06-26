@@ -4,6 +4,23 @@ Aplikasi web full-stack untuk mengelola komunitas badminton: sesi latihan, kehad
 
 ---
 
+## 1. Brief Project Description
+
+A full-stack web application that centralizes the management of a badminton community — training sessions, member attendance, monthly dues, and member profiles — in one platform. It replaces scattered chat messages and manual spreadsheets with a single source of truth, giving members self-service RSVP and dues uploads while giving admins a dedicated panel to schedule sessions, confirm payments, and manage members.
+
+## 2. What business problem are you trying to solve?
+
+Most amateur badminton communities are run manually, which creates recurring friction for both members and the organizers:
+
+- **Scattered scheduling.** Session announcements live in chat groups (e.g. WhatsApp), so RSVPs are hard to count, attendance caps are easy to overshoot, and there is no reliable record of who is coming.
+- **Manual attendance tracking.** Presence is recorded on paper or ad-hoc spreadsheets, making it tedious to maintain and error-prone to report.
+- **Painful dues collection.** Treasurers chase monthly payments one by one and verify transfer proofs by hand, with no clear, shared view of who has paid, who is pending, and who is overdue.
+- **No central member record.** Member data, play level, and payment history are fragmented, so admins lack the visibility needed to manage the community and produce reports.
+
+This solution automates and centralizes those workflows — reducing the operational/administrative effort on organizers and treasurers, removing manual bookkeeping errors, and giving members transparent, self-service access to schedules and their own dues status.
+
+---
+
 ## Tech Stack
 
 ### Frontend

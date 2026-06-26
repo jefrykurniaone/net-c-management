@@ -16,7 +16,7 @@ import {
     User,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn, communityAbbr } from '@/lib/utils';
+import { cn, communityAbbr, isAdminRole } from '@/lib/utils';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
@@ -31,7 +31,7 @@ export function Sidebar({
     const { locale } = useLocale();
     const t = getDictionary(locale);
 
-    const isAdmin = session?.user?.role === 'ADMIN';
+    const isAdmin = isAdminRole(session?.user?.role);
     const initials =
         session?.user?.name
             ?.split(' ')

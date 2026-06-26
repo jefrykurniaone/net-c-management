@@ -210,8 +210,12 @@ export default function ProfilePage() {
                                     ? 'default'
                                     : 'secondary'
                             }
-                            className='mt-1 text-xs'>
-                            {profile.role === 'ADMIN' ? t.profile.roleAdmin : t.profile.roleMember}
+                            className={`mt-1 text-xs${profile.role === 'OWNER' ? ' bg-purple-600 text-white hover:bg-purple-700 border-transparent' : ''}`}>
+                            {profile.role === 'OWNER'
+                                ? t.roles.OWNER
+                                : profile.role === 'ADMIN'
+                                  ? t.profile.roleAdmin
+                                  : t.profile.roleMember}
                         </Badge>
                     </div>
                 </div>

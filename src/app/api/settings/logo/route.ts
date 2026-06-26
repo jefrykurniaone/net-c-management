@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { uploadLogo } from '@/lib/supabase';
+import { isAdminRole } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 const ALLOWED_TYPES = new Set([
@@ -17,7 +18,7 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (session.user.role !== 'ADMIN') {
+    if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

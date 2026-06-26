@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { confirmPaymentSchema } from '@/lib/validations/payment';
+import { isAdminRole } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 // GET /api/payments/[id]
@@ -29,7 +30,7 @@ export async function GET(
     }
 
     // Non-admins can only see their own payments
-    if (session.user.role !== 'ADMIN' && payment.userId !== session.user.id) {
+    if (!isAdminRole(session.user.role) && payment.userId !== session.user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -45,7 +46,7 @@ export async function PATCH(
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    if (session.user.role !== 'ADMIN') {
+    if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

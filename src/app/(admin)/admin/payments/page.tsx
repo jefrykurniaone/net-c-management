@@ -10,7 +10,7 @@ import { PaymentActions } from "./payment-actions";
 import type { Payment } from "@prisma/client";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { paymentStatusVariant } from "@/lib/utils";
+import { paymentStatusVariant, isAdminRole } from "@/lib/utils";
 
 export default async function AdminPaymentsPage({
   searchParams,
@@ -18,7 +18,7 @@ export default async function AdminPaymentsPage({
   searchParams: Promise<{ month?: string; year?: string; status?: string }>;
 }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
-  if (!session?.user?.id || session.user.role !== "ADMIN") redirect("/dashboard");
+  if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
 
   const t = getDictionary(locale);
   const dateLocale = locale === 'id' ? localeId : enUS;

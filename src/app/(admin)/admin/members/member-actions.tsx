@@ -10,7 +10,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 interface Member {
   id: string;
   name: string | null;
-  role: "ADMIN" | "MEMBER";
+  role: "ADMIN" | "MEMBER" | "OWNER";
   isActive: boolean;
 }
 
@@ -48,6 +48,7 @@ export function MemberActions({
   }
 
   const isSelf = member.id === currentUserId;
+  const isOwner = member.role === "OWNER";
 
   return (
     <div className="flex items-center justify-center gap-1 flex-wrap">
@@ -56,11 +57,11 @@ export function MemberActions({
         size="sm"
         className="h-7 text-xs"
         onClick={() => patch({ isActive: !member.isActive })}
-        disabled={loading || isSelf}
+        disabled={loading || isSelf || isOwner}
       >
         {member.isActive ? t.admin.deactivateMember : t.admin.activateMember}
       </Button>
-      {!isSelf && (
+      {!isSelf && !isOwner && (
         <Button
           variant="outline"
           size="sm"

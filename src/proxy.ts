@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
+import { isAdminRole } from "@/lib/utils";
 import { NextResponse } from "next/server";
 
 export default auth((req) => {
   const { nextUrl, auth: session } = req;
   const isLoggedIn = !!session?.user;
-  const isAdmin = session?.user?.role === "ADMIN";
+  const isAdmin = isAdminRole(session?.user?.role);
   const isProfileComplete = session?.user?.isProfileComplete ?? false;
 
   const isAuthPage = nextUrl.pathname.startsWith("/auth");
