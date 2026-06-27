@@ -50,3 +50,6 @@ prisma/generated/
 # local file uploads (user-uploaded content should not be committed)
 uploads/
 public/uploads/
+
+# local planning notes (not part of the project)
+plans/
