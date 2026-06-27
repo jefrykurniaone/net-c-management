@@ -44,7 +44,7 @@ next-env.d.ts
 # editor
 .vscode/
 
-# prisma generated client
+# prisma generated client (migrations under prisma/migrations/ ARE committed)
 prisma/generated/
 
 # local file uploads (user-uploaded content should not be committed)
