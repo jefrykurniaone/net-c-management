@@ -9,6 +9,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         Google({
             clientId: process.env.AUTH_GOOGLE_ID!,
             clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+            // Dev-only: lets a Google login link to a pre-seeded user with the
+            // same email (e.g. the seeded OWNER). Disabled in production to avoid
+            // account-takeover via unverified email matching.
+            allowDangerousEmailAccountLinking:
+                process.env.NODE_ENV !== 'production',
         }),
     ],
     session: {
