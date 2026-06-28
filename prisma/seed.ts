@@ -8,12 +8,14 @@
  *
  * Idempotent — re-running only fills in what's missing.
  *
- * If SEED_OWNER_EMAIL is set, it also seeds an OWNER user with that email so you
- * can log in straight as OWNER. Logging in via Google then links to this user
- * because `allowDangerousEmailAccountLinking` is enabled in dev only (see
- * src/lib/auth.ts) — without it, a pre-seeded email triggers
- * `OAuthAccountNotLinked`. In production that linking is off; use
- * `npm run db:promote -- <email>` to promote a user instead.
+ * It also seeds one user per Role (MEMBER, ADMIN, OWNER), each with a default
+ * placeholder email so you always have one of every role to test with. Override
+ * any email via SEED_MEMBER_EMAIL / SEED_ADMIN_EMAIL / SEED_OWNER_EMAIL — set one
+ * to your real Google address and you can log in straight as that role. Logging
+ * in via Google links to the pre-seeded user because
+ * `allowDangerousEmailAccountLinking` is enabled in dev only (see src/lib/auth.ts)
+ * — without it, a pre-seeded email triggers `OAuthAccountNotLinked`. In production
+ * that linking is off; use `npm run db:promote -- <email>` to promote a user.
  *
  *   SEED_OWNER_EMAIL=you@gmail.com npm run db:seed
  */
@@ -36,6 +38,14 @@ const SAMPLE_SESSION_FEE = 25000;
 const DAYS_PER_WEEK = 7;
 const SESSION_START = '08:00';
 const SESSION_END = '10:00';
+
+// One user per Role. Default emails are placeholders; override any of them via
+// the matching env var to use a real (e.g. Google) address for that role.
+const SEED_USERS = [
+    { role: 'MEMBER', name: 'Member', defaultEmail: 'member@netc.local', envKey: 'SEED_MEMBER_EMAIL' },
+    { role: 'ADMIN', name: 'Admin', defaultEmail: 'admin@netc.local', envKey: 'SEED_ADMIN_EMAIL' },
+    { role: 'OWNER', name: 'Owner', defaultEmail: 'owner@netc.local', envKey: 'SEED_OWNER_EMAIL' },
+] as const;
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -111,36 +121,34 @@ async function seedSampleSessions(ekskulId: string) {
     console.log(`✔ Sessions: ${samples.length} sample sessions created`);
 }
 
-async function seedOwner(ekskulId: string) {
-    const email = process.env.SEED_OWNER_EMAIL?.trim();
-    if (!email) {
-        console.log('• Owner: SEED_OWNER_EMAIL not set, skipping owner seed');
-        return;
+async function seedUsers(ekskulId: string) {
+    for (const u of SEED_USERS) {
+        const email = process.env[u.envKey]?.trim() || u.defaultEmail;
+        const user = await prisma.user.upsert({
+            where: { email },
+            update: { role: u.role, isActive: true, isProfileComplete: true },
+            create: {
+                email,
+                name: u.name,
+                role: u.role,
+                isActive: true,
+                isProfileComplete: true,
+            },
+        });
+        await prisma.membership.upsert({
+            where: { userId_ekskulId: { userId: user.id, ekskulId } },
+            update: {},
+            create: { userId: user.id, ekskulId },
+        });
+        console.log(`✔ ${u.role}: ${user.email} (active, profile complete)`);
     }
-    const owner = await prisma.user.upsert({
-        where: { email },
-        update: { role: 'OWNER', isActive: true, isProfileComplete: true },
-        create: {
-            email,
-            name: 'Owner',
-            role: 'OWNER',
-            isActive: true,
-            isProfileComplete: true,
-        },
-    });
-    await prisma.membership.upsert({
-        where: { userId_ekskulId: { userId: owner.id, ekskulId } },
-        update: {},
-        create: { userId: owner.id, ekskulId },
-    });
-    console.log(`✔ Owner: ${owner.email} (OWNER, active, profile complete)`);
 }
 
 async function main() {
     const ekskul = await seedEkskul();
     await seedSettings();
     await seedSampleSessions(ekskul.id);
-    await seedOwner(ekskul.id);
+    await seedUsers(ekskul.id);
     console.log('Done. Seed complete.');
 }
 
