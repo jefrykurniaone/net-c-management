@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { auth } from '@/lib/auth';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
@@ -37,7 +38,7 @@ export default async function RootLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    const locale = await getLocale();
+    const [locale, session] = await Promise.all([getLocale(), auth()]);
 
     return (
         <html
@@ -46,7 +47,7 @@ export default async function RootLayout({
             suppressHydrationWarning>
             <body className='min-h-full flex flex-col'>
                 <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
-                    <AuthProvider>
+                    <AuthProvider session={session}>
                         <LocaleProvider initialLocale={locale}>
                             {children}
                             <Toaster richColors position='top-right' />

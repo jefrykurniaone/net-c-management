@@ -1,10 +1,23 @@
 'use client';
 
+import { useSyncExternalStore } from 'react';
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { cn } from '@/lib/utils';
+
+// Hydration-safe "is this running on the client yet?" flag. Returns false during
+// SSR and the first client render (so they match), then true after hydration —
+// without a setState-in-effect. See https://react.dev/reference/react/useSyncExternalStore
+const emptySubscribe = () => () => {};
+function useIsHydrated(): boolean {
+    return useSyncExternalStore(
+        emptySubscribe,
+        () => true,
+        () => false,
+    );
+}
 
 function Switch({ on }: Readonly<{ on: boolean }>) {
     return (
@@ -27,8 +40,13 @@ export function ThemeToggle({ compact }: Readonly<{ compact?: boolean }>) {
     const { resolvedTheme, setTheme } = useTheme();
     const { locale } = useLocale();
     const t = getDictionary(locale);
+    const isHydrated = useIsHydrated();
 
-    if (!resolvedTheme) return null;
+    // Render nothing until hydrated so the server and the first client render
+    // agree (next-themes only resolves the theme on the client). Without this,
+    // the server renders null while the client renders the toggle, shifting
+    // sibling elements and triggering a hydration mismatch.
+    if (!isHydrated || !resolvedTheme) return null;
 
     const isDark = resolvedTheme === 'dark';
     const toggle = () => setTheme(isDark ? 'light' : 'dark');
