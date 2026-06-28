@@ -88,6 +88,15 @@ export default async function SignInPage() {
                 <p className='text-xs text-gray-400 dark:text-gray-500 text-center'>
                     {t.auth.signInNote}
                 </p>
+
+                {/* Dev-only shortcut to the OAuth-bypass login page. */}
+                {process.env.NODE_ENV !== 'production' && (
+                    <a
+                        href='/auth/dev'
+                        className='text-xs text-amber-600 dark:text-amber-400 hover:underline'>
+                        Dev login →
+                    </a>
+                )}
             </div>
         </div>
     );
