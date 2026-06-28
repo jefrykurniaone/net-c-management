@@ -9,6 +9,11 @@ export default auth((req) => {
   const isProfileComplete = session?.user?.isProfileComplete ?? false;
 
   const isAuthPage = nextUrl.pathname.startsWith("/auth");
+  // Dev-only login page (/auth/dev) must stay reachable even when logged in, so
+  // you can switch between the seeded users. Never matches in production.
+  const isDevLoginPage =
+    process.env.NODE_ENV !== "production" &&
+    nextUrl.pathname === "/auth/dev";
   const isOnboarding = nextUrl.pathname === "/onboarding";
   const isAdminRoute = nextUrl.pathname.startsWith("/admin");
   const isProtectedRoute =
@@ -36,7 +41,7 @@ export default auth((req) => {
   }
 
   // Redirect logged-in users away from auth pages
-  if (isLoggedIn && isAuthPage) {
+  if (isLoggedIn && isAuthPage && !isDevLoginPage) {
     if (!isProfileComplete) {
       return NextResponse.redirect(new URL("/onboarding", nextUrl));
     }
