@@ -29,7 +29,7 @@ export async function GET(req: Request) {
     const ekskulIdParam = searchParams.get('ekskulId') ?? undefined;
     const isAdmin = isAdminRole(session.user.role);
 
-    const where: Prisma.BadmintonSessionWhereInput = upcoming
+    const where: Prisma.ActivitySessionWhereInput = upcoming
         ? {
               date: { gte: new Date() },
               status: { in: [SessionStatus.SCHEDULED, SessionStatus.ONGOING] },
@@ -48,7 +48,7 @@ export async function GET(req: Request) {
     }
 
     const [sessions, total] = await Promise.all([
-        prisma.badmintonSession.findMany({
+        prisma.activitySession.findMany({
             where,
             orderBy: { date: upcoming ? 'asc' : 'desc' },
             skip,
@@ -62,7 +62,7 @@ export async function GET(req: Request) {
                 },
             },
         }),
-        prisma.badmintonSession.count({ where }),
+        prisma.activitySession.count({ where }),
     ]);
 
     return NextResponse.json({ sessions, total, page, limit });
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
     }
 
     const { date, ...rest } = parsed.data;
-    const newSession = await prisma.badmintonSession.create({
+    const newSession = await prisma.activitySession.create({
         data: {
             ...rest,
             date: new Date(date),

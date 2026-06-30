@@ -41,7 +41,7 @@ export default async function DashboardPage() {
                 orderBy: { name: 'asc' },
                 select: { id: true, name: true, color: true },
             }),
-            prisma.badmintonSession.findMany({
+            prisma.activitySession.findMany({
                 where: {
                     ekskulId: { in: myEkskulIds },
                     date: { gte: today },
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
                     },
                 },
             }),
-            prisma.badmintonSession.count({
+            prisma.activitySession.count({
                 where: {
                     ekskulId: { in: myEkskulIds },
                     date: { gte: yearStart, lte: yearEnd },

@@ -31,7 +31,7 @@ export default async function SessionsPage({
     sp.ekskulId && myEkskulIds.includes(sp.ekskulId) ? sp.ekskulId : undefined;
 
   const [sessions, myEkskuls] = await Promise.all([
-    prisma.badmintonSession.findMany({
+    prisma.activitySession.findMany({
       where: {
         date: { gte: today },
         status: { in: ["SCHEDULED", "ONGOING"] },
@@ -40,7 +40,7 @@ export default async function SessionsPage({
       orderBy: { date: "asc" },
       include: {
         _count: { select: { attendances: true } },
-        ekskul: { select: { id: true, name: true, color: true } },
+        ekskul: { select: { id: true, name: true, color: true, icon: true } },
         attendances: {
           where: { userId: session.user.id },
           select: { status: true },
@@ -85,14 +85,19 @@ export default async function SessionsPage({
             const isFull = s._count.attendances >= s.maxPlayers;
             return (
               <Link key={s.id} href={`/sessions/${s.id}`}>
-                <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 hover:border-green-200 hover:shadow-sm transition-all">
+                <div className="relative overflow-hidden bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 hover:border-green-200 hover:shadow-sm transition-all">
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-0 h-full w-[3px]"
+                    style={{ backgroundColor: s.ekskul.color }}
+                  />
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <h3 className="font-semibold text-gray-900 dark:text-white">
                           {s.title}
                         </h3>
-                        <EkskulBadge name={s.ekskul.name} color={s.ekskul.color} />
+                        <EkskulBadge name={s.ekskul.name} color={s.ekskul.color} icon={s.ekskul.icon} />
                         <Badge
                           variant={sessionStatusVariant(s.status)}
                         >

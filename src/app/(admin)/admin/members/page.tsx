@@ -52,8 +52,6 @@ export default async function AdminMembersPage({
         role: true,
         isActive: true,
         isProfileComplete: true,
-        playPosition: true,
-        playerLevel: true,
         phone: true,
         createdAt: true,
         memberships: {
@@ -115,7 +113,6 @@ export default async function AdminMembersPage({
               <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
                 <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colName}</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-500">{t.ekskul.label}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colLevel}</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colAttendance}</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colPayments}</th>
                 <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colMemberStatus}</th>
@@ -168,12 +165,6 @@ export default async function AdminMembersPage({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    <p>{u.playerLevel ? t.levels[u.playerLevel] : "-"}</p>
-                    <p className="text-xs text-gray-400">
-                      {u.playPosition ? t.positions[u.playPosition] : ""}
-                    </p>
-                  </td>
                   <td className="px-4 py-3 text-center text-gray-500">
                     {u._count.attendances}
                   </td>
@@ -202,7 +193,7 @@ export default async function AdminMembersPage({
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                     {t.admin.noMembers}
                   </td>
                 </tr>

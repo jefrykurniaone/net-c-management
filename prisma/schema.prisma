@@ -37,18 +37,6 @@ enum PaymentStatus {
   REJECTED
 }
 
-enum PlayPosition {
-  SINGLE
-  DOUBLE
-  BOTH
-}
-
-enum PlayerLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-}
-
 // ─── NextAuth Required Models ─────────────────────────────────────────────────
 
 model Account {
@@ -99,8 +87,6 @@ model User {
   role              Role        @default(MEMBER)
   isActive          Boolean     @default(true)
   isProfileComplete Boolean     @default(false)
-  playPosition      PlayPosition?
-  playerLevel       PlayerLevel?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
@@ -130,7 +116,7 @@ model Ekskul {
   updatedAt       DateTime @updatedAt
 
   memberships Membership[]
-  sessions    BadmintonSession[]
+  sessions    ActivitySession[]
   payments    Payment[]
 }
 
@@ -149,9 +135,9 @@ model Membership {
   @@index([ekskulId])
 }
 
-// Despite its name, this models a generic activity session scoped to an Ekskul.
-// (Kept as BadmintonSession to avoid a repo-wide rename — see plan out-of-scope.)
-model BadmintonSession {
+// A generic activity session scoped to an Ekskul. Named ActivitySession (not
+// Session) to avoid colliding with the NextAuth `Session` model.
+model ActivitySession {
   id          String        @id @default(cuid())
   title       String
   date        DateTime
@@ -182,7 +168,7 @@ model Attendance {
   updatedAt DateTime         @updatedAt
 
   user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  session BadmintonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session ActivitySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, sessionId])
 }

@@ -27,13 +27,13 @@ import { toast } from "sonner";
 import { ArrowLeft, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import type { BadmintonSession, Attendance, User } from "@prisma/client";
+import type { ActivitySession, Attendance, User } from "@prisma/client";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { EkskulOption } from "@/types/ekskul";
 
 type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
-type SessionWithAttendances = BadmintonSession & { attendances: AttendanceWithUser[] };
+type SessionWithAttendances = ActivitySession & { attendances: AttendanceWithUser[] };
 
 export function EditSessionForm({ session }: Readonly<{ session: SessionWithAttendances }>) {
   const router = useRouter();

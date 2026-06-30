@@ -28,8 +28,8 @@ export async function generateMetadata(): Promise<Metadata> {
     ]);
     const t = getDictionary(locale);
     return {
-        title: `${communityName} - ${t.auth.signInSubtitle}`,
-        description: `${t.auth.signInSubtitle} ${communityName}`,
+        title: `${communityName} - ${t.brand.tagline}`,
+        description: `${t.brand.tagline} - ${communityName}`,
     };
 }
 

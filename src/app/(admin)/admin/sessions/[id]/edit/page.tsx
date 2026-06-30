@@ -13,7 +13,7 @@ export default async function EditSessionPage({
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
 
   const { id } = await params;
-  const badmintonSession = await prisma.badmintonSession.findUnique({
+  const activitySession = await prisma.activitySession.findUnique({
     where: { id },
     include: {
       attendances: {
@@ -25,11 +25,11 @@ export default async function EditSessionPage({
     },
   });
 
-  if (!badmintonSession) notFound();
+  if (!activitySession) notFound();
 
   return (
     <div className="max-w-lg mx-auto">
-      <EditSessionForm session={badmintonSession} />
+      <EditSessionForm session={activitySession} />
     </div>
   );
 }

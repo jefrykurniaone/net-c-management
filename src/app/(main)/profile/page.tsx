@@ -17,13 +17,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -40,8 +33,6 @@ interface Profile {
     email: string | null;
     image: string | null;
     phone: string | null;
-    playPosition: string | null;
-    playerLevel: string | null;
     role: string;
     createdAt: string;
 }
@@ -92,8 +83,6 @@ export default function ProfilePage() {
         defaultValues: {
             name: '',
             phone: '',
-            playPosition: undefined,
-            playerLevel: undefined,
         },
     });
 
@@ -105,12 +94,6 @@ export default function ProfilePage() {
                 form.reset({
                     name: data.name ?? '',
                     phone: data.phone ?? '',
-                    playPosition:
-                        (data.playPosition as UpdateProfileFormData['playPosition']) ??
-                        undefined,
-                    playerLevel:
-                        (data.playerLevel as UpdateProfileFormData['playerLevel']) ??
-                        undefined,
                 });
             })
             .finally(() => setLoading(false));
@@ -263,68 +246,6 @@ export default function ProfilePage() {
                                             {...field}
                                         />
                                     </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name='playPosition'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.profile.position}</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t.profile.positionPlaceholder} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value='SINGLE'>
-                                                {t.positions.SINGLE}
-                                            </SelectItem>
-                                            <SelectItem value='DOUBLE'>
-                                                {t.positions.DOUBLE}
-                                            </SelectItem>
-                                            <SelectItem value='BOTH'>
-                                                {t.positions.BOTH}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name='playerLevel'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.profile.level}</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        value={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t.profile.levelPlaceholder} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value='BEGINNER'>
-                                                {t.levels.BEGINNER}
-                                            </SelectItem>
-                                            <SelectItem value='INTERMEDIATE'>
-                                                {t.levels.INTERMEDIATE}
-                                            </SelectItem>
-                                            <SelectItem value='ADVANCED'>
-                                                {t.levels.ADVANCED}
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}

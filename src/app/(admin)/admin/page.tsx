@@ -39,7 +39,7 @@ export default async function AdminDashboardPage() {
         prisma.user.count({
             where: { isActive: true, isProfileComplete: true },
         }),
-        prisma.badmintonSession.count({
+        prisma.activitySession.count({
             where: {
                 date: { gte: startOfToday },
                 status: { in: ['SCHEDULED', 'ONGOING'] },
@@ -53,7 +53,7 @@ export default async function AdminDashboardPage() {
                 year: currentYear,
             },
         }),
-        prisma.badmintonSession.count({
+        prisma.activitySession.count({
             where: {
                 date: {
                     gte: new Date(`${currentYear}-01-01`),
@@ -68,7 +68,7 @@ export default async function AdminDashboardPage() {
             where: { isActive: true },
             _count: true,
         }),
-        prisma.badmintonSession.groupBy({
+        prisma.activitySession.groupBy({
             by: ['ekskulId'],
             where: {
                 date: { gte: startOfToday },

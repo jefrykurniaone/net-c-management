@@ -20,8 +20,6 @@ export async function GET() {
       email: true,
       image: true,
       phone: true,
-      playPosition: true,
-      playerLevel: true,
       role: true,
       createdAt: true,
     },
@@ -50,22 +48,18 @@ export async function PATCH(req: Request) {
     );
   }
 
-  const { name, phone, playPosition, playerLevel } = parsed.data;
+  const { name, phone } = parsed.data;
 
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data: {
       ...(name ? { name } : {}),
       ...(phone ? { phone } : {}),
-      ...(playPosition ? { playPosition } : {}),
-      ...(playerLevel ? { playerLevel } : {}),
     },
     select: {
       id: true,
       name: true,
       phone: true,
-      playPosition: true,
-      playerLevel: true,
     },
   });
 

@@ -97,7 +97,7 @@ async function seedSettings() {
 }
 
 async function seedSampleSessions(ekskulId: string) {
-    const existing = await prisma.badmintonSession.count({ where: { ekskulId } });
+    const existing = await prisma.activitySession.count({ where: { ekskulId } });
     if (existing > 0) {
         console.log(`• Sessions: ${existing} already present, skipping samples`);
         return;
@@ -106,7 +106,7 @@ async function seedSampleSessions(ekskulId: string) {
         { title: 'Latihan Rutin', date: daysFromNow(2) },
         { title: 'Sparring Gabungan', date: daysFromNow(DAYS_PER_WEEK + 2) },
     ];
-    await prisma.badmintonSession.createMany({
+    await prisma.activitySession.createMany({
         data: samples.map((s) => ({
             title: s.title,
             date: s.date,

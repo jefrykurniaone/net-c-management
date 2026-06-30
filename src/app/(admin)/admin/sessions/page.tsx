@@ -9,15 +9,15 @@ import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
 import { EkskulFilter } from '@/components/ekskul/ekskul-filter';
 import Link from 'next/link';
 import { CalendarDays, Plus, ExternalLink } from 'lucide-react';
-import type { BadmintonSession } from '@prisma/client';
+import type { ActivitySession } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getEkskuls } from '@/lib/ekskul';
 import { sessionStatusVariant, isAdminRole } from '@/lib/utils';
 
-type SessionRow = BadmintonSession & {
+type SessionRow = ActivitySession & {
     _count: { attendances: number };
-    ekskul: { id: string; name: string; color: string };
+    ekskul: { id: string; name: string; color: string; icon: string | null };
 };
 
 export default async function AdminSessionsPage({
@@ -34,13 +34,15 @@ export default async function AdminSessionsPage({
     const selected = sp.ekskulId || undefined;
 
     const [sessions, ekskuls] = await Promise.all([
-        prisma.badmintonSession.findMany({
+        prisma.activitySession.findMany({
             where: selected ? { ekskulId: selected } : {},
             orderBy: { date: 'desc' },
             take: 50,
             include: {
                 _count: { select: { attendances: true } },
-                ekskul: { select: { id: true, name: true, color: true } },
+                ekskul: {
+                    select: { id: true, name: true, color: true, icon: true },
+                },
             },
         }),
         getEkskuls(),
@@ -104,13 +106,22 @@ export default async function AdminSessionsPage({
                                         <tr
                                             key={s.id}
                                             className='border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'>
-                                            <td className='px-4 py-3 font-medium text-gray-900 dark:text-white max-w-50'>
+                                            <td className='relative px-4 py-3 font-medium text-gray-900 dark:text-white max-w-50'>
+                                                <span
+                                                    aria-hidden
+                                                    className='absolute left-0 top-0 h-full w-[3px]'
+                                                    style={{
+                                                        backgroundColor:
+                                                            s.ekskul.color,
+                                                    }}
+                                                />
                                                 <span className='truncate block'>
                                                     {s.title}
                                                 </span>
                                                 <EkskulBadge
                                                     name={s.ekskul.name}
                                                     color={s.ekskul.color}
+                                                    icon={s.ekskul.icon}
                                                     className='mt-1'
                                                 />
                                             </td>

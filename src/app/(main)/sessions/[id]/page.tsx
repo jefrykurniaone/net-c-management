@@ -34,7 +34,7 @@ export default async function SessionDetailPage({
 
     const { id } = await params;
 
-    const badmintonSession = await prisma.badmintonSession.findUnique({
+    const activitySession = await prisma.activitySession.findUnique({
         where: { id },
         include: {
             ekskul: { select: { id: true, name: true, color: true } },
@@ -45,8 +45,6 @@ export default async function SessionDetailPage({
                             id: true,
                             name: true,
                             image: true,
-                            playerLevel: true,
-                            playPosition: true,
                         },
                     },
                 },
@@ -56,14 +54,14 @@ export default async function SessionDetailPage({
         },
     });
 
-    if (!badmintonSession) notFound();
+    if (!activitySession) notFound();
 
-    const myAttendance = badmintonSession.attendances.find(
+    const myAttendance = activitySession.attendances.find(
         (a) => a.userId === authSession.user.id,
     );
     const isRegistered = !!myAttendance;
     const isFull =
-        badmintonSession._count.attendances >= badmintonSession.maxPlayers;
+        activitySession._count.attendances >= activitySession.maxPlayers;
     return (
         <div className='max-w-2xl mx-auto space-y-6'>
             {/* Back */}
@@ -79,17 +77,17 @@ export default async function SessionDetailPage({
                 <div className='flex items-start justify-between gap-3'>
                     <div className='space-y-2'>
                         <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
-                            {badmintonSession.title}
+                            {activitySession.title}
                         </h1>
                         <EkskulBadge
-                            name={badmintonSession.ekskul.name}
-                            color={badmintonSession.ekskul.color}
+                            name={activitySession.ekskul.name}
+                            color={activitySession.ekskul.color}
                         />
                     </div>
                     <Badge
-                        variant={sessionStatusVariant(badmintonSession.status)}
+                        variant={sessionStatusVariant(activitySession.status)}
                     >
-                        {t.sessionStatus[badmintonSession.status]}
+                        {t.sessionStatus[activitySession.status]}
                     </Badge>
                 </div>
 
@@ -98,25 +96,25 @@ export default async function SessionDetailPage({
                         <Clock className='w-4 h-4 shrink-0 text-gray-400' />
                         <span>
                             {format(
-                                new Date(badmintonSession.date),
+                                new Date(activitySession.date),
                                 'EEEE, d MMMM yyyy',
                                 {
                                     locale: dateLocale,
                                 },
                             )}{' '}
-                            · {badmintonSession.startTime} –{' '}
-                            {badmintonSession.endTime}
+                            · {activitySession.startTime} –{' '}
+                            {activitySession.endTime}
                         </span>
                     </div>
                     <div className='flex items-center gap-2'>
                         <MapPin className='w-4 h-4 shrink-0 text-gray-400' />
-                        <span>{badmintonSession.location}</span>
+                        <span>{activitySession.location}</span>
                     </div>
                     <div className='flex items-center gap-2'>
                         <Users className='w-4 h-4 shrink-0 text-gray-400' />
                         <span>
-                            {badmintonSession._count.attendances}/
-                            {badmintonSession.maxPlayers} {t.sessions.participants}
+                            {activitySession._count.attendances}/
+                            {activitySession.maxPlayers} {t.sessions.participants}
                         </span>
                         {isFull && (
                             <Badge variant='secondary' className='text-xs ml-1'>
@@ -124,47 +122,47 @@ export default async function SessionDetailPage({
                             </Badge>
                         )}
                     </div>
-                    {badmintonSession.fee > 0 && (
+                    {activitySession.fee > 0 && (
                         <div className='flex items-center gap-2'>
                             <Banknote className='w-4 h-4 shrink-0 text-gray-400' />
                             <span>
                                 Rp{' '}
-                                {badmintonSession.fee.toLocaleString('id-ID')}
+                                {activitySession.fee.toLocaleString('id-ID')}
                                 {t.sessions.feePerPerson}
                             </span>
                         </div>
                     )}
-                    {badmintonSession.notes && (
+                    {activitySession.notes && (
                         <div className='flex items-start gap-2'>
                             <FileText className='w-4 h-4 shrink-0 text-gray-400 mt-0.5' />
                             <span className='whitespace-pre-wrap'>
-                                {badmintonSession.notes}
+                                {activitySession.notes}
                             </span>
                         </div>
                     )}
                 </div>
 
                 <RSVPButton
-                    sessionId={badmintonSession.id}
+                    sessionId={activitySession.id}
                     isRegistered={isRegistered}
                     isFull={isFull && !isRegistered}
-                    isCancelled={badmintonSession.status === 'CANCELLED'}
-                    isCompleted={badmintonSession.status === 'COMPLETED'}
+                    isCancelled={activitySession.status === 'CANCELLED'}
+                    isCompleted={activitySession.status === 'COMPLETED'}
                 />
             </div>
 
             {/* Participants list */}
             <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6'>
                 <h2 className='font-semibold text-gray-900 dark:text-white mb-4'>
-                    {t.sessions.attendeeList} ({badmintonSession._count.attendances})
+                    {t.sessions.attendeeList} ({activitySession._count.attendances})
                 </h2>
-                {badmintonSession.attendances.length === 0 ? (
+                {activitySession.attendances.length === 0 ? (
                     <p className='text-sm text-gray-400 text-center py-4'>
                         {t.sessions.noAttendees}
                     </p>
                 ) : (
                     <div className='space-y-3'>
-                        {badmintonSession.attendances.map((attendance, i) => {
+                        {activitySession.attendances.map((attendance, i) => {
                             const initials =
                                 attendance.user.name
                                     ?.split(' ')
@@ -221,7 +219,7 @@ export default async function SessionDetailPage({
                                         </Badge>
                                     </div>
                                     {i <
-                                        badmintonSession.attendances.length -
+                                        activitySession.attendances.length -
                                             1 && <Separator className='mt-3' />}
                                 </div>
                             );

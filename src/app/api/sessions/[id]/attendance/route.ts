@@ -17,34 +17,34 @@ export async function POST(
 
   const { id: sessionId } = await params;
 
-  const badmintonSession = await prisma.badmintonSession.findUnique({
+  const activitySession = await prisma.activitySession.findUnique({
     where: { id: sessionId },
     include: { _count: { select: { attendances: true } } },
   });
 
-  if (!badmintonSession) {
+  if (!activitySession) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
   // Only active members of the session's ekskul may register.
   const isMember = await assertMembership(
     session.user.id,
-    badmintonSession.ekskulId
+    activitySession.ekskulId
   );
   if (!isMember) {
     const t = getDictionary(await getLocale());
     return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
   }
 
-  if (badmintonSession.status === "CANCELLED") {
+  if (activitySession.status === "CANCELLED") {
     return NextResponse.json({ error: "Session is cancelled" }, { status: 400 });
   }
 
-  if (badmintonSession.status === "COMPLETED") {
+  if (activitySession.status === "COMPLETED") {
     return NextResponse.json({ error: "Session already completed" }, { status: 400 });
   }
 
-  if (badmintonSession._count.attendances >= badmintonSession.maxPlayers) {
+  if (activitySession._count.attendances >= activitySession.maxPlayers) {
     return NextResponse.json({ error: "Session is full" }, { status: 400 });
   }
 

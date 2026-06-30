@@ -132,7 +132,7 @@ function EkskulFormDialog({
                                     <FormLabel>{t.admin.ekskulName}</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder='Badminton'
+                                            placeholder={t.admin.ekskulNamePlaceholder}
                                             {...field}
                                             onChange={(e) => {
                                                 field.onChange(e);
@@ -157,7 +157,7 @@ function EkskulFormDialog({
                                 <FormItem>
                                     <FormLabel>{t.admin.ekskulSlug}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder='badminton' {...field} />
+                                        <Input placeholder={t.admin.ekskulSlugPlaceholder} {...field} />
                                     </FormControl>
                                     <FormDescription>
                                         {t.admin.ekskulSlugHint}

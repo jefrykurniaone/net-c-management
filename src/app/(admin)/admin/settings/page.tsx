@@ -31,7 +31,7 @@ export default function AdminSettingsPage() {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [settings, setSettings] = useState<SettingsMap>({
-        communityName: 'Xclub Badminton',
+        communityName: t.brand.defaultCommunityName,
         defaultMonthlyFee: '50000',
         defaultLocation: '',
         adminWhatsapp: '',
@@ -124,7 +124,7 @@ export default function AdminSettingsPage() {
                 </h1>
                 <p className='text-sm text-gray-500 mt-1'>
                     {t.admin.settingsSubtitle}{' '}
-                    {settings.communityName ?? 'Xclub Badminton'}
+                    {settings.communityName ?? t.brand.defaultCommunityName}
                 </p>
             </div>
 

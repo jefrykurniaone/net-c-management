@@ -3,7 +3,7 @@ import Image from 'next/image';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, CreditCard, Users, ShieldCheck } from 'lucide-react';
+import { CalendarDays, CreditCard, Users, ShieldCheck, Sparkles } from 'lucide-react';
 import { getSettings } from '@/lib/settings';
 import { communityAbbr } from '@/lib/utils';
 import { getLocale } from '@/lib/i18n/locale';
@@ -68,10 +68,8 @@ export default async function LandingPage() {
             {/* Hero */}
             <section className='text-center py-20 px-6 max-w-4xl mx-auto'>
                 <div className='inline-flex items-center gap-2 bg-green-100 text-green-700 text-sm font-medium px-4 py-1.5 rounded-full mb-6'>
-                    <span>🏸</span>
-                    <span>
-                        {t.landing.badge} {communityName}
-                    </span>
+                    <Sparkles className='w-4 h-4' />
+                    <span>{t.landing.badge}</span>
                 </div>
                 <h1 className='text-4xl md:text-5xl font-extrabold text-gray-900 dark:text-white mb-4 leading-tight'>
                     {t.landing.heroTitle}{' '}

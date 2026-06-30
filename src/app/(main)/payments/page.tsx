@@ -32,7 +32,9 @@ export default async function PaymentsPage({
         ...(selected ? { ekskulId: selected } : {}),
       },
       orderBy: [{ year: "desc" }, { month: "desc" }],
-      include: { ekskul: { select: { id: true, name: true, color: true } } },
+      include: {
+        ekskul: { select: { id: true, name: true, color: true, icon: true } },
+      },
     }),
     prisma.ekskul.findMany({
       where: { id: { in: myEkskulIds }, isActive: true },
@@ -109,8 +111,13 @@ export default async function PaymentsPage({
           {payments.map((payment) => (
             <div
               key={payment.id}
-              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5"
+              className="relative overflow-hidden bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5"
             >
+              <span
+                aria-hidden
+                className="absolute left-0 top-0 h-full w-[3px]"
+                style={{ backgroundColor: payment.ekskul.color }}
+              />
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -120,6 +127,7 @@ export default async function PaymentsPage({
                     <EkskulBadge
                       name={payment.ekskul.name}
                       color={payment.ekskul.color}
+                      icon={payment.ekskul.icon}
                     />
                   </div>
                   <p className="text-sm text-gray-500 mt-0.5">

@@ -18,25 +18,21 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { communityAbbr } from '@/lib/utils';
 import type { EkskulOption } from '@/types/ekskul';
 
 export default function OnboardingPage() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
-    const [communityName, setCommunityName] = useState('Xclub Badminton');
-    const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
     const { locale } = useLocale();
     const t = getDictionary(locale);
+    const [isLoading, setIsLoading] = useState(false);
+    const [communityName, setCommunityName] = useState(
+        t.brand.defaultCommunityName,
+    );
+    const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
 
     useEffect(() => {
         fetch('/api/settings')
@@ -96,7 +92,9 @@ export default function OnboardingPage() {
             <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md'>
                 <div className='flex flex-col items-center gap-2 mb-6'>
                     <div className='w-12 h-12 bg-green-600 rounded-full flex items-center justify-center'>
-                        <span className='text-white font-bold text-xl'>PB</span>
+                        <span className='text-white font-bold text-xl'>
+                            {communityAbbr(communityName)}
+                        </span>
                     </div>
                     <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
                         {t.onboarding.title}
@@ -199,56 +197,6 @@ export default function OnboardingPage() {
                                     <p className='text-xs text-gray-400'>
                                         {t.onboarding.ekskulHint}
                                     </p>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name='playPosition'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.onboarding.position}</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t.onboarding.positionPlaceholder} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value='SINGLE'>{t.positions.SINGLE}</SelectItem>
-                                            <SelectItem value='DOUBLE'>{t.positions.DOUBLE}</SelectItem>
-                                            <SelectItem value='BOTH'>{t.positions.BOTH}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name='playerLevel'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.onboarding.level}</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={t.onboarding.levelPlaceholder} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value='BEGINNER'>{t.levels.BEGINNER}</SelectItem>
-                                            <SelectItem value='INTERMEDIATE'>{t.levels.INTERMEDIATE}</SelectItem>
-                                            <SelectItem value='ADVANCED'>{t.levels.ADVANCED}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                             )}

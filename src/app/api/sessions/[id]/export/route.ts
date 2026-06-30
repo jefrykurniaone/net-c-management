@@ -19,7 +19,7 @@ export async function GET(
 
     const { id: sessionId } = await params;
 
-    const badmintonSession = await prisma.badmintonSession.findUnique({
+    const activitySession = await prisma.activitySession.findUnique({
         where: { id: sessionId },
         include: {
             attendances: {
@@ -29,8 +29,6 @@ export async function GET(
                             name: true,
                             email: true,
                             phone: true,
-                            playPosition: true,
-                            playerLevel: true,
                         },
                     },
                 },
@@ -39,7 +37,7 @@ export async function GET(
         },
     });
 
-    if (!badmintonSession) {
+    if (!activitySession) {
         return NextResponse.json(
             { error: 'Session not found' },
             { status: 404 },
@@ -52,18 +50,14 @@ export async function GET(
             'Nama',
             'Email',
             'WhatsApp',
-            'Posisi',
-            'Level',
             'Status',
             'Waktu Daftar',
         ],
-        ...badmintonSession.attendances.map((a, i) => [
+        ...activitySession.attendances.map((a, i) => [
             String(i + 1),
             a.user.name ?? '',
             a.user.email ?? '',
             a.user.phone ?? '',
-            a.user.playPosition ?? '',
-            a.user.playerLevel ?? '',
             a.status,
             format(new Date(a.createdAt), 'dd/MM/yyyy HH:mm'),
         ]),
@@ -75,7 +69,7 @@ export async function GET(
         )
         .join('\n');
 
-    const filename = `absensi-${badmintonSession.title.replaceAll(/\s+/g, '-')}-${format(new Date(badmintonSession.date), 'yyyyMMdd')}.csv`;
+    const filename = `absensi-${activitySession.title.replaceAll(/\s+/g, '-')}-${format(new Date(activitySession.date), 'yyyyMMdd')}.csv`;
 
     return new Response(csv, {
         headers: {

@@ -16,7 +16,7 @@ import { paymentStatusVariant, isAdminRole } from "@/lib/utils";
 
 type PaymentRow = Payment & {
   user: { name: string | null; email: string | null };
-  ekskul: { id: string; name: string; color: string };
+  ekskul: { id: string; name: string; color: string; icon: string | null };
 };
 
 export default async function AdminPaymentsPage({
@@ -52,7 +52,7 @@ export default async function AdminPaymentsPage({
       take: 100,
       include: {
         user: { select: { name: true, email: true } },
-        ekskul: { select: { id: true, name: true, color: true } },
+        ekskul: { select: { id: true, name: true, color: true, icon: true } },
       },
     }),
     getEkskuls(),
@@ -152,14 +152,19 @@ export default async function AdminPaymentsPage({
                     key={p.id}
                     className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    <td className="px-4 py-3">
+                    <td className="relative px-4 py-3">
+                      <span
+                        aria-hidden
+                        className="absolute left-0 top-0 h-full w-[3px]"
+                        style={{ backgroundColor: p.ekskul.color }}
+                      />
                       <p className="font-medium text-gray-900 dark:text-white">
                         {p.user.name ?? p.user.email}
                       </p>
                       <p className="text-xs text-gray-400">{p.user.email}</p>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <EkskulBadge name={p.ekskul.name} color={p.ekskul.color} />
+                      <EkskulBadge name={p.ekskul.name} color={p.ekskul.color} icon={p.ekskul.icon} />
                     </td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                       {t.months[p.month]} {p.year}

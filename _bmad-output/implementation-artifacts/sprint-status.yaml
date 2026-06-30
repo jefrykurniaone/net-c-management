@@ -1,0 +1,82 @@
+# generated: 2026-06-30
+# last_updated: 2026-06-30 (Story 2.1 rename implemented; in review)
+# project: net-c-management
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+
+generated: 2026-06-30
+last_updated: 2026-06-30 (Story 2.1 rename implemented; in review)
+project: net-c-management
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # Epic 1 — Activity-Agnostic Rebrand & Identity
+  epic-1: done
+  1-1-neutral-platform-defaults-chrome-identity: done
+  1-2-sport-neutral-i18n-copy-ekskul-activity-relabel: done
+  1-3-configurable-community-identity-propagation: done
+  1-4-per-activity-identity-on-session-payment-rows: done
+  epic-1-retrospective: optional
+
+  # Epic 2 — Payment Foundation: Rename + Per-Activity Fee & Mode Config (Admin)
+  epic-2: in-progress
+  2-1-rename-badmintonsession-activitysession: review
+  2-2-admin-configures-activity-fees-payment-modes: backlog
+  2-3-remove-global-monthly-fee-activity-is-single-source-of-truth: backlog
+  2-4-session-fee-inheritance-per-session-override: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3 — Member Payment-Mode Selection & Billing
+  epic-3: backlog
+  3-1-membership-payment-mode-data-model-period-resolution: backlog
+  3-2-payment-model-extension-mode-partitioned-uniqueness: backlog
+  3-3-member-selects-a-payment-mode-from-the-offered-set: backlog
+  3-4-monthly-mode-billing: backlog
+  3-5-per-session-mode-billing-pre-pay-on-register-atomic: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4 — UI/UX Refresh, Responsiveness & Settings IA
+  epic-4: backlog
+  4-1-two-responsive-app-shells-navigation: backlog
+  4-2-full-responsiveness-across-every-screen: backlog
+  4-3-consistent-visual-language-shared-components-dark-mode: backlog
+  4-4-settings-information-architecture-cleanup: backlog
+  epic-4-retrospective: optional
