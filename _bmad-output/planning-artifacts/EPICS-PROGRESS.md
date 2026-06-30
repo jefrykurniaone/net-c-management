@@ -10,30 +10,34 @@
 |---|---|
 | step-01 validate prerequisites & extract requirements | ✅ done |
 | step-02 design epic list | ✅ done (4 epics approved) |
-| step-03 generate epics & stories | 🚧 in progress |
-| step-04 final validation | ⬜ not started |
+| step-03 generate epics & stories | ✅ done (all 4 epics, 17 stories) |
+| step-04 final validation | ✅ done (FR + UX-DR coverage verified) |
 
-### step-03 detail (story generation)
+**WORKFLOW COMPLETE.** `epics.md` is ready for development.
 
-| Epic | Stories | State |
+### Story inventory
+
+| Epic | Stories | FRs |
 |---|---|---|
-| Epic 1 — Activity-Agnostic Rebrand & Identity (FR-1..5) | 1.1–1.4 | ✅ written |
-| Epic 2 — Payment Foundation: Rename + Fee/Mode Config (FR-6..9) | 2.1–2.4 | ✅ written |
-| Epic 3 — Member Payment-Mode Selection & Billing (FR-10..12) | — | ⬜ next |
-| Epic 4 — UI/UX Refresh, Responsiveness & Settings IA (FR-13..15) | — | ⬜ pending |
+| Epic 1 — Activity-Agnostic Rebrand & Identity | 1.1–1.4 | FR-1..5 |
+| Epic 2 — Payment Foundation: Rename + Fee/Mode Config | 2.1–2.4 | FR-6..9 |
+| Epic 3 — Member Payment-Mode Selection & Billing | 3.1–3.5 | FR-10..12 |
+| Epic 4 — UI/UX Refresh, Responsiveness & Settings IA | 4.1–4.4 | FR-13..15 |
+
+### Validation result (step-04)
+
+- **FR coverage:** 15/15 covered with testable ACs.
+- **UX-DR coverage:** 22/22 covered. Three gaps found and closed — UX-DR11 (proof uploader) → Stories 3.4 + 3.5; UX-DR21 (onboarding flow) → Story 4.2; UX-DR22 (microcopy/voice) → Story 3.4.
+- **Story dependencies:** no forward dependencies within any epic; epics back-depend only.
+- **Epic independence / DB-entity-on-demand / starter-template (NONE, brownfield):** all pass.
 
 ## Next step
 
-Resume `bmad-create-epics-and-stories` at **step-03**, generate stories for **Epic 3** (then Epic 4):
-
-- **Epic 3** is the highest-risk track — member payment-mode selection + billing. Governed by AD-3..AD-7, AD-13, AD-14. Expect stories for: `Membership.paymentMode` (period-resolved, AD-7); `Payment` model extension `type`/`sessionId` + mode-partitioned uniqueness via raw SQL (AD-4/AD-5); monthly billing + migrate existing upsert (FR-11); per-session pre-pay-on-register atomic transaction (FR-12/AD-6/AD-14); member mode selector UI (FR-10/UX-DR10/UX-DR11).
-- **Epic 4** — cross-cutting UI/UX refresh, responsiveness, Settings IA cleanup (FR-13..15, AD-11). Lands last.
-- After both epics' stories are written → **step-04 final validation** (verify every FR + UX-DR covered, template compliance).
+Workflow done. Suggested follow-ups:
+- `bmad-sprint-planning` — generate sprint status tracking from these epics.
+- `bmad-create-story` — produce a context-filled story file for the first story to implement (Story 1.1 or 2.1).
+- `bmad-help` — get a recommendation for what to run next.
 
 ## Inputs (frontmatter of epics.md)
 
 PRD + addendum + ARCHITECTURE-SPINE + UX DESIGN/EXPERIENCE + SPEC + project-context.md — all confirmed.
-
-## How to resume
-
-Run the `bmad-create-epics-and-stories` skill in a fresh context window; it reads `epics.md` frontmatter (`stepsCompleted`) and the appended Epic 1/2 sections to continue at Epic 3.

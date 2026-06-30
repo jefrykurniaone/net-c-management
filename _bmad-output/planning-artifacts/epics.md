@@ -1,5 +1,5 @@
 ---
-stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics']
+stepsCompleted: ['step-01-validate-prerequisites', 'step-02-design-epics', 'step-03-create-stories', 'step-04-final-validation']
 inputDocuments:
   - _bmad-output/planning-artifacts/prds/prd-net-c-management-2026-06-30/prd.md
   - _bmad-output/planning-artifacts/prds/prd-net-c-management-2026-06-30/addendum.md
@@ -329,3 +329,255 @@ So that I set per-session prices once on the Activity yet can adjust an individu
 **Given** a later change to the Activity's `sessionFee`
 **When** existing Sessions are viewed
 **Then** already-created Sessions keep their stored fee (no retroactive rewrite); only newly created Sessions inherit the new default (consistent with the AD-8 snapshot principle).
+
+## Epic 3: Member Payment-Mode Selection & Billing
+
+A Member chooses, per Activity, how they pay from the modes that Activity offers, and is billed accordingly: Monthly bills one flat fee per Activity per month regardless of attendance; Per-Session secures a slot only after a proof upload that atomically creates a PENDING per-session Payment (amount computed server-side) plus a REGISTERED Attendance, with admin reject / member cancel releasing the slot. Reuses the existing proof-upload + Admin-confirm flow. Depends on Epic 2 (rename + Activity fees/modes). Governed by AD-3, AD-4, AD-5, AD-6, AD-7, AD-13, AD-14.
+
+### Story 3.1: Membership payment-mode data model & period resolution
+
+As a developer,
+I want the member's payment mode stored on `Membership` and resolved as a function of the billing period,
+So that mode is never inferred from past payments and a mid-period switch can never rewrite what the current period owes.
+
+**Acceptance Criteria:**
+
+**Given** `prisma/schema.prisma`
+**When** the `Membership` model is extended
+**Then** it carries `paymentMode` (`PaymentMode` enum `MONTHLY | PER_SESSION`) plus an `effectiveFrom` (`YYYYMM` int) and a nullable pending value for a queued switch, applied via `npx prisma generate` + `npx prisma db push`; the enum is imported from `@prisma/client`, never a string literal (AD-7, AD-12).
+
+**Given** a server-only helper `resolvePaymentMode(membership, month, year)` in `src/lib`
+**When** it is called for a billing period (AD-13 calendar `month` 1–12 + `year`)
+**Then** it returns the effective mode for that exact period — the pending/`effectiveFrom` value applies only from its period forward, and any period at or before the current one resolves to the unchanged current mode (current period immutable).
+
+**Given** a member with no explicit mode on an Activity that offers exactly one mode
+**When** the mode is resolved
+**Then** the helper returns that single offered mode (auto-applied), never null; an Activity offering both with no member selection yet resolves to an explicit "unselected" state the caller can prompt on (no silent default).
+
+**Given** the data layer for mode
+**When** a member-scoped read or write touches `Membership.paymentMode`
+**Then** it stays ekskul-scoped — reads via `getUserEkskulIds(userId)`, writes gated by `assertMembership(userId, ekskulId)`; Admin/Owner (`isAdminRole`) see all (NFR-1, AD-3).
+
+### Story 3.2: Payment model extension & mode-partitioned uniqueness
+
+As a developer,
+I want `Payment` extended to carry monthly and per-session charges with mode-partitioned uniqueness,
+So that a second per-session charge in a month is never blocked and every billing path writes payments the same, race-free way.
+
+**Acceptance Criteria:**
+
+**Given** `prisma/schema.prisma`
+**When** `Payment` is extended
+**Then** it gains `type` (`PaymentType` enum `MONTHLY | SESSION`) and a nullable `sessionId` FK → `ActivitySession`; no separate session-payment model is created; SESSION rows reuse the existing `proofUrl`/`proofPath`/`status`/`confirmedBy`/`confirmedAt` columns (AD-4); enums imported from `@prisma/client`.
+
+**Given** the legacy `@@unique([userId, ekskulId, month, year])`
+**When** the schema is migrated
+**Then** that unconditional unique is dropped; SESSION rows are constrained by native `@@unique([userId, sessionId])`, and MONTHLY rows by a **partial** unique index `(userId, ekskulId, month, year) WHERE type = 'MONTHLY'` applied out-of-band via raw SQL (`prisma db execute`), since `db push` cannot express a filtered unique (AD-5, AD-12).
+
+**Given** the existing monthly proof-upload upsert
+**When** it is migrated to the new model
+**Then** MONTHLY rows are written via a **transactional insert-or-update** (`INSERT … ON CONFLICT … DO UPDATE` / guarded `$transaction`) — never `prisma.payment.upsert`, which cannot target a partial index — and SESSION rows are written via `prisma.payment.upsert` on `(userId, sessionId)` (AD-5).
+
+**Given** a SESSION `Payment` row
+**When** it is created
+**Then** its `month`/`year` are derived from `ActivitySession.date`, its `ekskulId` equals the session's `ekskulId`, and its `amount` is computed server-side from the session fee and never trusted from the client — so existing `?month=`/`?year=` filters and admin stats include per-session payments and AD-3 scoping stays uniform (AD-4, AD-2).
+
+**Given** the existing monthly Payment flow after migration
+**When** a monthly proof is uploaded and confirmed
+**Then** behavior is unchanged for members (one monthly row per member/Activity/month/year, same proof→confirm) — no regression (NFR-8).
+
+### Story 3.3: Member selects a Payment Mode from the offered set
+
+As a Member,
+I want to choose how I pay for an Activity from the modes it offers and change it for a future period,
+So that I control whether I'm billed monthly or per session without affecting what I already owe.
+
+**Acceptance Criteria:**
+
+**Given** an Activity that offers both Monthly and Per-Session
+**When** the Member opens the Activity's payment-mode selector
+**Then** a segmented control / radio-card pair "Monthly" vs "Per-Session" renders, each showing its fee (Monthly Fee, Session Fee) with `tabular-nums`; the Member must choose before billing applies (UX-DR10, UX-DR3, FR-10).
+
+**Given** an Activity that offers exactly one mode
+**When** the Member views it
+**Then** that mode is auto-applied and stated (no selector prompt); the Member cannot pick a mode the Activity does not offer (FR-9, FR-10).
+
+**Given** a Member changes their mode
+**When** they confirm the change
+**Then** it is persisted via an auth-gated, ekskul-scoped Route Handler under `src/app/api/**` (`await auth()` → 401, `assertMembership` for the ekskul, `zod.safeParse` → 400 `{ error, details }`), takes effect from the **next** billing period (`effectiveFrom`), and never alters the current period; a small mode history / "effective next period" note is shown (UX-DR10, AD-7, AD-2, AD-3).
+
+**Given** the selected mode
+**When** the Member or an Admin/Owner views the membership
+**Then** the current effective mode is visible to both; Admins see every member's mode, members see only their own Activities (AD-3).
+
+### Story 3.4: Monthly-mode billing
+
+As a Member on Monthly mode,
+I want to owe one flat monthly fee per Activity regardless of how many sessions I attend,
+So that my dues are predictable and sourced from the Activity's current fee.
+
+**Acceptance Criteria:**
+
+**Given** a Member whose effective mode for the period is `MONTHLY` (resolved per Story 3.1)
+**When** monthly dues are computed for that Activity
+**Then** the amount owed equals the Activity's current `Ekskul.monthlyFee` — one flat charge per Member per Activity per month, independent of attendance count (FR-11, AD-8).
+
+**Given** a monthly charge is created
+**When** the `Payment` row is written
+**Then** it is keyed per Member/Activity/`month`/`year` (AD-13) via the transactional insert-or-update + partial unique from Story 3.2, with `type = MONTHLY` and `sessionId = null`; `amount` snapshots the fee at creation so a later `monthlyFee` edit never rewrites it (AD-5, AD-8 snapshot rule).
+
+**Given** a Member only has a per-session effective mode for an Activity
+**When** monthly dues are computed
+**Then** no monthly charge is raised for that Activity (mode gates billing); switching to Monthly applies from the next period only (AD-7).
+
+**Given** the existing monthly proof-upload + admin-confirm flow
+**When** a Monthly member pays
+**Then** it works exactly as before (upload proof → PENDING → admin confirm → CONFIRMED) with no regression (NFR-8), the owed amount sourced from the Activity not the removed global default (FR-7).
+
+**Given** the monthly proof uploader
+**When** a Monthly member opens it
+**Then** it presents an image picker (camera/library on phone) with the amount field prefilled to the owed monthly amount, submit disabled until image + amount are both present, and an optimistic "uploading…" → "awaiting confirmation" transition (UX-DR11).
+
+**Given** any money copy on the monthly billing surfaces
+**When** it renders
+**Then** it is plain, calm, and money-honest — naming the amount, the Activity, and the period — and is bilingual via `i18n/dictionaries.ts` (en/id parity), never hardcoded (UX-DR22, NFR-6).
+
+### Story 3.5: Per-session-mode billing — pre-pay-on-register (atomic)
+
+As a Member on Per-Session mode,
+I want registering for a session to secure my slot only after I upload payment proof,
+So that a slot is never held for free and my charge matches that session's fee.
+
+**Acceptance Criteria:**
+
+**Given** a Member whose effective mode for the session's period is `PER_SESSION`
+**When** they register via the payment upload route
+**Then** after a successful Supabase proof upload, the route creates the SESSION `Payment` (`PENDING`, `amount` computed server-side from the session's fee) **and** the `REGISTERED` `Attendance` together in **one** `prisma.$transaction`; the slot is secured at proof upload (`Payment ≥ PENDING`), not at admin confirmation (FR-12, AD-6, AD-14).
+
+**Given** the free `POST /api/sessions/[id]/attendance` route
+**When** a Per-Session-mode member calls it
+**Then** it is rejected (payment-required); only `MONTHLY`-mode members register free there — capacity is never held without a charge (AD-6).
+
+**Given** session capacity
+**When** it is evaluated anywhere
+**Then** the single authority is the `Attendance` count (`REGISTERED`/`PRESENT`); a payment alone never holds a seat (they are created atomically), and a full session disables the register CTA with a reason (UX-DR15, AD-6).
+
+**Given** an admin `PATCH /api/payments/[id]` rejects a per-session payment, or the member cancels via attendance `DELETE`
+**When** the action commits
+**Then** the paired `Attendance` is removed and the seat released; admin reject requires a note, both write `confirmedBy`/`confirmedAt` (UX-DR12, AD-6).
+
+**Given** the proof transaction fails
+**When** it rolls back
+**Then** neither the `Payment` nor the `Attendance` persists (no half-write); the already-uploaded Supabase object is left orphaned and accepted pre-launch — no compensation job in v1 (AD-14, NFR-3).
+
+**Given** a Per-Session register surface
+**When** the Member views a Session row/card
+**Then** the CTA reads "Register & pay", the per-Session owed amount + status are shown, and states cover register-unpaid / registered-pending / session-full (UX-DR15, UX-DR17, NFR-4 text+icon).
+
+**Given** the per-session proof uploader on the register-&-pay flow
+**When** a Per-Session member opens it
+**Then** it presents an image picker (camera/library on phone) with the amount field prefilled to that Session's fee, submit disabled until image + amount are both present, and an optimistic "uploading…" → "awaiting confirmation" transition (UX-DR11).
+
+## Epic 4: UI/UX Refresh, Responsiveness & Settings IA
+
+Every Member and Admin/Owner screen renders cleanly and consistently from desktop down to phone (dark mode included), shared shadcn components are reused rather than re-implemented, and each setting has exactly one obvious home (community identity under General settings, all fees/mode config under the Activity). Cross-cutting polish over all surfaces including the new payment UI from Epic 3; desktop-first base with member surfaces fully mobile-usable. Lands last so it refreshes finished screens. Governed by AD-11, AD-8 (fee IA).
+
+### Story 4.1: Two responsive app shells & navigation
+
+As a Member or Admin/Owner on any device,
+I want a shell and navigation that fits my role and screen,
+So that I can move through the app on a phone or a desktop without a broken or cramped layout.
+
+**Acceptance Criteria:**
+
+**Given** a Member viewing any `(main)` page
+**When** the shell renders
+**Then** it is a member shell — top bar + bottom/sheet nav, single column centered at `max-w-2xl` — built on shadcn primitives, with no new UI dependency or design system introduced (UX-DR16, AD-11).
+
+**Given** an Admin/Owner viewing any `(admin)` page
+**When** the shell renders
+**Then** it is an admin shell — sidebar nav + wide content on `≥ lg`, the sidebar collapsing to a sheet under `md` — built on the same shadcn primitives (UX-DR16, UX-DR18).
+
+**Given** the navigation at each breakpoint
+**When** the viewport crosses `md`/`lg` (Tailwind defaults sm 640 / md 768 / lg 1024 / xl 1280)
+**Then** member bottom nav/sheet and admin sidebar→sheet switch as specified by the responsive matrix, with every nav target ≥44px and reachable by keyboard with a visible focus ring (UX-DR18, UX-DR19, NFR-5).
+
+**Given** the existing routes and auth guards
+**When** the shells are applied
+**Then** route grouping and the twice-enforced access guards (`proxy.ts` matcher + route-group `layout.tsx`) are unchanged — this is presentation only, no mutation or auth behavior changes (NFR-8, AD-2).
+
+### Story 4.2: Full responsiveness across every screen
+
+As a Member primarily on a phone, and an Admin primarily on desktop,
+I want every screen to render and function at my screen width,
+So that nothing is clipped, horizontally scrolling, or unusable on my device.
+
+**Acceptance Criteria:**
+
+**Given** any Member or Admin/Owner screen
+**When** rendered at desktop, tablet, and mobile widths
+**Then** there is no broken layout, clipped content, or horizontal scroll, and interactive targets remain usable (≥44px on member surfaces) at mobile width (FR-13, NFR-5).
+
+**Given** an admin data table (members, payments, sessions)
+**When** the viewport is under `md`
+**Then** it collapses to stacked cards carrying the **same fields in the same order** as the table columns, preserving data and reading order (UX-DR13, UX-DR18, NFR-4 card-fallback parity).
+
+**Given** member content
+**When** viewed on `≥ lg`
+**Then** it stays centered at `max-w-2xl` (not stretched full-width), while admin content uses full-width tables + persistent sidebar + dense stat grid (UX-DR18).
+
+**Given** desktop density and clarity
+**When** responsive adaptations are added (`sm:`/`md:` downward from a desktop-first base)
+**Then** the desktop layout is **not** degraded to serve mobile — desktop information density is preserved (NFR-5 counter-metric, AD-11).
+
+**Given** the onboarding flow
+**When** a first-login user lands on it
+**Then** the `/onboarding` guard holds them there until `isProfileComplete`, the profile form is fully usable on a phone (≥44px targets, no clipping), and on finish they are routed by role into the product (member dashboard or admin shell) (UX-DR21, NFR-5).
+
+### Story 4.3: Consistent visual language, shared components & dark mode
+
+As any user,
+I want a consistent look and reused components across every screen,
+So that the app feels like one product and works identically in light and dark mode.
+
+**Acceptance Criteria:**
+
+**Given** spacing, typography, and the button/card/table usage across screens
+**When** the refresh is applied
+**Then** they are consistent screen-to-screen via shared shadcn components reused (not re-implemented per page), and every money amount / count / capacity / stat value uses `tabular-nums` weight 600 (FR-14, UX-DR3).
+
+**Given** the recurring UI patterns
+**When** screens are refreshed
+**Then** shared components cover the payment status badge (color **and** text label, never color-only — UX-DR6), the unpaid banner (UX-DR7), stat cards (UX-DR8), the community identity mark (UX-DR9), and the semantic payment-state tokens (`success` CONFIRMED-only, `warning` PENDING/unpaid, `destructive` REJECTED — UX-DR2) with the Deep Teal accent as the single platform accent (UX-DR1).
+
+**Given** cold load, empty, pending, rejected, and submit-fail conditions
+**When** any refreshed screen reaches them
+**Then** the state patterns render — shadcn `Skeleton` matching shape, role-appropriate empty states (with admin create variant), PENDING/REJECTED proof states, and `sonner` destructive toast on submit-fail with input retained (UX-DR17).
+
+**Given** dark mode + theming via `next-themes`
+**When** every refreshed screen is viewed in dark mode
+**Then** it works and contrast is verified to WCAG 2.2 AA on each screen; no new heavyweight UI dependency or design system is added (FR-14, UX-DR19, AD-11).
+
+### Story 4.4: Settings information architecture cleanup
+
+As an Admin/Owner,
+I want each setting to live in exactly one obvious place,
+So that no fee or identity field is duplicated, orphaned, or wrong in two homes.
+
+**Acceptance Criteria:**
+
+**Given** General Settings
+**When** an Admin/Owner opens it
+**Then** it holds community identity only — name, logo, location, WhatsApp — and no fee or payment-mode field appears there (FR-15, AD-8).
+
+**Given** Activity (Ekskul) configuration
+**When** an Admin/Owner opens it
+**Then** all money config — Monthly Fee, Session Fee, allowed-mode toggles — lives there and only there (FR-15, AD-8, consistent with Story 2.2 / 2.3).
+
+**Given** the full settings surface after fee consolidation
+**When** audited
+**Then** no setting appears in two places and there are no orphaned or dead fields left behind by the removed global `defaultMonthlyFee` (FR-15, SM-2, NFR-8).
+
+**Given** the refreshed Settings screens
+**When** viewed across breakpoints and in dark mode
+**Then** they meet the same responsiveness, shared-component, and accessibility bars as Stories 4.1–4.3 (FR-13, FR-14, NFR-4).
