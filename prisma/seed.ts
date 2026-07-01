@@ -65,7 +65,10 @@ async function seedEkskul() {
             name: DEFAULTS.communityName,
             slug: 'badminton',
             color: '#16a34a',
-            defaultFee: DEFAULTS.defaultMonthlyFee,
+            monthlyFee: DEFAULTS.defaultMonthlyFee,
+            sessionFee: SAMPLE_SESSION_FEE,
+            allowsMonthly: true,
+            allowsPerSession: false,
             defaultLocation: DEFAULTS.defaultLocation,
             maxPlayers: DEFAULTS.maxPlayers,
             adminWhatsapp: DEFAULTS.adminWhatsapp,
@@ -80,7 +83,6 @@ async function seedEkskul() {
 async function seedSettings() {
     const entries: Record<string, string> = {
         communityName: DEFAULTS.communityName,
-        defaultMonthlyFee: String(DEFAULTS.defaultMonthlyFee),
         defaultLocation: DEFAULTS.defaultLocation,
         adminWhatsapp: DEFAULTS.adminWhatsapp,
         maxPlayers: String(DEFAULTS.maxPlayers),

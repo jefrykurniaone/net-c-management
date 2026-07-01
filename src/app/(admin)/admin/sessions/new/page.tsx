@@ -63,7 +63,7 @@ export default function NewSessionPage() {
     form.setValue("ekskulId", id, { shouldValidate: true });
     const chosen = ekskuls.find((e) => e.id === id);
     if (!chosen) return;
-    form.setValue("fee", chosen.defaultFee);
+    form.setValue("fee", chosen.sessionFee);
     form.setValue("maxPlayers", chosen.maxPlayers);
     if (!form.getValues("location") && chosen.defaultLocation) {
       form.setValue("location", chosen.defaultLocation);

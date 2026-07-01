@@ -42,7 +42,7 @@ async function main() {
             name: settings.communityName ?? DEFAULTS.communityName,
             slug: 'badminton',
             color: '#16a34a',
-            defaultFee: Number(
+            monthlyFee: Number(
                 settings.defaultMonthlyFee ?? DEFAULTS.defaultMonthlyFee,
             ),
             defaultLocation:

@@ -88,8 +88,8 @@ export default async function AdminEkskulPage() {
                                     <td className='px-4 py-3 text-center text-gray-500'>
                                         {e._count.memberships}
                                     </td>
-                                    <td className='px-4 py-3 text-right text-gray-500 whitespace-nowrap'>
-                                        Rp {e.defaultFee.toLocaleString('id-ID')}
+                                    <td className='px-4 py-3 text-right text-gray-500 whitespace-nowrap tabular-nums'>
+                                        Rp {e.monthlyFee.toLocaleString('id-ID')}
                                     </td>
                                     <td className='px-4 py-3 text-center'>
                                         <Badge
@@ -116,7 +116,11 @@ export default async function AdminEkskulPage() {
                                                 slug: e.slug,
                                                 color: e.color,
                                                 description: e.description,
-                                                defaultFee: e.defaultFee,
+                                                monthlyFee: e.monthlyFee,
+                                                sessionFee: e.sessionFee,
+                                                allowsMonthly: e.allowsMonthly,
+                                                allowsPerSession:
+                                                    e.allowsPerSession,
                                                 defaultLocation:
                                                     e.defaultLocation,
                                                 maxPlayers: e.maxPlayers,

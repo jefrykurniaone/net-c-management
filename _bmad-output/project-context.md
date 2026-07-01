@@ -49,7 +49,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Single client: import `{ prisma }` from `@/lib/prisma`. NEVER `new PrismaClient()`. Pool `max`: 1 prod / 10 dev.
 - Driver-adapter preview (`PrismaPg`, raw `pg`). Connection: **Transaction pooler 6543** prod / **Session pooler 5432** dev.
 - Schema change → `npx prisma generate` then `npx prisma db push` (or `db:migrate`). Import enums/types from `@prisma/client`, not string literals.
-- Code accessor is `prisma.badmintonSession` (model `BadmintonSession`). Models beyond CLAUDE.md list: `Ekskul`, `Membership`. **Members see only sessions of their ekskul** (`getUserEkskulIds`); admins see all — keep any new member list query ekskul-scoped (cross-ekskul data leak = security bug).
+- Code accessor is `prisma.activitySession` (model `ActivitySession`). Models beyond CLAUDE.md list: `Ekskul`, `Membership`. **Members see only sessions of their ekskul** (`getUserEkskulIds`); admins see all — keep any new member list query ekskul-scoped (cross-ekskul data leak = security bug).
 - Storage only via `@/lib/supabase` helpers (service-role, bypasses RLS, **server-only**). Buckets: `payment-proofs`/`avatars`/`logos`. NEVER expose `SUPABASE_SERVICE_ROLE_KEY` to browser.
 
 ### i18n Rules

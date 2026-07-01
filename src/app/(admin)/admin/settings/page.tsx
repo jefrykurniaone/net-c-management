@@ -14,7 +14,6 @@ import { FormSkeleton } from '@/components/skeletons/page-skeletons';
 
 interface SettingsMap {
     communityName?: string;
-    defaultMonthlyFee?: string;
     defaultLocation?: string;
     adminWhatsapp?: string;
     maxPlayers?: string;
@@ -32,7 +31,6 @@ export default function AdminSettingsPage() {
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [settings, setSettings] = useState<SettingsMap>({
         communityName: t.brand.defaultCommunityName,
-        defaultMonthlyFee: '50000',
         defaultLocation: '',
         adminWhatsapp: '',
         maxPlayers: '20',
@@ -183,21 +181,6 @@ export default function AdminSettingsPage() {
                             value={settings.communityName ?? ''}
                             onChange={(e) =>
                                 update('communityName', e.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div className='space-y-1.5'>
-                        <Label htmlFor='defaultMonthlyFee'>
-                            {t.admin.defaultFeeLabel}
-                        </Label>
-                        <Input
-                            id='defaultMonthlyFee'
-                            type='number'
-                            min={0}
-                            value={settings.defaultMonthlyFee ?? ''}
-                            onChange={(e) =>
-                                update('defaultMonthlyFee', e.target.value)
                             }
                         />
                     </div>

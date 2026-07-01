@@ -5,7 +5,7 @@ note: Epic 1 changes are DONE but uncommitted in the working tree; this story bu
 
 # Story 2.1: Rename BadmintonSession → ActivitySession
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -65,6 +65,15 @@ So that no identifier encodes "badminton" and the payment-mode work (Stories 2.2
   - [x] `git grep -i badminton -- src/ prisma/schema.prisma prisma/seed.ts prisma/rls-policies.sql prisma/backfill-ekskul.ts` → zero hits.
   - [x] `npm run lint` → clean; `npm run build` → success (type-check passes; routes unchanged).
   - [x] Re-seed if needed (`npx prisma db seed`) and smoke-test the session flows listed in AC4 against the renamed table.
+
+### Review Findings
+
+_Code review 2026-07-01 — 3 adversarial layers (Blind Hunter, Edge Case Hunter, Acceptance Auditor). AC1–AC4 validated: rename is correct and behavior-preserving, no `session`/`auth()` shadowing (uses `authSession`/`activitySession`), generated client confirmed (625 `ActivitySession` refs, 0 `BadmintonSession`). Result: 1 patch, 3 deferred, 8 dismissed (Epic-1 changes intermingled in the shared `fac4883` commit — not rename defects)._
+
+- [x] [Review][Patch] Stale docs still name `BadmintonSession` / `prisma.badmintonSession` [CLAUDE.md:40, _bmad-output/project-context.md:52] — fixed
+- [x] [Review][Defer] RLS `CREATE POLICY` not idempotent after `ALTER TABLE RENAME` — add `DROP POLICY IF EXISTS` guards [prisma/rls-policies.sql:14] — deferred, pre-existing (all policies share the pattern; surface at prod RLS sync)
+- [x] [Review][Defer] Migration ledger still creates `BadmintonSession` + dropped enums; `migrate deploy`/`reset` would build a schema that mismatches the client [prisma/migrations/20260627175208_init/migration.sql:105] — deferred, pre-existing (project provisions via `db push` per AR-9; `migrations/**` immutable per story scope)
+- [x] [Review][Defer] Non-identifier `badminton` residue in seed/demo data + comments [prisma/seed.ts:6,29,62,66; prisma/backfill-ekskul.ts; prisma/schema.prisma:100,105] — deferred, pre-existing (AC4 identifier intent met; seed/rebrand cleanup story)
 
 ## Dev Notes
 
@@ -175,3 +184,4 @@ claude-opus-4-8[1m] (Opus 4.8, 1M context)
 |---|---|
 | 2026-06-30 | Story 2.1 created (ready-for-dev). Scope: behavior-preserving rename `BadmintonSession → ActivitySession` (model + accessor + types + local vars + RLS policy + backfill script), with a no-data-loss DB rename via `ALTER TABLE RENAME` before `db push`. Mapped the full rename surface (17 files; 12 accessor sites, 3 type sites, ~40 local-var refs). Migration history left immutable. AR-1 prerequisite for Stories 2.2–2.4. |
 | 2026-06-30 | Story 2.1 implemented. Renamed model/accessor/types/local-vars across 16 files; DB table renamed in place via `ALTER TABLE RENAME` (data preserved) + `db push` (index reconcile, no destructive change); RLS file updated (Supabase-only — local DB lacks `anon`/`authenticated`). Verified: zero `badminton` identifiers outside `migrations/`, old table gone (P1014), `npm run lint` + `npm run build` both green. Non-identifier seed/comment `badminton` flagged as out-of-scope Epic-1 follow-up. Status → review. |
+| 2026-07-01 | Code review (3 adversarial layers). AC1–AC4 validated; rename confirmed correct + behavior-preserving, no `auth()`/`session` shadowing. 1 patch applied (stale `BadmintonSession`/`prisma.badmintonSession` refs in `CLAUDE.md` + `project-context.md`), 3 deferred (RLS idempotency, migration-ledger drift, seed/comment residue → `deferred-work.md`), 8 dismissed (Epic-1 changes intermingled in `fac4883`). Status → done. |

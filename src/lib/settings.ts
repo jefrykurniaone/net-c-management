@@ -5,7 +5,6 @@ import { getDictionary } from './i18n/dictionaries';
 
 export interface AppSettings {
     communityName: string;
-    defaultMonthlyFee: number;
     defaultLocation: string;
     adminWhatsapp: string;
     maxPlayers: number;
@@ -20,7 +19,6 @@ export interface AppSettings {
  * string is baked in here.
  */
 const DEFAULTS: Omit<AppSettings, 'communityName'> = {
-    defaultMonthlyFee: 50000,
     defaultLocation: '',
     adminWhatsapp: '',
     maxPlayers: 20,
@@ -47,9 +45,6 @@ export async function getSettings(): Promise<AppSettings> {
         // identity across the app (AD-10; FR-4). `?.trim()` also strips stray
         // surrounding whitespace from a real configured name.
         communityName: map.communityName?.trim() || t.brand.defaultCommunityName,
-        defaultMonthlyFee: Number(
-            map.defaultMonthlyFee ?? DEFAULTS.defaultMonthlyFee,
-        ),
         defaultLocation: map.defaultLocation ?? DEFAULTS.defaultLocation,
         adminWhatsapp: map.adminWhatsapp ?? DEFAULTS.adminWhatsapp,
         maxPlayers: Number(map.maxPlayers ?? DEFAULTS.maxPlayers),

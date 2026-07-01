@@ -44,7 +44,7 @@ export default function UploadPaymentPage() {
                 setEkskuls(list);
                 if (list.length === 1) {
                     setEkskulId(list[0].id);
-                    if (!amount) setAmount(String(list[0].defaultFee || ''));
+                    if (!amount) setAmount(String(list[0].monthlyFee || ''));
                 }
             })
             .catch(() => setEkskuls([]));
@@ -54,8 +54,8 @@ export default function UploadPaymentPage() {
     function handleEkskulChange(id: string) {
         setEkskulId(id);
         const chosen = ekskuls.find((e) => e.id === id);
-        if (chosen && !amount && chosen.defaultFee) {
-            setAmount(String(chosen.defaultFee));
+        if (chosen && !amount && chosen.monthlyFee) {
+            setAmount(String(chosen.monthlyFee));
         }
     }
 
