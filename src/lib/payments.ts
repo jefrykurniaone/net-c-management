@@ -66,12 +66,13 @@ export async function resolveMonthlyOwed(input: MonthlyOwedInput): Promise<Month
       },
     }),
     prisma.ekskul.findUnique({
-      where: { id: ekskulId },
+      where: { id: ekskulId, isActive: true },
       select: { allowsMonthly: true, allowsPerSession: true, monthlyFee: true },
     }),
   ]);
 
-  // Defensive: the caller already 403s non-members, but never assume.
+  // Defensive: the caller already 403s non-members, but never assume. A missing
+  // or deactivated Activity resolves the same as `!ekskul` here.
   if (!membership?.isActive || !ekskul) return { ok: false, reason: 'notMonthly' };
 
   const offered = {

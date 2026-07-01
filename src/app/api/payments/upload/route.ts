@@ -22,6 +22,7 @@ const ALLOWED_TYPES = new Set([
 ]);
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const MIN_PAYMENT_YEAR = 2020;
+const MAX_FUTURE_YEARS = 1;
 const MIN_MONTH = 1;
 const MAX_MONTH = 12;
 const SESSION_FULL_STATUS = 409;
@@ -80,7 +81,8 @@ async function handleMonthlyUpload({ userId, formData, t }: UploadCtx) {
     if (!(await assertMembership(userId, ekskulId))) {
         return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
     }
-    if (!month || month < MIN_MONTH || month > MAX_MONTH || !year || year < MIN_PAYMENT_YEAR) {
+    const maxYear = new Date().getFullYear() + MAX_FUTURE_YEARS;
+    if (!month || month < MIN_MONTH || month > MAX_MONTH || !year || year < MIN_PAYMENT_YEAR || year > maxYear) {
         return NextResponse.json({ error: t.validation.monthYearInvalid }, { status: 400 });
     }
 

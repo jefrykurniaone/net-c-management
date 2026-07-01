@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-30
-last_updated: 2026-07-01 (Story 3.3 code-reviewed and closed → done; fixed a critical AD-7 immutability bug plus 12 other patch findings, 1 timezone item deferred; lint/typecheck clean)
+last_updated: 2026-07-02 (Story 3.4 code-reviewed and closed → done; restricted the uploader to the current billing period, fixed a missing isActive gate + year-ceiling validation + the missing "Uploading…" state, 9 patch findings total, 1 storage-cleanup item deferred; lint/typecheck clean)
 project: net-c-management
 project_key: NOKEY
 tracking_system: file-system
@@ -69,7 +69,7 @@ development_status:
   3-1-membership-payment-mode-data-model-period-resolution: done
   3-2-payment-model-extension-mode-partitioned-uniqueness: done
   3-3-member-selects-a-payment-mode-from-the-offered-set: done
-  3-4-monthly-mode-billing: review
+  3-4-monthly-mode-billing: done
   3-5-per-session-mode-billing-pre-pay-on-register-atomic: review
   epic-3-retrospective: optional
 

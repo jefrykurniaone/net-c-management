@@ -4,7 +4,7 @@ baseline_commit: 37d9e34cee0fff54a8dc237e752ef79421630582
 
 # Story 3.4: Monthly-mode billing
 
-Status: review
+Status: done
 
 ## Story
 
@@ -79,6 +79,19 @@ So that my dues are predictable and sourced from the Activity's current fee.
 - [x] **Task 5 — Verify (NFR-7, NFR-8)**
   - [x] `npx eslint` on every changed file → exit 0. `npm run build` → green (types check against generated `PaymentMode`/`PaymentType`).
   - [x] Reasoning/manual checks per "Testing standards" below (monthly amount = fee, per-session gated, unselected gated, no-fee gated, client amount ignored, no orphan proof on reject, monthly confirm lifecycle unchanged).
+
+### Review Findings
+
+- [x] [Review][Patch] Monthly-eligibility picker only reflects the CURRENT period, but the form let the member submit for any month/year in `[currentYear-1, currentYear+1]` [src/app/(main)/payments/upload/page.tsx: memberships fetch + `chosen`/`owedLabel` derivation + month/year `<Select>`] — `GET /api/users/memberships` (and its `effectiveMode`) is always resolved for "now," not for the month/year the member picked in the form, so the client could show an Activity as monthly-eligible / prefill an amount for a period the server would actually reject. Resolved (user decision): restrict the uploader to the current period only — remove the month/year pickers, submit `month`/`year` as the fixed current period.
+- [x] [Review][Patch] AC5/Task 3's "optimistic uploading… state" isn't implemented — the submit button never swaps to `t.payments.submitting` [src/app/(main)/payments/upload/page.tsx: submit `<Button>`] — only the `loading` prop's spinner shows; the button's children stay hardcoded to `{t.payments.submit}`. `t.payments.submitting` ("Uploading...") exists in the dictionary but is dead in this file. Task 3 explicitly requires "on submit the button label swaps to `t.payments.submitting`."
+- [x] [Review][Patch] A failed `GET /api/users/memberships` (401/500/network error) is indistinguishable from a genuine empty result [src/app/(main)/payments/upload/page.tsx: memberships `useEffect`] — both render "You have no activities billed monthly," masking real errors; there's also no loading indicator distinct from the empty state while the fetch is in flight.
+- [x] [Review][Patch] Submit button's `disabled` doesn't include `!ekskulId` [src/app/(main)/payments/upload/page.tsx: submit `<Button>`] — if multiple monthly-eligible Activities exist and none auto-selects, a member can submit with an empty `ekskulId`, wasting a round trip for a 400 the client could've caught.
+- [x] [Review][Patch] `owedLabel`'s chained `.replace('{token}', value)` calls are vulnerable to `$`-pattern corruption [src/app/(main)/payments/upload/page.tsx: `owedLabel` derivation] — `String.prototype.replace`'s replacement-string argument treats `$&`/`$1`/`$$` etc. specially; an Activity name containing a literal `$`-pattern would silently corrupt the displayed string.
+- [x] [Review][Patch] `MembershipRow.effectiveMode` is typed `string | null` instead of the actual `PaymentMode | null` [src/app/(main)/payments/upload/page.tsx: `MembershipRow` type] — no compile-time safety on a value that gates whether a monthly charge can be raised.
+- [x] [Review][Patch] Dead i18n keys `payments.amountPlaceholder`/`payments.invalidAmount` (en+id) [src/lib/i18n/dictionaries.ts:154,161,604,611] — orphaned by this story's own change making the amount field read-only; never referenced anywhere in the diff.
+- [x] [Review][Patch] `resolveMonthlyOwed`'s `ekskul.findUnique` has no `isActive` check [src/lib/payments.ts: `resolveMonthlyOwed`] — a member can still raise a monthly charge against a deactivated Activity; the `!ekskul` (not-found) and `!membership?.isActive` cases also collapse into the same `notMonthly` reason/message, which is misleading for what's actually a not-found/deactivated condition. Mirrors the same gap fixed in Story 3.3's mode-switch route.
+- [x] [Review][Patch] No upper bound on the submitted `year` [src/app/api/payments/upload/route.ts: month/year validation in `handleMonthlyUpload`] — only `year < MIN_PAYMENT_YEAR` is checked; a forged request with a far-future year can create a bogus far-future `Payment` row. The client's own picker only offers `currentYear - 1` to `currentYear + 1`; the server should enforce the same ceiling.
+- [x] [Review][Defer] No cleanup of a superseded/orphaned proof object on resubmission or a post-storage DB failure [src/lib/payments.ts: `upsertMonthlyPayment`] — deferred, pre-existing. `upsertMonthlyPayment` is byte-for-byte unchanged from before this story; if a resubmission overwrites `proofUrl`/`proofPath`, or a DB write fails after `uploadPaymentProof` already succeeded, the old/orphaned storage object is never deleted. Not introduced by Story 3.4 — pick up whenever payment-proof storage cleanup is next hardened.
 
 ## Dev Notes
 

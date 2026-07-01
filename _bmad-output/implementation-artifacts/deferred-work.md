@@ -2,6 +2,10 @@
 
 Items surfaced during reviews that are real but intentionally not actioned now. Each notes where it should be picked up.
 
+## Deferred from: code review of story-3.4 (2026-07-02)
+
+- **No cleanup of superseded/orphaned payment-proof storage objects** — `upsertMonthlyPayment` (`src/lib/payments.ts`) is unchanged by Story 3.4; on a resubmission it overwrites `proofUrl`/`proofPath` without deleting the previous storage object, and if the DB write fails after `uploadPaymentProof` already succeeded, that object is orphaned with no cleanup path. Pre-existing since the monthly upload flow was first built, not introduced by Story 3.4. Pick up whenever payment-proof storage cleanup/lifecycle is next hardened (likely needs a `deletePaymentProof` helper in `src/lib/supabase.ts` called from both the resubmit-overwrite path and a catch around the post-upload DB write).
+
 ## Deferred from: code review of story-1.4 (2026-06-30)
 
 - **3-digit hex foreground edge case** — `parseHex` in `src/components/ekskul/ekskul-badge.tsx` accepts only 6-digit hex; a 3-digit hex (e.g. `#fff`) returns null and falls back to a white foreground, which is unreadable on a light background. Not currently reachable (`Ekskul.color` is set via a 6-digit color picker). Expand to accept 3-digit hex during the Epic 4 UI refresh.
