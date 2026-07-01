@@ -25,11 +25,11 @@ interface MembershipEkskul {
     effectiveMode: PaymentMode | null;
 }
 
-function fetchMemberships(): Promise<MembershipEkskul[]> {
+function fetchMemberships(): Promise<MembershipEkskul[] | null> {
     return fetch('/api/users/memberships')
         .then((r) => r.json())
         .then((data: { ekskuls?: MembershipEkskul[] }) => data.ekskuls ?? [])
-        .catch(() => []);
+        .catch(() => null);
 }
 
 export function EkskulMemberships() {
@@ -41,14 +41,21 @@ export function EkskulMemberships() {
 
     useEffect(() => {
         fetchMemberships()
-            .then(setEkskuls)
+            .then((list) => setEkskuls(list ?? []))
             .finally(() => setLoading(false));
     }, []);
 
     // Silent re-read after a mode change — the effective mode (and any queued
     // switch) is resolved server-side, so re-fetch rather than guess locally.
-    function refresh() {
-        fetchMemberships().then(setEkskuls);
+    // A failed re-fetch keeps the current list instead of blanking it — the
+    // action that triggered this already succeeded.
+    async function refresh() {
+        const list = await fetchMemberships();
+        if (list === null) {
+            toast.error(t.common.error);
+            return;
+        }
+        setEkskuls(list);
     }
 
     async function toggle(ekskul: MembershipEkskul) {
@@ -64,7 +71,7 @@ export function EkskulMemberships() {
             toast.success(
                 action === 'join' ? t.ekskul.joinSuccess : t.ekskul.leaveSuccess,
             );
-            refresh();
+            await refresh();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : t.common.error);
         } finally {

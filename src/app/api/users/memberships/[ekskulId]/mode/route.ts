@@ -4,7 +4,12 @@ import { assertMembership } from '@/lib/ekskul';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildUpdatePaymentModeSchema } from '@/lib/validations/membership';
-import { currentPeriod, nextPeriod, toPeriodKey } from '@/lib/payment-mode';
+import {
+    currentPeriod,
+    nextPeriod,
+    toPeriodKey,
+    graduateStanding,
+} from '@/lib/payment-mode';
 import { PaymentMode, Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
@@ -19,17 +24,19 @@ function offersMode(
 }
 
 /**
- * The Membership fields to write for a switch (AD-7). A first-ever selection
- * (no standing mode) applies THIS period — nothing is owed yet. Re-picking the
- * standing mode cancels any queued switch. A genuine change is queued for the
- * NEXT period, leaving the standing mode and thus the current period untouched.
+ * The Membership fields to write for a switch (AD-7), against the
+ * already-graduated standing mode (see `graduateStanding`). A first-ever
+ * selection (no standing mode) applies THIS period — nothing is owed yet.
+ * Re-picking the standing mode cancels any queued switch, persisting the
+ * graduation. A genuine change is queued for the NEXT period, leaving the
+ * (graduated) standing mode — and thus the current period — untouched.
  */
 function resolveSwitch(
-    standing: PaymentMode | null,
+    standing: { paymentMode: PaymentMode | null; effectiveFrom: number },
     mode: PaymentMode,
     now: Date,
 ): Prisma.MembershipUpdateInput {
-    if (standing === null) {
+    if (standing.paymentMode === null) {
         const cur = currentPeriod(now);
         return {
             paymentMode: mode,
@@ -38,11 +45,21 @@ function resolveSwitch(
             pendingEffectiveFrom: null,
         };
     }
-    if (mode === standing) {
-        return { pendingMode: null, pendingEffectiveFrom: null };
+    if (mode === standing.paymentMode) {
+        return {
+            paymentMode: standing.paymentMode,
+            effectiveFrom: standing.effectiveFrom,
+            pendingMode: null,
+            pendingEffectiveFrom: null,
+        };
     }
     const next = nextPeriod(now);
-    return { pendingMode: mode, pendingEffectiveFrom: toPeriodKey(next.month, next.year) };
+    return {
+        paymentMode: standing.paymentMode,
+        effectiveFrom: standing.effectiveFrom,
+        pendingMode: mode,
+        pendingEffectiveFrom: toPeriodKey(next.month, next.year),
+    };
 }
 
 const MEMBERSHIP_MODE_SELECT = {
@@ -72,7 +89,17 @@ export async function PATCH(
         return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
     }
 
-    const parsed = buildUpdatePaymentModeSchema(t).safeParse(await req.json());
+    let body: unknown;
+    try {
+        body = await req.json();
+    } catch {
+        return NextResponse.json(
+            { error: t.validation.paymentModeRequired },
+            { status: 400 },
+        );
+    }
+
+    const parsed = buildUpdatePaymentModeSchema(t).safeParse(body);
     if (!parsed.success) {
         return NextResponse.json(
             { error: t.validation.paymentModeRequired, details: parsed.error.issues },
@@ -81,7 +108,7 @@ export async function PATCH(
     }
 
     const ekskul = await prisma.ekskul.findUnique({
-        where: { id: ekskulId },
+        where: { id: ekskulId, isActive: true },
         select: { allowsMonthly: true, allowsPerSession: true },
     });
     if (!ekskul) {
@@ -95,18 +122,40 @@ export async function PATCH(
     }
 
     const membership = await prisma.membership.findUnique({
-        where: { userId_ekskulId: { userId, ekskulId } },
-        select: { paymentMode: true },
+        where: { userId_ekskulId: { userId, ekskulId }, isActive: true },
+        select: MEMBERSHIP_MODE_SELECT,
     });
     if (!membership) {
         return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
     }
 
-    const updated = await prisma.membership.update({
-        where: { userId_ekskulId: { userId, ekskulId } },
-        data: resolveSwitch(membership.paymentMode, parsed.data.mode, new Date()),
-        select: MEMBERSHIP_MODE_SELECT,
-    });
+    const now = new Date();
+    const standing = graduateStanding(membership, currentPeriod(now));
 
-    return NextResponse.json(updated, { status: 200 });
+    try {
+        const updated = await prisma.membership.update({
+            // Extended-where-unique doubles as an optimistic-concurrency guard:
+            // if another request already changed any of these fields since we
+            // read them, this update matches nothing and throws P2025 instead
+            // of silently clobbering that write.
+            where: {
+                userId_ekskulId: { userId, ekskulId },
+                isActive: true,
+                paymentMode: membership.paymentMode,
+                pendingMode: membership.pendingMode,
+                pendingEffectiveFrom: membership.pendingEffectiveFrom,
+            },
+            data: resolveSwitch(standing, parsed.data.mode, now),
+            select: MEMBERSHIP_MODE_SELECT,
+        });
+        return NextResponse.json(updated, { status: 200 });
+    } catch (err) {
+        if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === 'P2025'
+        ) {
+            return NextResponse.json({ error: t.common.error }, { status: 409 });
+        }
+        throw err;
+    }
 }

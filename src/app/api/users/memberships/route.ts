@@ -35,6 +35,8 @@ function toEkskulView(
     return {
         ...ekskul,
         joined: membership !== undefined,
+        paymentMode: membership?.paymentMode ?? null,
+        effectiveFrom: membership?.effectiveFrom ?? null,
         pendingMode: membership?.pendingMode ?? null,
         pendingEffectiveFrom: membership?.pendingEffectiveFrom ?? null,
         effectiveMode: membership

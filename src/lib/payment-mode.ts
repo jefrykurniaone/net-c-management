@@ -113,3 +113,33 @@ export function resolvePaymentMode(
   // No explicit selection covers this period → the offered set decides.
   return singleOfferedMode(offered);
 }
+
+/**
+ * The standing mode/effectiveFrom for `period`, with any already-elapsed
+ * pending switch folded in. `resolvePaymentMode` treats a pending switch as
+ * effective once its period arrives without ever persisting that graduation
+ * back to `paymentMode`/`effectiveFrom` — a write path that compares against
+ * the raw fields instead of this would rewrite an already-effective period
+ * the next time it runs (AD-7). Any code that writes a new switch must fold
+ * an elapsed pending switch in first via this helper.
+ */
+export function graduateStanding(
+  membership: MembershipMode,
+  period: BillingPeriod,
+): { paymentMode: PaymentMode | null; effectiveFrom: number } {
+  const periodKey = toPeriodKey(period.month, period.year);
+  if (
+    membership.pendingMode !== null &&
+    membership.pendingEffectiveFrom !== null &&
+    periodKey >= membership.pendingEffectiveFrom
+  ) {
+    return {
+      paymentMode: membership.pendingMode,
+      effectiveFrom: membership.pendingEffectiveFrom,
+    };
+  }
+  return {
+    paymentMode: membership.paymentMode,
+    effectiveFrom: membership.effectiveFrom,
+  };
+}

@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import type { PaymentMode } from '@prisma/client';
+import { PaymentMode } from '@prisma/client';
 import { toast } from 'sonner';
 import { Check } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 
-const MONTHLY: PaymentMode = 'MONTHLY';
-const PER_SESSION: PaymentMode = 'PER_SESSION';
+const MONTHLY = PaymentMode.MONTHLY;
+const PER_SESSION = PaymentMode.PER_SESSION;
 /** Radix for decoding a YYYYMM period key back into month + year. */
 const PERIOD_RADIX = 100;
 
@@ -40,27 +40,33 @@ function ModeCard({
     desc,
     fee,
     selected,
+    pending,
     busy,
+    disabled,
     onSelect,
 }: Readonly<{
     label: string;
     desc: string;
     fee: string;
     selected: boolean;
+    pending: boolean;
     busy: boolean;
+    disabled: boolean;
     onSelect: () => void;
 }>) {
     return (
         <button
             type='button'
             onClick={onSelect}
-            disabled={busy}
+            disabled={disabled}
             aria-pressed={selected}
             className={`min-h-[44px] rounded-lg border p-3 text-left transition ${
                 selected
                     ? 'border-primary ring-1 ring-primary bg-primary/5'
-                    : 'border-border hover:border-primary/40'
-            } ${busy ? 'opacity-60' : ''}`}>
+                    : pending
+                      ? 'border-warning ring-1 ring-warning/60'
+                      : 'border-border hover:border-primary/40'
+            } ${busy || disabled ? 'opacity-60' : ''}`}>
             <span className='flex items-center gap-1 text-sm font-medium text-foreground'>
                 {selected && <Check className='w-3.5 h-3.5 text-primary' />}
                 {label}
@@ -79,7 +85,13 @@ function SingleModeLine({
     t,
 }: Readonly<{ membership: MembershipMode; t: Dictionary }>) {
     const mode = membership.effectiveMode;
-    if (!mode) return null;
+    if (!mode) {
+        return (
+            <p className='mt-2 text-xs text-muted-foreground'>
+                {t.paymentMode.noModesOffered}
+            </p>
+        );
+    }
     const isMonthly = mode === MONTHLY;
     const label = isMonthly ? t.paymentMode.monthly : t.paymentMode.perSession;
     const fee = isMonthly
@@ -97,7 +109,7 @@ function SingleModeLine({
 export function PaymentModeSelector({
     membership,
     onChanged,
-}: Readonly<{ membership: MembershipMode; onChanged: () => void }>) {
+}: Readonly<{ membership: MembershipMode; onChanged: () => Promise<void> }>) {
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const [saving, setSaving] = useState<PaymentMode | null>(null);
@@ -122,7 +134,7 @@ export function PaymentModeSelector({
                 throw new Error(err.error ?? t.common.error);
             }
             toast.success(t.paymentMode.saved);
-            onChanged();
+            await onChanged();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : t.common.error);
         } finally {
@@ -134,6 +146,11 @@ export function PaymentModeSelector({
         return <SingleModeLine membership={membership} t={t} />;
     }
 
+    const pendingLabel =
+        membership.pendingMode === MONTHLY
+            ? t.paymentMode.monthly
+            : t.paymentMode.perSession;
+
     return (
         <div className='mt-2'>
             <p className='text-xs text-muted-foreground mb-1.5'>{t.paymentMode.choosePrompt}</p>
@@ -143,7 +160,9 @@ export function PaymentModeSelector({
                     desc={t.paymentMode.monthlyDesc}
                     fee={`${money(membership.monthlyFee)}${t.paymentMode.perMonthSuffix}`}
                     selected={membership.effectiveMode === MONTHLY}
+                    pending={membership.pendingMode === MONTHLY}
                     busy={saving === MONTHLY}
+                    disabled={saving !== null}
                     onSelect={() => choose(MONTHLY)}
                 />
                 <ModeCard
@@ -151,13 +170,15 @@ export function PaymentModeSelector({
                     desc={t.paymentMode.perSessionDesc}
                     fee={`${money(membership.sessionFee)}${t.paymentMode.perSessionSuffix}`}
                     selected={membership.effectiveMode === PER_SESSION}
+                    pending={membership.pendingMode === PER_SESSION}
                     busy={saving === PER_SESSION}
+                    disabled={saving !== null}
                     onSelect={() => choose(PER_SESSION)}
                 />
             </div>
             {membership.pendingMode && membership.pendingEffectiveFrom && (
                 <p className='mt-1.5 text-xs text-warning'>
-                    {t.paymentMode.pendingNote} · {t.paymentMode.effectivePrefix}{' '}
+                    {pendingLabel} · {t.paymentMode.pendingNote} · {t.paymentMode.effectivePrefix}{' '}
                     {periodLabel(membership.pendingEffectiveFrom, t.months)}
                 </p>
             )}

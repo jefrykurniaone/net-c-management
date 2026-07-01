@@ -9,11 +9,9 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { isAdminRole, roleBadgeVariant, paymentStatusVariant } from "@/lib/utils";
 import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
-
-const PAYMENT_MODE_LABELS: Record<string, string> = {
-  MONTHLY: "Bulanan",
-  PER_SESSION: "Per sesi",
-};
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { PaymentMode } from "@prisma/client";
 
 const STATUS_LABELS = {
   REGISTERED: "Terdaftar",
@@ -42,8 +40,9 @@ export default async function MemberDetailPage({
 }: Readonly<{
   params: Promise<{ id: string }>;
 }>) {
-  const session = await auth();
+  const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
+  const t = getDictionary(locale);
 
   const { id } = await params;
   const member = await prisma.user.findUnique({
@@ -135,7 +134,12 @@ export default async function MemberDetailPage({
                     <span key={m.ekskul.id} className="inline-flex items-center gap-1">
                       <EkskulBadge name={m.ekskul.name} color={m.ekskul.color} />
                       <span className="text-xs text-muted-foreground">
-                        · {mode ? PAYMENT_MODE_LABELS[mode] : "—"}
+                        ·{" "}
+                        {mode === PaymentMode.MONTHLY
+                          ? t.paymentMode.monthly
+                          : mode === PaymentMode.PER_SESSION
+                            ? t.paymentMode.perSession
+                            : "—"}
                       </span>
                     </span>
                   );

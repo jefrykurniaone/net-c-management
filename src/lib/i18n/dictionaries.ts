@@ -357,7 +357,6 @@ const en = {
         membersCount: 'members',
     },
     paymentMode: {
-        title: 'Payment mode',
         choosePrompt: 'Choose how you pay for this activity',
         monthly: 'Monthly',
         perSession: 'Per session',
@@ -368,7 +367,7 @@ const en = {
         perSessionSuffix: '/session',
         effectivePrefix: 'Effective',
         pendingNote: 'Change takes effect next period',
-        changeCta: 'Change',
+        noModesOffered: 'No payment mode is configured for this activity',
         saved: 'Payment mode updated',
     },
     common: {
@@ -811,7 +810,6 @@ const id: typeof en = {
         membersCount: 'anggota',
     },
     paymentMode: {
-        title: 'Metode pembayaran',
         choosePrompt: 'Pilih cara kamu membayar aktivitas ini',
         monthly: 'Bulanan',
         perSession: 'Per sesi',
@@ -822,7 +820,7 @@ const id: typeof en = {
         perSessionSuffix: '/sesi',
         effectivePrefix: 'Berlaku',
         pendingNote: 'Perubahan berlaku mulai periode berikutnya',
-        changeCta: 'Ubah',
+        noModesOffered: 'Tidak ada metode pembayaran yang dikonfigurasi untuk aktivitas ini',
         saved: 'Metode pembayaran diperbarui',
     },
     common: {
