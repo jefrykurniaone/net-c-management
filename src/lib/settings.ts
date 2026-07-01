@@ -7,7 +7,6 @@ export interface AppSettings {
     communityName: string;
     defaultLocation: string;
     adminWhatsapp: string;
-    maxPlayers: number;
     logoUrl: string;
 }
 
@@ -21,7 +20,6 @@ export interface AppSettings {
 const DEFAULTS: Omit<AppSettings, 'communityName'> = {
     defaultLocation: '',
     adminWhatsapp: '',
-    maxPlayers: 20,
     logoUrl: '',
 };
 
@@ -47,7 +45,6 @@ export async function getSettings(): Promise<AppSettings> {
         communityName: map.communityName?.trim() || t.brand.defaultCommunityName,
         defaultLocation: map.defaultLocation ?? DEFAULTS.defaultLocation,
         adminWhatsapp: map.adminWhatsapp ?? DEFAULTS.adminWhatsapp,
-        maxPlayers: Number(map.maxPlayers ?? DEFAULTS.maxPlayers),
         logoUrl: map.logoUrl ?? DEFAULTS.logoUrl,
     };
 }

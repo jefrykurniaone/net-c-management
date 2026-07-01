@@ -16,7 +16,6 @@ interface SettingsMap {
     communityName?: string;
     defaultLocation?: string;
     adminWhatsapp?: string;
-    maxPlayers?: string;
     logoUrl?: string;
 }
 
@@ -33,7 +32,6 @@ export default function AdminSettingsPage() {
         communityName: t.brand.defaultCommunityName,
         defaultLocation: '',
         adminWhatsapp: '',
-        maxPlayers: '20',
         logoUrl: '',
     });
 
@@ -110,7 +108,7 @@ export default function AdminSettingsPage() {
     }
 
     if (loading) {
-        return <FormSkeleton fields={6} />;
+        return <FormSkeleton fields={5} />;
     }
 
     return (
@@ -214,21 +212,6 @@ export default function AdminSettingsPage() {
                         <p className='text-xs text-muted-foreground'>
                             {t.admin.whatsappHint}
                         </p>
-                    </div>
-
-                    <div className='space-y-1.5'>
-                        <Label htmlFor='maxPlayers'>
-                            {t.admin.maxPlayersLabel}
-                        </Label>
-                        <Input
-                            id='maxPlayers'
-                            type='number'
-                            min={2}
-                            value={settings.maxPlayers ?? ''}
-                            onChange={(e) =>
-                                update('maxPlayers', e.target.value)
-                            }
-                        />
                     </div>
 
                     <Button

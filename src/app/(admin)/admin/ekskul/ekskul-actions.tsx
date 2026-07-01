@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import {
@@ -25,6 +25,7 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Plus, Pencil } from 'lucide-react';
@@ -88,6 +89,15 @@ function EkskulFormDialog({
             adminWhatsapp: ekskul?.adminWhatsapp ?? '',
         },
     });
+
+    // The ≥1-payment-mode refine attaches its error to a synthetic
+    // `paymentModes` path (not a real form field) so it never misattributes
+    // to whichever mode checkbox happens to be named in the path.
+    const paymentModesError = (
+        form.formState.errors as FieldErrors<CreateEkskulFormData> & {
+            paymentModes?: { message?: string };
+        }
+    ).paymentModes;
 
     async function onSubmit(data: CreateEkskulFormData) {
         setLoading(true);
@@ -268,47 +278,44 @@ function EkskulFormDialog({
                                     control={form.control}
                                     name='allowsMonthly'
                                     render={({ field }) => (
-                                        <label className='flex items-center gap-2 text-sm font-normal'>
-                                            <input
-                                                type='checkbox'
-                                                className='h-4 w-4 rounded border-input text-primary focus:ring-ring'
-                                                checked={!!field.value}
-                                                onChange={(e) =>
-                                                    field.onChange(
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                            />
-                                            {t.admin.ekskulModeMonthly}
-                                        </label>
+                                        <FormItem className='flex items-center gap-2 space-y-0'>
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={!!field.value}
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormLabel className='text-sm font-normal'>
+                                                {t.admin.ekskulModeMonthly}
+                                            </FormLabel>
+                                        </FormItem>
                                     )}
                                 />
                                 <FormField
                                     control={form.control}
                                     name='allowsPerSession'
                                     render={({ field }) => (
-                                        <label className='flex items-center gap-2 text-sm font-normal'>
-                                            <input
-                                                type='checkbox'
-                                                className='h-4 w-4 rounded border-input text-primary focus:ring-ring'
-                                                checked={!!field.value}
-                                                onChange={(e) =>
-                                                    field.onChange(
-                                                        e.target.checked,
-                                                    )
-                                                }
-                                            />
-                                            {t.admin.ekskulModePerSession}
-                                        </label>
+                                        <FormItem className='flex items-center gap-2 space-y-0'>
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={!!field.value}
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormLabel className='text-sm font-normal'>
+                                                {t.admin.ekskulModePerSession}
+                                            </FormLabel>
+                                        </FormItem>
                                     )}
                                 />
                             </div>
-                            {form.formState.errors.allowsPerSession && (
+                            {paymentModesError && (
                                 <p className='text-sm font-medium text-destructive'>
-                                    {
-                                        form.formState.errors.allowsPerSession
-                                            .message as string
-                                    }
+                                    {paymentModesError.message}
                                 </p>
                             )}
                         </FormItem>
@@ -325,11 +332,15 @@ function EkskulFormDialog({
                                             type='number'
                                             min={2}
                                             {...field}
+                                            value={field.value ?? ''}
                                             onChange={(e) =>
                                                 field.onChange(
-                                                    Number.parseInt(
-                                                        e.target.value,
-                                                    ) || 0,
+                                                    e.target.value === ''
+                                                        ? undefined
+                                                        : Number.parseInt(
+                                                              e.target.value,
+                                                              10,
+                                                          ),
                                                 )
                                             }
                                         />

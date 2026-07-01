@@ -85,7 +85,6 @@ async function seedSettings() {
         communityName: DEFAULTS.communityName,
         defaultLocation: DEFAULTS.defaultLocation,
         adminWhatsapp: DEFAULTS.adminWhatsapp,
-        maxPlayers: String(DEFAULTS.maxPlayers),
         logoUrl: DEFAULTS.logoUrl,
     };
     for (const [key, value] of Object.entries(entries)) {

@@ -59,7 +59,7 @@ function bothModesDisabled(data: {
 export function buildCreateEkskulSchema(t: Dictionary) {
     return ekskulObjectSchema(t).refine((d) => !bothModesDisabled(d), {
         error: t.validation.paymentModeAtLeastOne,
-        path: ['allowsPerSession'],
+        path: ['paymentModes'],
     });
 }
 
@@ -73,7 +73,7 @@ export function buildUpdateEkskulSchema(t: Dictionary) {
         .extend({ isActive: z.boolean().optional() })
         .refine((d) => !bothModesDisabled(d), {
             error: t.validation.paymentModeAtLeastOne,
-            path: ['allowsPerSession'],
+            path: ['paymentModes'],
         });
 }
 
