@@ -37,6 +37,13 @@ enum PaymentStatus {
   REJECTED
 }
 
+// How a member pays for an Activity. Lives on Membership, never inferred from
+// past payments (AD-7). Resolved as a function of the billing period.
+enum PaymentMode {
+  MONTHLY
+  PER_SESSION
+}
+
 // ─── NextAuth Required Models ─────────────────────────────────────────────────
 
 model Account {
@@ -130,6 +137,17 @@ model Membership {
   ekskulId String
   isActive Boolean  @default(true)
   joinedAt DateTime @default(now())
+
+  // Payment mode is owned by the Membership and period-resolved (AD-7). A null
+  // paymentMode is the explicit "unselected" state (the member has not chosen
+  // yet on an Activity that offers both modes). effectiveFrom is the YYYYMM the
+  // current mode applies from; a queued switch is held in pendingMode /
+  // pendingEffectiveFrom and only takes effect from its own period forward, so
+  // the current period is never rewritten.
+  paymentMode          PaymentMode?
+  effectiveFrom        Int          @default(0)
+  pendingMode          PaymentMode?
+  pendingEffectiveFrom Int?
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   ekskul Ekskul @relation(fields: [ekskulId], references: [id], onDelete: Cascade)
