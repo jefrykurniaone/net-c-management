@@ -20,7 +20,7 @@ export default async function DevLoginPage() {
         <div className='min-h-screen flex items-center justify-center bg-muted'>
             <div className='bg-card rounded-2xl shadow-xl p-8 w-full max-w-sm flex flex-col items-center gap-6'>
                 <div className='flex flex-col items-center gap-1 text-center'>
-                    <span className='text-xs font-semibold uppercase tracking-wide text-warning'>
+                    <span className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
                         Development only
                     </span>
                     <h1 className='text-2xl font-bold text-foreground'>

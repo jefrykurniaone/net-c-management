@@ -102,7 +102,7 @@ export default async function SessionsPage({
                           {t.sessionStatus[s.status]}
                         </Badge>
                         {isRegistered && (
-                          <Badge variant="success">
+                          <Badge variant="default">
                             {t.sessions.registered}
                           </Badge>
                         )}

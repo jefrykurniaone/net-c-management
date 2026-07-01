@@ -230,7 +230,7 @@ export default async function DashboardPage() {
                                                     </div>
                                                     {isRegistered ? (
                                                         <Badge
-                                                            variant='success'
+                                                            variant='default'
                                                             className='text-xs shrink-0'>
                                                             {t.dashboard.registered}
                                                         </Badge>

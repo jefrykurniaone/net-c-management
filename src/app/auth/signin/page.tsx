@@ -82,7 +82,7 @@ export default async function SignInPage() {
                 {process.env.NODE_ENV !== 'production' && (
                     <a
                         href='/auth/dev'
-                        className='text-xs text-warning hover:underline'>
+                        className='text-xs text-muted-foreground hover:underline'>
                         Dev login →
                     </a>
                 )}

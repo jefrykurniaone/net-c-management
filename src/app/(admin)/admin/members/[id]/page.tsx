@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { isAdminRole, roleBadgeVariant } from "@/lib/utils";
+import { isAdminRole, roleBadgeVariant, paymentStatusVariant } from "@/lib/utils";
 import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
 
 const PAYMENT_MODE_LABELS: Record<string, string> = {
@@ -27,11 +27,6 @@ const ATTENDANCE_BADGE_VARIANTS: Record<string, "default" | "destructive" | "sec
   REGISTERED: "secondary",
 };
 
-const PAYMENT_BADGE_VARIANTS: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
-  CONFIRMED: "default",
-  REJECTED: "destructive",
-  PENDING: "secondary",
-};
 const PAYMENT_STATUS_LABELS = {
   PENDING: "Pending",
   CONFIRMED: "Dikonfirmasi",
@@ -212,7 +207,7 @@ export default async function MemberDetailPage({
                     Rp {p.amount.toLocaleString("id-ID")}
                   </p>
                 </div>
-                <Badge variant={PAYMENT_BADGE_VARIANTS[p.status] ?? "secondary"}>
+                <Badge variant={paymentStatusVariant(p.status)}>
                   {PAYMENT_STATUS_LABELS[p.status]}
                 </Badge>
               </div>

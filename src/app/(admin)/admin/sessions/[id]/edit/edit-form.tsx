@@ -48,8 +48,8 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
   ];
 
   const ATTENDANCE_STATUS_OPTIONS = [
-    { value: "REGISTERED", label: t.attendanceStatus.REGISTERED, icon: Clock, color: "text-warning" },
-    { value: "PRESENT", label: t.attendanceStatus.PRESENT, icon: CheckCircle, color: "text-success" },
+    { value: "REGISTERED", label: t.attendanceStatus.REGISTERED, icon: Clock, color: "text-muted-foreground" },
+    { value: "PRESENT", label: t.attendanceStatus.PRESENT, icon: CheckCircle, color: "text-primary" },
     { value: "ABSENT", label: t.attendanceStatus.ABSENT, icon: XCircle, color: "text-destructive" },
   ];
   const [loading, setLoading] = useState(false);
@@ -410,8 +410,8 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                   </div>
                   <div className="flex gap-1">
                     {ATTENDANCE_STATUS_OPTIONS.map((opt) => {
-                      let activeClass = "bg-warning/15 text-warning ring-1 ring-warning/40";
-                      if (opt.value === "PRESENT") activeClass = "bg-success/15 text-success ring-1 ring-success/40";
+                      let activeClass = "bg-muted text-muted-foreground ring-1 ring-border";
+                      if (opt.value === "PRESENT") activeClass = "bg-primary/15 text-primary ring-1 ring-primary/40";
                       if (opt.value === "ABSENT") activeClass = "bg-destructive/15 text-destructive ring-1 ring-destructive/40";
                       const isActive = a.status === opt.value;
                       return (
