@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 import { uploadPaymentProof } from '@/lib/supabase';
+import { upsertMonthlyPayment } from '@/lib/payments';
 import { assertMembership } from '@/lib/ekskul';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -88,34 +88,17 @@ export async function POST(req: Request) {
         file.type,
     );
 
-    // Upsert payment record — one record per user per ekskul per month/year
-    const payment = await prisma.payment.upsert({
-        where: {
-            userId_ekskulId_month_year: {
-                userId: session.user.id,
-                ekskulId,
-                month,
-                year,
-            },
-        },
-        create: {
-            userId: session.user.id,
-            ekskulId,
-            amount,
-            month,
-            year,
-            status: 'PENDING',
-            proofUrl: url,
-            proofPath: path,
-        },
-        update: {
-            amount,
-            status: 'PENDING',
-            proofUrl: url,
-            proofPath: path,
-            confirmedBy: null,
-            confirmedAt: null,
-        },
+    // One MONTHLY record per user per ekskul per month/year. Written via a
+    // race-free insert-or-update (the partial unique index is the arbiter), not
+    // prisma.payment.upsert, which cannot target a partial index (AD-5).
+    const payment = await upsertMonthlyPayment({
+        userId: session.user.id,
+        ekskulId,
+        amount,
+        month,
+        year,
+        proofUrl: url,
+        proofPath: path,
     });
 
     return NextResponse.json(payment, { status: 201 });

@@ -5,7 +5,7 @@ note: Depends on Story 2.2 (Ekskul.monthlyFee now exists). Removes the legacy gl
 
 # Story 2.3: Remove global monthly fee — Activity is single source of truth
 
-Status: review
+Status: done
 
 ## Story
 

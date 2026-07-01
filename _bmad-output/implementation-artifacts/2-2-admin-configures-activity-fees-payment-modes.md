@@ -5,7 +5,7 @@ note: Builds on Story 2.1 (rename done). Extends the Ekskul (Activity) model wit
 
 # Story 2.2: Admin configures Activity fees & payment modes
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -155,3 +155,12 @@ claude-opus-4-8[1m] (Opus 4.8, 1M context)
 | Date | Change |
 |---|---|
 | 2026-07-01 | Story 2.2 created (context-filled). Scope: extend Ekskul with monthlyFee (repurpose defaultFee) + sessionFee + allowsMonthly/allowsPerSession; explicit-required fee inputs + mode toggles in the Activity form; ≥1-mode rule in dict-aware zod (enforced by POST + PATCH routes); propagate the field rename to all consumers. No-data-loss column rename via ALTER before db push. |
+| 2026-07-01 | Code review (3-layer adversarial: Blind Hunter + Edge Case Hunter + Acceptance Auditor) over `57f801b..93ce4f2`. All 10 ACs across Stories 2.2/2.3/2.4 MET. 0 decision-needed, 0 patch, 3 deferred, 6 dismissed (4 Blind-Hunter false positives from no-repo-access + 2 by-design). Status → done. |
+
+## Review Findings
+
+_Code review 2026-07-01 (Blind Hunter / Edge Case Hunter / Acceptance Auditor) over `57f801b..93ce4f2`. All acceptance criteria MET; no blocking issues. Deferred items below (all UI-safe / pre-existing / cosmetic):_
+
+- [x] [Review][Defer] ≥1-payment-mode refine validates request body, not merged DB state [src/lib/validations/ekskul.ts:52-57] — a hand-crafted partial PATCH setting one mode `false` while the other is already `false` in the DB (and omitted from the body) bypasses the ≥1-mode rule. The full edit form always submits both toggles, so the UI path is safe. Already disclosed in Completion Notes; harden route to merge-then-check when the payment-mode API is next touched. Deferred.
+- [x] [Review][Defer] Payment-mode validation error always attaches to the `allowsPerSession` checkbox [src/app/(admin)/admin/ekskul/ekskul-actions.tsx] — `path: ['allowsPerSession']` means disabling only `allowsMonthly` surfaces the error on the *other* toggle. Minor UX attribution, not a logic bug. Deferred to Epic 4 UI refresh.
+- [x] [Review][Defer] `maxPlayers` input uses `Number.parseInt(e.target.value) || 0` (no radix, clear→0) [src/app/(admin)/admin/ekskul/ekskul-actions.tsx] — inconsistent with the fee fields' cleaner `''→undefined` + radix-10 pattern; `min(2)` still blocks the bad value at submit. Cosmetic and pre-existing (field pre-dates Epic 2). Deferred.

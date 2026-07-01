@@ -5,7 +5,7 @@ note: Verification story. The enabling change (new Session inherits the Activity
 
 # Story 2.4: Session fee inheritance & per-session override
 
-Status: review
+Status: done
 
 ## Story
 
