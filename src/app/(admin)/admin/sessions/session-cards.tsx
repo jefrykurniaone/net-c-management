@@ -1,0 +1,86 @@
+import Link from "next/link";
+import { format } from "date-fns";
+import { id as localeId, enUS } from "date-fns/locale";
+import type { Locale as DateFnsLocale } from "date-fns";
+import { ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
+import { sessionStatusVariant } from "@/lib/utils";
+import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
+import type { ActivitySession } from "@prisma/client";
+
+type SessionRow = ActivitySession & {
+  _count: { attendances: number };
+  ekskul: { id: string; name: string; color: string; icon: string | null };
+};
+
+function SessionCard({
+  s,
+  t,
+  dateLocale,
+}: Readonly<{ s: SessionRow; t: Dictionary; dateLocale: DateFnsLocale }>) {
+  return (
+    <MobileCard accentColor={s.ekskul.color}>
+      <div className="min-w-0 space-y-1">
+        <p className="truncate font-medium text-foreground">{s.title}</p>
+        <EkskulBadge name={s.ekskul.name} color={s.ekskul.color} icon={s.ekskul.icon} />
+      </div>
+      <CardField label={t.admin.colDate}>
+        <div>
+          {format(new Date(s.date), "d MMM yyyy", { locale: dateLocale })}
+          <span className="block text-xs text-muted-foreground">
+            {s.startTime} – {s.endTime}
+          </span>
+        </div>
+      </CardField>
+      <CardField label={t.admin.colLocation}>
+        <span className="block max-w-48 truncate">{s.location}</span>
+      </CardField>
+      <CardField label={t.admin.colParticipants}>
+        <span className="tabular-nums">{s._count.attendances}/{s.maxPlayers}</span>
+      </CardField>
+      <CardField label={t.admin.colStatus}>
+        <Badge variant={sessionStatusVariant(s.status)}>{t.sessionStatus[s.status]}</Badge>
+      </CardField>
+      <div className="flex items-center gap-4 pt-1">
+        <Link
+          href={`/sessions/${s.id}`}
+          className="flex items-center gap-1 text-xs text-primary hover:underline"
+        >
+          <ExternalLink className="w-3 h-3" />
+          {t.admin.detail}
+        </Link>
+        <Link
+          href={`/admin/sessions/${s.id}/edit`}
+          className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+        >
+          {t.admin.edit}
+        </Link>
+        <a
+          href={`/api/sessions/${s.id}/export`}
+          className="text-xs text-primary hover:underline"
+          download
+        >
+          CSV
+        </a>
+      </div>
+    </MobileCard>
+  );
+}
+
+export function SessionCards({
+  sessions,
+  t,
+  locale,
+}: Readonly<{ sessions: SessionRow[]; t: Dictionary; locale: Locale }>) {
+  const dateLocale = locale === "id" ? localeId : enUS;
+  if (sessions.length === 0) return <CardListEmpty>{t.admin.noSessions}</CardListEmpty>;
+  return (
+    <div className="space-y-3">
+      {sessions.map((s) => (
+        <SessionCard key={s.id} s={s} t={t} dateLocale={dateLocale} />
+      ))}
+    </div>
+  );
+}

@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-30
-last_updated: 2026-07-01 (Story 3.3 implemented → review; member payment-mode selector, eslint+build green)
+last_updated: 2026-07-01 (Story 4.3 created → ready-for-dev; visual-language refresh: Deep Teal primary + success/warning tokens, badge variants + status/role variant helpers, 4 shared components, ~298-hardcode → semantic-token migration across 15 files, tabular-nums everywhere, dark-mode AA audit)
 project: net-c-management
 project_key: NOKEY
 tracking_system: file-system
@@ -69,14 +69,14 @@ development_status:
   3-1-membership-payment-mode-data-model-period-resolution: done
   3-2-payment-model-extension-mode-partitioned-uniqueness: done
   3-3-member-selects-a-payment-mode-from-the-offered-set: review
-  3-4-monthly-mode-billing: backlog
-  3-5-per-session-mode-billing-pre-pay-on-register-atomic: backlog
+  3-4-monthly-mode-billing: review
+  3-5-per-session-mode-billing-pre-pay-on-register-atomic: review
   epic-3-retrospective: optional
 
   # Epic 4 — UI/UX Refresh, Responsiveness & Settings IA
-  epic-4: backlog
-  4-1-two-responsive-app-shells-navigation: backlog
-  4-2-full-responsiveness-across-every-screen: backlog
-  4-3-consistent-visual-language-shared-components-dark-mode: backlog
+  epic-4: in-progress
+  4-1-two-responsive-app-shells-navigation: review
+  4-2-full-responsiveness-across-every-screen: review
+  4-3-consistent-visual-language-shared-components-dark-mode: in-progress
   4-4-settings-information-architecture-cleanup: backlog
   epic-4-retrospective: optional

@@ -2,21 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import {
-    LayoutDashboard,
-    CalendarDays,
-    CreditCard,
-    Users,
-    Settings,
-    LogOut,
-    ShieldCheck,
-    Shapes,
-    Menu,
-    User,
-} from 'lucide-react';
+import { LogOut, Menu, User, LayoutDashboard } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Sheet,
@@ -25,11 +13,13 @@ import {
     SheetTrigger,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { cn, communityAbbr, isAdminRole } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { CommunityIdentityMark } from '@/components/community/identity-mark';
+import { getAdminNav, isNavActive } from './nav-items';
 
 function NavLinks({
     onClose,
@@ -44,7 +34,6 @@ function NavLinks({
     const { data: session } = useSession();
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const isAdmin = isAdminRole(session?.user?.role);
     const initials =
         session?.user?.name
             ?.split(' ')
@@ -53,114 +42,70 @@ function NavLinks({
             .join('')
             .toUpperCase() ?? '?';
 
-    const MEMBER_NAV = [
-        { label: t.nav.dashboard, href: '/dashboard', icon: LayoutDashboard },
-        { label: t.nav.sessions, href: '/sessions', icon: CalendarDays },
-        { label: t.nav.payments, href: '/payments', icon: CreditCard },
-    ];
-
-    const ADMIN_NAV = [
-        { label: t.nav.adminDashboard, href: '/admin', icon: ShieldCheck },
-        {
-            label: t.nav.adminSessions,
-            href: '/admin/sessions',
-            icon: CalendarDays,
-        },
-        {
-            label: t.nav.adminPayments,
-            href: '/admin/payments',
-            icon: CreditCard,
-        },
-        { label: t.nav.adminMembers, href: '/admin/members', icon: Users },
-        { label: t.nav.adminEkskul, href: '/admin/ekskul', icon: Shapes },
-        { label: t.nav.adminSettings, href: '/admin/settings', icon: Settings },
-    ];
+    const ADMIN_NAV = getAdminNav(t);
 
     return (
         <div className='flex flex-col h-full'>
             {/* Logo */}
-            <div className='flex items-center gap-3 px-4 py-4 border-b border-gray-100'>
-                {logoUrl ? (
-                    <Image
-                        src={logoUrl}
-                        alt={communityName}
-                        width={32}
-                        height={32}
-                        className='w-8 h-8 rounded-full object-cover'
-                    />
-                ) : (
-                    <div className='w-8 h-8 bg-green-600 rounded-full flex items-center justify-center'>
-                        <span className='text-white font-bold text-xs'>
-                            {communityAbbr(communityName)}
-                        </span>
-                    </div>
-                )}
-                <span className='font-bold text-gray-900'>{communityName}</span>
+            <div className='flex items-center gap-3 px-4 py-4 border-b border-border'>
+                <CommunityIdentityMark
+                    communityName={communityName}
+                    logoUrl={logoUrl}
+                    size='md'
+                />
+                <span className='font-bold text-foreground'>{communityName}</span>
             </div>
 
-            <nav className='flex-1 px-3 py-4 space-y-1 overflow-y-auto'>
-                <p className='px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2'>
-                    {t.nav.mainLabel}
+            <nav
+                aria-label={t.nav.adminLabel}
+                className='flex-1 px-3 py-4 space-y-1 overflow-y-auto'>
+                <p className='px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2'>
+                    {t.nav.adminLabel}
                 </p>
-                {MEMBER_NAV.map(({ label, href, icon: Icon }) => {
-                    const isActive =
-                        pathname === href || pathname.startsWith(href + '/');
+                {ADMIN_NAV.map(({ label, href, icon: Icon }) => {
+                    const active = isNavActive(pathname, href);
                     return (
                         <Link
                             key={href}
                             href={href}
                             onClick={onClose}
+                            aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium',
-                                isActive
-                                    ? 'bg-green-50 text-green-700'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
+                                'flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                active
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                             )}>
-                            <Icon className='w-4 h-4' />
+                            <Icon className='w-4 h-4 shrink-0' />
                             {label}
                         </Link>
                     );
                 })}
-                {isAdmin && (
-                    <div className='pt-4'>
-                        <p className='px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2'>
-                            {t.nav.adminLabel}
-                        </p>
-                        {ADMIN_NAV.map(({ label, href, icon: Icon }) => {
-                            const isActive =
-                                pathname === href ||
-                                (href !== '/admin' &&
-                                    pathname.startsWith(href + '/'));
-                            return (
-                                <Link
-                                    key={href}
-                                    href={href}
-                                    onClick={onClose}
-                                    className={cn(
-                                        'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium',
-                                        isActive
-                                            ? 'bg-purple-50 text-purple-700'
-                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                                    )}>
-                                    <Icon className='w-4 h-4' />
-                                    {label}
-                                </Link>
-                            );
-                        })}
-                    </div>
-                )}
+
+                <div className='pt-4'>
+                    <Link
+                        href='/dashboard'
+                        onClick={onClose}
+                        className='flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                        <LayoutDashboard className='w-4 h-4 shrink-0' />
+                        {t.nav.memberView}
+                    </Link>
+                </div>
             </nav>
 
-            <div className='border-t border-gray-100 p-4'>
+            <div className='border-t border-border p-4'>
                 <div className='flex items-center gap-3 mb-3'>
                     <Avatar className='w-8 h-8'>
-                        <AvatarImage src={session?.user?.image ?? ''} alt={session?.user?.name ?? ''} />
-                        <AvatarFallback className='bg-green-100 text-green-700 text-xs font-semibold'>
+                        <AvatarImage
+                            src={session?.user?.image ?? ''}
+                            alt={session?.user?.name ?? ''}
+                        />
+                        <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
                             {initials}
                         </AvatarFallback>
                     </Avatar>
                     <div className='flex-1 min-w-0'>
-                        <p className='text-sm font-medium text-gray-900 truncate'>
+                        <p className='text-sm font-medium text-foreground truncate'>
                             {session?.user?.name ?? '—'}
                         </p>
                     </div>
@@ -170,13 +115,13 @@ function NavLinks({
                 <Link
                     href='/profile'
                     onClick={onClose}
-                    className='flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors w-full'>
+                    className='flex items-center gap-2 px-2 py-1.5 min-h-11 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                     <User className='w-4 h-4 shrink-0' />
                     {t.nav.profile}
                 </Link>
                 <button
                     onClick={() => signOut({ callbackUrl: '/' })}
-                    className='flex items-center gap-2 text-sm text-red-500 hover:text-red-700 px-1 mt-1 w-full'>
+                    className='flex items-center gap-2 text-sm text-destructive hover:bg-destructive/10 px-1 mt-1 w-full min-h-11 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                     <LogOut className='w-4 h-4' />
                     {t.nav.signOut}
                 </button>
@@ -190,17 +135,19 @@ export function MobileNav({
     logoUrl,
 }: Readonly<{ communityName: string; logoUrl?: string }>) {
     const [open, setOpen] = useState(false);
+    const { locale } = useLocale();
+    const t = getDictionary(locale);
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
                 <Button variant='ghost' size='icon' className='md:hidden'>
                     <Menu className='w-5 h-5' />
-                    <span className='sr-only'>Menu</span>
+                    <span className='sr-only'>{t.nav.navigationMenu}</span>
                 </Button>
             </SheetTrigger>
             <SheetContent side='left' className='p-0 w-64'>
-                <SheetTitle className='sr-only'>Navigation Menu</SheetTitle>
+                <SheetTitle className='sr-only'>{t.nav.navigationMenu}</SheetTitle>
                 <NavLinks
                     onClose={() => setOpen(false)}
                     communityName={communityName}

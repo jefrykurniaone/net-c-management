@@ -20,6 +20,7 @@ import {
 import Link from 'next/link';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { resolvePaymentMode, currentPeriod } from '@/lib/payment-mode';
 
 export default async function SessionDetailPage({
     params,
@@ -37,7 +38,15 @@ export default async function SessionDetailPage({
     const activitySession = await prisma.activitySession.findUnique({
         where: { id },
         include: {
-            ekskul: { select: { id: true, name: true, color: true } },
+            ekskul: {
+                select: {
+                    id: true,
+                    name: true,
+                    color: true,
+                    allowsMonthly: true,
+                    allowsPerSession: true,
+                },
+            },
             attendances: {
                 include: {
                     user: {
@@ -56,6 +65,48 @@ export default async function SessionDetailPage({
 
     if (!activitySession) notFound();
 
+    // Resolve the member's effective payment mode for THIS session's period and
+    // their per-session payment status, so the CTA can switch to register-&-pay.
+    const [membership, sessionPayment] = await Promise.all([
+        prisma.membership.findUnique({
+            where: {
+                userId_ekskulId: {
+                    userId: authSession.user.id,
+                    ekskulId: activitySession.ekskulId,
+                },
+            },
+            select: {
+                isActive: true,
+                paymentMode: true,
+                effectiveFrom: true,
+                pendingMode: true,
+                pendingEffectiveFrom: true,
+            },
+        }),
+        prisma.payment.findFirst({
+            where: {
+                userId: authSession.user.id,
+                sessionId: activitySession.id,
+                type: 'SESSION',
+            },
+            select: { status: true },
+        }),
+    ]);
+
+    const period = currentPeriod(activitySession.date);
+    const effectiveMode =
+        membership?.isActive
+            ? resolvePaymentMode(
+                  membership,
+                  {
+                      allowsMonthly: activitySession.ekskul.allowsMonthly,
+                      allowsPerSession: activitySession.ekskul.allowsPerSession,
+                  },
+                  period.month,
+                  period.year,
+              )
+            : null;
+
     const myAttendance = activitySession.attendances.find(
         (a) => a.userId === authSession.user.id,
     );
@@ -67,16 +118,16 @@ export default async function SessionDetailPage({
             {/* Back */}
             <Link
                 href='/sessions'
-                className='inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700'>
+                className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
                 <ArrowLeft className='w-4 h-4' />
                 {t.sessions.backToList}
             </Link>
 
             {/* Header */}
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 space-y-4'>
+            <div className='bg-card rounded-xl border border-border p-6 space-y-4'>
                 <div className='flex items-start justify-between gap-3'>
                     <div className='space-y-2'>
-                        <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
+                        <h1 className='text-xl font-bold text-foreground'>
                             {activitySession.title}
                         </h1>
                         <EkskulBadge
@@ -91,9 +142,9 @@ export default async function SessionDetailPage({
                     </Badge>
                 </div>
 
-                <div className='space-y-2 text-sm text-gray-600 dark:text-gray-400'>
+                <div className='space-y-2 text-sm text-muted-foreground'>
                     <div className='flex items-center gap-2'>
-                        <Clock className='w-4 h-4 shrink-0 text-gray-400' />
+                        <Clock className='w-4 h-4 shrink-0 text-muted-foreground' />
                         <span>
                             {format(
                                 new Date(activitySession.date),
@@ -107,15 +158,16 @@ export default async function SessionDetailPage({
                         </span>
                     </div>
                     <div className='flex items-center gap-2'>
-                        <MapPin className='w-4 h-4 shrink-0 text-gray-400' />
+                        <MapPin className='w-4 h-4 shrink-0 text-muted-foreground' />
                         <span>{activitySession.location}</span>
                     </div>
                     <div className='flex items-center gap-2'>
-                        <Users className='w-4 h-4 shrink-0 text-gray-400' />
-                        <span>
+                        <Users className='w-4 h-4 shrink-0 text-muted-foreground' />
+                        <span className='tabular-nums'>
                             {activitySession._count.attendances}/
-                            {activitySession.maxPlayers} {t.sessions.participants}
+                            {activitySession.maxPlayers}
                         </span>
+                        <span>{t.sessions.participants}</span>
                         {isFull && (
                             <Badge variant='secondary' className='text-xs ml-1'>
                                 {t.sessions.full}
@@ -124,17 +176,19 @@ export default async function SessionDetailPage({
                     </div>
                     {activitySession.fee > 0 && (
                         <div className='flex items-center gap-2'>
-                            <Banknote className='w-4 h-4 shrink-0 text-gray-400' />
+                            <Banknote className='w-4 h-4 shrink-0 text-muted-foreground' />
                             <span>
-                                Rp{' '}
-                                {activitySession.fee.toLocaleString('id-ID')}
+                                <span className='tabular-nums'>
+                                    Rp{' '}
+                                    {activitySession.fee.toLocaleString('id-ID')}
+                                </span>
                                 {t.sessions.feePerPerson}
                             </span>
                         </div>
                     )}
                     {activitySession.notes && (
                         <div className='flex items-start gap-2'>
-                            <FileText className='w-4 h-4 shrink-0 text-gray-400 mt-0.5' />
+                            <FileText className='w-4 h-4 shrink-0 text-muted-foreground mt-0.5' />
                             <span className='whitespace-pre-wrap'>
                                 {activitySession.notes}
                             </span>
@@ -148,16 +202,19 @@ export default async function SessionDetailPage({
                     isFull={isFull && !isRegistered}
                     isCancelled={activitySession.status === 'CANCELLED'}
                     isCompleted={activitySession.status === 'COMPLETED'}
+                    paymentMode={effectiveMode}
+                    sessionFee={activitySession.fee}
+                    sessionPaymentStatus={sessionPayment?.status ?? null}
                 />
             </div>
 
             {/* Participants list */}
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6'>
-                <h2 className='font-semibold text-gray-900 dark:text-white mb-4'>
+            <div className='bg-card rounded-xl border border-border p-6'>
+                <h2 className='font-semibold text-foreground mb-4'>
                     {t.sessions.attendeeList} ({activitySession._count.attendances})
                 </h2>
                 {activitySession.attendances.length === 0 ? (
-                    <p className='text-sm text-gray-400 text-center py-4'>
+                    <p className='text-sm text-muted-foreground text-center py-4'>
                         {t.sessions.noAttendees}
                     </p>
                 ) : (
@@ -173,7 +230,7 @@ export default async function SessionDetailPage({
                             return (
                                 <div key={attendance.id}>
                                     <div className='flex items-center gap-3'>
-                                        <span className='text-xs text-gray-400 w-5 text-right'>
+                                        <span className='text-xs text-muted-foreground w-5 text-right tabular-nums'>
                                             {i + 1}
                                         </span>
                                         <Avatar className='w-8 h-8'>
@@ -183,16 +240,16 @@ export default async function SessionDetailPage({
                                                 }
                                                 alt=''
                                             />
-                                            <AvatarFallback className='text-xs bg-green-100 text-green-700'>
+                                            <AvatarFallback className='text-xs bg-primary/10 text-primary'>
                                                 {initials}
                                             </AvatarFallback>
                                         </Avatar>
                                         <div className='flex-1 min-w-0'>
-                                            <p className='text-sm font-medium text-gray-900 dark:text-white truncate'>
+                                            <p className='text-sm font-medium text-foreground truncate'>
                                                 {attendance.user.name ?? '—'}
                                                 {attendance.userId ===
                                                     authSession.user.id && (
-                                                    <span className='text-xs text-green-600 ml-1'>
+                                                    <span className='text-xs text-primary ml-1'>
                                                         ({locale === 'id' ? 'Kamu' : 'you'})
                                                     </span>
                                                 )}

@@ -58,15 +58,15 @@ function ModeCard({
             aria-pressed={selected}
             className={`min-h-[44px] rounded-lg border p-3 text-left transition ${
                 selected
-                    ? 'border-green-600 ring-1 ring-green-600 bg-green-50 dark:bg-green-950/30'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                    ? 'border-primary ring-1 ring-primary bg-primary/5'
+                    : 'border-border hover:border-primary/40'
             } ${busy ? 'opacity-60' : ''}`}>
-            <span className='flex items-center gap-1 text-sm font-medium text-gray-900 dark:text-white'>
-                {selected && <Check className='w-3.5 h-3.5 text-green-600' />}
+            <span className='flex items-center gap-1 text-sm font-medium text-foreground'>
+                {selected && <Check className='w-3.5 h-3.5 text-primary' />}
                 {label}
             </span>
-            <span className='block text-xs text-gray-500'>{desc}</span>
-            <span className='mt-1 block text-sm font-semibold tabular-nums text-gray-900 dark:text-white'>
+            <span className='block text-xs text-muted-foreground'>{desc}</span>
+            <span className='mt-1 block text-sm font-semibold tabular-nums text-foreground'>
                 {fee}
             </span>
         </button>
@@ -86,9 +86,9 @@ function SingleModeLine({
         ? `${money(membership.monthlyFee)}${t.paymentMode.perMonthSuffix}`
         : `${money(membership.sessionFee)}${t.paymentMode.perSessionSuffix}`;
     return (
-        <p className='mt-2 text-xs text-gray-500'>
+        <p className='mt-2 text-xs text-muted-foreground'>
             {t.paymentMode.youPay}:{' '}
-            <span className='font-medium text-gray-700 dark:text-gray-300'>{label}</span>{' '}
+            <span className='font-medium text-foreground'>{label}</span>{' '}
             <span className='tabular-nums'>{fee}</span>
         </p>
     );
@@ -136,7 +136,7 @@ export function PaymentModeSelector({
 
     return (
         <div className='mt-2'>
-            <p className='text-xs text-gray-500 mb-1.5'>{t.paymentMode.choosePrompt}</p>
+            <p className='text-xs text-muted-foreground mb-1.5'>{t.paymentMode.choosePrompt}</p>
             <div className='grid grid-cols-2 gap-2'>
                 <ModeCard
                     label={t.paymentMode.monthly}
@@ -156,7 +156,7 @@ export function PaymentModeSelector({
                 />
             </div>
             {membership.pendingMode && membership.pendingEffectiveFrom && (
-                <p className='mt-1.5 text-xs text-amber-700 dark:text-amber-500'>
+                <p className='mt-1.5 text-xs text-warning'>
                     {t.paymentMode.pendingNote} · {t.paymentMode.effectivePrefix}{' '}
                     {periodLabel(membership.pendingEffectiveFrom, t.months)}
                 </p>

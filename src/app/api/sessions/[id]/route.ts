@@ -21,6 +21,7 @@ export async function GET(
     const activitySession = await prisma.activitySession.findUnique({
         where: { id },
         include: {
+            ekskul: { select: { id: true, name: true, color: true } },
             _count: { select: { attendances: true } },
             attendances: {
                 include: {

@@ -271,7 +271,7 @@ function EkskulFormDialog({
                                         <label className='flex items-center gap-2 text-sm font-normal'>
                                             <input
                                                 type='checkbox'
-                                                className='h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500'
+                                                className='h-4 w-4 rounded border-input text-primary focus:ring-ring'
                                                 checked={!!field.value}
                                                 onChange={(e) =>
                                                     field.onChange(
@@ -290,7 +290,7 @@ function EkskulFormDialog({
                                         <label className='flex items-center gap-2 text-sm font-normal'>
                                             <input
                                                 type='checkbox'
-                                                className='h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500'
+                                                className='h-4 w-4 rounded border-input text-primary focus:ring-ring'
                                                 checked={!!field.value}
                                                 onChange={(e) =>
                                                     field.onChange(
@@ -381,7 +381,7 @@ function EkskulFormDialog({
                         />
                         <Button
                             type='submit'
-                            className='w-full bg-green-600 hover:bg-green-700 text-white'
+                            className='w-full'
                             loading={loading}>
                             {isEdit
                                 ? t.admin.updateEkskulBtn
@@ -401,9 +401,7 @@ export function NewEkskulButton() {
 
     return (
         <>
-            <Button
-                className='bg-green-600 hover:bg-green-700 text-white gap-2'
-                onClick={() => setOpen(true)}>
+            <Button className='gap-2' onClick={() => setOpen(true)}>
                 <Plus className='w-4 h-4' />
                 {t.admin.newEkskul}
             </Button>

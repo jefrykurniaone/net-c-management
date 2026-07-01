@@ -1,17 +1,15 @@
 'use client';
 
-import { useEffect, useState, type ChangeEvent, type SubmitEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import {
+    useEffect,
+    useState,
+    type ChangeEvent,
+    type SubmitEvent,
+} from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Upload, ArrowLeft, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -19,52 +17,34 @@ import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
-const currentYear = new Date().getFullYear();
-const currentMonth = new Date().getMonth() + 1;
-
-/** An Activity the member is billed monthly for this period. */
-interface MonthlyEkskul {
+/** The session prefill the register-&-pay uploader needs (display only). */
+interface SessionInfo {
     id: string;
-    name: string;
-    monthlyFee: number;
+    title: string;
+    fee: number;
+    ekskul: { name: string };
 }
 
-type MembershipRow = {
-    id: string;
-    name: string;
-    monthlyFee: number;
-    joined: boolean;
-    effectiveMode: string | null;
-};
-
-export default function UploadPaymentPage() {
+export default function SessionPayPage() {
     const router = useRouter();
+    const params = useParams<{ id: string }>();
+    const sessionId = params.id;
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const [loading, setLoading] = useState(false);
     const [loaded, setLoaded] = useState(false);
+    const [session, setSession] = useState<SessionInfo | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
     const [file, setFile] = useState<File | null>(null);
-    const [ekskuls, setEkskuls] = useState<MonthlyEkskul[]>([]);
-    const [ekskulId, setEkskulId] = useState('');
-    const [month, setMonth] = useState(String(currentMonth));
-    const [year, setYear] = useState(String(currentYear));
 
     useEffect(() => {
-        // Only Activities the member is billed monthly for this period can raise
-        // a monthly charge; effectiveMode is server-resolved by the memberships GET.
-        fetch('/api/users/memberships')
-            .then((r) => r.json())
-            .then((data: { ekskuls?: MembershipRow[] }) => {
-                const list = (data.ekskuls ?? [])
-                    .filter((e) => e.joined && e.effectiveMode === 'MONTHLY')
-                    .map((e) => ({ id: e.id, name: e.name, monthlyFee: e.monthlyFee }));
-                setEkskuls(list);
-                if (list.length === 1) setEkskulId(list[0].id);
-            })
-            .catch(() => setEkskuls([]))
+        // Prefill (amount is display-only; the server recomputes from the fee).
+        fetch(`/api/sessions/${sessionId}`)
+            .then((r) => (r.ok ? r.json() : null))
+            .then((data: SessionInfo | null) => setSession(data))
+            .catch(() => setSession(null))
             .finally(() => setLoaded(true));
-    }, []);
+    }, [sessionId]);
 
     function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
         const f = e.target.files?.[0];
@@ -75,35 +55,27 @@ export default function UploadPaymentPage() {
 
     async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!ekskulId) {
-            toast.error(t.validation.ekskulRequired);
-            return;
-        }
         if (!file) {
             toast.error(t.payments.selectFile);
             return;
         }
-
         setLoading(true);
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('ekskulId', ekskulId);
-            formData.append('month', month);
-            formData.append('year', year);
+            formData.append('sessionId', sessionId);
 
             const res = await fetch('/api/payments/upload', {
                 method: 'POST',
                 body: formData,
             });
-
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.error ?? t.payments.toastError);
             }
 
             toast.success(t.payments.toastSuccess);
-            router.push('/payments');
+            router.push(`/sessions/${sessionId}`);
             router.refresh();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : t.common.error);
@@ -112,27 +84,18 @@ export default function UploadPaymentPage() {
         }
     }
 
-    const months = Array.from({ length: 12 }, (_, i) => i + 1);
-    const years = [currentYear - 1, currentYear, currentYear + 1];
-    const chosen = ekskuls.find((e) => e.id === ekskulId);
-    const owedLabel = chosen
-        ? t.payments.owedFor
-              .replace('{activity}', chosen.name)
-              .replace('{month}', t.months[Number(month)])
-              .replace('{year}', year)
+    const owedLabel = session
+        ? t.payments.sessionOwedFor
+              .replace('{activity}', session.ekskul.name)
+              .replace('{session}', session.title)
         : '';
 
-    if (loaded && ekskuls.length === 0) {
+    if (loaded && !session) {
         return (
             <div className='max-w-lg mx-auto space-y-6'>
-                <Link
-                    href='/payments'
-                    className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
-                    <ArrowLeft className='w-4 h-4' />
-                    {t.payments.backToHistory}
-                </Link>
+                <BackLink sessionId={sessionId} label={t.sessions.backToList} />
                 <div className='text-center py-16 bg-card rounded-xl border border-border'>
-                    <p className='text-muted-foreground'>{t.payments.noMonthlyEkskul}</p>
+                    <p className='text-muted-foreground'>{t.sessions.notFound}</p>
                 </div>
             </div>
         );
@@ -140,76 +103,18 @@ export default function UploadPaymentPage() {
 
     return (
         <div className='max-w-lg mx-auto space-y-6'>
-            <Link
-                href='/payments'
-                className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
-                <ArrowLeft className='w-4 h-4' />
-                {t.payments.backToHistory}
-            </Link>
+            <BackLink sessionId={sessionId} label={t.sessions.backToList} />
 
             <div className='bg-card rounded-xl border border-border p-6'>
                 <div className='flex items-center gap-2 mb-6'>
                     <Upload className='w-5 h-5 text-primary' />
                     <h1 className='text-xl font-bold text-foreground'>
-                    {t.payments.uploadTitle}
+                        {t.payments.paySessionTitle}
                     </h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className='space-y-5'>
-                    {/* Ekskul */}
-                    <div className='space-y-1.5'>
-                        <Label>{t.ekskul.label}</Label>
-                        <Select value={ekskulId} onValueChange={setEkskulId}>
-                            <SelectTrigger className='w-full'>
-                                <SelectValue
-                                    placeholder={t.ekskul.selectPlaceholder}
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {ekskuls.map((e) => (
-                                    <SelectItem key={e.id} value={e.id}>
-                                        {e.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Month & Year */}
-                    <div className='grid grid-cols-2 gap-4'>
-                        <div className='space-y-1.5'>
-                            <Label>{t.payments.monthLabel}</Label>
-                            <Select value={month} onValueChange={setMonth}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {months.map((m) => (
-                                        <SelectItem key={m} value={String(m)}>
-                                            {t.months[m]}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className='space-y-1.5'>
-                            <Label>{t.payments.yearLabel}</Label>
-                            <Select value={year} onValueChange={setYear}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {years.map((y) => (
-                                        <SelectItem key={y} value={String(y)}>
-                                            {y}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    {/* Amount — server-authoritative from the Activity's monthly fee */}
+                    {/* Amount — server-authoritative from the Session's fee */}
                     <div className='space-y-1.5'>
                         <Label htmlFor='amount'>{t.payments.amountLabel}</Label>
                         <Input
@@ -218,12 +123,12 @@ export default function UploadPaymentPage() {
                             readOnly
                             className='tabular-nums bg-muted'
                             value={
-                                chosen
-                                    ? `Rp ${chosen.monthlyFee.toLocaleString('id-ID')}`
+                                session
+                                    ? `Rp ${session.fee.toLocaleString('id-ID')}`
                                     : ''
                             }
                         />
-                        {chosen && (
+                        {session && (
                             <p className='text-xs text-muted-foreground'>
                                 {t.payments.amountLocked}
                             </p>
@@ -284,5 +189,19 @@ export default function UploadPaymentPage() {
                 </form>
             </div>
         </div>
+    );
+}
+
+function BackLink({
+    sessionId,
+    label,
+}: Readonly<{ sessionId: string; label: string }>) {
+    return (
+        <Link
+            href={`/sessions/${sessionId}`}
+            className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
+            <ArrowLeft className='w-4 h-4' />
+            {label}
+        </Link>
     );
 }

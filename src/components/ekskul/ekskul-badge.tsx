@@ -66,6 +66,7 @@ function resolveActivityIcon(icon: string | null | undefined): LucideIcon {
 // uses the true WCAG 2.2 relative-luminance contrast ratio (sRGB-linearized),
 // not a perceived-brightness shortcut — whichever foreground scores higher wins.
 const HEX_LENGTH = 6;
+const SHORT_HEX_LENGTH = 3;
 const MAX_CHANNEL = 255;
 const SRGB_LINEAR_THRESHOLD = 0.03928;
 const SRGB_LINEAR_DIVISOR = 12.92;
@@ -87,7 +88,15 @@ interface Rgb {
 }
 
 function parseHex(hex: string): Rgb | null {
-    const normalized = hex.replace('#', '');
+    let normalized = hex.replace('#', '');
+    // Expand a 3-digit shorthand (e.g. #fff) to its 6-digit form so the readable
+    // foreground calc works instead of falling back to an unreadable white.
+    if (normalized.length === SHORT_HEX_LENGTH) {
+        normalized = normalized
+            .split('')
+            .map((c) => c + c)
+            .join('');
+    }
     if (normalized.length !== HEX_LENGTH) return null;
     const r = Number.parseInt(normalized.slice(0, 2), 16);
     const g = Number.parseInt(normalized.slice(2, 4), 16);

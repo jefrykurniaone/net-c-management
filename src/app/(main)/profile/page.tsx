@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { User } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { roleBadgeVariant } from '@/lib/utils';
 import { FormSkeleton } from '@/components/skeletons/page-skeletons';
 import { EkskulMemberships } from './ekskul-memberships';
 
@@ -129,30 +130,30 @@ export default function ProfilePage() {
     return (
         <div className='max-w-lg space-y-6'>
             <div>
-                <h1 className='text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-                    <User className='w-6 h-6 text-green-600' />
+                <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
+                    <User className='w-6 h-6 text-primary' />
                     {t.profile.title}
                 </h1>
-                <p className='text-sm text-gray-500 mt-1'>
+                <p className='text-sm text-muted-foreground mt-1'>
                     {t.profile.subtitle}
                 </p>
             </div>
 
             {/* Account info */}
             {profile && (
-                <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-5 flex items-center gap-4'>
+                <div className='bg-card rounded-xl border border-border p-5 flex items-center gap-4'>
                     <button
                         type='button'
                         onClick={() => fileInputRef.current?.click()}
                         disabled={uploading}
-                        className='relative group shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500'
+                        className='relative group shrink-0 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                         aria-label={t.profile.changePhotoAlt}>
                         <Avatar className='w-14 h-14'>
                             <AvatarImage
                                 src={profile.image ?? ''}
                                 alt={profile.name ?? ''}
                             />
-                            <AvatarFallback className='bg-green-100 text-green-700 font-bold text-xl'>
+                            <AvatarFallback className='bg-primary/10 text-primary font-bold text-xl'>
                                 {(profile.name ??
                                     profile.email ??
                                     '?')[0].toUpperCase()}
@@ -185,17 +186,13 @@ export default function ProfilePage() {
                         onChange={handleAvatarChange}
                     />
                     <div>
-                        <p className='font-semibold text-gray-900 dark:text-white'>
+                        <p className='font-semibold text-foreground'>
                             {profile.name ?? `(${t.profile.roleMember})`}
                         </p>
-                        <p className='text-sm text-gray-400'>{profile.email}</p>
+                        <p className='text-sm text-muted-foreground'>{profile.email}</p>
                         <Badge
-                            variant={
-                                profile.role === 'ADMIN'
-                                    ? 'default'
-                                    : 'secondary'
-                            }
-                            className={`mt-1 text-xs${profile.role === 'OWNER' ? ' bg-purple-600 text-white hover:bg-purple-700 border-transparent' : ''}`}>
+                            variant={roleBadgeVariant(profile.role)}
+                            className='mt-1 text-xs'>
                             {profile.role === 'OWNER'
                                 ? t.roles.OWNER
                                 : profile.role === 'ADMIN'
@@ -208,8 +205,8 @@ export default function ProfilePage() {
 
             <EkskulMemberships />
 
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6'>
-                <h2 className='font-semibold text-gray-900 dark:text-white mb-5'>
+            <div className='bg-card rounded-xl border border-border p-6'>
+                <h2 className='font-semibold text-foreground mb-5'>
                     {t.profile.editTitle}
                 </h2>
 
@@ -253,7 +250,7 @@ export default function ProfilePage() {
 
                         <Button
                             type='submit'
-                            className='w-full bg-green-600 hover:bg-green-700 text-white'
+                            className='w-full'
                             loading={saving}>
                             {t.profile.save}
                         </Button>

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
 import { EkskulFilter } from '@/components/ekskul/ekskul-filter';
+import { SessionCards } from './session-cards';
 import Link from 'next/link';
 import { CalendarDays, Plus, ExternalLink } from 'lucide-react';
 import type { ActivitySession } from '@prisma/client';
@@ -50,13 +51,13 @@ export default async function AdminSessionsPage({
 
     return (
         <div className='space-y-6'>
-            <div className='flex items-center justify-between'>
+            <div className='flex items-center justify-between flex-wrap gap-3'>
                 <div>
-                    <h1 className='text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-                        <CalendarDays className='w-6 h-6 text-green-600' />
+                    <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
+                        <CalendarDays className='w-6 h-6 text-primary' />
                         {t.admin.sessionsTitle}
                     </h1>
-                    <p className='text-sm text-gray-500 mt-1'>
+                    <p className='text-sm text-muted-foreground mt-1'>
                         {t.admin.sessionsSubtitle}
                     </p>
                 </div>
@@ -67,7 +68,7 @@ export default async function AdminSessionsPage({
                         allLabel={t.ekskul.filterAll}
                     />
                     <Link href='/admin/sessions/new'>
-                        <Button className='bg-green-600 hover:bg-green-700 text-white gap-2'>
+                        <Button className='gap-2'>
                             <Plus className='w-4 h-4' />
                             {t.admin.newSession}
                         </Button>
@@ -75,27 +76,33 @@ export default async function AdminSessionsPage({
                 </div>
             </div>
 
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden'>
+            {/* Mobile: stacked cards (< md) */}
+            <div className='md:hidden'>
+                <SessionCards sessions={sessions} t={t} locale={locale} />
+            </div>
+
+            {/* Desktop: full table (>= md) */}
+            <div className='hidden md:block bg-card rounded-xl border border-border overflow-hidden'>
                 <div className='overflow-x-auto'>
                     <table className='w-full text-sm'>
                         <thead>
-                            <tr className='bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700'>
-                                <th className='text-left px-4 py-3 font-medium text-gray-500'>
+                            <tr className='bg-muted border-b border-border'>
+                                <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
                                     {t.admin.colSession}
                                 </th>
-                                <th className='text-left px-4 py-3 font-medium text-gray-500'>
+                                <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
                                     {t.admin.colDate}
                                 </th>
-                                <th className='text-left px-4 py-3 font-medium text-gray-500'>
+                                <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
                                     {t.admin.colLocation}
                                 </th>
-                                <th className='text-center px-4 py-3 font-medium text-gray-500'>
+                                <th className='text-center px-4 py-3 font-medium text-muted-foreground'>
                                     {t.admin.colParticipants}
                                 </th>
-                                <th className='text-center px-4 py-3 font-medium text-gray-500'>
+                                <th className='text-center px-4 py-3 font-medium text-muted-foreground'>
                                     {t.admin.colStatus}
                                 </th>
-                                <th className='text-right px-4 py-3 font-medium text-gray-500'>
+                                <th className='text-right px-4 py-3 font-medium text-muted-foreground'>
                                     {t.admin.colActions}
                                 </th>
                             </tr>
@@ -105,8 +112,8 @@ export default async function AdminSessionsPage({
                                     return (
                                         <tr
                                             key={s.id}
-                                            className='border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'>
-                                            <td className='relative px-4 py-3 font-medium text-gray-900 dark:text-white max-w-50'>
+                                            className='border-b border-border hover:bg-muted'>
+                                            <td className='relative px-4 py-3 font-medium text-foreground max-w-50'>
                                                 <span
                                                     aria-hidden
                                                     className='absolute left-0 top-0 h-full w-[3px]'
@@ -125,20 +132,20 @@ export default async function AdminSessionsPage({
                                                     className='mt-1'
                                                 />
                                             </td>
-                                            <td className='px-4 py-3 text-gray-500 whitespace-nowrap'>
+                                            <td className='px-4 py-3 text-muted-foreground whitespace-nowrap'>
                                                 {format(
                                                     new Date(s.date),
                                                     'd MMM yyyy',
                                                     { locale: dateLocale },
                                                 )}
-                                                <span className='text-xs text-gray-400 block'>
+                                                <span className='text-xs text-muted-foreground block'>
                                                     {s.startTime} – {s.endTime}
                                                 </span>
                                             </td>
-                                            <td className='px-4 py-3 text-gray-500 max-w-37.5 truncate'>
+                                            <td className='px-4 py-3 text-muted-foreground max-w-37.5 truncate'>
                                                 {s.location}
                                             </td>
-                                            <td className='px-4 py-3 text-center text-gray-500'>
+                                            <td className='px-4 py-3 text-center text-muted-foreground tabular-nums'>
                                                 {s._count.attendances}/
                                                 {s.maxPlayers}
                                             </td>
@@ -152,18 +159,18 @@ export default async function AdminSessionsPage({
                                                 <div className='flex items-center justify-end gap-2'>
                                                     <Link
                                                         href={`/sessions/${s.id}`}
-                                                        className='text-xs text-blue-500 hover:underline flex items-center gap-1'>
+                                                        className='text-xs text-primary hover:underline flex items-center gap-1'>
                                                         <ExternalLink className='w-3 h-3' />
                                                         {t.admin.detail}
                                                     </Link>
                                                     <Link
                                                         href={`/admin/sessions/${s.id}/edit`}
-                                                        className='text-xs text-gray-500 hover:text-gray-700 hover:underline'>
+                                                        className='text-xs text-muted-foreground hover:text-foreground hover:underline'>
                                                         {t.admin.edit}
                                                     </Link>
                                                     <a
                                                         href={`/api/sessions/${s.id}/export`}
-                                                        className='text-xs text-green-600 hover:underline'
+                                                        className='text-xs text-primary hover:underline'
                                                         download>
                                                         CSV
                                                     </a>
@@ -177,7 +184,7 @@ export default async function AdminSessionsPage({
                                 <tr>
                                     <td
                                         colSpan={6}
-                                        className='px-4 py-8 text-center text-gray-400'>
+                                        className='px-4 py-8 text-center text-muted-foreground'>
                                         {t.admin.noSessions}
                                     </td>
                                 </tr>

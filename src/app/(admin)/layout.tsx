@@ -1,10 +1,10 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import Image from 'next/image';
 import { Sidebar } from '@/components/layout/sidebar';
 import { MobileNav } from '@/components/layout/mobile-nav';
+import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { getSettings } from '@/lib/settings';
-import { communityAbbr, isAdminRole } from '@/lib/utils';
+import { isAdminRole } from '@/lib/utils';
 
 export default async function AdminLayout({
     children,
@@ -26,7 +26,7 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className='flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950'>
+        <div className='flex h-screen overflow-hidden bg-muted'>
             <div className='hidden md:flex md:shrink-0'>
                 <Sidebar
                     communityName={settings.communityName}
@@ -34,28 +34,18 @@ export default async function AdminLayout({
                 />
             </div>
             <div className='flex flex-col flex-1 overflow-hidden'>
-                <header className='md:hidden flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700'>
+                <header className='md:hidden flex items-center gap-3 px-4 py-3 bg-card border-b border-border'>
                     <MobileNav
                         communityName={settings.communityName}
                         logoUrl={settings.logoUrl}
                     />
                     <div className='flex items-center gap-2'>
-                        {settings.logoUrl ? (
-                            <Image
-                                src={settings.logoUrl}
-                                alt={settings.communityName}
-                                width={28}
-                                height={28}
-                                className='w-7 h-7 rounded-full object-cover'
-                            />
-                        ) : (
-                            <div className='w-7 h-7 bg-green-600 rounded-full flex items-center justify-center'>
-                                <span className='text-white font-bold text-xs'>
-                                    {communityAbbr(settings.communityName)}
-                                </span>
-                            </div>
-                        )}
-                        <span className='font-bold text-gray-900 dark:text-white text-sm'>
+                        <CommunityIdentityMark
+                            communityName={settings.communityName}
+                            logoUrl={settings.logoUrl}
+                            size='sm'
+                        />
+                        <span className='font-bold text-foreground text-sm'>
                             {settings.communityName}
                         </span>
                     </div>

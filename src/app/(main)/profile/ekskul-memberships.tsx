@@ -73,31 +73,31 @@ export function EkskulMemberships() {
     }
 
     return (
-        <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6'>
+        <div className='bg-card rounded-xl border border-border p-6'>
             <div className='flex items-center gap-2 mb-1'>
-                <Shapes className='w-5 h-5 text-green-600' />
-                <h2 className='font-semibold text-gray-900 dark:text-white'>
+                <Shapes className='w-5 h-5 text-primary' />
+                <h2 className='font-semibold text-foreground'>
                     {t.ekskul.yourEkskul}
                 </h2>
             </div>
-            <p className='text-sm text-gray-500 mb-4'>{t.ekskul.yourEkskulSub}</p>
+            <p className='text-sm text-muted-foreground mb-4'>{t.ekskul.yourEkskulSub}</p>
 
             {loading ? (
-                <p className='text-sm text-gray-400'>{t.common.loading}</p>
+                <p className='text-sm text-muted-foreground'>{t.common.loading}</p>
             ) : ekskuls.length === 0 ? (
-                <p className='text-sm text-gray-400'>{t.admin.noEkskul}</p>
+                <p className='text-sm text-muted-foreground'>{t.admin.noEkskul}</p>
             ) : (
                 <div className='space-y-2'>
                     {ekskuls.map((e) => (
                         <div
                             key={e.id}
-                            className='py-2 border-b border-gray-50 dark:border-gray-800 last:border-0'>
+                            className='py-2 border-b border-border last:border-0'>
                             <div className='flex items-center justify-between'>
                                 <EkskulBadge name={e.name} color={e.color} />
                                 <Button
                                     variant={e.joined ? 'outline' : 'default'}
                                     size='sm'
-                                    className={`h-7 text-xs${e.joined ? '' : ' bg-green-600 hover:bg-green-700 text-white'}`}
+                                    className='h-11 sm:h-7 text-xs'
                                     loading={pendingId === e.id}
                                     onClick={() => toggle(e)}>
                                     {e.joined ? t.ekskul.leave : t.ekskul.join}

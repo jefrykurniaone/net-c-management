@@ -116,17 +116,17 @@ export default function AdminSettingsPage() {
     return (
         <div className='max-w-lg space-y-6'>
             <div>
-                <h1 className='text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-                    <Settings className='w-6 h-6 text-green-600' />
+                <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
+                    <Settings className='w-6 h-6 text-primary' />
                     {t.admin.settingsTitle}
                 </h1>
-                <p className='text-sm text-gray-500 mt-1'>
+                <p className='text-sm text-muted-foreground mt-1'>
                     {t.admin.settingsSubtitle}{' '}
                     {settings.communityName ?? t.brand.defaultCommunityName}
                 </p>
             </div>
 
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6 space-y-5'>
+            <div className='bg-card rounded-xl border border-border p-6 space-y-5'>
                 {/* Logo upload */}
                 <div className='space-y-3'>
                     <Label>{t.admin.logoLabel}</Label>
@@ -139,11 +139,11 @@ export default function AdminSettingsPage() {
                             alt={t.admin.logoLabel}
                                 width={64}
                                 height={64}
-                                className='w-16 h-16 rounded-full object-cover border border-gray-200'
+                                className='w-16 h-16 rounded-full object-cover border border-border'
                             />
                         ) : (
-                            <div className='w-16 h-16 rounded-full bg-green-100 flex items-center justify-center border border-gray-200'>
-                                <Upload className='w-6 h-6 text-green-600' />
+                            <div className='w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border border-border'>
+                                <Upload className='w-6 h-6 text-primary' />
                             </div>
                         )}
                         <div className='space-y-1'>
@@ -155,7 +155,7 @@ export default function AdminSettingsPage() {
                                 onClick={() => logoInputRef.current?.click()}>
                                 {logoButtonLabel()}
                             </Button>
-                            <p className='text-xs text-gray-400'>
+                            <p className='text-xs text-muted-foreground'>
                                 {t.admin.logoHint}
                             </p>
                         </div>
@@ -170,7 +170,7 @@ export default function AdminSettingsPage() {
                 </div>
             </div>
 
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6'>
+            <div className='bg-card rounded-xl border border-border p-6'>
                 <form onSubmit={handleSubmit} className='space-y-5'>
                     <div className='space-y-1.5'>
                         <Label htmlFor='communityName'>
@@ -211,7 +211,7 @@ export default function AdminSettingsPage() {
                                 update('adminWhatsapp', e.target.value)
                             }
                         />
-                        <p className='text-xs text-gray-400'>
+                        <p className='text-xs text-muted-foreground'>
                             {t.admin.whatsappHint}
                         </p>
                     </div>
@@ -233,7 +233,7 @@ export default function AdminSettingsPage() {
 
                     <Button
                         type='submit'
-                        className='w-full bg-green-600 hover:bg-green-700 text-white'
+                        className='w-full'
                         loading={saving}>
                         {t.admin.saveSettings}
                     </Button>

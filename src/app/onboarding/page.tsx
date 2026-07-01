@@ -88,18 +88,18 @@ export default function OnboardingPage() {
     }
 
     return (
-        <div className='min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800 px-4'>
-            <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-md'>
+        <div className='min-h-screen flex items-center justify-center bg-muted px-4'>
+            <div className='bg-card rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-md'>
                 <div className='flex flex-col items-center gap-2 mb-6'>
-                    <div className='w-12 h-12 bg-green-600 rounded-full flex items-center justify-center'>
-                        <span className='text-white font-bold text-xl'>
+                    <div className='w-12 h-12 bg-muted rounded-full flex items-center justify-center'>
+                        <span className='text-primary font-bold text-xl'>
                             {communityAbbr(communityName)}
                         </span>
                     </div>
-                    <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+                    <h1 className='text-2xl font-bold text-foreground'>
                         {t.onboarding.title}
                     </h1>
-                    <p className='text-sm text-gray-500 dark:text-gray-400 text-center'>
+                    <p className='text-sm text-muted-foreground text-center'>
                         {t.onboarding.welcome} {communityName}
                         {t.onboarding.welcomeSuffix} {t.onboarding.subtitle}
                     </p>
@@ -176,10 +176,10 @@ export default function OnboardingPage() {
                                                                   ],
                                                         )
                                                     }
-                                                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${
+                                                    className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors ${
                                                         selected
                                                             ? 'border-transparent text-white'
-                                                            : 'border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300'
+                                                            : 'border-border text-muted-foreground hover:bg-muted'
                                                     }`}
                                                     style={
                                                         selected
@@ -194,7 +194,7 @@ export default function OnboardingPage() {
                                             );
                                         })}
                                     </div>
-                                    <p className='text-xs text-gray-400'>
+                                    <p className='text-xs text-muted-foreground'>
                                         {t.onboarding.ekskulHint}
                                     </p>
                                     <FormMessage />

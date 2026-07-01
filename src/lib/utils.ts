@@ -50,8 +50,21 @@ export function sessionStatusVariant(
 
 export function paymentStatusVariant(
     status: string,
-): 'default' | 'secondary' | 'destructive' {
-    if (status === 'CONFIRMED') return 'default';
+): 'success' | 'warning' | 'destructive' {
+    if (status === 'CONFIRMED') return 'success';
     if (status === 'REJECTED') return 'destructive';
-    return 'secondary';
+    return 'warning';
+}
+
+/**
+ * Badge variant for a user role. OWNER carries the platform accent (default =
+ * Deep Teal), ADMIN a neutral secondary, MEMBER a plain outline. Replaces the
+ * legacy hardcoded purple OWNER badge (single-accent rule, UX-DR1).
+ */
+export function roleBadgeVariant(
+    role: string,
+): 'default' | 'secondary' | 'outline' {
+    if (role === 'OWNER') return 'default';
+    if (role === 'ADMIN') return 'secondary';
+    return 'outline';
 }

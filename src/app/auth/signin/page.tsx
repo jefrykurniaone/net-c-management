@@ -1,10 +1,9 @@
 import { signIn } from '@/lib/auth';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { getSettings } from '@/lib/settings';
-import { communityAbbr } from '@/lib/utils';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { CommunityIdentityMark } from '@/components/community/identity-mark';
 
 export default async function SignInPage() {
     const [{ communityName, logoUrl }, locale] = await Promise.all([
@@ -13,37 +12,27 @@ export default async function SignInPage() {
     ]);
     const t = getDictionary(locale);
     return (
-        <div className='min-h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-100 dark:from-gray-900 dark:to-gray-800'>
-            <div className='bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 w-full max-w-sm flex flex-col items-center gap-6'>
+        <div className='min-h-screen flex items-center justify-center bg-muted'>
+            <div className='bg-card rounded-2xl shadow-xl p-8 w-full max-w-sm flex flex-col items-center gap-6'>
                 {/* Logo / Branding */}
                 <div className='flex flex-col items-center gap-2'>
-                    {logoUrl ? (
-                        <Image
-                            src={logoUrl}
-                            alt={communityName}
-                            width={64}
-                            height={64}
-                            className='w-16 h-16 rounded-full object-cover'
-                        />
-                    ) : (
-                        <div className='w-16 h-16 bg-green-600 rounded-full flex items-center justify-center'>
-                            <span className='text-white font-bold text-2xl'>
-                                {communityAbbr(communityName)}
-                            </span>
-                        </div>
-                    )}
-                    <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
+                    <CommunityIdentityMark
+                        communityName={communityName}
+                        logoUrl={logoUrl}
+                        size='lg'
+                    />
+                    <h1 className='text-2xl font-bold text-foreground'>
                         {communityName}
                     </h1>
-                    <p className='text-sm text-gray-500 dark:text-gray-400 text-center'>
+                    <p className='text-sm text-muted-foreground text-center'>
                         {t.auth.signInSubtitle}
                     </p>
                 </div>
 
-                <div className='w-full border-t border-gray-100 dark:border-gray-700' />
+                <div className='w-full border-t border-border' />
 
                 <div className='flex flex-col items-center gap-3 w-full'>
-                    <p className='text-sm text-gray-600 dark:text-gray-400'>
+                    <p className='text-sm text-muted-foreground'>
                         {t.auth.signInTitle}
                     </p>
                     <form
@@ -85,7 +74,7 @@ export default async function SignInPage() {
                     </form>
                 </div>
 
-                <p className='text-xs text-gray-400 dark:text-gray-500 text-center'>
+                <p className='text-xs text-muted-foreground text-center'>
                     {t.auth.signInNote}
                 </p>
 
@@ -93,7 +82,7 @@ export default async function SignInPage() {
                 {process.env.NODE_ENV !== 'production' && (
                     <a
                         href='/auth/dev'
-                        className='text-xs text-amber-600 dark:text-amber-400 hover:underline'>
+                        className='text-xs text-warning hover:underline'>
                         Dev login →
                     </a>
                 )}

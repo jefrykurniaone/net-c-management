@@ -96,14 +96,14 @@ export default function NewSessionPage() {
     <div className="max-w-lg mx-auto space-y-6">
       <Link
         href="/admin/sessions"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" />
         {t.admin.backToSessions}
       </Link>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h1 className="text-xl font-bold text-foreground mb-6">
           {t.admin.newSessionTitle}
         </h1>
 
@@ -264,7 +264,7 @@ export default function NewSessionPage() {
 
             <Button
               type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              className="w-full"
               loading={loading}
             >
               {t.admin.createBtn}

@@ -20,9 +20,20 @@ export const uploadProofSchema = z.object({
 
 export type UploadProofFormData = z.infer<typeof uploadProofSchema>;
 
-export const confirmPaymentSchema = z.object({
-    status: z.enum(['CONFIRMED', 'REJECTED']),
-    notes: z.string().max(500).optional(),
-});
+// A rejection must carry a reason (UX-DR12); confirmation keeps notes optional.
+export function buildConfirmPaymentSchema(t: Dictionary) {
+    return z
+        .object({
+            status: z.enum(['CONFIRMED', 'REJECTED']),
+            notes: z.string().max(500).optional(),
+        })
+        .refine(
+            (data) =>
+                data.status !== 'REJECTED' || (data.notes?.trim().length ?? 0) > 0,
+            { path: ['notes'], message: t.validation.rejectReasonRequired },
+        );
+}
 
-export type ConfirmPaymentFormData = z.infer<typeof confirmPaymentSchema>;
+export type ConfirmPaymentFormData = z.infer<
+    ReturnType<typeof buildConfirmPaymentSchema>
+>;
