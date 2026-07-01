@@ -20,6 +20,37 @@ export function toPeriodKey(month: number, year: number): number {
   return year * PERIOD_YEAR_RADIX + month;
 }
 
+/** Calendar months in a year — for rolling a December switch into January. */
+const MONTHS_PER_YEAR = 12;
+/** First calendar month (January), 1-indexed per AD-13. */
+const FIRST_MONTH = 1;
+
+/** A billing period as the calendar pair used everywhere (AD-13). */
+export interface BillingPeriod {
+  month: number;
+  year: number;
+}
+
+/**
+ * The billing period containing `now` — calendar month 1–12 + full year. `now`
+ * is injected (never read from an ambient clock here) so this stays a pure
+ * function, matching `resolvePaymentMode`.
+ */
+export function currentPeriod(now: Date): BillingPeriod {
+  return { month: now.getMonth() + 1, year: now.getFullYear() };
+}
+
+/**
+ * The billing period immediately after the one containing `now`. December rolls
+ * into January of the next year. Used to queue a mode switch for the next
+ * period so the current period is never rewritten (AD-7).
+ */
+export function nextPeriod(now: Date): BillingPeriod {
+  const { month, year } = currentPeriod(now);
+  if (month === MONTHS_PER_YEAR) return { month: FIRST_MONTH, year: year + 1 };
+  return { month: month + 1, year };
+}
+
 /** The minimal Membership fields the resolver reads. */
 export interface MembershipMode {
   paymentMode: PaymentMode | null;

@@ -8,6 +8,12 @@ import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { isAdminRole } from "@/lib/utils";
+import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
+
+const PAYMENT_MODE_LABELS: Record<string, string> = {
+  MONTHLY: "Bulanan",
+  PER_SESSION: "Per sesi",
+};
 
 const STATUS_LABELS = {
   REGISTERED: "Terdaftar",
@@ -50,7 +56,17 @@ export default async function MemberDetailPage({
     include: {
       memberships: {
         where: { isActive: true, ekskul: { isActive: true } },
-        include: { ekskul: { select: { id: true, name: true, color: true } } },
+        include: {
+          ekskul: {
+            select: {
+              id: true,
+              name: true,
+              color: true,
+              allowsMonthly: true,
+              allowsPerSession: true,
+            },
+          },
+        },
       },
       attendances: {
         include: { session: true },
@@ -65,6 +81,8 @@ export default async function MemberDetailPage({
   });
 
   if (!member) notFound();
+
+  const { month, year } = currentPeriod(new Date());
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -110,14 +128,26 @@ export default async function MemberDetailPage({
               )}
             </div>
             {member.memberships.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {member.memberships.map((m) => (
-                  <EkskulBadge
-                    key={m.ekskul.id}
-                    name={m.ekskul.name}
-                    color={m.ekskul.color}
-                  />
-                ))}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {member.memberships.map((m) => {
+                  const mode = resolvePaymentMode(
+                    m,
+                    {
+                      allowsMonthly: m.ekskul.allowsMonthly,
+                      allowsPerSession: m.ekskul.allowsPerSession,
+                    },
+                    month,
+                    year,
+                  );
+                  return (
+                    <span key={m.ekskul.id} className="inline-flex items-center gap-1">
+                      <EkskulBadge name={m.ekskul.name} color={m.ekskul.color} />
+                      <span className="text-xs text-gray-500">
+                        · {mode ? PAYMENT_MODE_LABELS[mode] : "—"}
+                      </span>
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>
