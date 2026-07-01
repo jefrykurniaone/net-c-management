@@ -86,8 +86,8 @@ export default function SessionPayPage() {
 
     const owedLabel = session
         ? t.payments.sessionOwedFor
-              .replace('{activity}', session.ekskul.name)
-              .replace('{session}', session.title)
+              .split('{activity}').join(session.ekskul.name)
+              .split('{session}').join(session.title)
         : '';
 
     if (loaded && !session) {

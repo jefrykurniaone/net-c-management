@@ -39,6 +39,14 @@ export async function POST(
     return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
   }
 
+  if (activitySession.status === "CANCELLED") {
+    return NextResponse.json({ error: "Session is cancelled" }, { status: 400 });
+  }
+
+  if (activitySession.status === "COMPLETED") {
+    return NextResponse.json({ error: "Session already completed" }, { status: 400 });
+  }
+
   // Per-session (and unselected) members are payment-gated — reject the free path.
   const freeAllowed = await isFreeRegisterAllowed({
     userId: session.user.id,
@@ -47,14 +55,6 @@ export async function POST(
   if (!freeAllowed) {
     const t = getDictionary(await getLocale());
     return NextResponse.json({ error: t.sessions.payRequired }, { status: 403 });
-  }
-
-  if (activitySession.status === "CANCELLED") {
-    return NextResponse.json({ error: "Session is cancelled" }, { status: 400 });
-  }
-
-  if (activitySession.status === "COMPLETED") {
-    return NextResponse.json({ error: "Session already completed" }, { status: 400 });
   }
 
   if (activitySession._count.attendances >= activitySession.maxPlayers) {

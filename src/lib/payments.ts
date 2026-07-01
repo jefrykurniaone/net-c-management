@@ -156,6 +156,22 @@ export class SessionFullError extends Error {
   }
 }
 
+/** Thrown when the Session is cancelled/completed by the time the lock is held. */
+export class SessionNotRegisterableError extends Error {
+  constructor() {
+    super('Session is not open for registration');
+    this.name = 'SessionNotRegisterableError';
+  }
+}
+
+/** Thrown when re-uploading proof for a payment that's already been confirmed. */
+export class SessionAlreadyConfirmedError extends Error {
+  constructor() {
+    super('Payment already confirmed');
+    this.name = 'SessionAlreadyConfirmedError';
+  }
+}
+
 /** The Session fields the register transaction needs (all server-sourced). */
 export interface SessionForCharge {
   id: string;
@@ -200,10 +216,10 @@ export async function resolveSessionCharge(input: {
       date: true,
       maxPlayers: true,
       status: true,
-      ekskul: { select: { allowsMonthly: true, allowsPerSession: true } },
+      ekskul: { select: { isActive: true, allowsMonthly: true, allowsPerSession: true } },
     },
   });
-  if (!session) return { ok: false, reason: 'notFound' };
+  if (!session?.ekskul.isActive) return { ok: false, reason: 'notFound' };
   if (
     session.status === SessionStatus.CANCELLED ||
     session.status === SessionStatus.COMPLETED
@@ -249,23 +265,42 @@ export interface SessionRegistrationInput {
 }
 
 /**
- * Atomically secure a per-session slot: in ONE transaction, re-check capacity
- * (Attendance count is the sole authority, AD-6), then upsert the SESSION
- * `Payment` (PENDING, amount snapshot) AND the REGISTERED `Attendance`. If the
- * last seat was taken between the gate and here, throw `SessionFullError` so the
- * whole transaction rolls back — no half-write (AD-14/NFR-3). Re-uploading resets
- * the payment to PENDING and clears any prior confirmation.
+ * Atomically secure a per-session slot: in ONE transaction, lock the Session
+ * row (`SELECT ... FOR UPDATE`) so concurrent registrations serialize on it,
+ * re-check its status + capacity fresh under that lock (Attendance count is the
+ * sole authority, AD-6), then upsert the SESSION `Payment` (PENDING, amount
+ * snapshot) AND the REGISTERED `Attendance`. If the last seat was taken between
+ * the gate and here, throw `SessionFullError` so the whole transaction rolls
+ * back — no half-write (AD-14/NFR-3). Re-uploading resets the payment to
+ * PENDING and clears any prior confirmation, unless it's already CONFIRMED.
  */
 export async function registerAndPaySession(input: SessionRegistrationInput) {
   const { userId, session, amount, month, year, proofUrl, proofPath } = input;
   const key = { userId_sessionId: { userId, sessionId: session.id } };
 
   return prisma.$transaction(async (tx) => {
+    const [locked] = await tx.$queryRaw<{ maxPlayers: number; status: SessionStatus }[]>`
+      SELECT "maxPlayers", "status" FROM "ActivitySession" WHERE "id" = ${session.id} FOR UPDATE
+    `;
+    if (
+      !locked ||
+      locked.status === SessionStatus.CANCELLED ||
+      locked.status === SessionStatus.COMPLETED
+    ) {
+      throw new SessionNotRegisterableError();
+    }
+
+    const existing = await tx.payment.findUnique({ where: key, select: { status: true } });
+    if (existing?.status === PaymentStatus.CONFIRMED) {
+      throw new SessionAlreadyConfirmedError();
+    }
+
     const others = await tx.attendance.count({
       where: { sessionId: session.id, userId: { not: userId }, status: { in: SEAT_HELD_STATUSES } },
     });
-    const mine = await tx.attendance.findUnique({ where: key, select: { id: true } });
-    if (!mine && others >= session.maxPlayers) throw new SessionFullError();
+    const mine = await tx.attendance.findUnique({ where: key, select: { status: true } });
+    const mineHoldsSeat = mine !== null && SEAT_HELD_STATUSES.includes(mine.status);
+    if (!mineHoldsSeat && others >= locked.maxPlayers) throw new SessionFullError();
 
     const payment = await tx.payment.upsert({
       where: key,
@@ -283,6 +318,8 @@ export async function registerAndPaySession(input: SessionRegistrationInput) {
       },
       update: {
         amount,
+        month,
+        year,
         status: PaymentStatus.PENDING,
         proofUrl,
         proofPath,
@@ -309,8 +346,11 @@ export type SeatReleaseResult =
  * paired SESSION `Payment` in one transaction, so no orphaned charge remains.
  * A `CONFIRMED` (paid + admin-verified) payment is protected — the member may
  * not self-cancel it and is routed to an admin (whose reject path releases the
- * seat). Safe for monthly members: with no SESSION payment the `deleteMany` is a
- * no-op and only the free-register Attendance is removed.
+ * seat). The payment's status is read via `SELECT ... FOR UPDATE` inside the
+ * same transaction as the deletes, so a concurrent admin-confirm can't slip a
+ * CONFIRMED payment past this check (no TOCTOU gap). Safe for monthly members:
+ * with no SESSION payment the delete is a no-op and only the free-register
+ * Attendance is removed.
  */
 export async function releaseSessionSeat(input: {
   userId: string;
@@ -318,36 +358,38 @@ export async function releaseSessionSeat(input: {
 }): Promise<SeatReleaseResult> {
   const { userId, sessionId } = input;
 
-  const attendance = await prisma.attendance.findUnique({
-    where: { userId_sessionId: { userId, sessionId } },
-    select: { id: true },
-  });
-  if (!attendance) return { released: false, reason: 'notRegistered' };
+  return prisma.$transaction(async (tx) => {
+    const attendance = await tx.attendance.findUnique({
+      where: { userId_sessionId: { userId, sessionId } },
+      select: { id: true },
+    });
+    if (!attendance) return { released: false, reason: 'notRegistered' };
 
-  const payment = await prisma.payment.findFirst({
-    where: { userId, sessionId },
-    select: { status: true },
-  });
-  if (payment?.status === PaymentStatus.CONFIRMED) {
-    return { released: false, reason: 'confirmedLocked' };
-  }
+    const [payment] = await tx.$queryRaw<{ status: PaymentStatus }[]>`
+      SELECT "status" FROM "Payment"
+      WHERE "userId" = ${userId} AND "sessionId" = ${sessionId} AND "type" = 'SESSION'
+      FOR UPDATE
+    `;
+    if (payment?.status === PaymentStatus.CONFIRMED) {
+      return { released: false, reason: 'confirmedLocked' };
+    }
 
-  await prisma.$transaction([
-    prisma.attendance.deleteMany({ where: { userId, sessionId } }),
-    prisma.payment.deleteMany({ where: { userId, sessionId } }),
-  ]);
-  return { released: true };
+    await tx.attendance.deleteMany({ where: { userId, sessionId } });
+    await tx.payment.deleteMany({ where: { userId, sessionId, type: PaymentType.SESSION } });
+    return { released: true };
+  });
 }
 
 /**
  * Whether a member may register for a Session via the FREE attendance route.
- * Only a member whose effective mode for the Session's period is `MONTHLY` may;
- * a `PER_SESSION` (or unselected) member must go through pre-pay-on-register so a
- * seat is never held without a charge (AD-6).
+ * A member whose effective mode for the Session's period is `MONTHLY` may, and
+ * so may anyone when the Session's fee is 0 (nothing to charge — a `PER_SESSION`
+ * member is never left with no registration path). Otherwise the member must go
+ * through pre-pay-on-register so a seat is never held without a charge (AD-6).
  */
 export async function isFreeRegisterAllowed(input: {
   userId: string;
-  session: { ekskulId: string; date: Date };
+  session: { ekskulId: string; date: Date; fee: number };
 }): Promise<boolean> {
   const { userId, session } = input;
 
@@ -363,11 +405,15 @@ export async function isFreeRegisterAllowed(input: {
       },
     }),
     prisma.ekskul.findUnique({
-      where: { id: session.ekskulId },
+      where: { id: session.ekskulId, isActive: true },
       select: { allowsMonthly: true, allowsPerSession: true },
     }),
   ]);
   if (!membership?.isActive || !ekskul) return false;
+
+  // A free session has nothing to charge — any member may register, regardless
+  // of mode, so a PER_SESSION member on a fee-0 session isn't left with no path.
+  if (session.fee < MIN_SESSION_FEE) return true;
 
   const { month, year } = currentPeriod(session.date);
   const offered = { allowsMonthly: ekskul.allowsMonthly, allowsPerSession: ekskul.allowsPerSession };

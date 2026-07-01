@@ -2,9 +2,13 @@
 
 Items surfaced during reviews that are real but intentionally not actioned now. Each notes where it should be picked up.
 
+## Deferred from: code review of story-3.5 (2026-07-02)
+
+- **Rejecting a payment has no guard against the session already being `COMPLETED`** — `PATCH /api/payments/[id]`'s REJECTED branch deletes the paired `Attendance` unconditionally whenever `type === SESSION`, with no check on the session's own status. Whether a late rejection should ever retroactively erase historical (e.g. `PRESENT`) attendance is a business-rule question, not a mechanical fix. Pick up alongside the storage-cleanup item below in a future payment-lifecycle hardening pass.
+
 ## Deferred from: code review of story-3.4 (2026-07-02)
 
-- **No cleanup of superseded/orphaned payment-proof storage objects** — `upsertMonthlyPayment` (`src/lib/payments.ts`) is unchanged by Story 3.4; on a resubmission it overwrites `proofUrl`/`proofPath` without deleting the previous storage object, and if the DB write fails after `uploadPaymentProof` already succeeded, that object is orphaned with no cleanup path. Pre-existing since the monthly upload flow was first built, not introduced by Story 3.4. Pick up whenever payment-proof storage cleanup/lifecycle is next hardened (likely needs a `deletePaymentProof` helper in `src/lib/supabase.ts` called from both the resubmit-overwrite path and a catch around the post-upload DB write).
+- **No cleanup of superseded/orphaned payment-proof storage objects** — `upsertMonthlyPayment` (`src/lib/payments.ts`) is unchanged by Story 3.4; on a resubmission it overwrites `proofUrl`/`proofPath` without deleting the previous storage object, and if the DB write fails after `uploadPaymentProof` already succeeded, that object is orphaned with no cleanup path. Pre-existing since the monthly upload flow was first built, not introduced by Story 3.4. Pick up whenever payment-proof storage cleanup/lifecycle is next hardened (likely needs a `deletePaymentProof` helper in `src/lib/supabase.ts` called from both the resubmit-overwrite path and a catch around the post-upload DB write). **Update (Story 3.5 review):** the same gap also surfaces via `releaseSessionSeat` (member self-cancel) and the admin-reject path in `payments/[id]/route.ts` — both hard-delete the `Payment` row with no storage cleanup. All three code paths should be fixed together.
 
 ## Deferred from: code review of story-1.4 (2026-06-30)
 

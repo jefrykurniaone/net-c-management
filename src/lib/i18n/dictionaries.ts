@@ -168,6 +168,7 @@ const en = {
         sessionOwedFor: 'Session fee for {activity} · {session}',
         paySessionTitle: 'Register & pay',
         rejectReasonPrompt: 'Enter a reason for rejecting this payment',
+        alreadyConfirmed: 'This payment has already been confirmed.',
     },
     profile: {
         title: 'My Profile',
@@ -282,6 +283,7 @@ const en = {
         paymentConfirmed: 'Payment confirmed',
         paymentRejected: 'Payment rejected',
         paymentUpdateFailed: 'Failed to update payment status',
+        paymentAlreadyReviewed: 'This payment has already been reviewed.',
         confirmConfirm: 'Are you sure you want to confirm this payment?',
         confirmReject: 'Are you sure you want to reject this payment?',
         deactivateMember: 'Deactivate',
@@ -447,7 +449,6 @@ const en = {
         ekskulRequired: 'Select an activity',
         ekskulMembershipRequired: 'Select at least one activity',
         rejectReasonRequired: 'A rejection reason is required.',
-        sessionRequired: 'Session is required',
     },
 };
 
@@ -617,6 +618,7 @@ const id: typeof en = {
         sessionOwedFor: 'Biaya sesi {activity} · {session}',
         paySessionTitle: 'Daftar & bayar',
         rejectReasonPrompt: 'Masukkan alasan penolakan pembayaran ini',
+        alreadyConfirmed: 'Pembayaran ini sudah dikonfirmasi.',
     },
     profile: {
         title: 'Profil Saya',
@@ -731,6 +733,7 @@ const id: typeof en = {
         paymentConfirmed: 'Pembayaran dikonfirmasi',
         paymentRejected: 'Pembayaran ditolak',
         paymentUpdateFailed: 'Gagal memperbarui status',
+        paymentAlreadyReviewed: 'Pembayaran ini sudah ditinjau.',
         confirmConfirm: 'Yakin ingin mengkonfirmasi pembayaran ini?',
         confirmReject: 'Yakin ingin menolak pembayaran ini?',
         deactivateMember: 'Non-aktifkan',
@@ -897,7 +900,6 @@ const id: typeof en = {
         ekskulRequired: 'Pilih aktivitas',
         ekskulMembershipRequired: 'Pilih minimal satu aktivitas',
         rejectReasonRequired: 'Alasan penolakan wajib diisi.',
-        sessionRequired: 'Sesi wajib dipilih',
     },
 };
 

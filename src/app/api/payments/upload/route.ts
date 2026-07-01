@@ -6,6 +6,8 @@ import {
     resolveSessionCharge,
     registerAndPaySession,
     SessionFullError,
+    SessionNotRegisterableError,
+    SessionAlreadyConfirmedError,
     type SessionCharge,
 } from '@/lib/payments';
 import { assertMembership } from '@/lib/ekskul';
@@ -137,10 +139,16 @@ async function handleSessionUpload({ userId, formData, t }: UploadCtx, sessionId
         });
         return NextResponse.json(payment, { status: 201 });
     } catch (error) {
-        // Only the in-transaction capacity race can reject after the upload — the
-        // orphaned object is accepted pre-launch (AD-14/NFR-3).
+        // In-transaction rejections can happen after the upload — the orphaned
+        // object is accepted pre-launch (AD-14/NFR-3).
         if (error instanceof SessionFullError) {
             return NextResponse.json({ error: t.sessions.sessionFull }, { status: SESSION_FULL_STATUS });
+        }
+        if (error instanceof SessionNotRegisterableError) {
+            return NextResponse.json({ error: t.sessions.notRegisterable }, { status: 400 });
+        }
+        if (error instanceof SessionAlreadyConfirmedError) {
+            return NextResponse.json({ error: t.payments.alreadyConfirmed }, { status: 409 });
         }
         throw error;
     }

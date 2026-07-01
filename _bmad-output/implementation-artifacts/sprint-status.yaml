@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-30
-last_updated: 2026-07-02 (Story 3.4 code-reviewed and closed → done; restricted the uploader to the current billing period, fixed a missing isActive gate + year-ceiling validation + the missing "Uploading…" state, 9 patch findings total, 1 storage-cleanup item deferred; lint/typecheck clean)
+last_updated: 2026-07-02 (Story 3.5 code-reviewed and closed → done; Epic 3 complete. Fixed two critical concurrency bugs — the per-session capacity race and a cancel/confirm TOCTOU gap — via SELECT ... FOR UPDATE row locking, plus 13 other patch findings, 2 deferred; lint/typecheck clean)
 project: net-c-management
 project_key: NOKEY
 tracking_system: file-system
@@ -65,12 +65,12 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3 — Member Payment-Mode Selection & Billing
-  epic-3: in-progress
+  epic-3: done
   3-1-membership-payment-mode-data-model-period-resolution: done
   3-2-payment-model-extension-mode-partitioned-uniqueness: done
   3-3-member-selects-a-payment-mode-from-the-offered-set: done
   3-4-monthly-mode-billing: done
-  3-5-per-session-mode-billing-pre-pay-on-register-atomic: review
+  3-5-per-session-mode-billing-pre-pay-on-register-atomic: done
   epic-3-retrospective: optional
 
   # Epic 4 — UI/UX Refresh, Responsiveness & Settings IA

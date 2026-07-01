@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import type { PaymentMode, PaymentStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
-type PaymentMode = 'MONTHLY' | 'PER_SESSION' | null;
-type PaymentStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | null;
+/** A session with no fee has nothing to charge, regardless of payment mode. */
+const MIN_SESSION_FEE = 1;
 
 interface RSVPButtonProps {
     sessionId: string;
@@ -17,9 +18,9 @@ interface RSVPButtonProps {
     isFull: boolean;
     isCancelled: boolean;
     isCompleted: boolean;
-    paymentMode: PaymentMode;
+    paymentMode: PaymentMode | null;
     sessionFee: number;
-    sessionPaymentStatus: PaymentStatus;
+    sessionPaymentStatus: PaymentStatus | null;
 }
 
 export function RSVPButton({
@@ -82,8 +83,17 @@ export function RSVPButton({
         return <DisabledCta label={t.sessions.sessionCompleted} />;
     }
 
-    // Per-session (and unselected) members pay to secure a slot — never free.
-    if (paymentMode !== 'MONTHLY') {
+    // A fee-0 session has nothing to charge — everyone registers free. Otherwise
+    // only a MONTHLY member registers free; a non-member / no-mode-selected
+    // member (null) isn't offered the pay CTA either — there's no valid path.
+    const isFreeEligible = paymentMode === 'MONTHLY' || sessionFee < MIN_SESSION_FEE;
+
+    if (!isFreeEligible && paymentMode === null) {
+        return <DisabledCta label={t.sessions.payRequired} />;
+    }
+
+    // Per-session members pay to secure a slot — never free.
+    if (!isFreeEligible) {
         return (
             <PerSessionCta
                 sessionId={sessionId}
@@ -130,7 +140,7 @@ interface PerSessionCtaProps {
     isRegistered: boolean;
     isFull: boolean;
     sessionFee: number;
-    status: PaymentStatus;
+    status: PaymentStatus | null;
     loading: boolean;
     onCancel: () => void;
     t: ReturnType<typeof getDictionary>;
@@ -157,7 +167,9 @@ function PerSessionCta({
         );
     }
 
-    if (isRegistered && status === 'REJECTED') {
+    // A reject deletes the Attendance row, so isRegistered is already false by
+    // the time status is REJECTED — check status alone, not isRegistered too.
+    if (status === 'REJECTED') {
         return (
             <div className='space-y-2'>
                 <p className='text-sm font-medium text-destructive text-center'>

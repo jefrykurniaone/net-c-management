@@ -66,10 +66,16 @@ export async function PATCH(
 
     const payment = await prisma.payment.findUnique({
         where: { id },
-        select: { id: true, type: true, sessionId: true, userId: true },
+        select: { id: true, type: true, sessionId: true, userId: true, status: true },
     });
     if (!payment) {
         return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
+    }
+    if (payment.status !== 'PENDING') {
+        return NextResponse.json(
+            { error: t.admin.paymentAlreadyReviewed },
+            { status: 409 },
+        );
     }
 
     // Both confirm and reject record the acting admin + timestamp (AC4/UX-DR12).
@@ -81,6 +87,8 @@ export async function PATCH(
     };
 
     // Rejecting a per-session payment releases the paired seat atomically (AD-6).
+    // Only a REGISTERED (not yet PRESENT) attendance is released — a completed
+    // session's historical PRESENT record is never retroactively erased.
     if (
         parsed.data.status === 'REJECTED' &&
         payment.type === PaymentType.SESSION &&
@@ -89,7 +97,9 @@ export async function PATCH(
         const { userId, sessionId } = payment;
         const [updated] = await prisma.$transaction([
             prisma.payment.update({ where: { id }, data }),
-            prisma.attendance.deleteMany({ where: { userId, sessionId } }),
+            prisma.attendance.deleteMany({
+                where: { userId, sessionId, status: 'REGISTERED' },
+            }),
         ]);
         return NextResponse.json(updated);
     }
