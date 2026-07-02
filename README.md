@@ -151,11 +151,13 @@ This solution automates and centralizes those workflows — reducing the operati
     Confirm `DATABASE_URL` in `.env.local` points at this local DB:
     `postgresql://postgres:postgres@localhost:5432/netc?schema=public`
 
-    Then create & apply the migration and seed initial data:
+    Then apply the schema, the raw-SQL extras, and seed initial data:
 
     ```bash
-    npm run db:migrate     # first time: Prisma will ask for --name (e.g. init)
-    npm run db:seed        # ekskul + settings + sample sessions (+ owner if SEED_OWNER_EMAIL set)
+    npx prisma db push     # apply prisma/schema.prisma to the local DB
+    npx prisma db execute --file prisma/payment-monthly-unique.sql
+    npx prisma db execute --file prisma/rls-policies.sql
+    npm run db:seed        # activities + settings + sample members/payments (+ owner if SEED_OWNER_EMAIL set)
     ```
 
 5. **Set up Supabase Storage**
@@ -209,32 +211,58 @@ npm run lint         # ESLint
 
 ## Changing the Schema & Promoting to Production
 
-Safe flow: **local first, production is an explicit step.**
+Both environments are managed with **`prisma db push`** (the `prisma/migrations/`
+folder only holds the original `init` and is not the source of truth). Safe flow:
+**local first, production is an explicit step.**
 
-1. **Local:** edit `prisma/schema.prisma`, then create a new migration against the local DB:
-
-    ```bash
-    npm run db:migrate -- --name <change-description>
-    ```
-
-    Migrations are stored in `prisma/migrations/` (commit them to git). Test locally.
-
-2. **Baseline production (one time only):** production already has tables from the
-   old `db push` workflow, so mark the first migration as already applied without
-   running its SQL:
+1. **Local:** edit `prisma/schema.prisma`, then:
 
     ```bash
-    cross-env DATABASE_TARGET=prod prisma migrate resolve --applied <ts>_init
+    npx prisma generate   # regenerate the client
+    npx prisma db push    # apply to the local DB
     ```
 
-3. **Deploy to production:** once the migration is tested locally and committed:
+    Test locally.
+
+2. **Promote to production** (opt-in via `DATABASE_TARGET=prod` → `.env.prod`):
 
     ```bash
-    npm run db:deploy:prod   # apply new migrations to Supabase prod (port 5432)
+    cross-env DATABASE_TARGET=prod prisma db push
     ```
 
-`prisma migrate deploy` only applies migrations that aren't yet in production — it
-won't drop columns/data without an explicit migration, unlike `db push`.
+    Review the command's data-loss warnings before accepting them — `db push`
+    can drop columns, unlike `migrate deploy`.
+
+3. **Re-apply the raw-SQL extras** if the affected tables changed (both are
+   idempotent, so re-running is always safe — and **mandatory after any reset**,
+   which recreates tables without them):
+
+    ```bash
+    # Partial unique index on MONTHLY payments (db push cannot express it)
+    cross-env DATABASE_TARGET=prod prisma db execute --file prisma/payment-monthly-unique.sql
+
+    # Enable RLS + deny direct API access on every table (Supabase hardening)
+    cross-env DATABASE_TARGET=prod prisma db execute --file prisma/rls-policies.sql
+    ```
+
+### Production seed & owner
+
+`prisma/seed.ts` is **local/testing only** (sample members, confirmed payments).
+Production uses its own seeder, which only writes settings and the real
+Activities — no sample data:
+
+```bash
+npm run db:seed:prod
+```
+
+Becoming OWNER in production is a two-step flow: production keeps
+`allowDangerousEmailAccountLinking` **off** (see `src/lib/auth.ts`), so a
+pre-seeded User row for a Google email that never signed in would break that
+login (`OAuthAccountNotLinked`). Therefore:
+
+1. Sign in once via Google on the production app (creates your User row).
+2. Re-run `npm run db:seed:prod` — it promotes the owner email — or run
+   `npm run db:promote:prod -- your-email@gmail.com`.
 
 ---
 
@@ -259,8 +287,12 @@ src/
 │   └── validations/    # Zod schemas
 └── types/              # TypeScript type augmentation
 prisma/
-├── schema.prisma       # Database schema
-├── seed.ts             # Local seed (ekskul, settings, sample sessions, owner)
-└── migrations/         # Prisma Migrate history (committed)
+├── schema.prisma               # Database schema
+├── seed.ts                     # Local/testing seed (sample members, payments, quotas)
+├── seed-prod.ts                # Production seed (settings, real Activities, owner promotion)
+├── promote-owner.ts            # Promote a signed-in user to OWNER (local or prod)
+├── payment-monthly-unique.sql  # Partial unique index (applied via prisma db execute)
+├── rls-policies.sql            # Supabase RLS hardening (applied via prisma db execute)
+└── migrations/                 # Historical init migration (db push is the source of truth)
 prisma.config.ts        # Prisma 7 config (selects local/prod via DATABASE_TARGET)
 ```
