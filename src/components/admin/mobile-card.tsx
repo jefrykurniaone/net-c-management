@@ -38,8 +38,12 @@ export function CardField({
   className,
 }: Readonly<{ label: string; children: ReactNode; className?: string }>) {
   return (
-    <div className={cn("flex items-start justify-between gap-3 text-sm", className)}>
-      <span className="shrink-0 text-muted-foreground">{label}</span>
+    <div
+      role="group"
+      aria-label={label}
+      className={cn("flex items-start justify-between gap-3 text-sm", className)}
+    >
+      <span aria-hidden className="shrink-0 text-muted-foreground">{label}</span>
       <div className="min-w-0 text-right text-foreground">{children}</div>
     </div>
   );

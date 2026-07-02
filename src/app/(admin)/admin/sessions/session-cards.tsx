@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { format } from "date-fns";
-import { id as localeId, enUS } from "date-fns/locale";
 import type { Locale as DateFnsLocale } from "date-fns";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,7 @@ import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
 import { sessionStatusVariant } from "@/lib/utils";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
+import { getDateFnsLocale } from "@/lib/i18n/locale";
 import type { ActivitySession } from "@prisma/client";
 
 type SessionRow = ActivitySession & {
@@ -74,7 +74,7 @@ export function SessionCards({
   t,
   locale,
 }: Readonly<{ sessions: SessionRow[]; t: Dictionary; locale: Locale }>) {
-  const dateLocale = locale === "id" ? localeId : enUS;
+  const dateLocale = getDateFnsLocale(locale);
   if (sessions.length === 0) return <CardListEmpty>{t.admin.noSessions}</CardListEmpty>;
   return (
     <div className="space-y-3">

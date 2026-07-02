@@ -1,5 +1,4 @@
 import { format } from "date-fns";
-import { id as localeId, enUS } from "date-fns/locale";
 import type { Locale as DateFnsLocale } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
@@ -7,6 +6,7 @@ import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-
 import { PaymentActions } from "./payment-actions";
 import { paymentStatusVariant } from "@/lib/utils";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
+import { getDateFnsLocale } from "@/lib/i18n/locale";
 import type { Payment } from "@prisma/client";
 
 type PaymentRow = Payment & {
@@ -50,7 +50,7 @@ export function PaymentCards({
   t,
   locale,
 }: Readonly<{ payments: PaymentRow[]; t: Dictionary; locale: Locale }>) {
-  const dateLocale = locale === "id" ? localeId : enUS;
+  const dateLocale = getDateFnsLocale(locale);
   if (payments.length === 0) return <CardListEmpty>{t.admin.noPayments}</CardListEmpty>;
   return (
     <div className="space-y-3">

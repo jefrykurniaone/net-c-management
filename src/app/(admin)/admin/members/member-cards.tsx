@@ -5,18 +5,22 @@ import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-
 import { MemberActions } from "./member-actions";
 import { roleBadgeVariant } from "@/lib/utils";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import type { Role } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
-interface MemberRow {
-  id: string;
-  name: string | null;
-  email: string | null;
-  image: string | null;
-  role: Role;
-  isActive: boolean;
-  memberships: { ekskul: { id: string; name: string; color: string } }[];
-  _count: { attendances: number; payments: number };
-}
+type MemberRow = Prisma.UserGetPayload<{
+  select: {
+    id: true;
+    name: true;
+    email: true;
+    image: true;
+    role: true;
+    isActive: true;
+    memberships: {
+      select: { ekskul: { select: { id: true; name: true; color: true } } };
+    };
+    _count: { select: { attendances: true; payments: true } };
+  };
+}>;
 
 function MemberCard({
   u,

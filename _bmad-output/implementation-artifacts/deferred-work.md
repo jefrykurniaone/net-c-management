@@ -2,6 +2,10 @@
 
 Items surfaced during reviews that are real but intentionally not actioned now. Each notes where it should be picked up.
 
+## Deferred from: code review of story-4.2 (2026-07-02)
+
+- **Avatar-initial fallback crashes on empty-string email** — `(u.name ?? u.email ?? "?")[0].toUpperCase()` in the admin members table and the new `member-cards.tsx` throws if `email` is `""` rather than `null`, since `??` only short-circuits on `null`/`undefined` and `""[0]` is `undefined`. Pre-existing in the desktop table (unchanged by Story 4.2), duplicated verbatim into the new mobile card component per the story's "reuse verbatim" instruction. Low real-world risk (emails come from Google OAuth, unlikely to ever be `""`), but worth a one-line guard (e.g. `.trim()[0] ?? "?"`) next time either file is touched.
+
 ## Deferred from: code review of story-3.5 (2026-07-02)
 
 - **Rejecting a payment has no guard against the session already being `COMPLETED`** — `PATCH /api/payments/[id]`'s REJECTED branch deletes the paired `Attendance` unconditionally whenever `type === SESSION`, with no check on the session's own status. Whether a late rejection should ever retroactively erase historical (e.g. `PRESENT`) attendance is a business-rule question, not a mechanical fix. Pick up alongside the storage-cleanup item below in a future payment-lifecycle hardening pass.
