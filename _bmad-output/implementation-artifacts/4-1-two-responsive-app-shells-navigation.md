@@ -4,7 +4,7 @@ baseline_commit: 37d9e34cee0fff54a8dc237e752ef79421630582
 
 # Story 4.1: Two responsive app shells & navigation
 
-Status: review
+Status: done
 
 ## Story
 
@@ -62,9 +62,9 @@ so that I can move through the app on a phone or a desktop without a broken or c
   - [x] **Short labels for the bottom bar:** `t.nav.sessionsShort` / `t.nav.paymentsShort` (added in Task 5) are used by the bottom bar via `shortLabel`; the inline desktop nav uses the full labels. Dashboard/Profile/Admin have no short variant (their labels already fit).
 
 - [x] **Task 3 — Admin shell: sidebar + sheet, wide content (AC: 2, 3, 6)**
-  - [x] `src/app/(admin)/layout.tsx` renders the **admin shell** — left unchanged (server-component guards `auth()`/`getSettings()`/`!session.user`/`!isProfileComplete`/`!isAdminRole → /dashboard` intact, AC4). Structure stays `hidden md:flex` sidebar + mobile topbar-with-hamburger; content is already **full-width** (`flex-1`, no `max-w-2xl` clamp — AC2/NFR-5). The `Sidebar`/`MobileNav` prop contract (`communityName`/`logoUrl`) is unchanged, so no layout edit was needed.
+  - [x] `src/app/(admin)/layout.tsx` renders the **admin shell** — its guards are unchanged (`auth()`/`getSettings()`/`!session.user`/`!isProfileComplete`/`!isAdminRole → /dashboard` intact, AC4). Structure stays `hidden md:flex` sidebar + mobile topbar-with-hamburger; content is already **full-width** (`flex-1`, no `max-w-2xl` clamp — AC2/NFR-5). *Correction (code review, 2026-07-02): the `Sidebar`/`MobileNav` prop contract is indeed unchanged, but the file itself WAS edited — its own inline logo-fallback markup was replaced with the new `CommunityIdentityMark` component and its wrapper/header classes migrated to semantic tokens for dark-mode parity. See File List.*
   - [x] Refactored `src/components/layout/sidebar.tsx` into the **admin sidebar**: renders `getAdminNav(t)` as the primary section (dropped the now-duplicated member-nav block and the `isAdmin` conditional — the `(admin)` layout already gates admins), added a **"member view"** link back to `/dashboard` (icon `LayoutDashboard`, AC5). Kept the footer (avatar + name/email, Profile, `LanguageSwitcher`, `ThemeToggle`, Sign Out) and the `ChevronRight` active indicator; all `dark:` classes preserved; nav targets given `min-h-11` + `focus-visible:ring`.
-  - [x] Refactored `src/components/layout/mobile-nav.tsx` (admin `Sheet`) to render the **same admin nav** via `getAdminNav(t)` + the member-view link. **Fixed the dark-mode gaps** in `NavLinks`: header/footer/label classes (`border-gray-100`, `text-gray-900`) now carry `dark:` variants at parity with `sidebar.tsx`; the hamburger `sr-only` + `SheetTitle` now route through `t.nav.navigationMenu`. No brand-token restyle (that is Story 4.3).
+  - [x] Refactored `src/components/layout/mobile-nav.tsx` (admin `Sheet`) to render the **same admin nav** via `getAdminNav(t)` + the member-view link. **Fixed the dark-mode gaps** in `NavLinks`: header/footer/label classes (`border-gray-100`, `text-gray-900`) now carry `dark:` variants at parity with `sidebar.tsx`; the hamburger `sr-only` + `SheetTitle` now route through `t.nav.navigationMenu`. *Correction (code review, 2026-07-02): this file's active/hover classes were in fact migrated to semantic tokens (`bg-primary/10 text-primary`, etc.) alongside the dark-mode fix, not left as brand-token-neutral — see the scope note in File List. The full Deep Teal accent-token swap + contrast audit remain Story 4.3's.*
   - [x] Sidebar visible `≥ md` (`hidden md:flex` in the admin layout), sheet `< md` — unchanged `md:` switch, matches the UX-DR18 matrix.
 
 - [x] **Task 4 — A11y + focus + tap targets on all nav (AC: 3)**
@@ -78,6 +78,17 @@ so that I can move through the app on a phone or a desktop without a broken or c
 - [x] **Task 6 — Verify (NFR-7, NFR-8, NFR-5)**
   - [x] `npx eslint` on all 6 changed files → "No issues found" (exit 0). `npm run build` → green (types check; `/sessions/[id]/pay` + all routes present; Proxy/middleware intact).
   - [x] Manual reasoning/responsive/regression checks per "Testing standards" below (member top-bar/bottom-nav switch at `md`; admin sidebar↔sheet at `md`; light+dark; keyboard focus rings; `max-w-2xl` member / full-width admin; guards + `proxy.ts` untouched).
+
+### Review Findings
+
+- [x] [Review][Patch] Hamburger `Sheet` trigger fails the ≥44px touch-target floor [src/components/layout/mobile-nav.tsx: `MobileNav`'s `SheetTrigger` `Button`] — Task 4 claims every nav control including "the hamburger trigger" has a ≥44px target via "the `Button` hamburger keeps the shadcn default," but the shadcn `Button` `size="icon"` variant is `size-8` (32×32px), below the 44px floor this story itself sets.
+- [x] [Review][Patch] Profile-menu (avatar) trigger fails the ≥44px touch-target floor [src/components/layout/member-nav.tsx: `ProfileMenu`'s `DropdownMenuTrigger`] — the bare Radix trigger adds no sizing of its own and wraps a `w-9 h-9` (36×36px) `Avatar`, so the actual clickable area is 36px — below the 44px standard applied everywhere else in this diff, and this is the desktop entry point for Profile/language/theme/sign-out.
+- [x] [Review][Patch] The "back to member view" link is nested inside the same admin-labeled `<nav aria-label={t.nav.adminLabel}>` landmark as the real admin items, in both [src/components/layout/sidebar.tsx] and [src/components/layout/mobile-nav.tsx] — a non-admin escape hatch is announced to assistive tech as part of "Admin" navigation with no distinguishing grouping.
+- [x] [Review][Patch] `useMemberItems` mutates the array `getMemberNav(t)` returns via `.push()` [src/components/layout/member-nav.tsx] — only safe because `getMemberNav` happens to allocate a fresh array today; a foot-gun the moment that function is memoized or its result cached/shared.
+- [x] [Review][Patch] Dead export `CROSS_SHELL_ICONS` [src/components/layout/nav-items.ts] — defined but never imported anywhere; `sidebar.tsx`/`mobile-nav.tsx` both re-import icons directly from `lucide-react` instead.
+- [x] [Review][Patch] The "back to member view" link is duplicated verbatim (same href, icon, classNames) across [src/components/layout/sidebar.tsx] and [src/components/layout/mobile-nav.tsx] instead of being expressed once via the new shared `nav-items.ts` module — the exact class of duplication this refactor's shared-nav-model is meant to eliminate.
+- [x] [Review][Patch] The mobile bottom nav's "Admin" entry depends on client-side `useSession()` [src/components/layout/member-nav.tsx: `useMemberItems`] — admins see a 3-4 tab bar reflow to 5 tabs (all `flex-1`, visibly resizing) once the session resolves, and the role could go stale after a live promotion/demotion mid-session. `(main)/layout.tsx` already resolves `session.user.role` server-side via `auth()` — thread `isAdmin` down as a prop instead of re-deriving it client-side.
+- [x] [Review][Patch] Documentation/traceability gap in this story's own records — the File List omits `src/components/community/identity-mark.tsx` (new) and `src/app/(admin)/layout.tsx` (modified), and Task 3's notes explicitly (and inaccurately) claim "no layout edit was needed" for `(admin)/layout.tsx` and "No brand-token restyle" for `mobile-nav.tsx`. Both files were in fact changed — legitimately, within the Scope Boundary's own "in scope: rewrite `(main)/layout.tsx` + `(admin)/layout.tsx`" line — but the semantic-token migration (`bg-green-50`/`text-purple-700`/etc. → `bg-primary/10`/`text-primary`) is exactly the kind of change the same Scope Boundary reserves for Story 4.3 ("the Deep Teal accent-token swap"). No code reversion is warranted: the green-vs-purple distinction existed to separate member/admin sections within one shared sidebar, and that need disappeared once this story split them into separate shells — but the File List and these two claims should be corrected for traceability, and Story 4.3's review should confirm no redundant/conflicting work.
 
 ## Dev Notes
 
@@ -178,12 +189,16 @@ claude-opus-4-8[1m] (Opus 4.8, 1M context)
 
 ### File List
 
-- `src/components/layout/nav-items.ts` (A) — `getMemberNav`/`getAdminNav`/`isNavActive`, `NavItem` type, shared icons
+- `src/components/layout/nav-items.ts` (A) — `getMemberNav`/`getAdminNav`/`isNavActive`/`getMemberViewLink`, `NavItem` type
 - `src/components/layout/member-nav.tsx` (A) — `MemberTopBar` + `MemberBottomNav` (+ internal `IdentityMark`/`ProfileMenu`/`useMemberItems`)
 - `src/app/(main)/layout.tsx` (M) — member shell: top bar + centered `max-w-2xl` main + bottom nav (guards unchanged)
 - `src/components/layout/sidebar.tsx` (M) — now the admin sidebar (admin nav + member-view link; a11y + focus targets)
 - `src/components/layout/mobile-nav.tsx` (M) — now the admin sheet (admin nav + member-view link; dark-mode fixes; dict-routed labels)
 - `src/lib/i18n/dictionaries.ts` (M) — `nav.sessionsShort`/`paymentsShort`/`admin`/`memberView` (en/id)
+- `src/components/community/identity-mark.tsx` (A) — **omitted from the original File List.** Shared `CommunityIdentityMark` component (logo image or `communityAbbr` fallback) factored out and used by `member-nav.tsx`, `sidebar.tsx`, `mobile-nav.tsx`, and `(admin)/layout.tsx` in place of each surface's own inline logo markup.
+- `src/app/(admin)/layout.tsx` (M) — **omitted from the original File List; Task 3 incorrectly stated "no layout edit was needed."** Adopted `CommunityIdentityMark` for its own mobile-topbar logo fallback and migrated its wrapper/header classes from hardcoded `gray-*`/`white` Tailwind colors to semantic tokens (`bg-muted`, `bg-card`, `border-border`, `text-foreground`) for dark-mode parity with the rest of this story's changes. No route/guard change — `auth()`/`isProfileComplete`/`isAdminRole` redirects are untouched.
+
+**Note on scope:** `sidebar.tsx`/`mobile-nav.tsx`/`(main)/layout.tsx`/`(admin)/layout.tsx` all replace hardcoded per-color-family classes (`green-*`, `purple-*`, `gray-*`) with semantic design tokens (`bg-primary`, `text-foreground`, etc.) — this is the same kind of change the Scope Boundary below reserves for Story 4.3 ("the Deep Teal accent-token swap"), and Task 3 incorrectly claimed mobile-nav.tsx had "No brand-token restyle." In practice this is low-risk: the green-vs-purple color coding existed to distinguish member/admin sections within one shared sidebar, and that need disappeared once this story split them into separate shells. No code reversion was made; flagged here for traceability. Story 4.3's review should confirm no redundant/conflicting work results.
 
 ## Change Log
 

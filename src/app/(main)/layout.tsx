@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { MemberTopBar, MemberBottomNav } from '@/components/layout/member-nav';
 import { getSettings } from '@/lib/settings';
+import { isAdminRole } from '@/lib/utils';
 
 export default async function MainLayout({
     children,
@@ -18,11 +19,14 @@ export default async function MainLayout({
         redirect('/onboarding');
     }
 
+    const isAdmin = isAdminRole(session.user.role);
+
     return (
         <div className='flex flex-col h-screen overflow-hidden bg-muted'>
             <MemberTopBar
                 communityName={settings.communityName}
                 logoUrl={settings.logoUrl}
+                isAdmin={isAdmin}
             />
 
             {/* Single centered column; bottom padding clears the fixed mobile nav. */}
@@ -30,7 +34,7 @@ export default async function MainLayout({
                 <div className='mx-auto w-full max-w-2xl'>{children}</div>
             </main>
 
-            <MemberBottomNav />
+            <MemberBottomNav isAdmin={isAdmin} />
         </div>
     );
 }

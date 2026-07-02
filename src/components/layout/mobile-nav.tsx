@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, Menu, User, LayoutDashboard } from 'lucide-react';
+import { LogOut, Menu, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Sheet,
@@ -19,7 +19,7 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
-import { getAdminNav, isNavActive } from './nav-items';
+import { getAdminNav, getMemberViewLink, isNavActive } from './nav-items';
 
 function NavLinks({
     onClose,
@@ -43,6 +43,7 @@ function NavLinks({
             .toUpperCase() ?? '?';
 
     const ADMIN_NAV = getAdminNav(t);
+    const memberViewLink = getMemberViewLink(t);
 
     return (
         <div className='flex flex-col h-full'>
@@ -81,16 +82,17 @@ function NavLinks({
                         </Link>
                     );
                 })}
+            </nav>
 
-                <div className='pt-4'>
-                    <Link
-                        href='/dashboard'
-                        onClick={onClose}
-                        className='flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-                        <LayoutDashboard className='w-4 h-4 shrink-0' />
-                        {t.nav.memberView}
-                    </Link>
-                </div>
+            {/* Cross-shell: back to member view (its own landmark, not part of Admin nav) */}
+            <nav aria-label={t.nav.mainLabel} className='px-3'>
+                <Link
+                    href={memberViewLink.href}
+                    onClick={onClose}
+                    className='flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                    <memberViewLink.icon className='w-4 h-4 shrink-0' />
+                    {memberViewLink.label}
+                </Link>
             </nav>
 
             <div className='border-t border-border p-4'>
@@ -141,7 +143,7 @@ export function MobileNav({
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button variant='ghost' size='icon' className='md:hidden'>
+                <Button variant='ghost' size='icon' className='md:hidden min-h-11 min-w-11'>
                     <Menu className='w-5 h-5' />
                     <span className='sr-only'>{t.nav.navigationMenu}</span>
                 </Button>

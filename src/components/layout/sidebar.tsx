@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, ChevronRight, LayoutDashboard, User } from 'lucide-react';
+import { LogOut, ChevronRight, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useLocale } from '@/components/providers/locale-provider';
@@ -11,7 +11,7 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
-import { getAdminNav, isNavActive } from './nav-items';
+import { getAdminNav, getMemberViewLink, isNavActive } from './nav-items';
 
 export function Sidebar({
     communityName,
@@ -31,6 +31,7 @@ export function Sidebar({
             .toUpperCase() ?? '?';
 
     const ADMIN_NAV = getAdminNav(t);
+    const memberViewLink = getMemberViewLink(t);
 
     return (
         <aside className='flex flex-col h-full w-64 bg-card border-r border-border'>
@@ -76,16 +77,16 @@ export function Sidebar({
                         </Link>
                     );
                 })}
+            </nav>
 
-                {/* Cross-shell: back to member view */}
-                <div className='pt-4'>
-                    <Link
-                        href='/dashboard'
-                        className='flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-                        <LayoutDashboard className='w-4 h-4 shrink-0' />
-                        {t.nav.memberView}
-                    </Link>
-                </div>
+            {/* Cross-shell: back to member view (its own landmark, not part of Admin nav) */}
+            <nav aria-label={t.nav.mainLabel} className='px-3'>
+                <Link
+                    href={memberViewLink.href}
+                    className='flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                    <memberViewLink.icon className='w-4 h-4 shrink-0' />
+                    {memberViewLink.label}
+                </Link>
             </nav>
 
             {/* User info + logout */}

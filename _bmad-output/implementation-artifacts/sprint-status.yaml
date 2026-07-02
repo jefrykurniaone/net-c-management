@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-30
-last_updated: 2026-07-02 (Story 3.5 code-reviewed and closed → done; Epic 3 complete. Fixed two critical concurrency bugs — the per-session capacity race and a cancel/confirm TOCTOU gap — via SELECT ... FOR UPDATE row locking, plus 13 other patch findings, 2 deferred; lint/typecheck clean)
+last_updated: 2026-07-02 (Story 4.1 code-reviewed and closed → done; fixed two ≥44px touch-target gaps, mis-grouped nav landmark, admin-role prop threading (was client-side, caused layout shift), DRY'd the cross-shell link, removed dead code, and corrected the story's own File List/scope documentation; 8 patch findings, lint/typecheck clean)
 project: net-c-management
 project_key: NOKEY
 tracking_system: file-system
@@ -75,7 +75,7 @@ development_status:
 
   # Epic 4 — UI/UX Refresh, Responsiveness & Settings IA
   epic-4: in-progress
-  4-1-two-responsive-app-shells-navigation: review
+  4-1-two-responsive-app-shells-navigation: done
   4-2-full-responsiveness-across-every-screen: review
   4-3-consistent-visual-language-shared-components-dark-mode: review
   4-4-settings-information-architecture-cleanup: review

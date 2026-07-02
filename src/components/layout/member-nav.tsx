@@ -12,7 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn, isAdminRole } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
@@ -20,24 +20,32 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { getMemberNav, isNavActive, type NavItem } from './nav-items';
 
-type ShellProps = Readonly<{ communityName: string; logoUrl?: string }>;
+type ShellProps = Readonly<{ communityName: string; logoUrl?: string; isAdmin: boolean }>;
 
 /** Nav items shared by both surfaces: member core (+ Profile on mobile) + Admin entry when admin. */
-function useMemberItems({ withProfile }: { withProfile: boolean }): NavItem[] {
-    const { data: session } = useSession();
+function useMemberItems({
+    withProfile,
+    isAdmin,
+}: {
+    withProfile: boolean;
+    isAdmin: boolean;
+}): NavItem[] {
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const items = getMemberNav(t);
+    const items = [...getMemberNav(t)];
     if (withProfile) {
         items.push({ label: t.nav.profile, href: '/profile', icon: User });
     }
-    if (isAdminRole(session?.user?.role)) {
+    if (isAdmin) {
         items.push({ label: t.nav.admin, href: '/admin', icon: ShieldCheck });
     }
     return items;
 }
 
-function IdentityMark({ communityName, logoUrl }: ShellProps) {
+function IdentityMark({
+    communityName,
+    logoUrl,
+}: Readonly<{ communityName: string; logoUrl?: string }>) {
     return (
         <div className='flex items-center gap-2 min-w-0'>
             <CommunityIdentityMark
@@ -68,7 +76,7 @@ function ProfileMenu() {
         <DropdownMenu>
             <DropdownMenuTrigger
                 aria-label={t.nav.profile}
-                className='rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                className='min-h-11 min-w-11 flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                 <Avatar className='w-9 h-9'>
                     <AvatarImage
                         src={session?.user?.image ?? ''}
@@ -105,11 +113,11 @@ function ProfileMenu() {
 }
 
 /** Sticky top bar: identity mark + inline desktop nav (≥ md) + profile menu. */
-export function MemberTopBar({ communityName, logoUrl }: ShellProps) {
+export function MemberTopBar({ communityName, logoUrl, isAdmin }: ShellProps) {
     const pathname = usePathname();
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const items = useMemberItems({ withProfile: false });
+    const items = useMemberItems({ withProfile: false, isAdmin });
 
     return (
         <header className='sticky top-0 z-30 flex items-center gap-4 px-4 py-3 bg-card border-b border-border'>
@@ -144,11 +152,11 @@ export function MemberTopBar({ communityName, logoUrl }: ShellProps) {
 }
 
 /** Fixed bottom tab bar — mobile only (< md). */
-export function MemberBottomNav() {
+export function MemberBottomNav({ isAdmin }: Readonly<{ isAdmin: boolean }>) {
     const pathname = usePathname();
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const items = useMemberItems({ withProfile: true });
+    const items = useMemberItems({ withProfile: true, isAdmin });
 
     return (
         <nav

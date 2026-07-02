@@ -7,7 +7,6 @@ import {
     Shapes,
     Settings,
     ShieldCheck,
-    User,
 } from 'lucide-react';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
@@ -66,5 +65,7 @@ export function isNavActive(pathname: string, href: string): boolean {
     return pathname === href || pathname.startsWith(href + '/');
 }
 
-/** Reusable icons for cross-shell entries. */
-export const CROSS_SHELL_ICONS = { admin: ShieldCheck, memberView: LayoutDashboard, profile: User };
+/** Cross-shell "back to member view" link — shown by both admin nav surfaces. */
+export function getMemberViewLink(t: Dict): NavItem {
+    return { label: t.nav.memberView, href: '/dashboard', icon: LayoutDashboard };
+}
