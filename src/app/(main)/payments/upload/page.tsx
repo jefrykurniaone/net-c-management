@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import type { PaymentMode } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,53 +19,64 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import type { EkskulOption } from '@/types/ekskul';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
+
+/** An Activity the member is billed monthly for this period. */
+interface MonthlyEkskul {
+    id: string;
+    name: string;
+    monthlyFee: number;
+}
+
+type MembershipRow = {
+    id: string;
+    name: string;
+    monthlyFee: number;
+    joined: boolean;
+    effectiveMode: PaymentMode | null;
+};
+
+type LoadStatus = 'loading' | 'loaded' | 'error';
 
 export default function UploadPaymentPage() {
     const router = useRouter();
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<LoadStatus>('loading');
     const [preview, setPreview] = useState<string | null>(null);
     const [file, setFile] = useState<File | null>(null);
-    const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
+    const [ekskuls, setEkskuls] = useState<MonthlyEkskul[]>([]);
     const [ekskulId, setEkskulId] = useState('');
-    const [month, setMonth] = useState(String(currentMonth));
-    const [year, setYear] = useState(String(currentYear));
-    const [amount, setAmount] = useState('');
 
     useEffect(() => {
-        fetch('/api/ekskul?mine=true')
-            .then((r) => r.json())
-            .then((data: { ekskuls?: EkskulOption[] }) => {
-                const list = data.ekskuls ?? [];
-                setEkskuls(list);
-                if (list.length === 1) {
-                    setEkskulId(list[0].id);
-                    if (!amount) setAmount(String(list[0].defaultFee || ''));
-                }
+        // Only Activities the member is billed monthly for THIS period can raise a
+        // monthly charge; effectiveMode is server-resolved by the memberships GET
+        // for the current period, so this uploader only ever submits for it.
+        fetch('/api/users/memberships')
+            .then((r) => {
+                if (!r.ok) throw new Error('fetch failed');
+                return r.json();
             })
-            .catch(() => setEkskuls([]));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+            .then((data: { ekskuls?: MembershipRow[] }) => {
+                const list = (data.ekskuls ?? [])
+                    .filter((e) => e.joined && e.effectiveMode === 'MONTHLY')
+                    .map((e) => ({ id: e.id, name: e.name, monthlyFee: e.monthlyFee }));
+                setEkskuls(list);
+                if (list.length === 1) setEkskulId(list[0].id);
+                setStatus('loaded');
+            })
+            .catch(() => setStatus('error'));
     }, []);
-
-    function handleEkskulChange(id: string) {
-        setEkskulId(id);
-        const chosen = ekskuls.find((e) => e.id === id);
-        if (chosen && !amount && chosen.defaultFee) {
-            setAmount(String(chosen.defaultFee));
-        }
-    }
 
     function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
         const f = e.target.files?.[0];
         if (!f) return;
         setFile(f);
-        const url = URL.createObjectURL(f);
-        setPreview(url);
+        setPreview(URL.createObjectURL(f));
     }
 
     async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
@@ -77,19 +89,14 @@ export default function UploadPaymentPage() {
             toast.error(t.payments.selectFile);
             return;
         }
-        if (!amount || Number.parseInt(amount) < 1) {
-            toast.error(t.payments.invalidAmount);
-            return;
-        }
 
         setLoading(true);
         try {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('ekskulId', ekskulId);
-            formData.append('month', month);
-            formData.append('year', year);
-            formData.append('amount', amount);
+            formData.append('month', String(currentMonth));
+            formData.append('year', String(currentYear));
 
             const res = await fetch('/api/payments/upload', {
                 method: 'POST',
@@ -105,30 +112,63 @@ export default function UploadPaymentPage() {
             router.push('/payments');
             router.refresh();
         } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : t.common.error,
-            );
+            toast.error(err instanceof Error ? err.message : t.common.error);
         } finally {
             setLoading(false);
         }
     }
 
-    const months = Array.from({ length: 12 }, (_, i) => i + 1);
-    const years = [currentYear - 1, currentYear, currentYear + 1];
+    const chosen = ekskuls.find((e) => e.id === ekskulId);
+    const owedLabel = chosen
+        ? t.payments.owedFor
+              .split('{activity}').join(chosen.name)
+              .split('{month}').join(t.months[currentMonth])
+              .split('{year}').join(String(currentYear))
+        : '';
+
+    if (status !== 'loaded') {
+        return (
+            <div className='max-w-lg mx-auto space-y-6'>
+                <Link
+                    href='/payments'
+                    className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
+                    <ArrowLeft className='w-4 h-4' />
+                    {t.payments.backToHistory}
+                </Link>
+                <EmptyState
+                    title={status === 'loading' ? t.common.loading : t.common.error}
+                />
+            </div>
+        );
+    }
+
+    if (ekskuls.length === 0) {
+        return (
+            <div className='max-w-lg mx-auto space-y-6'>
+                <Link
+                    href='/payments'
+                    className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
+                    <ArrowLeft className='w-4 h-4' />
+                    {t.payments.backToHistory}
+                </Link>
+                <EmptyState title={t.payments.noMonthlyEkskul} />
+            </div>
+        );
+    }
 
     return (
         <div className='max-w-lg mx-auto space-y-6'>
             <Link
                 href='/payments'
-                className='inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700'>
+                className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
                 <ArrowLeft className='w-4 h-4' />
                 {t.payments.backToHistory}
             </Link>
 
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6'>
+            <div className='bg-card rounded-xl border border-border p-6'>
                 <div className='flex items-center gap-2 mb-6'>
-                    <Upload className='w-5 h-5 text-green-600' />
-                    <h1 className='text-xl font-bold text-gray-900 dark:text-white'>
+                    <Upload className='w-5 h-5 text-primary' />
+                    <h1 className='text-xl font-bold text-foreground'>
                     {t.payments.uploadTitle}
                     </h1>
                 </div>
@@ -137,7 +177,7 @@ export default function UploadPaymentPage() {
                     {/* Ekskul */}
                     <div className='space-y-1.5'>
                         <Label>{t.ekskul.label}</Label>
-                        <Select value={ekskulId} onValueChange={handleEkskulChange}>
+                        <Select value={ekskulId} onValueChange={setEkskulId}>
                             <SelectTrigger className='w-full'>
                                 <SelectValue
                                     placeholder={t.ekskul.selectPlaceholder}
@@ -153,51 +193,30 @@ export default function UploadPaymentPage() {
                         </Select>
                     </div>
 
-                    {/* Month & Year */}
-                    <div className='grid grid-cols-2 gap-4'>
-                        <div className='space-y-1.5'>
-                            <Label>{t.payments.monthLabel}</Label>
-                            <Select value={month} onValueChange={setMonth}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {months.map((m) => (
-                                        <SelectItem key={m} value={String(m)}>
-                                            {t.months[m]}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className='space-y-1.5'>
-                            <Label>{t.payments.yearLabel}</Label>
-                            <Select value={year} onValueChange={setYear}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {years.map((y) => (
-                                        <SelectItem key={y} value={String(y)}>
-                                            {y}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-
-                    {/* Amount */}
+                    {/* Amount — server-authoritative from the Activity's monthly fee */}
                     <div className='space-y-1.5'>
                         <Label htmlFor='amount'>{t.payments.amountLabel}</Label>
                         <Input
                             id='amount'
-                            type='number'
-                            min={1}
-                            placeholder={t.payments.amountPlaceholder}
-                            value={amount}
-                            onChange={(e) => setAmount(e.target.value)}
+                            type='text'
+                            readOnly
+                            className='tabular-nums bg-muted'
+                            value={
+                                chosen
+                                    ? `Rp ${chosen.monthlyFee.toLocaleString('id-ID')}`
+                                    : ''
+                            }
                         />
+                        {chosen && (
+                            <p className='text-xs text-muted-foreground'>
+                                {t.payments.amountLocked}
+                            </p>
+                        )}
+                        {owedLabel && (
+                            <p className='text-sm text-muted-foreground'>
+                                {owedLabel}
+                            </p>
+                        )}
                     </div>
 
                     {/* File Upload */}
@@ -205,7 +224,7 @@ export default function UploadPaymentPage() {
                         <Label>{t.payments.fileLabel}</Label>
                         <label
                             htmlFor='proof-file'
-                            className='flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-green-400 hover:bg-green-50 transition-colors relative overflow-hidden'>
+                            className='flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors relative overflow-hidden'>
                             {preview ? (
                                 <Image
                                     src={preview}
@@ -214,10 +233,10 @@ export default function UploadPaymentPage() {
                                     className='object-cover rounded-xl'
                                 />
                             ) : (
-                                <div className='flex flex-col items-center gap-2 text-gray-400 pointer-events-none'>
+                                <div className='flex flex-col items-center gap-2 text-muted-foreground pointer-events-none'>
                                     <ImageIcon className='w-8 h-8' />
                                     <p className='text-sm'>
-                                        {locale === 'id' ? 'Klik untuk pilih gambar' : 'Click to select image'}
+                                        {t.payments.selectImage}
                                     </p>
                                     <p className='text-xs'>
                                         {t.payments.fileDesc}
@@ -233,7 +252,7 @@ export default function UploadPaymentPage() {
                             className='sr-only'
                         />
                         {file && (
-                            <p className='text-xs text-gray-500 truncate'>
+                            <p className='text-xs text-muted-foreground truncate tabular-nums'>
                                 {file.name} ({(file.size / 1024).toFixed(0)} KB)
                             </p>
                         )}
@@ -241,9 +260,10 @@ export default function UploadPaymentPage() {
 
                     <Button
                         type='submit'
-                        className='w-full bg-green-600 hover:bg-green-700 text-white'
+                        className='w-full'
+                        disabled={!file || !ekskulId || loading}
                         loading={loading}>
-                        {t.payments.submit}
+                        {loading ? t.payments.submitting : t.payments.submit}
                     </Button>
                 </form>
             </div>

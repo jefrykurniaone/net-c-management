@@ -26,7 +26,7 @@ export function EkskulFilter({
         <select
             value={selected ?? ''}
             onChange={(e) => onChange(e.target.value)}
-            className='border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900'>
+            className='border border-border rounded-lg px-3 py-1.5 text-sm bg-background'>
             <option value=''>{allLabel}</option>
             {ekskuls.map((e) => (
                 <option key={e.id} value={e.id}>

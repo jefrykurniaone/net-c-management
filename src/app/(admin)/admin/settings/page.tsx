@@ -11,13 +11,12 @@ import { Settings, Upload } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { FormSkeleton } from '@/components/skeletons/page-skeletons';
+import { PhonePicker } from '@/components/admin/phone-picker';
 
 interface SettingsMap {
     communityName?: string;
-    defaultMonthlyFee?: string;
     defaultLocation?: string;
     adminWhatsapp?: string;
-    maxPlayers?: string;
     logoUrl?: string;
 }
 
@@ -31,11 +30,9 @@ export default function AdminSettingsPage() {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [settings, setSettings] = useState<SettingsMap>({
-        communityName: 'Xclub Badminton',
-        defaultMonthlyFee: '50000',
+        communityName: t.brand.defaultCommunityName,
         defaultLocation: '',
         adminWhatsapp: '',
-        maxPlayers: '20',
         logoUrl: '',
     });
 
@@ -112,23 +109,23 @@ export default function AdminSettingsPage() {
     }
 
     if (loading) {
-        return <FormSkeleton fields={6} />;
+        return <FormSkeleton fields={5} />;
     }
 
     return (
         <div className='max-w-lg space-y-6'>
             <div>
-                <h1 className='text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2'>
-                    <Settings className='w-6 h-6 text-green-600' />
+                <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
+                    <Settings className='w-6 h-6 text-primary' />
                     {t.admin.settingsTitle}
                 </h1>
-                <p className='text-sm text-gray-500 mt-1'>
+                <p className='text-sm text-muted-foreground mt-1'>
                     {t.admin.settingsSubtitle}{' '}
-                    {settings.communityName ?? 'Xclub Badminton'}
+                    {settings.communityName ?? t.brand.defaultCommunityName}
                 </p>
             </div>
 
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6 space-y-5'>
+            <div className='bg-card rounded-xl border border-border p-6 space-y-5'>
                 {/* Logo upload */}
                 <div className='space-y-3'>
                     <Label>{t.admin.logoLabel}</Label>
@@ -141,11 +138,11 @@ export default function AdminSettingsPage() {
                             alt={t.admin.logoLabel}
                                 width={64}
                                 height={64}
-                                className='w-16 h-16 rounded-full object-cover border border-gray-200'
+                                className='w-16 h-16 rounded-full object-cover border border-border'
                             />
                         ) : (
-                            <div className='w-16 h-16 rounded-full bg-green-100 flex items-center justify-center border border-gray-200'>
-                                <Upload className='w-6 h-6 text-green-600' />
+                            <div className='w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border border-border'>
+                                <Upload className='w-6 h-6 text-primary' />
                             </div>
                         )}
                         <div className='space-y-1'>
@@ -157,7 +154,7 @@ export default function AdminSettingsPage() {
                                 onClick={() => logoInputRef.current?.click()}>
                                 {logoButtonLabel()}
                             </Button>
-                            <p className='text-xs text-gray-400'>
+                            <p className='text-xs text-muted-foreground'>
                                 {t.admin.logoHint}
                             </p>
                         </div>
@@ -172,7 +169,7 @@ export default function AdminSettingsPage() {
                 </div>
             </div>
 
-            <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6'>
+            <div className='bg-card rounded-xl border border-border p-6'>
                 <form onSubmit={handleSubmit} className='space-y-5'>
                     <div className='space-y-1.5'>
                         <Label htmlFor='communityName'>
@@ -183,21 +180,6 @@ export default function AdminSettingsPage() {
                             value={settings.communityName ?? ''}
                             onChange={(e) =>
                                 update('communityName', e.target.value)
-                            }
-                        />
-                    </div>
-
-                    <div className='space-y-1.5'>
-                        <Label htmlFor='defaultMonthlyFee'>
-                            {t.admin.defaultFeeLabel}
-                        </Label>
-                        <Input
-                            id='defaultMonthlyFee'
-                            type='number'
-                            min={0}
-                            value={settings.defaultMonthlyFee ?? ''}
-                            onChange={(e) =>
-                                update('defaultMonthlyFee', e.target.value)
                             }
                         />
                     </div>
@@ -228,29 +210,17 @@ export default function AdminSettingsPage() {
                                 update('adminWhatsapp', e.target.value)
                             }
                         />
-                        <p className='text-xs text-gray-400'>
+                        <p className='text-xs text-muted-foreground'>
                             {t.admin.whatsappHint}
                         </p>
-                    </div>
-
-                    <div className='space-y-1.5'>
-                        <Label htmlFor='maxPlayers'>
-                            {t.admin.maxPlayersLabel}
-                        </Label>
-                        <Input
-                            id='maxPlayers'
-                            type='number'
-                            min={2}
-                            value={settings.maxPlayers ?? ''}
-                            onChange={(e) =>
-                                update('maxPlayers', e.target.value)
-                            }
+                        <PhonePicker
+                            onPick={(phone) => update('adminWhatsapp', phone)}
                         />
                     </div>
 
                     <Button
                         type='submit'
-                        className='w-full bg-green-600 hover:bg-green-700 text-white'
+                        className='w-full'
                         loading={saving}>
                         {t.admin.saveSettings}
                     </Button>

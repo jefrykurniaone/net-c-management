@@ -1,53 +1,50 @@
 import 'server-only';
 import { prisma } from './prisma';
+import { getLocale } from './i18n/locale';
+import { getDictionary } from './i18n/dictionaries';
 
 export interface AppSettings {
     communityName: string;
-    defaultMonthlyFee: number;
     defaultLocation: string;
     adminWhatsapp: string;
-    maxPlayers: number;
     logoUrl: string;
 }
 
-const DEFAULTS: AppSettings = {
-    communityName: 'Xclub Badminton',
-    defaultMonthlyFee: 50000,
+/**
+ * Static fallbacks for settings whose default is locale-independent.
+ * `communityName` is intentionally excluded — its neutral default is
+ * locale-resolved through the i18n dictionary (AD-10): "Sports Community"
+ * (en) / "Komunitas Olahraga" (id). No sport-specific or "PB Net-C" brand
+ * string is baked in here.
+ */
+const DEFAULTS: Omit<AppSettings, 'communityName'> = {
     defaultLocation: '',
     adminWhatsapp: '',
-    maxPlayers: 20,
     logoUrl: '',
 };
 
 /**
  * Server-side helper: fetch all app settings from the DB.
- * Falls back to defaults if a key is missing.
+ * Falls back to defaults if a key is missing; the community-name default is
+ * sourced from the i18n dictionary so a fresh deployment shows a neutral,
+ * locale-appropriate name.
  * Only call from Server Components or Route Handlers.
  */
 export async function getSettings(): Promise<AppSettings> {
-    const rows = await prisma.settings.findMany();
+    const [rows, locale] = await Promise.all([
+        prisma.settings.findMany(),
+        getLocale(),
+    ]);
+    const t = getDictionary(locale);
     const map = Object.fromEntries(rows.map((s) => [s.key, s.value]));
     return {
-        communityName: map.communityName ?? DEFAULTS.communityName,
-        defaultMonthlyFee: Number(
-            map.defaultMonthlyFee ?? DEFAULTS.defaultMonthlyFee,
-        ),
+        // A blank/whitespace-only stored value falls back to the neutral
+        // dictionary default so a saved empty name never propagates an empty
+        // identity across the app (AD-10; FR-4). `?.trim()` also strips stray
+        // surrounding whitespace from a real configured name.
+        communityName: map.communityName?.trim() || t.brand.defaultCommunityName,
         defaultLocation: map.defaultLocation ?? DEFAULTS.defaultLocation,
         adminWhatsapp: map.adminWhatsapp ?? DEFAULTS.adminWhatsapp,
-        maxPlayers: Number(map.maxPlayers ?? DEFAULTS.maxPlayers),
         logoUrl: map.logoUrl ?? DEFAULTS.logoUrl,
     };
-}
-
-/**
- * Derive a short abbreviation (≤ 2 chars) from a community name.
- * e.g. "PB Net-C" → "PB", "Badminton Club" → "BC"
- */
-export function communityAbbr(name: string): string {
-    const words = name.trim().split(/\s+/);
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-    return words
-        .slice(0, 2)
-        .map((w) => w[0].toUpperCase())
-        .join('');
 }

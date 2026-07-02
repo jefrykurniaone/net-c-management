@@ -49,8 +49,6 @@ export async function GET(req: Request) {
                 role: true,
                 isActive: true,
                 isProfileComplete: true,
-                playPosition: true,
-                playerLevel: true,
                 createdAt: true,
                 _count: { select: { attendances: true, payments: true } },
             },

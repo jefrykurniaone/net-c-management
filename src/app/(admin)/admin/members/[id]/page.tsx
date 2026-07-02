@@ -7,7 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { isAdminRole } from "@/lib/utils";
+import { isAdminRole, roleBadgeVariant, paymentStatusVariant } from "@/lib/utils";
+import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { PaymentMode } from "@prisma/client";
 
 const STATUS_LABELS = {
   REGISTERED: "Terdaftar",
@@ -21,11 +25,6 @@ const ATTENDANCE_BADGE_VARIANTS: Record<string, "default" | "destructive" | "sec
   REGISTERED: "secondary",
 };
 
-const PAYMENT_BADGE_VARIANTS: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
-  CONFIRMED: "default",
-  REJECTED: "destructive",
-  PENDING: "secondary",
-};
 const PAYMENT_STATUS_LABELS = {
   PENDING: "Pending",
   CONFIRMED: "Dikonfirmasi",
@@ -41,8 +40,9 @@ export default async function MemberDetailPage({
 }: Readonly<{
   params: Promise<{ id: string }>;
 }>) {
-  const session = await auth();
+  const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
+  const t = getDictionary(locale);
 
   const { id } = await params;
   const member = await prisma.user.findUnique({
@@ -50,7 +50,17 @@ export default async function MemberDetailPage({
     include: {
       memberships: {
         where: { isActive: true, ekskul: { isActive: true } },
-        include: { ekskul: { select: { id: true, name: true, color: true } } },
+        include: {
+          ekskul: {
+            select: {
+              id: true,
+              name: true,
+              color: true,
+              allowsMonthly: true,
+              allowsPerSession: true,
+            },
+          },
+        },
       },
       attendances: {
         include: { session: true },
@@ -66,18 +76,20 @@ export default async function MemberDetailPage({
 
   if (!member) notFound();
 
+  const { month, year } = currentPeriod(new Date());
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <Link
         href="/admin/members"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" />
         Kembali ke daftar anggota
       </Link>
 
       {/* Profile */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
+      <div className="bg-card rounded-xl border border-border p-6">
         <div className="flex items-center gap-4">
           {member.image ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -87,70 +99,84 @@ export default async function MemberDetailPage({
               className="w-16 h-16 rounded-full object-cover"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xl">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
               {(member.name ?? member.email ?? "?")[0].toUpperCase()}
             </div>
           )}
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl font-bold text-foreground">
               {member.name ?? "(Belum diisi)"}
             </h1>
-            <p className="text-sm text-gray-500">{member.email}</p>
+            <p className="text-sm text-muted-foreground">{member.email}</p>
             <div className="flex gap-2 mt-1">
-              <Badge
-                variant={member.role === "ADMIN" ? "default" : "secondary"}
-                className={member.role === "OWNER" ? "bg-purple-600 text-white hover:bg-purple-700 border-transparent" : undefined}
-              >
+              <Badge variant={roleBadgeVariant(member.role)}>
                 {member.role}
               </Badge>
               {!member.isActive && (
-                <Badge variant="outline" className="text-red-500 border-red-200">
+                <Badge variant="destructive">
                   Non-aktif
                 </Badge>
               )}
             </div>
             {member.memberships.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {member.memberships.map((m) => (
-                  <EkskulBadge
-                    key={m.ekskul.id}
-                    name={m.ekskul.name}
-                    color={m.ekskul.color}
-                  />
-                ))}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {member.memberships.map((m) => {
+                  const mode = resolvePaymentMode(
+                    m,
+                    {
+                      allowsMonthly: m.ekskul.allowsMonthly,
+                      allowsPerSession: m.ekskul.allowsPerSession,
+                    },
+                    month,
+                    year,
+                  );
+                  return (
+                    <span key={m.ekskul.id} className="inline-flex items-center gap-1">
+                      <EkskulBadge name={m.ekskul.name} color={m.ekskul.color} />
+                      <span className="text-xs text-muted-foreground">
+                        ·{" "}
+                        {mode === PaymentMode.MONTHLY
+                          ? t.paymentMode.monthly
+                          : mode === PaymentMode.PER_SESSION
+                            ? t.paymentMode.perSession
+                            : "—"}
+                      </span>
+                    </span>
+                  );
+                })}
               </div>
             )}
           </div>
         </div>
         {member.phone && (
-          <p className="mt-4 text-sm text-gray-500">
-            Telepon: <span className="text-gray-700">{member.phone}</span>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Telepon: <span className="text-foreground">{member.phone}</span>
           </p>
         )}
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Bergabung {format(new Date(member.createdAt), "d MMMM yyyy", { locale: localeId })}
         </p>
       </div>
 
       {/* Attendances */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
-        <h2 className="font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h2 className="font-bold text-foreground mb-4">
           Riwayat Kehadiran ({member.attendances.length})
         </h2>
         {member.attendances.length === 0 ? (
-          <p className="text-sm text-gray-400">Belum ada data kehadiran.</p>
+          <p className="text-sm text-muted-foreground">Belum ada data kehadiran.</p>
         ) : (
           <div className="space-y-2">
             {member.attendances.map((a) => (
               <div
                 key={a.id}
-                className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
+                className="flex items-center justify-between py-2 border-b border-border last:border-0"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                  <p className="text-sm font-medium text-foreground">
                     {a.session.title}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     {format(new Date(a.session.date), "d MMM yyyy", { locale: localeId })}
                   </p>
                 </div>
@@ -164,28 +190,28 @@ export default async function MemberDetailPage({
       </div>
 
       {/* Payments */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
-        <h2 className="font-bold text-gray-900 dark:text-white mb-4">
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h2 className="font-bold text-foreground mb-4">
           Riwayat Iuran ({member.payments.length})
         </h2>
         {member.payments.length === 0 ? (
-          <p className="text-sm text-gray-400">Belum ada data iuran.</p>
+          <p className="text-sm text-muted-foreground">Belum ada data iuran.</p>
         ) : (
           <div className="space-y-2">
             {member.payments.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
+                className="flex items-center justify-between py-2 border-b border-border last:border-0"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                  <p className="text-sm font-medium text-foreground">
                     {MONTH_NAMES[p.month]} {p.year}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-muted-foreground tabular-nums">
                     Rp {p.amount.toLocaleString("id-ID")}
                   </p>
                 </div>
-                <Badge variant={PAYMENT_BADGE_VARIANTS[p.status] ?? "secondary"}>
+                <Badge variant={paymentStatusVariant(p.status)}>
                   {PAYMENT_STATUS_LABELS[p.status]}
                 </Badge>
               </div>

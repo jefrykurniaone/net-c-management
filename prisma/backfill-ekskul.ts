@@ -2,7 +2,7 @@
  * One-off backfill: migrate all existing data into a default "Badminton" ekskul.
  *
  * Run BETWEEN the two `prisma db push` steps (while `ekskulId` is still optional
- * on BadmintonSession/Payment):
+ * on ActivitySession/Payment):
  *
  *   1. schema: ekskulId optional  → npx prisma generate && npx prisma db push
  *   2. npx tsx prisma/backfill-ekskul.ts        ← this script
@@ -42,7 +42,7 @@ async function main() {
             name: settings.communityName ?? DEFAULTS.communityName,
             slug: 'badminton',
             color: '#16a34a',
-            defaultFee: Number(
+            monthlyFee: Number(
                 settings.defaultMonthlyFee ?? DEFAULTS.defaultMonthlyFee,
             ),
             defaultLocation:
@@ -57,7 +57,7 @@ async function main() {
 
     // 2. Point every existing session/payment without an ekskul at Badminton.
     const sessionsUpdated = await prisma.$executeRawUnsafe(
-        `UPDATE "BadmintonSession" SET "ekskulId" = $1 WHERE "ekskulId" IS NULL`,
+        `UPDATE "ActivitySession" SET "ekskulId" = $1 WHERE "ekskulId" IS NULL`,
         ekskul.id,
     );
     const paymentsUpdated = await prisma.$executeRawUnsafe(
@@ -80,7 +80,7 @@ async function main() {
     // 4. Verify no session/payment is left without an ekskul.
     const [{ count: nullSessions }] = await prisma.$queryRawUnsafe<
         { count: bigint }[]
-    >(`SELECT COUNT(*)::bigint AS count FROM "BadmintonSession" WHERE "ekskulId" IS NULL`);
+    >(`SELECT COUNT(*)::bigint AS count FROM "ActivitySession" WHERE "ekskulId" IS NULL`);
     const [{ count: nullPayments }] = await prisma.$queryRawUnsafe<
         { count: bigint }[]
     >(`SELECT COUNT(*)::bigint AS count FROM "Payment" WHERE "ekskulId" IS NULL`);

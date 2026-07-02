@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import {
@@ -25,7 +25,16 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { PhonePicker } from '@/components/admin/phone-picker';
 import { toast } from 'sonner';
 import { Plus, Pencil } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
@@ -37,12 +46,23 @@ export interface EkskulRow {
     slug: string;
     color: string;
     description: string | null;
-    defaultFee: number;
+    monthlyFee: number;
+    sessionFee: number;
+    allowsMonthly: boolean;
+    allowsPerSession: boolean;
+    minMembers: number;
+    recurringDay: number | null;
+    recurringStartTime: string;
+    recurringEndTime: string;
     defaultLocation: string;
     maxPlayers: number;
     adminWhatsapp: string;
     isActive: boolean;
 }
+
+/** Sentinel for the "no weekly auto-schedule" select option. */
+const RECURRING_OFF = 'off';
+const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
 function slugify(value: string): string {
     return value
@@ -74,12 +94,30 @@ function EkskulFormDialog({
             slug: ekskul?.slug ?? '',
             color: ekskul?.color ?? '#16a34a',
             description: ekskul?.description ?? '',
-            defaultFee: ekskul?.defaultFee ?? 0,
+            // Empty (undefined) on create so the admin must enter a fee
+            // explicitly — a blank submit is rejected, never a silent 0.
+            monthlyFee: ekskul?.monthlyFee,
+            sessionFee: ekskul?.sessionFee,
+            allowsMonthly: ekskul?.allowsMonthly ?? true,
+            allowsPerSession: ekskul?.allowsPerSession ?? false,
+            minMembers: ekskul?.minMembers ?? 0,
+            recurringDay: ekskul?.recurringDay ?? null,
+            recurringStartTime: ekskul?.recurringStartTime ?? '08:00',
+            recurringEndTime: ekskul?.recurringEndTime ?? '10:00',
             defaultLocation: ekskul?.defaultLocation ?? '',
             maxPlayers: ekskul?.maxPlayers ?? 20,
             adminWhatsapp: ekskul?.adminWhatsapp ?? '',
         },
     });
+
+    // The ≥1-payment-mode refine attaches its error to a synthetic
+    // `paymentModes` path (not a real form field) so it never misattributes
+    // to whichever mode checkbox happens to be named in the path.
+    const paymentModesError = (
+        form.formState.errors as FieldErrors<CreateEkskulFormData> & {
+            paymentModes?: { message?: string };
+        }
+    ).paymentModes;
 
     async function onSubmit(data: CreateEkskulFormData) {
         setLoading(true);
@@ -132,7 +170,7 @@ function EkskulFormDialog({
                                     <FormLabel>{t.admin.ekskulName}</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder='Badminton'
+                                            placeholder={t.admin.ekskulNamePlaceholder}
                                             {...field}
                                             onChange={(e) => {
                                                 field.onChange(e);
@@ -157,7 +195,7 @@ function EkskulFormDialog({
                                 <FormItem>
                                     <FormLabel>{t.admin.ekskulSlug}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder='badminton' {...field} />
+                                        <Input placeholder={t.admin.ekskulSlugPlaceholder} {...field} />
                                     </FormControl>
                                     <FormDescription>
                                         {t.admin.ekskulSlugHint}
@@ -194,7 +232,7 @@ function EkskulFormDialog({
                         <div className='grid grid-cols-2 gap-4'>
                             <FormField
                                 control={form.control}
-                                name='defaultFee'
+                                name='monthlyFee'
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>{t.admin.ekskulFee}</FormLabel>
@@ -203,11 +241,15 @@ function EkskulFormDialog({
                                                 type='number'
                                                 min={0}
                                                 {...field}
+                                                value={field.value ?? ''}
                                                 onChange={(e) =>
                                                     field.onChange(
-                                                        Number.parseInt(
-                                                            e.target.value,
-                                                        ) || 0,
+                                                        e.target.value === ''
+                                                            ? undefined
+                                                            : Number.parseInt(
+                                                                  e.target.value,
+                                                                  10,
+                                                              ),
                                                     )
                                                 }
                                             />
@@ -218,22 +260,26 @@ function EkskulFormDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name='maxPlayers'
+                                name='sessionFee'
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>
-                                            {t.admin.ekskulMaxPlayers}
+                                            {t.admin.ekskulSessionFee}
                                         </FormLabel>
                                         <FormControl>
                                             <Input
                                                 type='number'
-                                                min={2}
+                                                min={0}
                                                 {...field}
+                                                value={field.value ?? ''}
                                                 onChange={(e) =>
                                                     field.onChange(
-                                                        Number.parseInt(
-                                                            e.target.value,
-                                                        ) || 0,
+                                                        e.target.value === ''
+                                                            ? undefined
+                                                            : Number.parseInt(
+                                                                  e.target.value,
+                                                                  10,
+                                                              ),
                                                     )
                                                 }
                                             />
@@ -243,6 +289,222 @@ function EkskulFormDialog({
                                 )}
                             />
                         </div>
+                        <FormItem>
+                            <div className='text-sm font-medium leading-none'>
+                                {t.admin.ekskulPaymentModes}
+                            </div>
+                            <div className='flex gap-6 pt-1'>
+                                <FormField
+                                    control={form.control}
+                                    name='allowsMonthly'
+                                    render={({ field }) => (
+                                        <FormItem className='flex items-center gap-2 space-y-0'>
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={!!field.value}
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormLabel className='text-sm font-normal'>
+                                                {t.admin.ekskulModeMonthly}
+                                            </FormLabel>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name='allowsPerSession'
+                                    render={({ field }) => (
+                                        <FormItem className='flex items-center gap-2 space-y-0'>
+                                            <FormControl>
+                                                <Checkbox
+                                                    checked={!!field.value}
+                                                    onCheckedChange={
+                                                        field.onChange
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormLabel className='text-sm font-normal'>
+                                                {t.admin.ekskulModePerSession}
+                                            </FormLabel>
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            {paymentModesError && (
+                                <p className='text-sm font-medium text-destructive'>
+                                    {paymentModesError.message}
+                                </p>
+                            )}
+                        </FormItem>
+                        <FormField
+                            control={form.control}
+                            name='minMembers'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        {t.admin.ekskulMinMembers}
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type='number'
+                                            min={0}
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            onChange={(e) => {
+                                                const parsed = Number.parseInt(
+                                                    e.target.value,
+                                                    10,
+                                                );
+                                                field.onChange(
+                                                    Number.isNaN(parsed)
+                                                        ? 0
+                                                        : parsed,
+                                                );
+                                            }}
+                                        />
+                                    </FormControl>
+                                    <FormDescription>
+                                        {t.admin.ekskulMinMembersHint}
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        {form.watch('allowsMonthly') && (
+                            <div className='space-y-3 rounded-lg border border-border p-3'>
+                                <div className='text-sm font-medium leading-none'>
+                                    {t.admin.ekskulRecurringTitle}
+                                </div>
+                                <p className='text-xs text-muted-foreground'>
+                                    {t.admin.ekskulRecurringHint}
+                                </p>
+                                <FormField
+                                    control={form.control}
+                                    name='recurringDay'
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>
+                                                {t.admin.ekskulRecurringDay}
+                                            </FormLabel>
+                                            <Select
+                                                value={
+                                                    field.value === null ||
+                                                    field.value === undefined
+                                                        ? RECURRING_OFF
+                                                        : String(field.value)
+                                                }
+                                                onValueChange={(v) =>
+                                                    field.onChange(
+                                                        v === RECURRING_OFF
+                                                            ? null
+                                                            : Number.parseInt(
+                                                                  v,
+                                                                  10,
+                                                              ),
+                                                    )
+                                                }>
+                                                <FormControl>
+                                                    <SelectTrigger className='w-full'>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value={RECURRING_OFF}>
+                                                        {
+                                                            t.admin
+                                                                .ekskulRecurringOff
+                                                        }
+                                                    </SelectItem>
+                                                    {WEEKDAYS.map((d) => (
+                                                        <SelectItem
+                                                            key={d}
+                                                            value={String(d)}>
+                                                            {t.days[d]}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                {form.watch('recurringDay') !== null && (
+                                    <div className='grid grid-cols-2 gap-4'>
+                                        <FormField
+                                            control={form.control}
+                                            name='recurringStartTime'
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t.admin.formStartTime}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type='time'
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name='recurringEndTime'
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {t.admin.formEndTime}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type='time'
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        <FormField
+                            control={form.control}
+                            name='maxPlayers'
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        {t.admin.ekskulMaxPlayers}
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type='number'
+                                            min={2}
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            onChange={(e) => {
+                                                const parsed = Number.parseInt(
+                                                    e.target.value,
+                                                    10,
+                                                );
+                                                field.onChange(
+                                                    Number.isNaN(parsed)
+                                                        ? undefined
+                                                        : parsed,
+                                                );
+                                            }}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                         <FormField
                             control={form.control}
                             name='defaultLocation'
@@ -265,6 +527,16 @@ function EkskulFormDialog({
                                     <FormControl>
                                         <Input placeholder='628...' {...field} />
                                     </FormControl>
+                                    <FormDescription>
+                                        {t.admin.whatsappHint}
+                                    </FormDescription>
+                                    <PhonePicker
+                                        onPick={(phone) =>
+                                            form.setValue('adminWhatsapp', phone, {
+                                                shouldValidate: true,
+                                            })
+                                        }
+                                    />
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -286,7 +558,7 @@ function EkskulFormDialog({
                         />
                         <Button
                             type='submit'
-                            className='w-full bg-green-600 hover:bg-green-700 text-white'
+                            className='w-full'
                             loading={loading}>
                             {isEdit
                                 ? t.admin.updateEkskulBtn
@@ -306,9 +578,7 @@ export function NewEkskulButton() {
 
     return (
         <>
-            <Button
-                className='bg-green-600 hover:bg-green-700 text-white gap-2'
-                onClick={() => setOpen(true)}>
+            <Button className='gap-2' onClick={() => setOpen(true)}>
                 <Plus className='w-4 h-4' />
                 {t.admin.newEkskul}
             </Button>

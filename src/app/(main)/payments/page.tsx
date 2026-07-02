@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import { EkskulFilter } from "@/components/ekskul/ekskul-filter";
+import { UnpaidBanner } from "@/components/payments/unpaid-banner";
+import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { CreditCard, Upload, ExternalLink } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
@@ -32,7 +34,9 @@ export default async function PaymentsPage({
         ...(selected ? { ekskulId: selected } : {}),
       },
       orderBy: [{ year: "desc" }, { month: "desc" }],
-      include: { ekskul: { select: { id: true, name: true, color: true } } },
+      include: {
+        ekskul: { select: { id: true, name: true, color: true, icon: true } },
+      },
     }),
     prisma.ekskul.findMany({
       where: { id: { in: myEkskulIds }, isActive: true },
@@ -49,13 +53,13 @@ export default async function PaymentsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-green-600" />
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <CreditCard className="w-6 h-6 text-primary" />
             {t.payments.title}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">{t.payments.subtitle}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t.payments.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           {myEkskuls.length > 1 && (
@@ -66,7 +70,7 @@ export default async function PaymentsPage({
             />
           )}
           <Link href="/payments/upload">
-            <Button className="bg-green-600 hover:bg-green-700 text-white gap-2">
+            <Button className="gap-2">
               <Upload className="w-4 h-4" />
               {t.payments.uploadBtn}
             </Button>
@@ -76,57 +80,62 @@ export default async function PaymentsPage({
 
       {/* Current month status banner */}
       {!hasCurrentMonth && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-center justify-between gap-3">
-          <div>
-            <p className="font-medium text-yellow-800 text-sm">
-              {t.months[currentMonth]} {currentYear} {t.payments.unpaidBannerTitle}
-            </p>
-            <p className="text-xs text-yellow-600 mt-0.5">
-              {t.payments.unpaidBannerSub}
-            </p>
-          </div>
-          <Link href="/payments/upload">
-            <Button size="sm" className="bg-yellow-500 hover:bg-yellow-600 text-white shrink-0">
-              {t.payments.payNow}
-            </Button>
-          </Link>
-        </div>
+        <UnpaidBanner
+          title={`${t.months[currentMonth]} ${currentYear} ${t.payments.unpaidBannerTitle}`}
+          description={t.payments.unpaidBannerSub}
+          ctaLabel={t.payments.payNow}
+          href="/payments/upload"
+        />
       )}
 
       {/* Payment list */}
       {payments.length === 0 ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800">
-          <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">{t.payments.noPayments}</p>
-          <Link href="/payments/upload">
-            <Button variant="outline" className="mt-4">
-              {t.payments.uploadProofBtn}
-            </Button>
-          </Link>
-        </div>
+        <EmptyState
+          icon={CreditCard}
+          title={t.payments.noPayments}
+          action={
+            <Link href="/payments/upload">
+              <Button variant="outline">{t.payments.uploadProofBtn}</Button>
+            </Link>
+          }
+        />
       ) : (
         <div className="space-y-3">
           {payments.map((payment) => (
             <div
               key={payment.id}
-              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5"
+              className="relative overflow-hidden bg-card rounded-xl border border-border p-5"
             >
+              <span
+                aria-hidden
+                className="absolute left-0 top-0 h-full w-[3px]"
+                style={{ backgroundColor: payment.ekskul.color }}
+              />
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-gray-900 dark:text-white">
+                    <p className="font-semibold text-foreground">
                       {t.months[payment.month]} {payment.year}
                     </p>
                     <EkskulBadge
                       name={payment.ekskul.name}
                       color={payment.ekskul.color}
+                      icon={payment.ekskul.icon}
                     />
                   </div>
-                  <p className="text-sm text-gray-500 mt-0.5">
+                  <p className="text-sm text-muted-foreground mt-0.5 tabular-nums">
                     Rp {payment.amount.toLocaleString("id-ID")}
                   </p>
-                  {payment.notes && (
-                    <p className="text-xs text-gray-400 mt-1 italic">{payment.notes}</p>
+                  {payment.notes && payment.status === "REJECTED" ? (
+                    <p className="text-xs text-destructive mt-1">
+                      {t.payments.rejectReason}: {payment.notes}
+                    </p>
+                  ) : (
+                    payment.notes && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        {payment.notes}
+                      </p>
+                    )
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-2">
@@ -140,7 +149,7 @@ export default async function PaymentsPage({
                       href={payment.proofUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
                     >
                       <ExternalLink className="w-3 h-3" />
                       {t.payments.viewProof}

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import { CreditCard, Download } from "lucide-react";
 import { PaymentActions } from "./payment-actions";
+import { PaymentCards } from "./payment-cards";
 import type { Payment } from "@prisma/client";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -16,7 +17,7 @@ import { paymentStatusVariant, isAdminRole } from "@/lib/utils";
 
 type PaymentRow = Payment & {
   user: { name: string | null; email: string | null };
-  ekskul: { id: string; name: string; color: string };
+  ekskul: { id: string; name: string; color: string; icon: string | null };
 };
 
 export default async function AdminPaymentsPage({
@@ -52,7 +53,7 @@ export default async function AdminPaymentsPage({
       take: 100,
       include: {
         user: { select: { name: true, email: true } },
-        ekskul: { select: { id: true, name: true, color: true } },
+        ekskul: { select: { id: true, name: true, color: true, icon: true } },
       },
     }),
     getEkskuls(),
@@ -62,16 +63,16 @@ export default async function AdminPaymentsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-green-600" />
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <CreditCard className="w-6 h-6 text-primary" />
             {t.admin.paymentsTitle}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">{t.admin.paymentsSubtitle}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t.admin.paymentsSubtitle}</p>
         </div>
         <a
           href={`/api/payments/export?month=${currentMonth}&year=${currentYear}${filterEkskul ? `&ekskulId=${filterEkskul}` : ""}`}
           download
-          className="inline-flex items-center gap-1.5 text-sm text-green-600 hover:underline border border-green-200 rounded-lg px-3 py-2"
+          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline border border-border rounded-lg px-3 py-2"
         >
           <Download className="w-4 h-4" />
           {t.admin.exportCSV}
@@ -83,7 +84,7 @@ export default async function AdminPaymentsPage({
         <select
           name="month"
           defaultValue={String(filterMonth ?? "")}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900"
+          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
         >
           <option value="">{t.admin.allMonths}</option>
           {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -95,7 +96,7 @@ export default async function AdminPaymentsPage({
         <select
           name="year"
           defaultValue={String(filterYear ?? "")}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900"
+          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
         >
           <option value="">{t.admin.allYears}</option>
           {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
@@ -107,7 +108,7 @@ export default async function AdminPaymentsPage({
         <select
           name="status"
           defaultValue={filterStatus ?? ""}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900"
+          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
         >
           <option value="">{t.admin.allStatuses}</option>
           <option value="PENDING">{t.paymentStatus.PENDING}</option>
@@ -117,7 +118,7 @@ export default async function AdminPaymentsPage({
         <select
           name="ekskulId"
           defaultValue={filterEkskul ?? ""}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900"
+          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
         >
           <option value="">{t.ekskul.filterAll}</option>
           {ekskuls.map((e) => (
@@ -131,18 +132,24 @@ export default async function AdminPaymentsPage({
         </Button>
       </form>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+      {/* Mobile: stacked cards (< md) */}
+      <div className="md:hidden">
+        <PaymentCards payments={payments} t={t} locale={locale} />
+      </div>
+
+      {/* Desktop: full table (>= md) */}
+      <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colMember}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.ekskul.label}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colMonth}</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-500">{t.admin.colAmount}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colStatus}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colDate}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colActions}</th>
+              <tr className="bg-muted border-b border-border">
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colMember}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.ekskul.label}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colMonth}</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t.admin.colAmount}</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colStatus}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colDate}</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colActions}</th>
               </tr>
             </thead>
             <tbody>
@@ -150,21 +157,26 @@ export default async function AdminPaymentsPage({
                 return (
                   <tr
                     key={p.id}
-                    className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    className="border-b border-border hover:bg-muted"
                   >
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900 dark:text-white">
+                    <td className="relative px-4 py-3">
+                      <span
+                        aria-hidden
+                        className="absolute left-0 top-0 h-full w-[3px]"
+                        style={{ backgroundColor: p.ekskul.color }}
+                      />
+                      <p className="font-medium text-foreground">
                         {p.user.name ?? p.user.email}
                       </p>
-                      <p className="text-xs text-gray-400">{p.user.email}</p>
+                      <p className="text-xs text-muted-foreground">{p.user.email}</p>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <EkskulBadge name={p.ekskul.name} color={p.ekskul.color} />
+                      <EkskulBadge name={p.ekskul.name} color={p.ekskul.color} icon={p.ekskul.icon} />
                     </td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {t.months[p.month]} {p.year}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700 font-medium whitespace-nowrap">
+                    <td className="px-4 py-3 text-right text-foreground font-medium whitespace-nowrap tabular-nums">
                       Rp {p.amount.toLocaleString("id-ID")}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -174,7 +186,7 @@ export default async function AdminPaymentsPage({
                         {t.paymentStatus[p.status]}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                       {format(new Date(p.createdAt), "d MMM yyyy", { locale: dateLocale })}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -185,7 +197,7 @@ export default async function AdminPaymentsPage({
               })}
               {payments.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
                     {t.admin.noPayments}
                   </td>
                 </tr>

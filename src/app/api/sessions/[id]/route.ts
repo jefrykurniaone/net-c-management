@@ -18,9 +18,10 @@ export async function GET(
 
     const { id } = await params;
 
-    const badmintonSession = await prisma.badmintonSession.findUnique({
+    const activitySession = await prisma.activitySession.findUnique({
         where: { id },
         include: {
+            ekskul: { select: { id: true, name: true, color: true } },
             _count: { select: { attendances: true } },
             attendances: {
                 include: {
@@ -29,8 +30,6 @@ export async function GET(
                             id: true,
                             name: true,
                             image: true,
-                            playerLevel: true,
-                            playPosition: true,
                         },
                     },
                 },
@@ -39,14 +38,14 @@ export async function GET(
         },
     });
 
-    if (!badmintonSession) {
+    if (!activitySession) {
         return NextResponse.json(
             { error: 'Session not found' },
             { status: 404 },
         );
     }
 
-    return NextResponse.json(badmintonSession);
+    return NextResponse.json(activitySession);
 }
 
 // PATCH /api/sessions/[id] — admin only
@@ -77,7 +76,7 @@ export async function PATCH(
 
     const { date, ...rest } = parsed.data;
 
-    const updated = await prisma.badmintonSession.update({
+    const updated = await prisma.activitySession.update({
         where: { id },
         data: {
             ...rest,
@@ -103,7 +102,7 @@ export async function DELETE(
 
     const { id } = await params;
 
-    await prisma.badmintonSession.delete({ where: { id } });
+    await prisma.activitySession.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
 }

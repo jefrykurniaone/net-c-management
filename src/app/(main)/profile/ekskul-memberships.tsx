@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import type { PaymentMode } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
+import { PaymentModeSelector } from './payment-mode-selector';
 import { toast } from 'sonner';
-import { Shapes } from 'lucide-react';
+import { MessageCircle, Shapes } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
@@ -14,6 +16,21 @@ interface MembershipEkskul {
     color: string;
     slug: string;
     joined: boolean;
+    monthlyFee: number;
+    sessionFee: number;
+    allowsMonthly: boolean;
+    allowsPerSession: boolean;
+    adminWhatsapp: string;
+    pendingMode: PaymentMode | null;
+    pendingEffectiveFrom: number | null;
+    effectiveMode: PaymentMode | null;
+}
+
+function fetchMemberships(): Promise<MembershipEkskul[] | null> {
+    return fetch('/api/users/memberships')
+        .then((r) => r.json())
+        .then((data: { ekskuls?: MembershipEkskul[] }) => data.ekskuls ?? [])
+        .catch(() => null);
 }
 
 export function EkskulMemberships() {
@@ -24,14 +41,23 @@ export function EkskulMemberships() {
     const [pendingId, setPendingId] = useState<string | null>(null);
 
     useEffect(() => {
-        fetch('/api/users/memberships')
-            .then((r) => r.json())
-            .then((data: { ekskuls?: MembershipEkskul[] }) =>
-                setEkskuls(data.ekskuls ?? []),
-            )
-            .catch(() => setEkskuls([]))
+        fetchMemberships()
+            .then((list) => setEkskuls(list ?? []))
             .finally(() => setLoading(false));
     }, []);
+
+    // Silent re-read after a mode change — the effective mode (and any queued
+    // switch) is resolved server-side, so re-fetch rather than guess locally.
+    // A failed re-fetch keeps the current list instead of blanking it — the
+    // action that triggered this already succeeded.
+    async function refresh() {
+        const list = await fetchMemberships();
+        if (list === null) {
+            toast.error(t.common.error);
+            return;
+        }
+        setEkskuls(list);
+    }
 
     async function toggle(ekskul: MembershipEkskul) {
         const action = ekskul.joined ? 'leave' : 'join';
@@ -43,16 +69,10 @@ export function EkskulMemberships() {
                 body: JSON.stringify({ ekskulId: ekskul.id, action }),
             });
             if (!res.ok) throw new Error(t.ekskul.actionFailed);
-            setEkskuls((prev) =>
-                prev.map((e) =>
-                    e.id === ekskul.id ? { ...e, joined: !e.joined } : e,
-                ),
-            );
             toast.success(
-                action === 'join'
-                    ? t.ekskul.joinSuccess
-                    : t.ekskul.leaveSuccess,
+                action === 'join' ? t.ekskul.joinSuccess : t.ekskul.leaveSuccess,
             );
+            await refresh();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : t.common.error);
         } finally {
@@ -61,34 +81,64 @@ export function EkskulMemberships() {
     }
 
     return (
-        <div className='bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6'>
+        <div className='bg-card rounded-xl border border-border p-6'>
             <div className='flex items-center gap-2 mb-1'>
-                <Shapes className='w-5 h-5 text-green-600' />
-                <h2 className='font-semibold text-gray-900 dark:text-white'>
+                <Shapes className='w-5 h-5 text-primary' />
+                <h2 className='font-semibold text-foreground'>
                     {t.ekskul.yourEkskul}
                 </h2>
             </div>
-            <p className='text-sm text-gray-500 mb-4'>{t.ekskul.yourEkskulSub}</p>
+            <p className='text-sm text-muted-foreground mb-4'>{t.ekskul.yourEkskulSub}</p>
 
             {loading ? (
-                <p className='text-sm text-gray-400'>{t.common.loading}</p>
+                <p className='text-sm text-muted-foreground'>{t.common.loading}</p>
             ) : ekskuls.length === 0 ? (
-                <p className='text-sm text-gray-400'>{t.admin.noEkskul}</p>
+                <p className='text-sm text-muted-foreground'>{t.admin.noEkskul}</p>
             ) : (
                 <div className='space-y-2'>
                     {ekskuls.map((e) => (
                         <div
                             key={e.id}
-                            className='flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-800 last:border-0'>
-                            <EkskulBadge name={e.name} color={e.color} />
-                            <Button
-                                variant={e.joined ? 'outline' : 'default'}
-                                size='sm'
-                                className={`h-7 text-xs${e.joined ? '' : ' bg-green-600 hover:bg-green-700 text-white'}`}
-                                loading={pendingId === e.id}
-                                onClick={() => toggle(e)}>
-                                {e.joined ? t.ekskul.leave : t.ekskul.join}
-                            </Button>
+                            className='py-2 border-b border-border last:border-0'>
+                            <div className='flex items-center justify-between gap-2'>
+                                <EkskulBadge name={e.name} color={e.color} />
+                                <div className='flex items-center gap-1'>
+                                    {e.adminWhatsapp && (
+                                        <a
+                                            href={`https://wa.me/${e.adminWhatsapp.replace(/\D/g, '')}`}
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            aria-label={t.sessions.contactAdmin}
+                                            title={t.sessions.contactAdmin}
+                                            className='inline-flex h-11 sm:h-7 items-center justify-center rounded-md border border-success/40 px-2 text-success hover:bg-success/10'>
+                                            <MessageCircle className='w-3.5 h-3.5' />
+                                        </a>
+                                    )}
+                                    <Button
+                                        variant={e.joined ? 'outline' : 'default'}
+                                        size='sm'
+                                        className='h-11 sm:h-7 text-xs'
+                                        loading={pendingId === e.id}
+                                        onClick={() => toggle(e)}>
+                                        {e.joined ? t.ekskul.leave : t.ekskul.join}
+                                    </Button>
+                                </div>
+                            </div>
+                            {e.joined && (
+                                <PaymentModeSelector
+                                    membership={{
+                                        ekskulId: e.id,
+                                        monthlyFee: e.monthlyFee,
+                                        sessionFee: e.sessionFee,
+                                        allowsMonthly: e.allowsMonthly,
+                                        allowsPerSession: e.allowsPerSession,
+                                        pendingMode: e.pendingMode,
+                                        pendingEffectiveFrom: e.pendingEffectiveFrom,
+                                        effectiveMode: e.effectiveMode,
+                                    }}
+                                    onChanged={refresh}
+                                />
+                            )}
                         </div>
                     ))}
                 </div>

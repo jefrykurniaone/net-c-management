@@ -37,7 +37,7 @@ New users are created by NextAuth on first login; until `isProfileComplete = tru
 
 Prisma uses the `driverAdapters` preview feature with `PrismaPg` (direct `pg` pool, not Prisma's built-in connector). The singleton is in `src/lib/prisma.ts` — production caps the pool at 1 connection per serverless function, so use Supabase's **Transaction pooler (port 6543)** in production and the **Session pooler (port 5432)** in development.
 
-Core models: `User`, `BadmintonSession`, `Attendance`, `Payment`, `Settings`. Key enums: `Role` (MEMBER/ADMIN), `SessionStatus`, `AttendanceStatus`, `PaymentStatus`.
+Core models: `User`, `ActivitySession`, `Attendance`, `Payment`, `Settings`. Key enums: `Role` (MEMBER/ADMIN), `SessionStatus`, `AttendanceStatus`, `PaymentStatus`.
 
 ### Storage
 

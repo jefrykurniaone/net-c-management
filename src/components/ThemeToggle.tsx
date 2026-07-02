@@ -24,11 +24,11 @@ function Switch({ on }: Readonly<{ on: boolean }>) {
         <span
             className={cn(
                 'relative ml-auto inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors',
-                on ? 'bg-green-600' : 'bg-gray-300 dark:bg-gray-600',
+                on ? 'bg-primary' : 'bg-input',
             )}>
             <span
                 className={cn(
-                    'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform',
+                    'inline-block h-4 w-4 transform rounded-full bg-background shadow-sm transition-transform',
                     on ? 'translate-x-4' : 'translate-x-0.5',
                 )}
             />
@@ -55,7 +55,7 @@ export function ThemeToggle({ compact }: Readonly<{ compact?: boolean }>) {
         return (
             <button
                 onClick={toggle}
-                className='flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors'
+                className='flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors'
                 aria-label={t.nav.toggleTheme}>
                 {isDark ? (
                     <Sun className='w-4 h-4 shrink-0' />
@@ -72,7 +72,7 @@ export function ThemeToggle({ compact }: Readonly<{ compact?: boolean }>) {
             role='switch'
             aria-checked={isDark}
             aria-label={t.nav.toggleTheme}
-            className='flex items-center gap-2 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors w-full'>
+            className='flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors w-full'>
             {isDark ? (
                 <Moon className='w-4 h-4 shrink-0' />
             ) : (

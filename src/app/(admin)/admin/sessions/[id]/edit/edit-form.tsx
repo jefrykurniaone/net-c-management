@@ -27,13 +27,13 @@ import { toast } from "sonner";
 import { ArrowLeft, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import type { BadmintonSession, Attendance, User } from "@prisma/client";
+import type { ActivitySession, Attendance, User } from "@prisma/client";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { EkskulOption } from "@/types/ekskul";
 
 type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
-type SessionWithAttendances = BadmintonSession & { attendances: AttendanceWithUser[] };
+type SessionWithAttendances = ActivitySession & { attendances: AttendanceWithUser[] };
 
 export function EditSessionForm({ session }: Readonly<{ session: SessionWithAttendances }>) {
   const router = useRouter();
@@ -48,9 +48,9 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
   ];
 
   const ATTENDANCE_STATUS_OPTIONS = [
-    { value: "REGISTERED", label: t.attendanceStatus.REGISTERED, icon: Clock, color: "text-yellow-500" },
-    { value: "PRESENT", label: t.attendanceStatus.PRESENT, icon: CheckCircle, color: "text-green-500" },
-    { value: "ABSENT", label: t.attendanceStatus.ABSENT, icon: XCircle, color: "text-red-500" },
+    { value: "REGISTERED", label: t.attendanceStatus.REGISTERED, icon: Clock, color: "text-muted-foreground" },
+    { value: "PRESENT", label: t.attendanceStatus.PRESENT, icon: CheckCircle, color: "text-primary" },
+    { value: "ABSENT", label: t.attendanceStatus.ABSENT, icon: XCircle, color: "text-destructive" },
   ];
   const [loading, setLoading] = useState(false);
   const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
@@ -164,14 +164,14 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
     <div className="space-y-6">
       <Link
         href="/admin/sessions"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" />
         {t.admin.backToSessions}
       </Link>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h1 className="text-xl font-bold text-foreground mb-6">
           {t.admin.editSessionTitle}
         </h1>
 
@@ -352,7 +352,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
             <div className="flex gap-3">
               <Button
                 type="submit"
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1"
                 loading={loading}
               >
                 {t.admin.updateBtn}
@@ -360,7 +360,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               <Button
                 type="button"
                 variant="outline"
-                className="border-red-200 text-red-500 hover:bg-red-50"
+                className="text-destructive hover:bg-destructive/10"
                 onClick={handleDelete}
                 loading={loading}
               >
@@ -373,15 +373,14 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
 
       {/* Attendance Management */}
       {attendances.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 p-6">
+        <div className="bg-card rounded-xl border border-border p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-foreground">
               {t.admin.manualAttendance} ({attendances.length})
             </h2>
             <Button
               type="button"
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white"
               onClick={handleMarkAllPresent}
               loading={loading}
             >
@@ -395,25 +394,25 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               return (
                 <div
                   key={a.userId}
-                  className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0"
+                  className="flex items-center justify-between py-2 border-b border-border last:border-0"
                 >
                   <div className="flex items-center gap-2">
                     {attendanceLoading === a.userId ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
                     ) : (
                       currentOpt && (
                         <currentOpt.icon className={`w-4 h-4 ${currentOpt.color}`} />
                       )
                     )}
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    <span className="text-sm font-medium text-foreground">
                       {a.user.name ?? "—"}
                     </span>
                   </div>
                   <div className="flex gap-1">
                     {ATTENDANCE_STATUS_OPTIONS.map((opt) => {
-                      let activeClass = "bg-yellow-100 text-yellow-700 ring-1 ring-yellow-400";
-                      if (opt.value === "PRESENT") activeClass = "bg-green-100 text-green-700 ring-1 ring-green-400";
-                      if (opt.value === "ABSENT") activeClass = "bg-red-100 text-red-700 ring-1 ring-red-400";
+                      let activeClass = "bg-muted text-muted-foreground ring-1 ring-border";
+                      if (opt.value === "PRESENT") activeClass = "bg-primary/15 text-primary ring-1 ring-primary/40";
+                      if (opt.value === "ABSENT") activeClass = "bg-destructive/15 text-destructive ring-1 ring-destructive/40";
                       const isActive = a.status === opt.value;
                       return (
                         <button
@@ -427,7 +426,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                             )
                           }
                           className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
-                            isActive ? activeClass : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                            isActive ? activeClass : "bg-muted text-muted-foreground hover:bg-muted/70"
                           }`}
                         >
                           {opt.label}

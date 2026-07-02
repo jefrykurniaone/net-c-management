@@ -7,7 +7,7 @@ const DEFAULT_TABLE_ROWS = 6;
 const DEFAULT_TABLE_COLS = 6;
 const DEFAULT_FORM_FIELDS = 5;
 
-const CARD = 'bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800';
+const CARD = 'bg-card rounded-xl border border-border';
 
 export function PageHeaderSkeleton() {
     return (
@@ -66,7 +66,7 @@ export function ListSkeleton({
 
 function TableRow({ cols }: Readonly<{ cols: number }>) {
     return (
-        <div className='p-4 flex gap-4 border-b border-gray-50 dark:border-gray-800/50 last:border-0'>
+        <div className='p-4 flex gap-4 border-b border-border last:border-0'>
             {Array.from({ length: cols }).map((_, c) => (
                 <Skeleton key={c} className='h-4 flex-1' />
             ))}
@@ -86,7 +86,7 @@ export function TableSkeleton({
                 <Skeleton className='h-9 w-24' />
             </div>
             <div className={`${CARD} overflow-hidden`}>
-                <div className='border-b border-gray-100 dark:border-gray-800 p-4 flex gap-4'>
+                <div className='border-b border-border p-4 flex gap-4'>
                     {Array.from({ length: cols }).map((_, i) => (
                         <Skeleton key={i} className='h-4 flex-1' />
                     ))}

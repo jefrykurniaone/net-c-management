@@ -37,16 +37,19 @@ enum PaymentStatus {
   REJECTED
 }
 
-enum PlayPosition {
-  SINGLE
-  DOUBLE
-  BOTH
+// How a member pays for an Activity. Lives on Membership, never inferred from
+// past payments (AD-7). Resolved as a function of the billing period.
+enum PaymentMode {
+  MONTHLY
+  PER_SESSION
 }
 
-enum PlayerLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
+// What a Payment row bills for. MONTHLY rows are one-per-member/Activity/period;
+// SESSION rows are one-per-member/ActivitySession (per-session pre-pay). A single
+// Payment model carries both (AD-4) — no separate session-payment table.
+enum PaymentType {
+  MONTHLY
+  SESSION
 }
 
 // ─── NextAuth Required Models ─────────────────────────────────────────────────
@@ -99,8 +102,6 @@ model User {
   role              Role        @default(MEMBER)
   isActive          Boolean     @default(true)
   isProfileComplete Boolean     @default(false)
-  playPosition      PlayPosition?
-  playerLevel       PlayerLevel?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
@@ -120,7 +121,18 @@ model Ekskul {
   description     String?  @db.Text
   color           String   @default("#16a34a") // badge color (inline style)
   icon            String? // optional lucide icon name
-  defaultFee      Int      @default(0)
+  monthlyFee       Int     @default(0) // consolidated monthly dues per Activity (AR-7)
+  sessionFee       Int     @default(0) // default per-session price inherited by new Sessions (FR-8)
+  allowsMonthly    Boolean @default(true) // Activity offers the Monthly payment mode (FR-9)
+  allowsPerSession Boolean @default(false) // Activity offers the Per-Session payment mode (FR-9)
+  // Cost-sharing viability: how many paying members the Activity needs per
+  // session to cover shared costs (venue rent, equipment). 0 = no minimum.
+  minMembers       Int     @default(0)
+  // Weekly recurring schedule for auto-generated sessions. Day is 0 (Sunday)
+  // through 6 (Saturday); null disables auto-generation.
+  recurringDay       Int?
+  recurringStartTime String @default("08:00")
+  recurringEndTime   String @default("10:00")
   defaultLocation String   @default("")
   maxPlayers      Int      @default(20)
   adminWhatsapp   String   @default("")
@@ -130,7 +142,7 @@ model Ekskul {
   updatedAt       DateTime @updatedAt
 
   memberships Membership[]
-  sessions    BadmintonSession[]
+  sessions    ActivitySession[]
   payments    Payment[]
 }
 
@@ -142,6 +154,17 @@ model Membership {
   isActive Boolean  @default(true)
   joinedAt DateTime @default(now())
 
+  // Payment mode is owned by the Membership and period-resolved (AD-7). A null
+  // paymentMode is the explicit "unselected" state (the member has not chosen
+  // yet on an Activity that offers both modes). effectiveFrom is the YYYYMM the
+  // current mode applies from; a queued switch is held in pendingMode /
+  // pendingEffectiveFrom and only takes effect from its own period forward, so
+  // the current period is never rewritten.
+  paymentMode          PaymentMode?
+  effectiveFrom        Int          @default(0)
+  pendingMode          PaymentMode?
+  pendingEffectiveFrom Int?
+
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   ekskul Ekskul @relation(fields: [ekskulId], references: [id], onDelete: Cascade)
 
@@ -149,9 +172,9 @@ model Membership {
   @@index([ekskulId])
 }
 
-// Despite its name, this models a generic activity session scoped to an Ekskul.
-// (Kept as BadmintonSession to avoid a repo-wide rename — see plan out-of-scope.)
-model BadmintonSession {
+// A generic activity session scoped to an Ekskul. Named ActivitySession (not
+// Session) to avoid colliding with the NextAuth `Session` model.
+model ActivitySession {
   id          String        @id @default(cuid())
   title       String
   date        DateTime
@@ -168,6 +191,7 @@ model BadmintonSession {
 
   ekskul      Ekskul       @relation(fields: [ekskulId], references: [id])
   attendances Attendance[]
+  payments    Payment[]
 
   @@index([ekskulId])
 }
@@ -182,7 +206,7 @@ model Attendance {
   updatedAt DateTime         @updatedAt
 
   user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  session BadmintonSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  session ActivitySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, sessionId])
 }
@@ -191,6 +215,15 @@ model Payment {
   id          String        @id @default(cuid())
   userId      String
   ekskulId    String
+  // What this row bills for. MONTHLY (sessionId = null) is one row per
+  // member/Activity/month/year; SESSION carries a sessionId and is one row per
+  // member/ActivitySession (AD-4). Defaults to MONTHLY so pre-existing rows and
+  // the monthly proof-upload flow keep working unchanged (NFR-8).
+  type        PaymentType   @default(MONTHLY)
+  // Set only on SESSION rows. Its month/year/ekskulId are derived server-side
+  // from the ActivitySession (AD-4). Restrict so a paid session cannot be
+  // silently deleted out from under a payment record.
+  sessionId   String?
   amount      Int           // dalam Rupiah
   month       Int           // 1-12
   year        Int
@@ -203,11 +236,17 @@ model Payment {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ekskul Ekskul @relation(fields: [ekskulId], references: [id])
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ekskul  Ekskul           @relation(fields: [ekskulId], references: [id])
+  session ActivitySession? @relation(fields: [sessionId], references: [id], onDelete: Restrict)
 
-  @@unique([userId, ekskulId, month, year])
+  // SESSION uniqueness: one payment per member per session. NULLs are distinct
+  // in Postgres, so MONTHLY rows (sessionId = null) are unaffected here — their
+  // uniqueness is enforced by a PARTIAL unique index applied via raw SQL (see
+  // prisma/payment-monthly-unique.sql), which `db push` cannot express (AD-5).
+  @@unique([userId, sessionId])
   @@index([ekskulId])
+  @@index([sessionId])
 }
 
 model Settings {

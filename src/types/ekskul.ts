@@ -4,7 +4,10 @@ export interface EkskulOption {
     name: string;
     slug: string;
     color: string;
-    defaultFee: number;
+    monthlyFee: number;
+    sessionFee: number;
+    allowsMonthly: boolean;
+    allowsPerSession: boolean;
     defaultLocation: string;
     maxPlayers: number;
     isActive: boolean;

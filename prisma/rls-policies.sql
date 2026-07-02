@@ -10,8 +10,8 @@
 --     to resolve the "RLS Enabled No Policy" Security Advisor warning.
 -- =============================================================================
 
--- BadmintonSession ─────────────────────────────────────────────────────────────
-CREATE POLICY "deny_direct_api_access" ON "BadmintonSession"
+-- ActivitySession ─────────────────────────────────────────────────────────────
+CREATE POLICY "deny_direct_api_access" ON "ActivitySession"
   FOR ALL
   TO anon, authenticated
   USING (false)

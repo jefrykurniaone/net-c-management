@@ -23,7 +23,7 @@ export async function PATCH(req: Request) {
         );
     }
 
-    const { name, phone, playPosition, playerLevel, ekskulIds } = parsed.data;
+    const { name, phone, ekskulIds } = parsed.data;
     const userId = session.user.id;
 
     // Only allow joining ekskul that are active.
@@ -48,8 +48,6 @@ export async function PATCH(req: Request) {
             data: {
                 name,
                 phone,
-                playPosition,
-                playerLevel,
                 isProfileComplete: true,
             },
             select: {

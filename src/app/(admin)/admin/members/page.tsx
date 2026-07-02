@@ -6,10 +6,11 @@ import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { MemberActions } from "./member-actions";
+import { MemberCards } from "./member-cards";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getEkskuls } from "@/lib/ekskul";
-import { isAdminRole } from "@/lib/utils";
+import { isAdminRole, roleBadgeVariant } from "@/lib/utils";
 import type { Prisma } from "@prisma/client";
 
 export default async function AdminMembersPage({
@@ -52,8 +53,6 @@ export default async function AdminMembersPage({
         role: true,
         isActive: true,
         isProfileComplete: true,
-        playPosition: true,
-        playerLevel: true,
         phone: true,
         createdAt: true,
         memberships: {
@@ -70,11 +69,11 @@ export default async function AdminMembersPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-green-600" />
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Users className="w-6 h-6 text-primary" />
             {t.admin.membersTitle}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {users.length} {t.admin.membersRegistered}
           </p>
         </div>
@@ -86,12 +85,12 @@ export default async function AdminMembersPage({
           name="search"
           defaultValue={search}
           placeholder={t.admin.searchPlaceholder}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900 w-full max-w-sm"
+          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full max-w-sm"
         />
         <select
           name="ekskulId"
           defaultValue={ekskulId}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-gray-900"
+          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
         >
           <option value="">{t.ekskul.filterAll}</option>
           {ekskuls.map((e) => (
@@ -102,31 +101,36 @@ export default async function AdminMembersPage({
         </select>
         <button
           type="submit"
-          className="border rounded-lg px-4 py-1.5 text-sm bg-white dark:bg-gray-900 hover:bg-gray-50"
+          className="border rounded-lg px-4 py-1.5 text-sm bg-background hover:bg-muted w-full sm:w-auto"
         >
           {t.admin.searchBtn}
         </button>
       </form>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+      {/* Mobile: stacked cards (< md) */}
+      <div className="md:hidden">
+        <MemberCards users={users} t={t} currentUserId={session.user.id} />
+      </div>
+
+      {/* Desktop: full table (>= md) */}
+      <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colName}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.ekskul.label}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">{t.admin.colLevel}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colAttendance}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colPayments}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colMemberStatus}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-500">{t.admin.colActions}</th>
+              <tr className="bg-muted border-b border-border">
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colName}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.ekskul.label}</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colAttendance}</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colPayments}</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colMemberStatus}</th>
+                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colActions}</th>
               </tr>
             </thead>
             <tbody>
               {users.map((u) => (
                 <tr
                   key={u.id}
-                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  className="border-b border-border hover:bg-muted"
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
@@ -138,25 +142,25 @@ export default async function AdminMembersPage({
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-medium text-xs">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
                           {(u.name ?? u.email ?? "?")[0].toUpperCase()}
                         </div>
                       )}
                       <div>
                         <Link
                           href={`/admin/members/${u.id}`}
-                          className="font-medium text-gray-900 dark:text-white hover:underline"
+                          className="font-medium text-foreground hover:underline"
                         >
                           {u.name ?? `(${t.admin.profileIncomplete})`}
                         </Link>
-                        <p className="text-xs text-gray-400">{u.email}</p>
+                        <p className="text-xs text-muted-foreground">{u.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {u.memberships.length === 0 ? (
-                        <span className="text-xs text-gray-300">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       ) : (
                         u.memberships.map((m) => (
                           <EkskulBadge
@@ -168,28 +172,19 @@ export default async function AdminMembersPage({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    <p>{u.playerLevel ? t.levels[u.playerLevel] : "-"}</p>
-                    <p className="text-xs text-gray-400">
-                      {u.playPosition ? t.positions[u.playPosition] : ""}
-                    </p>
-                  </td>
-                  <td className="px-4 py-3 text-center text-gray-500">
+                  <td className="px-4 py-3 text-center text-muted-foreground tabular-nums">
                     {u._count.attendances}
                   </td>
-                  <td className="px-4 py-3 text-center text-gray-500">
+                  <td className="px-4 py-3 text-center text-muted-foreground tabular-nums">
                     {u._count.payments}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <Badge
-                        variant={u.role === "ADMIN" ? "default" : "secondary"}
-                        className={`text-xs${u.role === "OWNER" ? " bg-purple-600 text-white hover:bg-purple-700 border-transparent" : ""}`}
-                      >
+                      <Badge variant={roleBadgeVariant(u.role)} className="text-xs">
                         {t.roles[u.role]}
                       </Badge>
                       {!u.isActive && (
-                        <Badge variant="outline" className="text-xs text-red-500 border-red-200">
+                        <Badge variant="destructive" className="text-xs">
                           {t.admin.inactive2}
                         </Badge>
                       )}
@@ -202,7 +197,7 @@ export default async function AdminMembersPage({
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                     {t.admin.noMembers}
                   </td>
                 </tr>

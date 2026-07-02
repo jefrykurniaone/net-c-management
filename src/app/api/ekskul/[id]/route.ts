@@ -100,7 +100,7 @@ export async function DELETE(
 
     const { id } = await params;
     const [sessionCount, paymentCount] = await Promise.all([
-        prisma.badmintonSession.count({ where: { ekskulId: id } }),
+        prisma.activitySession.count({ where: { ekskulId: id } }),
         prisma.payment.count({ where: { ekskulId: id } }),
     ]);
 
