@@ -1,14 +1,17 @@
 /**
- * Promote a user to OWNER on the *local* database.
+ * Promote a user to OWNER.
  *
- * Run once after your first Google login locally — logging in creates your User
- * row; this flips it to an active, profile-complete OWNER so you can reach
- * `/admin` without going through onboarding.
+ * Run once after your first Google login — logging in creates your User row;
+ * this flips it to an active, profile-complete OWNER so you can reach `/admin`
+ * without going through onboarding.
  *
- *   npm run db:promote -- your-email@gmail.com
+ *   npm run db:promote -- your-email@gmail.com        (local DB)
+ *   npm run db:promote:prod -- your-email@gmail.com   (production DB)
  */
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+// Same target selection as prisma.config.ts: prod is an explicit opt-in.
+const envFile = process.env.DATABASE_TARGET === 'prod' ? '.env.prod' : '.env.local';
+config({ path: envFile });
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
