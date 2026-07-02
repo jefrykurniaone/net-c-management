@@ -5,7 +5,7 @@ base_working_tree: Mostly clean at HEAD (347770b) for src/ and prisma/. Correcti
 
 # Story 4.4: Settings information architecture cleanup
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -110,6 +110,16 @@ so that no fee or identity field is duplicated, orphaned, or wrong in two homes.
   - [x] Toggle both Settings screens (General Settings, Activity create+edit dialog) light↔dark and at mobile/tablet/desktop widths — confirm no regression from Story 4.3's token migration (both files are already tokenized; this is a confirmation pass, not a re-migration) and that the new `Checkbox` renders correctly in both themes.
   - [x] `npx eslint` on every changed file → 0 issues. `npm run build` → green (types + all routes). `npx prisma generate` if the Prisma client needs refreshing (no schema change expected, so likely unnecessary — only run if `db push`/client drift is observed).
   - [x] Regression pass: activity CRUD (create/edit/activate/deactivate), general-settings save (name/location/whatsapp/logo), `proxy.ts`/layout guards, `/api/ekskul/**` and `/api/settings/**` routes all unchanged and working. No new dependency in `package.json` (the `Checkbox` component only uses the already-installed `radix-ui` package).
+
+### Review Findings
+
+Reviewed as a single pass (425-line diff, `a14a70b^..HEAD` scoped to the story's File List — well under the chunking threshold). 3 adversarial layers (Blind Hunter, Edge Case Hunter, Acceptance Auditor), each claim verified against the live codebase before triage.
+
+**0 decision-needed, 0 patch, 0 defer — clean implementation.** Every finding raised across all 3 layers (~30 total) was one of:
+- **Verified false against the live code:** Radix `Checkbox`'s `onCheckedChange` "could fire `'indeterminate'`" — unreachable here since `checked={!!field.value}` is always a strict boolean, so Radix never enters indeterminate display state and user clicks only toggle `true`/`false`. `paymentModesError.message` "could render empty" — unreachable since the refine's message is a static string literal, always defined whenever the error exists. The `{...field}` spread "order-dependent correctness" on the `maxPlayers` `<Input>` — correct as written; the explicit `value=`/`onChange=` JSX props after the spread correctly win, matching the identical established pattern already used for `monthlyFee`/`sessionFee` in the same file.
+- **Diff-range noise, not a 4.4 defect:** Blind Hunter and the Acceptance Auditor both flagged unrelated `dictionaries.ts` key churn (`monthLabel`, `invalidAmount`, `alreadyConfirmed`, `noModesOffered`, etc.) as apparent scope creep. Verified via `git show a14a70b -- src/lib/i18n/dictionaries.ts` that Story 4.4's actual commit touched **only** the `maxPlayersLabel` removal — the other key changes came from Stories 3.3/3.4/3.5's separately-closed review-fix commits that happened to touch the same shared dictionary file afterward, and only appear here because the review diff range extends to current HEAD. No dangling references to any removed key found via repo-wide grep.
+- **Matches spec exactly, as explicitly designed:** the `paymentModesError` narrow-cast pattern, the decimal-truncation behavior on `maxPlayers` input (pre-existing, identical to the fee-input pattern), and the "generic zod message on a cleared required field" behavior are all explicitly called out and accepted in the story's own Dev Notes/Task 3 text — not gaps.
+- **Pre-existing/out-of-scope nits, not introduced by this diff:** `FormSkeleton fields={5}` magic number (was already a magic number at `6`), `Checkbox` missing JSDoc/size-variant props (no other UI primitive in this repo has them either), no DB purge of the orphaned `Settings.maxPlayers` row (explicitly not needed per AD-12 — pre-launch, no production data).
 
 ## Dev Notes
 

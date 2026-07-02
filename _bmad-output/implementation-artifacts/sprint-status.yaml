@@ -41,7 +41,7 @@
 # - Retrospective appends its action items to action_items; sprint-status surfaces open ones
 
 generated: 2026-06-30
-last_updated: 2026-07-02 (Story 4.3 code-reviewed and closed → done, after Story 4.2 — 4.3 reviewed in 5 chunks (5168 diff lines, over single-pass threshold): tokens/shared-components/i18n, shells/nav, member screens, admin screens, misc/auth. Fixed 3 patches — badge success/warning focus-ring, paymentStatusVariant/roleBadgeVariant narrowed to Prisma enums (surfaced + fixed a real latent bug in profile/page.tsx's Profile.role typing), 3 hand-rolled empty-states replaced with <EmptyState>; 1 decision (ekskul-actions maxPlayers NaN gap) resolved by finishing the fix; 3 pre-existing items deferred; ~110 findings dismissed — many were Story 3.3/3.4/3.5/4.4 business logic bundled into the same giant commit, already reviewed under those stories, or verified false against the live code (e.g. "admin nav leaks to members" — false, Sidebar/MobileNav are admin-layout-gated); lint + build clean)
+last_updated: 2026-07-02 (Story 4.4 code-reviewed and closed → done, completing Epic 4 — 425-line single-pass diff, 0 patches/defers/decisions: every finding across 3 review layers was verified false, diff-range noise from Stories 3.3/3.4/3.5's already-closed commits touching the same shared dictionaries.ts, or explicitly spec-sanctioned behavior. Prior: Story 4.3 code-reviewed and closed → done after Story 4.2 — 4.3 reviewed in 5 chunks (5168 diff lines, over single-pass threshold): tokens/shared-components/i18n, shells/nav, member screens, admin screens, misc/auth. Fixed 3 patches — badge success/warning focus-ring, paymentStatusVariant/roleBadgeVariant narrowed to Prisma enums (surfaced + fixed a real latent bug in profile/page.tsx's Profile.role typing), 3 hand-rolled empty-states replaced with <EmptyState>; 1 decision (ekskul-actions maxPlayers NaN gap) resolved by finishing the fix; 3 pre-existing items deferred; ~110 findings dismissed; lint + build clean)
 project: net-c-management
 project_key: NOKEY
 tracking_system: file-system
@@ -74,9 +74,9 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4 — UI/UX Refresh, Responsiveness & Settings IA
-  epic-4: in-progress
+  epic-4: done
   4-1-two-responsive-app-shells-navigation: done
   4-2-full-responsiveness-across-every-screen: done
   4-3-consistent-visual-language-shared-components-dark-mode: done
-  4-4-settings-information-architecture-cleanup: review
+  4-4-settings-information-architecture-cleanup: done
   epic-4-retrospective: optional
