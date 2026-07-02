@@ -19,6 +19,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { EmptyState } from '@/components/ui/empty-state';
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
@@ -134,11 +135,9 @@ export default function UploadPaymentPage() {
                     <ArrowLeft className='w-4 h-4' />
                     {t.payments.backToHistory}
                 </Link>
-                <div className='text-center py-16 bg-card rounded-xl border border-border'>
-                    <p className='text-muted-foreground'>
-                        {status === 'loading' ? t.common.loading : t.common.error}
-                    </p>
-                </div>
+                <EmptyState
+                    title={status === 'loading' ? t.common.loading : t.common.error}
+                />
             </div>
         );
     }
@@ -152,9 +151,7 @@ export default function UploadPaymentPage() {
                     <ArrowLeft className='w-4 h-4' />
                     {t.payments.backToHistory}
                 </Link>
-                <div className='text-center py-16 bg-card rounded-xl border border-border'>
-                    <p className='text-muted-foreground'>{t.payments.noMonthlyEkskul}</p>
-                </div>
+                <EmptyState title={t.payments.noMonthlyEkskul} />
             </div>
         );
     }

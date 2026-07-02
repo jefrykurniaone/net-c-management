@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { Role } from '@prisma/client';
+import type { PaymentStatus, Role } from '@prisma/client';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -49,7 +49,7 @@ export function sessionStatusVariant(
 }
 
 export function paymentStatusVariant(
-    status: string,
+    status: PaymentStatus,
 ): 'success' | 'warning' | 'destructive' {
     if (status === 'CONFIRMED') return 'success';
     if (status === 'REJECTED') return 'destructive';
@@ -62,7 +62,7 @@ export function paymentStatusVariant(
  * legacy hardcoded purple OWNER badge (single-accent rule, UX-DR1).
  */
 export function roleBadgeVariant(
-    role: string,
+    role: Role,
 ): 'default' | 'secondary' | 'outline' {
     if (role === 'OWNER') return 'default';
     if (role === 'ADMIN') return 'secondary';

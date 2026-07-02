@@ -27,6 +27,7 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { roleBadgeVariant } from '@/lib/utils';
 import { FormSkeleton } from '@/components/skeletons/page-skeletons';
 import { EkskulMemberships } from './ekskul-memberships';
+import type { Role } from '@prisma/client';
 
 interface Profile {
     id: string;
@@ -34,7 +35,7 @@ interface Profile {
     email: string | null;
     image: string | null;
     phone: string | null;
-    role: string;
+    role: Role;
     createdAt: string;
 }
 

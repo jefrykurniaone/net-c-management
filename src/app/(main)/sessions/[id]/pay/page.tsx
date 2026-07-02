@@ -16,6 +16,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { EmptyState } from '@/components/ui/empty-state';
 
 /** The session prefill the register-&-pay uploader needs (display only). */
 interface SessionInfo {
@@ -94,9 +95,7 @@ export default function SessionPayPage() {
         return (
             <div className='max-w-lg mx-auto space-y-6'>
                 <BackLink sessionId={sessionId} label={t.sessions.backToList} />
-                <div className='text-center py-16 bg-card rounded-xl border border-border'>
-                    <p className='text-muted-foreground'>{t.sessions.notFound}</p>
-                </div>
+                <EmptyState title={t.sessions.notFound} />
             </div>
         );
     }

@@ -333,16 +333,17 @@ function EkskulFormDialog({
                                             min={2}
                                             {...field}
                                             value={field.value ?? ''}
-                                            onChange={(e) =>
+                                            onChange={(e) => {
+                                                const parsed = Number.parseInt(
+                                                    e.target.value,
+                                                    10,
+                                                );
                                                 field.onChange(
-                                                    e.target.value === ''
+                                                    Number.isNaN(parsed)
                                                         ? undefined
-                                                        : Number.parseInt(
-                                                              e.target.value,
-                                                              10,
-                                                          ),
-                                                )
-                                            }
+                                                        : parsed,
+                                                );
+                                            }}
                                         />
                                     </FormControl>
                                     <FormMessage />
