@@ -27,9 +27,11 @@ const prisma = new PrismaClient({ adapter });
 const OWNER_EMAIL = process.env.SEED_OWNER_EMAIL?.trim() || 'jefrykurniaone@gmail.com';
 const ADMIN_WHATSAPP = '6282126229978';
 
+// Names, locations, and fees intentionally mirror the local seeder
+// (prisma/seed.ts) so both environments start from the same catalog.
 const SETTINGS: Record<string, string> = {
-    communityName: 'PB Net-C',
-    defaultLocation: '',
+    communityName: 'XClub Community',
+    defaultLocation: 'GOR XClub',
     adminWhatsapp: ADMIN_WHATSAPP,
     logoUrl: '',
 };
@@ -44,11 +46,14 @@ const EKSKULS = [
         slug: 'badminton',
         name: 'Badminton',
         color: '#0EA5E9',
+        monthlyFee: 50_000,
+        sessionFee: 25_000,
         allowsMonthly: true,
         allowsPerSession: true,
         recurringDay: null,
         recurringStartTime: '08:00',
         recurringEndTime: '11:00', // 3-hour session
+        defaultLocation: 'GOR XClub',
         maxPlayers: 20,
         adminWhatsapp: ADMIN_WHATSAPP,
     },
@@ -56,11 +61,14 @@ const EKSKULS = [
         slug: 'futsal',
         name: 'Futsal',
         color: '#F97316',
+        monthlyFee: 40_000,
+        sessionFee: 15_000,
         allowsMonthly: true,
         allowsPerSession: true,
         recurringDay: null,
         recurringStartTime: '19:00',
         recurringEndTime: '21:00', // 2-hour session
+        defaultLocation: 'Lapangan Futsal XClub',
         maxPlayers: 12,
         adminWhatsapp: ADMIN_WHATSAPP,
     },
