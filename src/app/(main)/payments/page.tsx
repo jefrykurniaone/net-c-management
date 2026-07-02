@@ -126,8 +126,16 @@ export default async function PaymentsPage({
                   <p className="text-sm text-muted-foreground mt-0.5 tabular-nums">
                     Rp {payment.amount.toLocaleString("id-ID")}
                   </p>
-                  {payment.notes && (
-                    <p className="text-xs text-muted-foreground mt-1 italic">{payment.notes}</p>
+                  {payment.notes && payment.status === "REJECTED" ? (
+                    <p className="text-xs text-destructive mt-1">
+                      {t.payments.rejectReason}: {payment.notes}
+                    </p>
+                  ) : (
+                    payment.notes && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        {payment.notes}
+                      </p>
+                    )
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-2">

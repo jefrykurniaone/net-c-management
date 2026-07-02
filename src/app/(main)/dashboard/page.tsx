@@ -51,8 +51,22 @@ export default async function DashboardPage() {
                 orderBy: { date: 'asc' },
                 include: {
                     ekskul: { select: { id: true, name: true, color: true } },
-                    attendances: { where: { userId }, select: { status: true } },
-                    _count: { select: { attendances: true } },
+                    attendances: {
+                        where: {
+                            userId,
+                            status: { in: ['REGISTERED', 'PRESENT'] },
+                        },
+                        select: { status: true },
+                    },
+                    _count: {
+                        select: {
+                            attendances: {
+                                where: {
+                                    status: { in: ['REGISTERED', 'PRESENT'] },
+                                },
+                            },
+                        },
+                    },
                 },
             }),
             prisma.payment.findMany({
@@ -152,7 +166,7 @@ export default async function DashboardPage() {
                     icon={Shapes}
                     title={t.ekskul.noneJoined}
                     action={
-                        <Link href='/profile'>
+                        <Link href='/sessions'>
                             <Button variant='outline' size='sm'>
                                 {t.ekskul.join}
                             </Button>

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
 import { PaymentModeSelector } from './payment-mode-selector';
 import { toast } from 'sonner';
-import { Shapes } from 'lucide-react';
+import { MessageCircle, Shapes } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
@@ -20,6 +20,7 @@ interface MembershipEkskul {
     sessionFee: number;
     allowsMonthly: boolean;
     allowsPerSession: boolean;
+    adminWhatsapp: string;
     pendingMode: PaymentMode | null;
     pendingEffectiveFrom: number | null;
     effectiveMode: PaymentMode | null;
@@ -99,16 +100,29 @@ export function EkskulMemberships() {
                         <div
                             key={e.id}
                             className='py-2 border-b border-border last:border-0'>
-                            <div className='flex items-center justify-between'>
+                            <div className='flex items-center justify-between gap-2'>
                                 <EkskulBadge name={e.name} color={e.color} />
-                                <Button
-                                    variant={e.joined ? 'outline' : 'default'}
-                                    size='sm'
-                                    className='h-11 sm:h-7 text-xs'
-                                    loading={pendingId === e.id}
-                                    onClick={() => toggle(e)}>
-                                    {e.joined ? t.ekskul.leave : t.ekskul.join}
-                                </Button>
+                                <div className='flex items-center gap-1'>
+                                    {e.adminWhatsapp && (
+                                        <a
+                                            href={`https://wa.me/${e.adminWhatsapp.replace(/\D/g, '')}`}
+                                            target='_blank'
+                                            rel='noopener noreferrer'
+                                            aria-label={t.sessions.contactAdmin}
+                                            title={t.sessions.contactAdmin}
+                                            className='inline-flex h-11 sm:h-7 items-center justify-center rounded-md border border-success/40 px-2 text-success hover:bg-success/10'>
+                                            <MessageCircle className='w-3.5 h-3.5' />
+                                        </a>
+                                    )}
+                                    <Button
+                                        variant={e.joined ? 'outline' : 'default'}
+                                        size='sm'
+                                        className='h-11 sm:h-7 text-xs'
+                                        loading={pendingId === e.id}
+                                        onClick={() => toggle(e)}>
+                                        {e.joined ? t.ekskul.leave : t.ekskul.join}
+                                    </Button>
+                                </div>
                             </div>
                             {e.joined && (
                                 <PaymentModeSelector

@@ -66,7 +66,16 @@ export async function PATCH(
 
     const payment = await prisma.payment.findUnique({
         where: { id },
-        select: { id: true, type: true, sessionId: true, userId: true, status: true },
+        select: {
+            id: true,
+            type: true,
+            sessionId: true,
+            userId: true,
+            status: true,
+            ekskulId: true,
+            month: true,
+            year: true,
+        },
     });
     if (!payment) {
         return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
@@ -99,6 +108,28 @@ export async function PATCH(
             prisma.payment.update({ where: { id }, data }),
             prisma.attendance.deleteMany({
                 where: { userId, sessionId, status: 'REGISTERED' },
+            }),
+        ]);
+        return NextResponse.json(updated);
+    }
+
+    // Rejecting monthly dues releases every seat that payment was holding this
+    // period: the member's not-yet-attended registrations across the Activity's
+    // sessions of that month. PRESENT/ABSENT history stays untouched.
+    if (parsed.data.status === 'REJECTED' && payment.type === PaymentType.MONTHLY) {
+        const monthStart = new Date(Date.UTC(payment.year, payment.month - 1, 1));
+        const nextMonthStart = new Date(Date.UTC(payment.year, payment.month, 1));
+        const [updated] = await prisma.$transaction([
+            prisma.payment.update({ where: { id }, data }),
+            prisma.attendance.deleteMany({
+                where: {
+                    userId: payment.userId,
+                    status: 'REGISTERED',
+                    session: {
+                        ekskulId: payment.ekskulId,
+                        date: { gte: monthStart, lt: nextMonthStart },
+                    },
+                },
             }),
         ]);
         return NextResponse.json(updated);

@@ -125,6 +125,14 @@ model Ekskul {
   sessionFee       Int     @default(0) // default per-session price inherited by new Sessions (FR-8)
   allowsMonthly    Boolean @default(true) // Activity offers the Monthly payment mode (FR-9)
   allowsPerSession Boolean @default(false) // Activity offers the Per-Session payment mode (FR-9)
+  // Cost-sharing viability: how many paying members the Activity needs per
+  // session to cover shared costs (venue rent, equipment). 0 = no minimum.
+  minMembers       Int     @default(0)
+  // Weekly recurring schedule for auto-generated sessions. Day is 0 (Sunday)
+  // through 6 (Saturday); null disables auto-generation.
+  recurringDay       Int?
+  recurringStartTime String @default("08:00")
+  recurringEndTime   String @default("10:00")
   defaultLocation String   @default("")
   maxPlayers      Int      @default(20)
   adminWhatsapp   String   @default("")

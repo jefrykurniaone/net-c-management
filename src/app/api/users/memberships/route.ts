@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { ensureMembership } from '@/lib/ekskul';
 import {
     currentPeriod,
     resolvePaymentMode,
@@ -16,6 +17,7 @@ type EkskulRow = {
     sessionFee: number;
     allowsMonthly: boolean;
     allowsPerSession: boolean;
+    adminWhatsapp: string;
 };
 
 // Shape each Activity for the profile "Your activities" card: identity + fees +
@@ -67,6 +69,7 @@ export async function GET() {
                 sessionFee: true,
                 allowsMonthly: true,
                 allowsPerSession: true,
+                adminWhatsapp: true,
             },
         }),
         prisma.membership.findMany({
@@ -107,18 +110,12 @@ export async function POST(req: Request) {
     const userId = session.user.id;
 
     if (action === 'join') {
-        const ekskul = await prisma.ekskul.findFirst({
-            where: { id: ekskulId, isActive: true },
-            select: { id: true },
-        });
-        if (!ekskul) {
+        // Shared join path: (re)activates the membership and resets a stale
+        // payment-mode selection when re-joining after a leave.
+        const joined = await ensureMembership(userId, ekskulId);
+        if (!joined) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
         }
-        await prisma.membership.upsert({
-            where: { userId_ekskulId: { userId, ekskulId } },
-            create: { userId, ekskulId, isActive: true },
-            update: { isActive: true },
-        });
     } else {
         await prisma.membership.updateMany({
             where: { userId, ekskulId },

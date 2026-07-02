@@ -20,7 +20,14 @@ import {
 import Link from 'next/link';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { resolvePaymentMode, currentPeriod } from '@/lib/payment-mode';
+import {
+    resolvePaymentMode,
+    singleOfferedMode,
+    currentPeriod,
+} from '@/lib/payment-mode';
+import { getSessionQuotas } from '@/lib/recurring-sessions';
+import { getSettings } from '@/lib/settings';
+import { WhatsappButton } from '@/components/sessions/whatsapp-button';
 
 export default async function SessionDetailPage({
     params,
@@ -45,9 +52,15 @@ export default async function SessionDetailPage({
                     color: true,
                     allowsMonthly: true,
                     allowsPerSession: true,
+                    monthlyFee: true,
+                    minMembers: true,
+                    adminWhatsapp: true,
                 },
             },
             attendances: {
+                // ABSENT rows (monthly members who cancelled) are opt-out
+                // markers, not participants — hide them from the list.
+                where: { status: { in: ['REGISTERED', 'PRESENT'] } },
                 include: {
                     user: {
                         select: {
@@ -59,15 +72,23 @@ export default async function SessionDetailPage({
                 },
                 orderBy: { createdAt: 'asc' },
             },
-            _count: { select: { attendances: true } },
+            _count: {
+                select: {
+                    attendances: {
+                        where: { status: { in: ['REGISTERED', 'PRESENT'] } },
+                    },
+                },
+            },
         },
     });
 
     if (!activitySession) notFound();
 
-    // Resolve the member's effective payment mode for THIS session's period and
-    // their per-session payment status, so the CTA can switch to register-&-pay.
-    const [membership, sessionPayment] = await Promise.all([
+    // Resolve the member's effective payment mode for THIS session's period,
+    // their per-session payment status, and whether this period's monthly dues
+    // are in (seat lock follows money — an unpaid monthly member can't register).
+    const period = currentPeriod(activitySession.date);
+    const [membership, sessionPayment, monthlyPayment] = await Promise.all([
         prisma.membership.findUnique({
             where: {
                 userId_ekskulId: {
@@ -89,23 +110,38 @@ export default async function SessionDetailPage({
                 sessionId: activitySession.id,
                 type: 'SESSION',
             },
-            select: { status: true },
+            select: { status: true, notes: true },
+        }),
+        prisma.payment.findFirst({
+            where: {
+                userId: authSession.user.id,
+                ekskulId: activitySession.ekskulId,
+                type: 'MONTHLY',
+                month: period.month,
+                year: period.year,
+                status: { in: ['PENDING', 'CONFIRMED'] },
+            },
+            select: { id: true },
         }),
     ]);
+    const offered = {
+        allowsMonthly: activitySession.ekskul.allowsMonthly,
+        allowsPerSession: activitySession.ekskul.allowsPerSession,
+    };
+    // Non-members may register too (join-on-register), so a missing membership
+    // resolves like an unselected one: the offered set decides — a single
+    // offered mode auto-applies, both-offered stays null until the join dialog.
+    const effectiveMode = membership?.isActive
+        ? resolvePaymentMode(membership, offered, period.month, period.year)
+        : singleOfferedMode(offered);
 
-    const period = currentPeriod(activitySession.date);
-    const effectiveMode =
-        membership?.isActive
-            ? resolvePaymentMode(
-                  membership,
-                  {
-                      allowsMonthly: activitySession.ekskul.allowsMonthly,
-                      allowsPerSession: activitySession.ekskul.allowsPerSession,
-                  },
-                  period.month,
-                  period.year,
-              )
-            : null;
+    const [quotas, settings] = await Promise.all([
+        getSessionQuotas([activitySession]),
+        getSettings(),
+    ]);
+    const quota = quotas.get(activitySession.id);
+    const whatsapp =
+        activitySession.ekskul.adminWhatsapp || settings.adminWhatsapp || '';
 
     const myAttendance = activitySession.attendances.find(
         (a) => a.userId === authSession.user.id,
@@ -174,6 +210,29 @@ export default async function SessionDetailPage({
                             </Badge>
                         )}
                     </div>
+                    {quota && quota.needed > 0 && (
+                        <div className='flex items-center gap-2'>
+                            <Users className='w-4 h-4 shrink-0 text-muted-foreground' />
+                            <span className='tabular-nums'>
+                                {quota.committed}/{quota.needed}
+                            </span>
+                            <span>{t.sessions.quotaLabel}</span>
+                            <Badge
+                                variant='outline'
+                                className={
+                                    quota.isMet
+                                        ? 'text-success border-success/40 text-xs'
+                                        : 'text-warning border-warning/40 text-xs'
+                                }>
+                                {quota.isMet
+                                    ? t.sessions.quotaMet
+                                    : t.sessions.quotaNeedMore.replace(
+                                          '{n}',
+                                          String(quota.needed - quota.committed),
+                                      )}
+                            </Badge>
+                        </div>
+                    )}
                     {activitySession.fee > 0 && (
                         <div className='flex items-center gap-2'>
                             <Banknote className='w-4 h-4 shrink-0 text-muted-foreground' />
@@ -198,14 +257,25 @@ export default async function SessionDetailPage({
 
                 <RSVPButton
                     sessionId={activitySession.id}
+                    ekskulId={activitySession.ekskulId}
                     isRegistered={isRegistered}
                     isFull={isFull && !isRegistered}
                     isCancelled={activitySession.status === 'CANCELLED'}
                     isCompleted={activitySession.status === 'COMPLETED'}
                     paymentMode={effectiveMode}
                     sessionFee={activitySession.fee}
+                    monthlyFee={activitySession.ekskul.monthlyFee}
+                    hasMonthlyPaid={monthlyPayment !== null}
                     sessionPaymentStatus={sessionPayment?.status ?? null}
+                    sessionPaymentNotes={sessionPayment?.notes ?? null}
                 />
+
+                {whatsapp && (
+                    <WhatsappButton
+                        phone={whatsapp}
+                        label={t.sessions.contactAdmin}
+                    />
+                )}
             </div>
 
             {/* Participants list */}

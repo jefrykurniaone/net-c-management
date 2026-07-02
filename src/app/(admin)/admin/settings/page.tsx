@@ -11,6 +11,7 @@ import { Settings, Upload } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { FormSkeleton } from '@/components/skeletons/page-skeletons';
+import { PhonePicker } from '@/components/admin/phone-picker';
 
 interface SettingsMap {
     communityName?: string;
@@ -212,6 +213,9 @@ export default function AdminSettingsPage() {
                         <p className='text-xs text-muted-foreground'>
                             {t.admin.whatsappHint}
                         </p>
+                        <PhonePicker
+                            onPick={(phone) => update('adminWhatsapp', phone)}
+                        />
                     </div>
 
                     <Button

@@ -14,6 +14,7 @@ import type { ActivitySession } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getEkskuls } from '@/lib/ekskul';
+import { ensureRecurringSessions } from '@/lib/recurring-sessions';
 import { sessionStatusVariant, isAdminRole } from '@/lib/utils';
 
 type SessionRow = ActivitySession & {
@@ -34,13 +35,24 @@ export default async function AdminSessionsPage({
     const sp = await searchParams;
     const selected = sp.ekskulId || undefined;
 
+    // Lazy idempotent generation of this month's weekly sessions (no cron).
+    await ensureRecurringSessions();
+
     const [sessions, ekskuls] = await Promise.all([
         prisma.activitySession.findMany({
             where: selected ? { ekskulId: selected } : {},
             orderBy: { date: 'desc' },
             take: 50,
             include: {
-                _count: { select: { attendances: true } },
+                _count: {
+                    select: {
+                        attendances: {
+                            where: {
+                                status: { in: ['REGISTERED', 'PRESENT'] },
+                            },
+                        },
+                    },
+                },
                 ekskul: {
                     select: { id: true, name: true, color: true, icon: true },
                 },

@@ -123,6 +123,12 @@ export default async function AdminEkskulPage() {
                                                 allowsMonthly: e.allowsMonthly,
                                                 allowsPerSession:
                                                     e.allowsPerSession,
+                                                minMembers: e.minMembers,
+                                                recurringDay: e.recurringDay,
+                                                recurringStartTime:
+                                                    e.recurringStartTime,
+                                                recurringEndTime:
+                                                    e.recurringEndTime,
                                                 defaultLocation:
                                                     e.defaultLocation,
                                                 maxPlayers: e.maxPlayers,

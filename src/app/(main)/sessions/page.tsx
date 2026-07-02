@@ -11,7 +11,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getUserEkskulIds } from "@/lib/ekskul";
+import {
+  ensureRecurringSessions,
+  getSessionQuotas,
+} from "@/lib/recurring-sessions";
 import { sessionStatusVariant } from "@/lib/utils";
 
 export default async function SessionsPage({
@@ -26,34 +29,50 @@ export default async function SessionsPage({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const myEkskulIds = await getUserEkskulIds(session.user.id);
-  const sp = await searchParams;
-  const selected =
-    sp.ekskulId && myEkskulIds.includes(sp.ekskulId) ? sp.ekskulId : undefined;
+  // Lazy idempotent generation of this month's weekly sessions (no cron).
+  await ensureRecurringSessions();
 
-  const [sessions, myEkskuls] = await Promise.all([
-    prisma.activitySession.findMany({
-      where: {
-        date: { gte: today },
-        status: { in: ["SCHEDULED", "ONGOING"] },
-        ekskulId: selected ?? { in: myEkskulIds },
-      },
-      orderBy: { date: "asc" },
-      include: {
-        _count: { select: { attendances: true } },
-        ekskul: { select: { id: true, name: true, color: true, icon: true } },
-        attendances: {
-          where: { userId: session.user.id },
-          select: { status: true },
+  // Every session of every active Activity is visible — joining happens at the
+  // session level (registering also joins the Activity), so nothing is hidden
+  // behind a prior "join activity" step.
+  const allEkskuls = await prisma.ekskul.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
+  const sp = await searchParams;
+  const selected = allEkskuls.some((e) => e.id === sp.ekskulId)
+    ? sp.ekskulId
+    : undefined;
+
+  const sessions = await prisma.activitySession.findMany({
+    where: {
+      date: { gte: today },
+      status: { in: ["SCHEDULED", "ONGOING"] },
+      ekskulId: selected ?? { in: allEkskuls.map((e) => e.id) },
+    },
+    orderBy: { date: "asc" },
+    include: {
+      // Seat-holding rows only — ABSENT (a cancelled monthly member) neither
+      // occupies a seat nor counts as "registered".
+      _count: {
+        select: {
+          attendances: {
+            where: { status: { in: ["REGISTERED", "PRESENT"] } },
+          },
         },
       },
-    }),
-    prisma.ekskul.findMany({
-      where: { id: { in: myEkskulIds }, isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-  ]);
+      ekskul: { select: { id: true, name: true, color: true, icon: true } },
+      attendances: {
+        where: {
+          userId: session.user.id,
+          status: { in: ["REGISTERED", "PRESENT"] },
+        },
+        select: { status: true },
+      },
+    },
+  });
+  const quotas = await getSessionQuotas(sessions);
 
   return (
     <div className="space-y-6">
@@ -65,9 +84,9 @@ export default async function SessionsPage({
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{t.sessions.subtitle}</p>
         </div>
-        {myEkskuls.length > 1 && (
+        {allEkskuls.length > 1 && (
           <EkskulFilter
-            ekskuls={myEkskuls}
+            ekskuls={allEkskuls}
             selected={selected}
             allLabel={t.ekskul.filterAll}
           />
@@ -81,6 +100,8 @@ export default async function SessionsPage({
           {sessions.map((s) => {
             const isRegistered = s.attendances.length > 0;
             const isFull = s._count.attendances >= s.maxPlayers;
+            const quota = quotas.get(s.id);
+            const hasQuota = quota !== undefined && quota.needed > 0;
             return (
               <Link key={s.id} href={`/sessions/${s.id}`}>
                 <div className="relative overflow-hidden bg-card rounded-xl border border-border p-5 hover:border-primary/40 hover:shadow-sm transition-all">
@@ -104,6 +125,27 @@ export default async function SessionsPage({
                         {isRegistered && (
                           <Badge variant="default">
                             {t.sessions.registered}
+                          </Badge>
+                        )}
+                        {hasQuota && (
+                          <Badge
+                            variant="outline"
+                            className={
+                              quota.isMet
+                                ? "text-success border-success/40"
+                                : "text-warning border-warning/40"
+                            }
+                          >
+                            {quota.isMet
+                              ? t.sessions.quotaMet
+                              : t.sessions.quotaNeedMore.replace(
+                                  "{n}",
+                                  String(quota.needed - quota.committed),
+                                )}
+                            {" "}
+                            <span className="tabular-nums">
+                              ({quota.committed}/{quota.needed})
+                            </span>
                           </Badge>
                         )}
                       </div>

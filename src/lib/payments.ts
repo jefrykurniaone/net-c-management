@@ -8,7 +8,7 @@ import {
   AttendanceStatus,
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { resolvePaymentMode, currentPeriod } from '@/lib/payment-mode';
+import { resolvePaymentMode, currentPeriod, toPeriodKey } from '@/lib/payment-mode';
 
 /**
  * Server-only payment writes (Story 3.2, AD-5).
@@ -195,6 +195,61 @@ export type SessionCharge =
     };
 
 /**
+ * Registering through a payment path IS an explicit mode choice: a member whose
+ * effective mode for the current period is still unselected (null — Activity
+ * offers both modes, nothing chosen yet) adopts `mode` from this period.
+ * Uploading a per-session proof adopts PER_SESSION; free-registering on a paid
+ * session adopts MONTHLY. This is not a silent default (AD-7) — the member
+ * actively chose that path. A resolved mode (already selected, or single-
+ * offered) is never touched, and a mode the Activity doesn't offer never sticks.
+ */
+export async function adoptModeIfUnselected(
+  userId: string,
+  ekskulId: string,
+  mode: PaymentMode,
+  now = new Date(),
+): Promise<void> {
+  const [membership, ekskul] = await Promise.all([
+    prisma.membership.findUnique({
+      where: { userId_ekskulId: { userId, ekskulId } },
+      select: {
+        isActive: true,
+        paymentMode: true,
+        effectiveFrom: true,
+        pendingMode: true,
+        pendingEffectiveFrom: true,
+      },
+    }),
+    prisma.ekskul.findUnique({
+      where: { id: ekskulId, isActive: true },
+      select: { allowsMonthly: true, allowsPerSession: true },
+    }),
+  ]);
+  if (!membership?.isActive || !ekskul) return;
+
+  const offersMode =
+    mode === PaymentMode.MONTHLY ? ekskul.allowsMonthly : ekskul.allowsPerSession;
+  if (!offersMode) return;
+
+  const { month, year } = currentPeriod(now);
+  const offered = {
+    allowsMonthly: ekskul.allowsMonthly,
+    allowsPerSession: ekskul.allowsPerSession,
+  };
+  if (resolvePaymentMode(membership, offered, month, year) !== null) return;
+
+  await prisma.membership.update({
+    where: { userId_ekskulId: { userId, ekskulId } },
+    data: {
+      paymentMode: mode,
+      effectiveFrom: toPeriodKey(month, year),
+      pendingMode: null,
+      pendingEffectiveFrom: null,
+    },
+  });
+}
+
+/**
  * Gate a per-session proof upload BEFORE any storage write (AD-14): the member
  * must actively belong to the Session's Activity, the Session must be open, the
  * member's effective mode for the Session's period must be `PER_SESSION` (AD-7),
@@ -342,15 +397,21 @@ export type SeatReleaseResult =
   | { released: false; reason: 'notRegistered' | 'confirmedLocked' };
 
 /**
- * Member self-cancel: release the seat by deleting the `Attendance` AND its
- * paired SESSION `Payment` in one transaction, so no orphaned charge remains.
- * A `CONFIRMED` (paid + admin-verified) payment is protected — the member may
- * not self-cancel it and is routed to an admin (whose reject path releases the
+ * Member self-cancel: release the seat AND its paired SESSION `Payment` in one
+ * transaction, so no orphaned charge remains. A `CONFIRMED` (paid +
+ * admin-verified) per-session payment is protected — the member may not
+ * self-cancel it and is routed to an admin (whose reject path releases the
  * seat). The payment's status is read via `SELECT ... FOR UPDATE` inside the
- * same transaction as the deletes, so a concurrent admin-confirm can't slip a
- * CONFIRMED payment past this check (no TOCTOU gap). Safe for monthly members:
- * with no SESSION payment the delete is a no-op and only the free-register
- * Attendance is removed.
+ * same transaction as the writes, so a concurrent admin-confirm can't slip a
+ * CONFIRMED payment past this check (no TOCTOU gap).
+ *
+ * A member whose MONTHLY dues cover this session's period keeps the Attendance
+ * row as ABSENT instead of having it deleted: the seat is released (ABSENT
+ * holds no seat), but the row records the opt-out so `syncMonthlyAttendances`
+ * doesn't silently re-register them on the next page load. The skipped session
+ * is forfeited — monthly dues buy availability for the month, not a per-session
+ * credit. Everyone else (per-session, free-session registrants) is deleted
+ * outright.
  */
 export async function releaseSessionSeat(input: {
   userId: string;
@@ -374,18 +435,71 @@ export async function releaseSessionSeat(input: {
       return { released: false, reason: 'confirmedLocked' };
     }
 
-    await tx.attendance.deleteMany({ where: { userId, sessionId } });
     await tx.payment.deleteMany({ where: { userId, sessionId, type: PaymentType.SESSION } });
+
+    const session = await tx.activitySession.findUniqueOrThrow({
+      where: { id: sessionId },
+      select: { ekskulId: true, date: true },
+    });
+    const { month, year } = currentPeriod(session.date);
+    const monthlyPaid = await tx.payment.findFirst({
+      where: {
+        userId,
+        ekskulId: session.ekskulId,
+        type: PaymentType.MONTHLY,
+        month,
+        year,
+        status: { in: LIVE_PAYMENT_STATUSES },
+      },
+      select: { id: true },
+    });
+
+    if (monthlyPaid) {
+      await tx.attendance.update({
+        where: { userId_sessionId: { userId, sessionId } },
+        data: { status: AttendanceStatus.ABSENT },
+      });
+    } else {
+      await tx.attendance.deleteMany({ where: { userId, sessionId } });
+    }
     return { released: true };
   });
 }
 
+/** Payment statuses that hold a seat (a REJECTED payment funds nothing). */
+const LIVE_PAYMENT_STATUSES: PaymentStatus[] = [
+  PaymentStatus.PENDING,
+  PaymentStatus.CONFIRMED,
+];
+
+/** Whether the member has uploaded/confirmed this period's monthly dues. */
+export async function hasLiveMonthlyPayment(input: {
+  userId: string;
+  ekskulId: string;
+  month: number;
+  year: number;
+}): Promise<boolean> {
+  const payment = await prisma.payment.findFirst({
+    where: {
+      userId: input.userId,
+      ekskulId: input.ekskulId,
+      type: PaymentType.MONTHLY,
+      month: input.month,
+      year: input.year,
+      status: { in: LIVE_PAYMENT_STATUSES },
+    },
+    select: { id: true },
+  });
+  return payment !== null;
+}
+
 /**
  * Whether a member may register for a Session via the FREE attendance route.
- * A member whose effective mode for the Session's period is `MONTHLY` may, and
- * so may anyone when the Session's fee is 0 (nothing to charge — a `PER_SESSION`
- * member is never left with no registration path). Otherwise the member must go
- * through pre-pay-on-register so a seat is never held without a charge (AD-6).
+ * A seat is never held without money behind it (AD-6, extended to monthly):
+ * a MONTHLY member must have this period's dues uploaded (PENDING) or
+ * confirmed before they can hold a seat. Anyone may register when the
+ * Session's fee is 0 (nothing to charge). Everyone else goes through
+ * pre-pay-on-register.
  */
 export async function isFreeRegisterAllowed(input: {
   userId: string;
@@ -417,5 +531,105 @@ export async function isFreeRegisterAllowed(input: {
 
   const { month, year } = currentPeriod(session.date);
   const offered = { allowsMonthly: ekskul.allowsMonthly, allowsPerSession: ekskul.allowsPerSession };
-  return resolvePaymentMode(membership, offered, month, year) === PaymentMode.MONTHLY;
+  if (resolvePaymentMode(membership, offered, month, year) !== PaymentMode.MONTHLY) {
+    return false;
+  }
+  return hasLiveMonthlyPayment({ userId, ekskulId: session.ekskulId, month, year });
+}
+
+/**
+ * Register every PAID monthly member into the Activity's open sessions of a
+ * billing period. A paid month buys the whole month: called after a monthly
+ * proof upload (register that member everywhere) and after weekly session
+ * auto-generation (backfill the new sessions with everyone already paid).
+ * Idempotent — existing attendances are skipped, capacity is respected, and
+ * only SCHEDULED/ONGOING sessions are touched.
+ */
+export async function syncMonthlyAttendances(input: {
+  ekskulId: string;
+  month: number;
+  year: number;
+  /** Limit to these members (e.g. the one who just paid); omit for all. */
+  userIds?: string[];
+}): Promise<void> {
+  const { ekskulId, month, year, userIds } = input;
+
+  const ekskul = await prisma.ekskul.findUnique({
+    where: { id: ekskulId, isActive: true },
+    select: { allowsMonthly: true, allowsPerSession: true },
+  });
+  if (!ekskul?.allowsMonthly) return;
+
+  const memberships = await prisma.membership.findMany({
+    where: {
+      ekskulId,
+      isActive: true,
+      ...(userIds ? { userId: { in: userIds } } : {}),
+    },
+    select: {
+      userId: true,
+      paymentMode: true,
+      effectiveFrom: true,
+      pendingMode: true,
+      pendingEffectiveFrom: true,
+    },
+  });
+  const offered = {
+    allowsMonthly: ekskul.allowsMonthly,
+    allowsPerSession: ekskul.allowsPerSession,
+  };
+  const monthlyIds = memberships
+    .filter((m) => resolvePaymentMode(m, offered, month, year) === PaymentMode.MONTHLY)
+    .map((m) => m.userId);
+  if (monthlyIds.length === 0) return;
+
+  const paid = await prisma.payment.findMany({
+    where: {
+      ekskulId,
+      type: PaymentType.MONTHLY,
+      month,
+      year,
+      status: { in: LIVE_PAYMENT_STATUSES },
+      userId: { in: monthlyIds },
+    },
+    select: { userId: true },
+  });
+  const paidIds = paid.map((p) => p.userId);
+  if (paidIds.length === 0) return;
+
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const nextMonthStart = new Date(Date.UTC(year, month, 1));
+  const sessions = await prisma.activitySession.findMany({
+    where: {
+      ekskulId,
+      date: { gte: monthStart, lt: nextMonthStart },
+      status: { in: [SessionStatus.SCHEDULED, SessionStatus.ONGOING] },
+    },
+    select: {
+      id: true,
+      maxPlayers: true,
+      attendances: { select: { userId: true, status: true } },
+    },
+  });
+
+  const creates: { userId: string; sessionId: string }[] = [];
+  for (const session of sessions) {
+    const attendees = new Set(session.attendances.map((a) => a.userId));
+    const seatsHeld = session.attendances.filter((a) =>
+      SEAT_HELD_STATUSES.includes(a.status),
+    ).length;
+    let free = session.maxPlayers - seatsHeld;
+    for (const userId of paidIds) {
+      if (free <= 0) break;
+      if (attendees.has(userId)) continue;
+      creates.push({ userId, sessionId: session.id });
+      free--;
+    }
+  }
+  if (creates.length > 0) {
+    await prisma.attendance.createMany({
+      data: creates.map((c) => ({ ...c, status: AttendanceStatus.REGISTERED })),
+      skipDuplicates: true,
+    });
+  }
 }

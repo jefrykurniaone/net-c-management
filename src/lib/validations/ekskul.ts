@@ -3,6 +3,9 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{6})$/;
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const LAST_WEEKDAY = 6;
+const MAX_MIN_MEMBERS = 100;
 
 /**
  * Base object shape for an Activity (Ekskul). Kept as a plain object schema so
@@ -34,6 +37,28 @@ function ekskulObjectSchema(t: Dictionary) {
             .min(0, t.validation.sessionFeeMin),
         allowsMonthly: z.boolean(),
         allowsPerSession: z.boolean(),
+        // Cost-sharing minimum: paying members needed per session; 0 = none.
+        minMembers: z
+            .number()
+            .int()
+            .min(0, t.validation.minMembersMin)
+            .max(MAX_MIN_MEMBERS, t.validation.minMembersMax),
+        // Weekly auto-generated sessions: 0 (Sunday) – 6 (Saturday), null = off.
+        recurringDay: z
+            .number()
+            .int()
+            .min(0)
+            .max(LAST_WEEKDAY)
+            .nullable()
+            .optional(),
+        recurringStartTime: z
+            .string()
+            .regex(TIME_REGEX, t.validation.sessionTimeFormat)
+            .optional(),
+        recurringEndTime: z
+            .string()
+            .regex(TIME_REGEX, t.validation.sessionTimeFormat)
+            .optional(),
         defaultLocation: z.string().max(200).optional(),
         maxPlayers: z
             .number()

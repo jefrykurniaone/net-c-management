@@ -1,16 +1,19 @@
 import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { uploadPaymentProof } from '@/lib/supabase';
 import {
     upsertMonthlyPayment,
     resolveMonthlyOwed,
     resolveSessionCharge,
+    adoptModeIfUnselected,
+    syncMonthlyAttendances,
     registerAndPaySession,
     SessionFullError,
     SessionNotRegisterableError,
     SessionAlreadyConfirmedError,
     type SessionCharge,
 } from '@/lib/payments';
-import { assertMembership } from '@/lib/ekskul';
+import { ensureMembership } from '@/lib/ekskul';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { NextResponse } from 'next/server';
@@ -80,9 +83,12 @@ async function handleMonthlyUpload({ userId, formData, t }: UploadCtx) {
     if (!ekskulId) {
         return NextResponse.json({ error: t.validation.ekskulRequired }, { status: 400 });
     }
-    if (!(await assertMembership(userId, ekskulId))) {
+    // Paying monthly dues implies joining the Activity (join-on-pay) and is
+    // itself the MONTHLY mode choice for a member who hasn't selected one.
+    if (!(await ensureMembership(userId, ekskulId))) {
         return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
     }
+    await adoptModeIfUnselected(userId, ekskulId, 'MONTHLY');
     const maxYear = new Date().getFullYear() + MAX_FUTURE_YEARS;
     if (!month || month < MIN_MONTH || month > MAX_MONTH || !year || year < MIN_PAYMENT_YEAR || year > maxYear) {
         return NextResponse.json({ error: t.validation.monthYearInvalid }, { status: 400 });
@@ -109,12 +115,27 @@ async function handleMonthlyUpload({ userId, formData, t }: UploadCtx) {
         proofUrl: url,
         proofPath: path,
     });
+    // A paid month buys the whole month: register this member into every open
+    // session of the Activity for the period (idempotent, capacity-respecting).
+    await syncMonthlyAttendances({ ekskulId, month, year, userIds: [userId] });
     return NextResponse.json(payment, { status: 201 });
 }
 
 // ─── Per-session flow (Story 3.5 — pre-pay-on-register, atomic) ───────────────
 async function handleSessionUpload({ userId, formData, t }: UploadCtx, sessionId: string) {
     const file = formData.get('file') as File | null;
+
+    // Register-and-pay implies joining the session's Activity (join-on-register),
+    // so activate the membership before the charge gate evaluates it.
+    const target = await prisma.activitySession.findUnique({
+        where: { id: sessionId },
+        select: { ekskulId: true },
+    });
+    if (target) {
+        await ensureMembership(userId, target.ekskulId);
+        // Paying per session is itself the mode choice for an unselected member.
+        await adoptModeIfUnselected(userId, target.ekskulId, 'PER_SESSION');
+    }
 
     // Gate BEFORE storage: wrong mode / no fee / closed session never orphan an
     // uploaded object (AD-14). Amount is the Session's fee, server-sourced (AD-2).

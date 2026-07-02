@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildCreateSessionSchema } from '@/lib/validations/session';
-import { getUserEkskulIds } from '@/lib/ekskul';
 import { isAdminRole } from '@/lib/utils';
 import { Prisma, SessionStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
@@ -36,14 +35,12 @@ export async function GET(req: Request) {
           }
         : {};
 
-    // Members only see sessions of ekskul they belong to; admins see all.
+    // Members see sessions of every ACTIVE ekskul (join happens at the session
+    // level now); admins additionally see sessions of inactive ekskul.
     if (!isAdmin) {
-        const memberEkskulIds = await getUserEkskulIds(session.user.id);
-        const scoped = ekskulIdParam
-            ? memberEkskulIds.filter((id) => id === ekskulIdParam)
-            : memberEkskulIds;
-        where.ekskulId = { in: scoped };
-    } else if (ekskulIdParam) {
+        where.ekskul = { isActive: true };
+    }
+    if (ekskulIdParam) {
         where.ekskulId = ekskulIdParam;
     }
 

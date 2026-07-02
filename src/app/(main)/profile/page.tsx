@@ -11,6 +11,7 @@ import {
 import {
     Form,
     FormControl,
+    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -244,6 +245,9 @@ export default function ProfilePage() {
                                             {...field}
                                         />
                                     </FormControl>
+                                    <FormDescription>
+                                        {t.common.phoneCountryCodeHint}
+                                    </FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
