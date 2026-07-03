@@ -2,7 +2,7 @@
 -- Partial unique index: one MONTHLY Payment per member / Activity / period
 -- =============================================================================
 -- Context (Story 3.2, AD-5):
---   - The unconditional @@unique([userId, ekskulId, month, year]) was dropped
+--   - The unconditional @@unique([userId, activityId, month, year]) was dropped
 --     from the Prisma schema. It would have blocked a member from having both a
 --     MONTHLY row and any SESSION row (or a second SESSION row) in the same
 --     month/year, which is exactly the mode-partitioned billing we need.
@@ -18,6 +18,6 @@
 -- Idempotent: safe to re-run.
 -- =============================================================================
 
-CREATE UNIQUE INDEX IF NOT EXISTS "Payment_userId_ekskulId_month_year_monthly_key"
-  ON "Payment" ("userId", "ekskulId", "month", "year")
+CREATE UNIQUE INDEX IF NOT EXISTS "Payment_userId_activityId_month_year_monthly_key"
+  ON "Payment" ("userId", "activityId", "month", "year")
   WHERE "type" = 'MONTHLY';

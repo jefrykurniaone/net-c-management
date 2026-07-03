@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('MEMBER', 'ADMIN', 'OWNER');
 
@@ -11,10 +14,10 @@ CREATE TYPE "AttendanceStatus" AS ENUM ('REGISTERED', 'PRESENT', 'ABSENT');
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'CONFIRMED', 'REJECTED');
 
 -- CreateEnum
-CREATE TYPE "PlayPosition" AS ENUM ('SINGLE', 'DOUBLE', 'BOTH');
+CREATE TYPE "PaymentMode" AS ENUM ('MONTHLY', 'PER_SESSION');
 
 -- CreateEnum
-CREATE TYPE "PlayerLevel" AS ENUM ('BEGINNER', 'INTERMEDIATE', 'ADVANCED');
+CREATE TYPE "PaymentType" AS ENUM ('MONTHLY', 'SESSION');
 
 -- CreateTable
 CREATE TABLE "Account" (
@@ -62,8 +65,6 @@ CREATE TABLE "User" (
     "role" "Role" NOT NULL DEFAULT 'MEMBER',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "isProfileComplete" BOOLEAN NOT NULL DEFAULT false,
-    "playPosition" "PlayPosition",
-    "playerLevel" "PlayerLevel",
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -78,7 +79,14 @@ CREATE TABLE "Ekskul" (
     "description" TEXT,
     "color" TEXT NOT NULL DEFAULT '#16a34a',
     "icon" TEXT,
-    "defaultFee" INTEGER NOT NULL DEFAULT 0,
+    "monthlyFee" INTEGER NOT NULL DEFAULT 0,
+    "sessionFee" INTEGER NOT NULL DEFAULT 0,
+    "allowsMonthly" BOOLEAN NOT NULL DEFAULT true,
+    "allowsPerSession" BOOLEAN NOT NULL DEFAULT false,
+    "minMembers" INTEGER NOT NULL DEFAULT 0,
+    "recurringDay" INTEGER,
+    "recurringStartTime" TEXT NOT NULL DEFAULT '08:00',
+    "recurringEndTime" TEXT NOT NULL DEFAULT '10:00',
     "defaultLocation" TEXT NOT NULL DEFAULT '',
     "maxPlayers" INTEGER NOT NULL DEFAULT 20,
     "adminWhatsapp" TEXT NOT NULL DEFAULT '',
@@ -97,12 +105,16 @@ CREATE TABLE "Membership" (
     "ekskulId" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "paymentMode" "PaymentMode",
+    "effectiveFrom" INTEGER NOT NULL DEFAULT 0,
+    "pendingMode" "PaymentMode",
+    "pendingEffectiveFrom" INTEGER,
 
     CONSTRAINT "Membership_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "BadmintonSession" (
+CREATE TABLE "ActivitySession" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
@@ -117,7 +129,7 @@ CREATE TABLE "BadmintonSession" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "BadmintonSession_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ActivitySession_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -138,6 +150,8 @@ CREATE TABLE "Payment" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "ekskulId" TEXT NOT NULL,
+    "type" "PaymentType" NOT NULL DEFAULT 'MONTHLY',
+    "sessionId" TEXT,
     "amount" INTEGER NOT NULL,
     "month" INTEGER NOT NULL,
     "year" INTEGER NOT NULL,
@@ -189,7 +203,7 @@ CREATE INDEX "Membership_ekskulId_idx" ON "Membership"("ekskulId");
 CREATE UNIQUE INDEX "Membership_userId_ekskulId_key" ON "Membership"("userId", "ekskulId");
 
 -- CreateIndex
-CREATE INDEX "BadmintonSession_ekskulId_idx" ON "BadmintonSession"("ekskulId");
+CREATE INDEX "ActivitySession_ekskulId_idx" ON "ActivitySession"("ekskulId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Attendance_userId_sessionId_key" ON "Attendance"("userId", "sessionId");
@@ -198,7 +212,10 @@ CREATE UNIQUE INDEX "Attendance_userId_sessionId_key" ON "Attendance"("userId", 
 CREATE INDEX "Payment_ekskulId_idx" ON "Payment"("ekskulId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Payment_userId_ekskulId_month_year_key" ON "Payment"("userId", "ekskulId", "month", "year");
+CREATE INDEX "Payment_sessionId_idx" ON "Payment"("sessionId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Payment_userId_sessionId_key" ON "Payment"("userId", "sessionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Settings_key_key" ON "Settings"("key");
@@ -216,16 +233,19 @@ ALTER TABLE "Membership" ADD CONSTRAINT "Membership_userId_fkey" FOREIGN KEY ("u
 ALTER TABLE "Membership" ADD CONSTRAINT "Membership_ekskulId_fkey" FOREIGN KEY ("ekskulId") REFERENCES "Ekskul"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "BadmintonSession" ADD CONSTRAINT "BadmintonSession_ekskulId_fkey" FOREIGN KEY ("ekskulId") REFERENCES "Ekskul"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ActivitySession" ADD CONSTRAINT "ActivitySession_ekskulId_fkey" FOREIGN KEY ("ekskulId") REFERENCES "Ekskul"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "BadmintonSession"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "ActivitySession"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_ekskulId_fkey" FOREIGN KEY ("ekskulId") REFERENCES "Ekskul"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "ActivitySession"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

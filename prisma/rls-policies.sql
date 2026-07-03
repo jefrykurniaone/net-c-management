@@ -51,10 +51,10 @@ CREATE POLICY "deny_direct_api_access" ON "User"
   USING (false)
   WITH CHECK (false);
 
--- Ekskul (Activity) ────────────────────────────────────────────────────────────
-ALTER TABLE "Ekskul" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "deny_direct_api_access" ON "Ekskul";
-CREATE POLICY "deny_direct_api_access" ON "Ekskul"
+-- Activity ─────────────────────────────────────────────────────────────────────
+ALTER TABLE "Activity" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "deny_direct_api_access" ON "Activity";
+CREATE POLICY "deny_direct_api_access" ON "Activity"
   FOR ALL
   TO anon, authenticated
   USING (false)

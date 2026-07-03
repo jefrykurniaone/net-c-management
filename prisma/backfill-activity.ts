@@ -56,14 +56,14 @@ async function main() {
     console.log(`✔ Badminton activity: ${activity.id} (${activity.name})`);
 
     // 2. Point every existing session/payment without an activity at Badminton.
-    // Raw SQL targets the physical column name, which is still "ekskulId"
-    // (the Prisma field `activityId` is @map-ped onto it).
+    // Raw SQL so the script works whether the generated client currently types
+    // `activityId` as nullable or not.
     const sessionsUpdated = await prisma.$executeRawUnsafe(
-        `UPDATE "ActivitySession" SET "ekskulId" = $1 WHERE "ekskulId" IS NULL`,
+        `UPDATE "ActivitySession" SET "activityId" = $1 WHERE "activityId" IS NULL`,
         activity.id,
     );
     const paymentsUpdated = await prisma.$executeRawUnsafe(
-        `UPDATE "Payment" SET "ekskulId" = $1 WHERE "ekskulId" IS NULL`,
+        `UPDATE "Payment" SET "activityId" = $1 WHERE "activityId" IS NULL`,
         activity.id,
     );
     console.log(`✔ Sessions backfilled: ${sessionsUpdated}`);
@@ -82,10 +82,10 @@ async function main() {
     // 4. Verify no session/payment is left without an activity.
     const [{ count: nullSessions }] = await prisma.$queryRawUnsafe<
         { count: bigint }[]
-    >(`SELECT COUNT(*)::bigint AS count FROM "ActivitySession" WHERE "ekskulId" IS NULL`);
+    >(`SELECT COUNT(*)::bigint AS count FROM "ActivitySession" WHERE "activityId" IS NULL`);
     const [{ count: nullPayments }] = await prisma.$queryRawUnsafe<
         { count: bigint }[]
-    >(`SELECT COUNT(*)::bigint AS count FROM "Payment" WHERE "ekskulId" IS NULL`);
+    >(`SELECT COUNT(*)::bigint AS count FROM "Payment" WHERE "activityId" IS NULL`);
 
     if (Number(nullSessions) > 0 || Number(nullPayments) > 0) {
         throw new Error(
