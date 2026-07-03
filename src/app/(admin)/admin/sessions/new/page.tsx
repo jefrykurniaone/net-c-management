@@ -29,6 +29,7 @@ import Link from "next/link";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { ActivityOption } from "@/types/activity";
+import { parseIntInput } from "@/lib/form-utils";
 
 export default function NewSessionPage() {
   const router = useRouter();
@@ -217,7 +218,8 @@ export default function NewSessionPage() {
                         type="number"
                         min={2}
                         {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(parseIntInput(e))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -235,7 +237,8 @@ export default function NewSessionPage() {
                         type="number"
                         min={0}
                         {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(parseIntInput(e))}
                       />
                     </FormControl>
                     <FormMessage />

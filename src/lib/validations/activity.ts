@@ -39,7 +39,7 @@ function activityObjectSchema(t: Dictionary) {
         allowsPerSession: z.boolean(),
         // Cost-sharing minimum: paying members needed per session; 0 = none.
         minMembers: z
-            .number()
+            .number({ error: t.validation.minMembersRequired })
             .int()
             .min(0, t.validation.minMembersMin)
             .max(MAX_MIN_MEMBERS, t.validation.minMembersMax),
@@ -61,7 +61,7 @@ function activityObjectSchema(t: Dictionary) {
             .optional(),
         defaultLocation: z.string().max(200).optional(),
         maxPlayers: z
-            .number()
+            .number({ error: t.validation.maxPlayersRequired })
             .int()
             .min(2, t.validation.sessionMaxPlayersMin)
             .max(100, t.validation.sessionMaxPlayersMax),

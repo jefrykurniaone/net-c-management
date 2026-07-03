@@ -35,6 +35,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { PhonePicker } from '@/components/admin/phone-picker';
+import { parseIntInput } from '@/lib/form-utils';
 import { toast } from 'sonner';
 import { Plus, Pencil } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
@@ -244,12 +245,7 @@ function ActivityFormDialog({
                                                 value={field.value ?? ''}
                                                 onChange={(e) =>
                                                     field.onChange(
-                                                        e.target.value === ''
-                                                            ? undefined
-                                                            : Number.parseInt(
-                                                                  e.target.value,
-                                                                  10,
-                                                              ),
+                                                        parseIntInput(e),
                                                     )
                                                 }
                                             />
@@ -274,12 +270,7 @@ function ActivityFormDialog({
                                                 value={field.value ?? ''}
                                                 onChange={(e) =>
                                                     field.onChange(
-                                                        e.target.value === ''
-                                                            ? undefined
-                                                            : Number.parseInt(
-                                                                  e.target.value,
-                                                                  10,
-                                                              ),
+                                                        parseIntInput(e),
                                                     )
                                                 }
                                             />
@@ -353,17 +344,9 @@ function ActivityFormDialog({
                                             min={0}
                                             {...field}
                                             value={field.value ?? ''}
-                                            onChange={(e) => {
-                                                const parsed = Number.parseInt(
-                                                    e.target.value,
-                                                    10,
-                                                );
-                                                field.onChange(
-                                                    Number.isNaN(parsed)
-                                                        ? 0
-                                                        : parsed,
-                                                );
-                                            }}
+                                            onChange={(e) =>
+                                                field.onChange(parseIntInput(e))
+                                            }
                                         />
                                     </FormControl>
                                     <FormDescription>
@@ -488,17 +471,9 @@ function ActivityFormDialog({
                                             min={2}
                                             {...field}
                                             value={field.value ?? ''}
-                                            onChange={(e) => {
-                                                const parsed = Number.parseInt(
-                                                    e.target.value,
-                                                    10,
-                                                );
-                                                field.onChange(
-                                                    Number.isNaN(parsed)
-                                                        ? undefined
-                                                        : parsed,
-                                                );
-                                            }}
+                                            onChange={(e) =>
+                                                field.onChange(parseIntInput(e))
+                                            }
                                         />
                                     </FormControl>
                                     <FormMessage />

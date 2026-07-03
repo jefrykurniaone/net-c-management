@@ -31,6 +31,7 @@ import type { ActivitySession, Attendance, User } from "@prisma/client";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { ActivityOption } from "@/types/activity";
+import { parseIntInput } from "@/lib/form-utils";
 
 type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
 type SessionWithAttendances = ActivitySession & { attendances: AttendanceWithUser[] };
@@ -308,7 +309,8 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                         type="number"
                         min={2}
                         {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(parseIntInput(e))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -326,7 +328,8 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                         type="number"
                         min={0}
                         {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(parseIntInput(e))}
                       />
                     </FormControl>
                     <FormMessage />
