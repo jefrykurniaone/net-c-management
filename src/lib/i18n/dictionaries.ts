@@ -98,7 +98,7 @@ const en = {
         full: 'Full',
         participants: 'participants',
         viewAll: 'View all sessions →',
-        feePerPerson: 'per person',
+        feePerPerson: '/person',
     },
     sessions: {
         title: 'Training Sessions',
@@ -107,7 +107,7 @@ const en = {
         registered: '✓ Registered',
         full: 'Full',
         participants: 'participants',
-        feePerPerson: 'per person',
+        feePerPerson: '/person',
         backToList: 'Back to session list',
         participantsLabel: 'Participants',
         attendeeList: 'Attendee List',
