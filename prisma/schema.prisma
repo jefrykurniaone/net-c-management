@@ -114,8 +114,6 @@ model User {
 
 // A community activity — e.g. Badminton, Yoga, Futsal. Each piece of
 // activity data (sessions, payments, memberships) is scoped to one Activity.
-// Mapped to the legacy "Ekskul" table so no DB migration (and no RLS policy
-// change) is needed for the rename.
 model Activity {
   id              String   @id @default(cuid())
   name            String
@@ -151,16 +149,14 @@ model Activity {
   memberships Membership[]
   sessions    ActivitySession[]
   payments    Payment[]
-
-  @@map("Ekskul")
 }
 
 // Many-to-many join between User and Activity. A member can join several
-// activities. The activityId column keeps its legacy "ekskulId" name via @map.
+// activities.
 model Membership {
   id         String   @id @default(cuid())
   userId     String
-  activityId String   @map("ekskulId")
+  activityId String
   isActive   Boolean  @default(true)
   joinedAt   DateTime @default(now())
 
@@ -195,7 +191,7 @@ model ActivitySession {
   fee         Int           @default(0) // iuran per sesi, dalam Rupiah
   notes       String?       @db.Text
   status      SessionStatus @default(SCHEDULED)
-  activityId  String        @map("ekskulId")
+  activityId  String
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -224,7 +220,7 @@ model Attendance {
 model Payment {
   id          String        @id @default(cuid())
   userId      String
-  activityId  String        @map("ekskulId")
+  activityId  String
   // What this row bills for. MONTHLY (sessionId = null) is one row per
   // member/Activity/month/year; SESSION carries a sessionId and is one row per
   // member/ActivitySession (AD-4). Defaults to MONTHLY so pre-existing rows and
