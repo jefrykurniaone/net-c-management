@@ -30,6 +30,7 @@ import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { ActivityOption } from "@/types/activity";
 import { parseIntInput } from "@/lib/form-utils";
+import { FormSection } from "@/components/ui/form-section";
 
 export default function NewSessionPage() {
   const router = useRouter();
@@ -109,7 +110,8 @@ export default function NewSessionPage() {
         </h1>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <FormSection title={t.admin.sectionBasicInfo}>
             <FormField
               control={form.control}
               name="activityId"
@@ -148,7 +150,9 @@ export default function NewSessionPage() {
                 </FormItem>
               )}
             />
+            </FormSection>
 
+            <FormSection title={t.admin.sectionScheduleLocation}>
             <FormField
               control={form.control}
               name="date"
@@ -205,7 +209,9 @@ export default function NewSessionPage() {
                 </FormItem>
               )}
             />
+            </FormSection>
 
+            <FormSection title={t.admin.sectionParticipantsFee}>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -246,6 +252,7 @@ export default function NewSessionPage() {
                 )}
               />
             </div>
+            </FormSection>
 
             <FormField
               control={form.control}

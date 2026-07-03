@@ -133,6 +133,11 @@ export default async function AdminActivityPage() {
                                                     e.defaultLocation,
                                                 maxPlayers: e.maxPlayers,
                                                 adminWhatsapp: e.adminWhatsapp,
+                                                bankName: e.bankName,
+                                                bankAccountNumber:
+                                                    e.bankAccountNumber,
+                                                bankAccountHolder:
+                                                    e.bankAccountHolder,
                                                 isActive: e.isActive,
                                             }}
                                         />

@@ -15,27 +15,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Form } from '@/components/ui/form';
 import {
-    Form,
-    FormControl,
-    FormDescription,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
-import { PhonePicker } from '@/components/admin/phone-picker';
-import { parseIntInput } from '@/lib/form-utils';
+    BasicInfoSection,
+    PaymentSection,
+    ScheduleSection,
+    ContactSection,
+} from './activity-form-sections';
 import { toast } from 'sonner';
 import { Plus, Pencil } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
@@ -58,19 +44,10 @@ export interface ActivityRow {
     defaultLocation: string;
     maxPlayers: number;
     adminWhatsapp: string;
+    bankName: string;
+    bankAccountNumber: string;
+    bankAccountHolder: string;
     isActive: boolean;
-}
-
-/** Sentinel for the "no weekly auto-schedule" select option. */
-const RECURRING_OFF = 'off';
-const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const;
-
-function slugify(value: string): string {
-    return value
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '');
 }
 
 function ActivityFormDialog({
@@ -108,6 +85,9 @@ function ActivityFormDialog({
             defaultLocation: activity?.defaultLocation ?? '',
             maxPlayers: activity?.maxPlayers ?? 20,
             adminWhatsapp: activity?.adminWhatsapp ?? '',
+            bankName: activity?.bankName ?? '',
+            bankAccountNumber: activity?.bankAccountNumber ?? '',
+            bankAccountHolder: activity?.bankAccountHolder ?? '',
         },
     });
 
@@ -162,375 +142,15 @@ function ActivityFormDialog({
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSubmit)}
-                        className='space-y-4'>
-                        <FormField
-                            control={form.control}
-                            name='name'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.admin.activityName}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t.admin.activityNamePlaceholder}
-                                            {...field}
-                                            onChange={(e) => {
-                                                field.onChange(e);
-                                                if (!isEdit) {
-                                                    form.setValue(
-                                                        'slug',
-                                                        slugify(e.target.value),
-                                                        { shouldValidate: true },
-                                                    );
-                                                }
-                                            }}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
+                        className='space-y-5'>
+                        <BasicInfoSection form={form} t={t} isEdit={isEdit} />
+                        <PaymentSection
+                            form={form}
+                            t={t}
+                            modesError={paymentModesError?.message}
                         />
-                        <FormField
-                            control={form.control}
-                            name='slug'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.admin.activitySlug}</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder={t.admin.activitySlugPlaceholder} {...field} />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {t.admin.activitySlugHint}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name='color'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.admin.activityColor}</FormLabel>
-                                    <div className='flex items-center gap-2'>
-                                        <FormControl>
-                                            <Input
-                                                type='color'
-                                                className='h-9 w-14 p-1'
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <Input
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            placeholder='#16a34a'
-                                            className='flex-1'
-                                        />
-                                    </div>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className='grid grid-cols-2 gap-4'>
-                            <FormField
-                                control={form.control}
-                                name='monthlyFee'
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t.admin.activityFee}</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type='number'
-                                                min={0}
-                                                {...field}
-                                                value={field.value ?? ''}
-                                                onChange={(e) =>
-                                                    field.onChange(
-                                                        parseIntInput(e),
-                                                    )
-                                                }
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name='sessionFee'
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t.admin.activitySessionFee}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type='number'
-                                                min={0}
-                                                {...field}
-                                                value={field.value ?? ''}
-                                                onChange={(e) =>
-                                                    field.onChange(
-                                                        parseIntInput(e),
-                                                    )
-                                                }
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
-                        <FormItem>
-                            <div className='text-sm font-medium leading-none'>
-                                {t.admin.activityPaymentModes}
-                            </div>
-                            <div className='flex gap-6 pt-1'>
-                                <FormField
-                                    control={form.control}
-                                    name='allowsMonthly'
-                                    render={({ field }) => (
-                                        <FormItem className='flex items-center gap-2 space-y-0'>
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={!!field.value}
-                                                    onCheckedChange={
-                                                        field.onChange
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormLabel className='text-sm font-normal'>
-                                                {t.admin.activityModeMonthly}
-                                            </FormLabel>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name='allowsPerSession'
-                                    render={({ field }) => (
-                                        <FormItem className='flex items-center gap-2 space-y-0'>
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={!!field.value}
-                                                    onCheckedChange={
-                                                        field.onChange
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormLabel className='text-sm font-normal'>
-                                                {t.admin.activityModePerSession}
-                                            </FormLabel>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            {paymentModesError && (
-                                <p className='text-sm font-medium text-destructive'>
-                                    {paymentModesError.message}
-                                </p>
-                            )}
-                        </FormItem>
-                        <FormField
-                            control={form.control}
-                            name='minMembers'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {t.admin.activityMinMembers}
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type='number'
-                                            min={0}
-                                            {...field}
-                                            value={field.value ?? ''}
-                                            onChange={(e) =>
-                                                field.onChange(parseIntInput(e))
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {t.admin.activityMinMembersHint}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        {form.watch('allowsMonthly') && (
-                            <div className='space-y-3 rounded-lg border border-border p-3'>
-                                <div className='text-sm font-medium leading-none'>
-                                    {t.admin.activityRecurringTitle}
-                                </div>
-                                <p className='text-xs text-muted-foreground'>
-                                    {t.admin.activityRecurringHint}
-                                </p>
-                                <FormField
-                                    control={form.control}
-                                    name='recurringDay'
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>
-                                                {t.admin.activityRecurringDay}
-                                            </FormLabel>
-                                            <Select
-                                                value={
-                                                    field.value === null ||
-                                                    field.value === undefined
-                                                        ? RECURRING_OFF
-                                                        : String(field.value)
-                                                }
-                                                onValueChange={(v) =>
-                                                    field.onChange(
-                                                        v === RECURRING_OFF
-                                                            ? null
-                                                            : Number.parseInt(
-                                                                  v,
-                                                                  10,
-                                                              ),
-                                                    )
-                                                }>
-                                                <FormControl>
-                                                    <SelectTrigger className='w-full'>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem
-                                                        value={RECURRING_OFF}>
-                                                        {
-                                                            t.admin
-                                                                .activityRecurringOff
-                                                        }
-                                                    </SelectItem>
-                                                    {WEEKDAYS.map((d) => (
-                                                        <SelectItem
-                                                            key={d}
-                                                            value={String(d)}>
-                                                            {t.days[d]}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                {form.watch('recurringDay') !== null && (
-                                    <div className='grid grid-cols-2 gap-4'>
-                                        <FormField
-                                            control={form.control}
-                                            name='recurringStartTime'
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        {t.admin.formStartTime}
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            type='time'
-                                                            {...field}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name='recurringEndTime'
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>
-                                                        {t.admin.formEndTime}
-                                                    </FormLabel>
-                                                    <FormControl>
-                                                        <Input
-                                                            type='time'
-                                                            {...field}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        <FormField
-                            control={form.control}
-                            name='maxPlayers'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {t.admin.activityMaxPlayers}
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type='number'
-                                            min={2}
-                                            {...field}
-                                            value={field.value ?? ''}
-                                            onChange={(e) =>
-                                                field.onChange(parseIntInput(e))
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name='defaultLocation'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.admin.activityLocation}</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name='adminWhatsapp'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.admin.activityWhatsapp}</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder='628...' {...field} />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {t.admin.whatsappHint}
-                                    </FormDescription>
-                                    <PhonePicker
-                                        onPick={(phone) =>
-                                            form.setValue('adminWhatsapp', phone, {
-                                                shouldValidate: true,
-                                            })
-                                        }
-                                    />
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name='description'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {t.admin.activityDescription}
-                                    </FormLabel>
-                                    <FormControl>
-                                        <Textarea rows={2} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <ScheduleSection form={form} t={t} />
+                        <ContactSection form={form} t={t} />
                         <Button
                             type='submit'
                             className='w-full'

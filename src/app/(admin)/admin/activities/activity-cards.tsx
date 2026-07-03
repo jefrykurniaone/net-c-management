@@ -48,6 +48,9 @@ function ActivityCard({ e, t }: Readonly<{ e: ActivityCardRow; t: Dictionary }>)
           defaultLocation: e.defaultLocation,
           maxPlayers: e.maxPlayers,
           adminWhatsapp: e.adminWhatsapp,
+          bankName: e.bankName,
+          bankAccountNumber: e.bankAccountNumber,
+          bankAccountHolder: e.bankAccountHolder,
           isActive: e.isActive,
         }}
       />
