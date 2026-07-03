@@ -8,7 +8,7 @@ import { ActivityFilter } from "@/components/activity/activity-filter";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
-import { CreditCard, Upload, ExternalLink } from "lucide-react";
+import { CreditCard, Upload, ExternalLink, MessageCircle } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getUserActivityIds } from "@/lib/activity";
@@ -35,7 +35,15 @@ export default async function PaymentsPage({
       },
       orderBy: [{ year: "desc" }, { month: "desc" }],
       include: {
-        activity: { select: { id: true, name: true, color: true, icon: true } },
+        activity: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            icon: true,
+            adminWhatsapp: true,
+          },
+        },
       },
     }),
     prisma.activity.findMany({
@@ -136,6 +144,25 @@ export default async function PaymentsPage({
                         {payment.notes}
                       </p>
                     )
+                  )}
+                  {payment.status === "REJECTED" && (
+                    <p className="text-xs text-warning mt-1">
+                      {t.payments.rejectedRefundWarning}
+                      {payment.activity.adminWhatsapp && (
+                        <>
+                          {" "}
+                          <a
+                            href={`https://wa.me/${payment.activity.adminWhatsapp.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-success hover:underline"
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            {t.sessions.contactAdmin}
+                          </a>
+                        </>
+                      )}
+                    </p>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-2">
