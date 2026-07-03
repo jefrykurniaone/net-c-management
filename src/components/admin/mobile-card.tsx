@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 // ─── Mobile table→cards primitives (Story 4.2, UX-DR13) ──────────────────────
 // Admin data tables render a stacked-card fallback under `md`. These server-side
-// primitives keep the four card lists (members/payments/sessions/ekskul)
+// primitives keep the four card lists (members/payments/sessions/activity)
 // visually consistent: one card shell + one label/value field row + one empty
 // state — apply, don't reinvent per table (AD-11).
 

@@ -4,7 +4,7 @@ import { redirect, notFound } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { ActivityBadge } from "@/components/activity/activity-badge";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { isAdminRole, roleBadgeVariant, paymentStatusVariant } from "@/lib/utils";
@@ -49,9 +49,9 @@ export default async function MemberDetailPage({
     where: { id },
     include: {
       memberships: {
-        where: { isActive: true, ekskul: { isActive: true } },
+        where: { isActive: true, activity: { isActive: true } },
         include: {
-          ekskul: {
+          activity: {
             select: {
               id: true,
               name: true,
@@ -124,15 +124,15 @@ export default async function MemberDetailPage({
                   const mode = resolvePaymentMode(
                     m,
                     {
-                      allowsMonthly: m.ekskul.allowsMonthly,
-                      allowsPerSession: m.ekskul.allowsPerSession,
+                      allowsMonthly: m.activity.allowsMonthly,
+                      allowsPerSession: m.activity.allowsPerSession,
                     },
                     month,
                     year,
                   );
                   return (
-                    <span key={m.ekskul.id} className="inline-flex items-center gap-1">
-                      <EkskulBadge name={m.ekskul.name} color={m.ekskul.color} />
+                    <span key={m.activity.id} className="inline-flex items-center gap-1">
+                      <ActivityBadge name={m.activity.name} color={m.activity.color} />
                       <span className="text-xs text-muted-foreground">
                         ·{" "}
                         {mode === PaymentMode.MONTHLY

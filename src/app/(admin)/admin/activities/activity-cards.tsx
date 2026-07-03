@@ -1,28 +1,28 @@
 import { Badge } from "@/components/ui/badge";
-import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { ActivityBadge } from "@/components/activity/activity-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
-import { EkskulActions } from "./ekskul-actions";
+import { ActivityActions } from "./activity-actions";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
-import type { Ekskul } from "@prisma/client";
+import type { Activity } from "@prisma/client";
 
-type EkskulCardRow = Ekskul & {
+type ActivityCardRow = Activity & {
   _count: { memberships: number; sessions: number };
 };
 
-function EkskulCard({ e, t }: Readonly<{ e: EkskulCardRow; t: Dictionary }>) {
+function ActivityCard({ e, t }: Readonly<{ e: ActivityCardRow; t: Dictionary }>) {
   return (
     <MobileCard>
       <div className="space-y-1">
-        <EkskulBadge name={e.name} color={e.color} />
+        <ActivityBadge name={e.name} color={e.color} />
         {e.description && <p className="truncate text-xs text-muted-foreground">{e.description}</p>}
       </div>
-      <CardField label={t.admin.ekskulSlug}>
+      <CardField label={t.admin.activitySlug}>
         <span className="font-mono text-xs">{e.slug}</span>
       </CardField>
       <CardField label={t.admin.colMembers}>
         <span className="tabular-nums">{e._count.memberships}</span>
       </CardField>
-      <CardField label={t.admin.ekskulFee}>
+      <CardField label={t.admin.activityFee}>
         <span className="tabular-nums">Rp {e.monthlyFee.toLocaleString("id-ID")}</span>
       </CardField>
       <CardField label={t.admin.colStatus}>
@@ -30,8 +30,8 @@ function EkskulCard({ e, t }: Readonly<{ e: EkskulCardRow; t: Dictionary }>) {
           {e.isActive ? t.admin.active : t.admin.inactive2}
         </Badge>
       </CardField>
-      <EkskulActions
-        ekskul={{
+      <ActivityActions
+        activity={{
           id: e.id,
           name: e.name,
           slug: e.slug,
@@ -55,15 +55,15 @@ function EkskulCard({ e, t }: Readonly<{ e: EkskulCardRow; t: Dictionary }>) {
   );
 }
 
-export function EkskulCards({
-  ekskuls,
+export function ActivityCards({
+  activities,
   t,
-}: Readonly<{ ekskuls: EkskulCardRow[]; t: Dictionary }>) {
-  if (ekskuls.length === 0) return <CardListEmpty>{t.admin.noEkskul}</CardListEmpty>;
+}: Readonly<{ activities: ActivityCardRow[]; t: Dictionary }>) {
+  if (activities.length === 0) return <CardListEmpty>{t.admin.noActivity}</CardListEmpty>;
   return (
     <div className="space-y-3">
-      {ekskuls.map((e) => (
-        <EkskulCard key={e.id} e={e} t={t} />
+      {activities.map((e) => (
+        <ActivityCard key={e.id} e={e} t={t} />
       ))}
     </div>
   );

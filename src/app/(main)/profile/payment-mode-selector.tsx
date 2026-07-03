@@ -14,7 +14,7 @@ const PERIOD_RADIX = 100;
 
 /** The per-Activity mode state the selector renders and mutates. */
 export interface MembershipMode {
-    ekskulId: string;
+    activityId: string;
     monthlyFee: number;
     sessionFee: number;
     allowsMonthly: boolean;
@@ -122,7 +122,7 @@ export function PaymentModeSelector({
         setSaving(mode);
         try {
             const res = await fetch(
-                `/api/users/memberships/${membership.ekskulId}/mode`,
+                `/api/users/memberships/${membership.activityId}/mode`,
                 {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },

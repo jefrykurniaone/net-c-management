@@ -27,7 +27,7 @@ import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { roleBadgeVariant } from '@/lib/utils';
 import { FormSkeleton } from '@/components/skeletons/page-skeletons';
-import { EkskulMemberships } from './ekskul-memberships';
+import { ActivityMemberships } from './activity-memberships';
 import type { Role } from '@prisma/client';
 
 interface Profile {
@@ -205,7 +205,7 @@ export default function ProfilePage() {
                 </div>
             )}
 
-            <EkskulMemberships />
+            <ActivityMemberships />
 
             <div className='bg-card rounded-xl border border-border p-6'>
                 <h2 className='font-semibold text-foreground mb-5'>

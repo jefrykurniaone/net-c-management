@@ -23,10 +23,10 @@ export function buildOnboardingSchema(t: Dictionary) {
             .max(15, t.validation.phoneMax)
             .regex(/^[0-9+]+$/, t.validation.phoneFormat)
             .transform(normalizePhone),
-        // At least one ekskul must be chosen to complete the profile.
-        ekskulIds: z
+        // At least one activity must be chosen to complete the profile.
+        activityIds: z
             .array(z.string().min(1))
-            .min(1, t.validation.ekskulMembershipRequired),
+            .min(1, t.validation.activityMembershipRequired),
     });
 }
 
@@ -39,7 +39,7 @@ export function buildUpdateProfileSchema(t: Dictionary) {
             .min(2, t.validation.nameMin)
             .max(100, t.validation.nameMax)
             .optional(),
-        ekskulIds: z.array(z.string().min(1)).optional(),
+        activityIds: z.array(z.string().min(1)).optional(),
     });
 }
 

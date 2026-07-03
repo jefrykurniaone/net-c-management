@@ -21,18 +21,18 @@ export async function GET(req: Request) {
     const year = searchParams.get('year')
         ? Number.parseInt(searchParams.get('year')!)
         : undefined;
-    const ekskulId = searchParams.get('ekskulId') ?? undefined;
+    const activityId = searchParams.get('activityId') ?? undefined;
 
     const payments = await prisma.payment.findMany({
         where: {
             ...(month ? { month } : {}),
             ...(year ? { year } : {}),
-            ...(ekskulId ? { ekskulId } : {}),
+            ...(activityId ? { activityId } : {}),
         },
         orderBy: [{ year: 'desc' }, { month: 'desc' }, { createdAt: 'asc' }],
         include: {
             user: { select: { name: true, email: true, phone: true } },
-            ekskul: { select: { name: true } },
+            activity: { select: { name: true } },
         },
     });
 
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
             'Nama',
             'Email',
             'WhatsApp',
-            'Ekskul',
+            'Activity',
             'Bulan',
             'Tahun',
             'Jumlah (Rp)',
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
             p.user.name ?? '',
             p.user.email ?? '',
             p.user.phone ?? '',
-            p.ekskul.name,
+            p.activity.name,
             String(p.month),
             String(p.year),
             String(p.amount),

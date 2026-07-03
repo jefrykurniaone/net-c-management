@@ -41,7 +41,7 @@ const SETTINGS: Record<string, string> = {
  * the session length (badminton 3h, futsal 2h); `recurringDay` stays null so
  * no sessions auto-generate until an admin picks the weekday in the admin UI.
  */
-const EKSKULS = [
+const ACTIVITIES = [
     {
         slug: 'badminton',
         name: 'Badminton',
@@ -85,16 +85,16 @@ async function seedSettings() {
     console.log(`[ok] Settings: ${SETTINGS.communityName} (WA ${ADMIN_WHATSAPP})`);
 }
 
-async function seedEkskuls() {
-    for (const e of EKSKULS) {
+async function seedActivities() {
+    for (const e of ACTIVITIES) {
         const { slug, ...data } = e;
-        const ekskul = await prisma.ekskul.upsert({
+        const activity = await prisma.activity.upsert({
             where: { slug },
             update: data,
             create: { slug, ...data },
         });
         console.log(
-            `[ok] Activity: ${ekskul.name} (${ekskul.recurringStartTime}–${ekskul.recurringEndTime}, monthly + per-session)`,
+            `[ok] Activity: ${activity.name} (${activity.recurringStartTime}–${activity.recurringEndTime}, monthly + per-session)`,
         );
     }
 }
@@ -129,7 +129,7 @@ async function main() {
         throw new Error('DATABASE_URL missing — is .env.prod present?');
     }
     await seedSettings();
-    await seedEkskuls();
+    await seedActivities();
     await promoteOwner();
     console.log('Done. Production seed complete.');
 }

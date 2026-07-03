@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { ActivityBadge } from "@/components/activity/activity-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
 import { MemberActions } from "./member-actions";
 import { roleBadgeVariant } from "@/lib/utils";
@@ -16,7 +16,7 @@ type MemberRow = Prisma.UserGetPayload<{
     role: true;
     isActive: true;
     memberships: {
-      select: { ekskul: { select: { id: true; name: true; color: true } } };
+      select: { activity: { select: { id: true; name: true; color: true } } };
     };
     _count: { select: { attendances: true; payments: true } };
   };
@@ -49,13 +49,13 @@ function MemberCard({
         </div>
       </div>
 
-      <CardField label={t.ekskul.label}>
+      <CardField label={t.activity.label}>
         <div className="flex flex-wrap justify-end gap-1">
           {u.memberships.length === 0 ? (
             <span className="text-muted-foreground">—</span>
           ) : (
             u.memberships.map((m) => (
-              <EkskulBadge key={m.ekskul.id} name={m.ekskul.name} color={m.ekskul.color} />
+              <ActivityBadge key={m.activity.id} name={m.activity.name} color={m.activity.color} />
             ))
           )}
         </div>

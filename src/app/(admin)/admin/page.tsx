@@ -4,11 +4,11 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StatCard } from '@/components/ui/stat-card';
 import { Users, CalendarDays, CreditCard, TrendingUp } from 'lucide-react';
-import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
+import { ActivityBadge } from '@/components/activity/activity-badge';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { getEkskuls } from '@/lib/ekskul';
+import { getActivities } from '@/lib/activity';
 import { isAdminRole } from '@/lib/utils';
 
 export default async function AdminDashboardPage() {
@@ -31,10 +31,10 @@ export default async function AdminDashboardPage() {
         pendingPayments,
         confirmedPaymentsThisMonth,
         totalSessionsThisYear,
-        ekskuls,
-        membersByEkskul,
-        upcomingByEkskul,
-        pendingByEkskul,
+        activities,
+        membersByActivity,
+        upcomingByActivity,
+        pendingByActivity,
     ] = await Promise.all([
         prisma.user.count(),
         prisma.user.count({
@@ -63,14 +63,14 @@ export default async function AdminDashboardPage() {
                 status: { not: 'CANCELLED' },
             },
         }),
-        getEkskuls(),
+        getActivities(),
         prisma.membership.groupBy({
-            by: ['ekskulId'],
+            by: ['activityId'],
             where: { isActive: true },
             _count: true,
         }),
         prisma.activitySession.groupBy({
-            by: ['ekskulId'],
+            by: ['activityId'],
             where: {
                 date: { gte: startOfToday },
                 status: { in: ['SCHEDULED', 'ONGOING'] },
@@ -78,19 +78,19 @@ export default async function AdminDashboardPage() {
             _count: true,
         }),
         prisma.payment.groupBy({
-            by: ['ekskulId'],
+            by: ['activityId'],
             where: { status: 'PENDING' },
             _count: true,
         }),
     ]);
 
     const countMap = (
-        rows: { ekskulId: string; _count: number }[],
+        rows: { activityId: string; _count: number }[],
     ): Map<string, number> =>
-        new Map(rows.map((r) => [r.ekskulId, r._count]));
-    const memberCounts = countMap(membersByEkskul);
-    const upcomingCounts = countMap(upcomingByEkskul);
-    const pendingCounts = countMap(pendingByEkskul);
+        new Map(rows.map((r) => [r.activityId, r._count]));
+    const memberCounts = countMap(membersByActivity);
+    const upcomingCounts = countMap(upcomingByActivity);
+    const pendingCounts = countMap(pendingByActivity);
 
     const stats = [
         {
@@ -142,19 +142,19 @@ export default async function AdminDashboardPage() {
                 ))}
             </div>
 
-            {/* Per-ekskul breakdown */}
-            {ekskuls.length > 0 && (
+            {/* Per-activity breakdown */}
+            {activities.length > 0 && (
                 <div className='space-y-4'>
                     <h2 className='text-lg font-semibold text-foreground'>
-                        {t.admin.perEkskulTitle}
+                        {t.admin.perActivityTitle}
                     </h2>
                     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-                        {ekskuls.map((e) => (
+                        {activities.map((e) => (
                             <Card
                                 key={e.id}
                                 style={{ borderTop: `3px solid ${e.color}` }}>
                                 <CardHeader className='pb-2'>
-                                    <EkskulBadge name={e.name} color={e.color} />
+                                    <ActivityBadge name={e.name} color={e.color} />
                                 </CardHeader>
                                 <CardContent>
                                     <div className='grid grid-cols-3 gap-2 text-center'>

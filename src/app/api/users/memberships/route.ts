@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { ensureMembership } from '@/lib/ekskul';
+import { ensureMembership } from '@/lib/activity';
 import {
     currentPeriod,
     resolvePaymentMode,
@@ -8,7 +8,7 @@ import {
 } from '@/lib/payment-mode';
 import { NextResponse } from 'next/server';
 
-type EkskulRow = {
+type ActivityRow = {
     id: string;
     name: string;
     color: string;
@@ -24,18 +24,18 @@ type EkskulRow = {
 // offered modes, plus this member's mode fields and the server-resolved
 // effective mode for the current period (null when not joined). resolvePaymentMode
 // is server-only, so the effective mode is computed here, never on the client.
-function toEkskulView(
-    ekskul: EkskulRow,
-    membership: (MembershipMode & { ekskulId: string }) | undefined,
+function toActivityView(
+    activity: ActivityRow,
+    membership: (MembershipMode & { activityId: string }) | undefined,
     month: number,
     year: number,
 ) {
     const offered = {
-        allowsMonthly: ekskul.allowsMonthly,
-        allowsPerSession: ekskul.allowsPerSession,
+        allowsMonthly: activity.allowsMonthly,
+        allowsPerSession: activity.allowsPerSession,
     };
     return {
-        ...ekskul,
+        ...activity,
         joined: membership !== undefined,
         paymentMode: membership?.paymentMode ?? null,
         effectiveFrom: membership?.effectiveFrom ?? null,
@@ -47,7 +47,7 @@ function toEkskulView(
     };
 }
 
-// GET /api/users/memberships — all active ekskul with a `joined` flag plus the
+// GET /api/users/memberships — all active activity with a `joined` flag plus the
 // current user's payment-mode state per Activity. Scoped to the caller (AD-3):
 // only this member's membership rows are read, never another member's.
 export async function GET() {
@@ -56,8 +56,8 @@ export async function GET() {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const [ekskuls, memberships] = await Promise.all([
-        prisma.ekskul.findMany({
+    const [activities, memberships] = await Promise.all([
+        prisma.activity.findMany({
             where: { isActive: true },
             orderBy: { name: 'asc' },
             select: {
@@ -75,7 +75,7 @@ export async function GET() {
         prisma.membership.findMany({
             where: { userId: session.user.id, isActive: true },
             select: {
-                ekskulId: true,
+                activityId: true,
                 paymentMode: true,
                 effectiveFrom: true,
                 pendingMode: true,
@@ -84,16 +84,16 @@ export async function GET() {
         }),
     ]);
 
-    const byEkskul = new Map(memberships.map((m) => [m.ekskulId, m]));
+    const byActivity = new Map(memberships.map((m) => [m.activityId, m]));
     const { month, year } = currentPeriod(new Date());
 
     return NextResponse.json({
-        ekskuls: ekskuls.map((e) => toEkskulView(e, byEkskul.get(e.id), month, year)),
+        activities: activities.map((e) => toActivityView(e, byActivity.get(e.id), month, year)),
     });
 }
 
-// POST /api/users/memberships — join or leave an ekskul.
-// body: { ekskulId: string, action: "join" | "leave" }
+// POST /api/users/memberships — join or leave an activity.
+// body: { activityId: string, action: "join" | "leave" }
 export async function POST(req: Request) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -101,9 +101,9 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const ekskulId = typeof body.ekskulId === 'string' ? body.ekskulId : '';
+    const activityId = typeof body.activityId === 'string' ? body.activityId : '';
     const action = body.action === 'leave' ? 'leave' : 'join';
-    if (!ekskulId) {
+    if (!activityId) {
         return NextResponse.json({ error: 'Bad Request' }, { status: 400 });
     }
 
@@ -112,13 +112,13 @@ export async function POST(req: Request) {
     if (action === 'join') {
         // Shared join path: (re)activates the membership and resets a stale
         // payment-mode selection when re-joining after a leave.
-        const joined = await ensureMembership(userId, ekskulId);
+        const joined = await ensureMembership(userId, activityId);
         if (!joined) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
         }
     } else {
         await prisma.membership.updateMany({
-            where: { userId, ekskulId },
+            where: { userId, activityId },
             data: { isActive: false },
         });
     }

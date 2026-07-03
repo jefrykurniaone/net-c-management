@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import type { PaymentMode } from '@prisma/client';
 import { Button } from '@/components/ui/button';
-import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
+import { ActivityBadge } from '@/components/activity/activity-badge';
 import { PaymentModeSelector } from './payment-mode-selector';
 import { toast } from 'sonner';
 import { MessageCircle, Shapes } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
-interface MembershipEkskul {
+interface MembershipActivity {
     id: string;
     name: string;
     color: string;
@@ -26,23 +26,23 @@ interface MembershipEkskul {
     effectiveMode: PaymentMode | null;
 }
 
-function fetchMemberships(): Promise<MembershipEkskul[] | null> {
+function fetchMemberships(): Promise<MembershipActivity[] | null> {
     return fetch('/api/users/memberships')
         .then((r) => r.json())
-        .then((data: { ekskuls?: MembershipEkskul[] }) => data.ekskuls ?? [])
+        .then((data: { activities?: MembershipActivity[] }) => data.activities ?? [])
         .catch(() => null);
 }
 
-export function EkskulMemberships() {
+export function ActivityMemberships() {
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const [ekskuls, setEkskuls] = useState<MembershipEkskul[]>([]);
+    const [activities, setActivities] = useState<MembershipActivity[]>([]);
     const [loading, setLoading] = useState(true);
     const [pendingId, setPendingId] = useState<string | null>(null);
 
     useEffect(() => {
         fetchMemberships()
-            .then((list) => setEkskuls(list ?? []))
+            .then((list) => setActivities(list ?? []))
             .finally(() => setLoading(false));
     }, []);
 
@@ -56,21 +56,21 @@ export function EkskulMemberships() {
             toast.error(t.common.error);
             return;
         }
-        setEkskuls(list);
+        setActivities(list);
     }
 
-    async function toggle(ekskul: MembershipEkskul) {
-        const action = ekskul.joined ? 'leave' : 'join';
-        setPendingId(ekskul.id);
+    async function toggle(activity: MembershipActivity) {
+        const action = activity.joined ? 'leave' : 'join';
+        setPendingId(activity.id);
         try {
             const res = await fetch('/api/users/memberships', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ekskulId: ekskul.id, action }),
+                body: JSON.stringify({ activityId: activity.id, action }),
             });
-            if (!res.ok) throw new Error(t.ekskul.actionFailed);
+            if (!res.ok) throw new Error(t.activity.actionFailed);
             toast.success(
-                action === 'join' ? t.ekskul.joinSuccess : t.ekskul.leaveSuccess,
+                action === 'join' ? t.activity.joinSuccess : t.activity.leaveSuccess,
             );
             await refresh();
         } catch (err) {
@@ -85,23 +85,23 @@ export function EkskulMemberships() {
             <div className='flex items-center gap-2 mb-1'>
                 <Shapes className='w-5 h-5 text-primary' />
                 <h2 className='font-semibold text-foreground'>
-                    {t.ekskul.yourEkskul}
+                    {t.activity.yourActivity}
                 </h2>
             </div>
-            <p className='text-sm text-muted-foreground mb-4'>{t.ekskul.yourEkskulSub}</p>
+            <p className='text-sm text-muted-foreground mb-4'>{t.activity.yourActivitySub}</p>
 
             {loading ? (
                 <p className='text-sm text-muted-foreground'>{t.common.loading}</p>
-            ) : ekskuls.length === 0 ? (
-                <p className='text-sm text-muted-foreground'>{t.admin.noEkskul}</p>
+            ) : activities.length === 0 ? (
+                <p className='text-sm text-muted-foreground'>{t.admin.noActivity}</p>
             ) : (
                 <div className='space-y-2'>
-                    {ekskuls.map((e) => (
+                    {activities.map((e) => (
                         <div
                             key={e.id}
                             className='py-2 border-b border-border last:border-0'>
                             <div className='flex items-center justify-between gap-2'>
-                                <EkskulBadge name={e.name} color={e.color} />
+                                <ActivityBadge name={e.name} color={e.color} />
                                 <div className='flex items-center gap-1'>
                                     {e.adminWhatsapp && (
                                         <a
@@ -120,14 +120,14 @@ export function EkskulMemberships() {
                                         className='h-11 sm:h-7 text-xs'
                                         loading={pendingId === e.id}
                                         onClick={() => toggle(e)}>
-                                        {e.joined ? t.ekskul.leave : t.ekskul.join}
+                                        {e.joined ? t.activity.leave : t.activity.join}
                                     </Button>
                                 </div>
                             </div>
                             {e.joined && (
                                 <PaymentModeSelector
                                     membership={{
-                                        ekskulId: e.id,
+                                        activityId: e.id,
                                         monthlyFee: e.monthlyFee,
                                         sessionFee: e.sessionFee,
                                         allowsMonthly: e.allowsMonthly,

@@ -30,7 +30,7 @@ import { format } from "date-fns";
 import type { ActivitySession, Attendance, User } from "@prisma/client";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import type { EkskulOption } from "@/types/ekskul";
+import type { ActivityOption } from "@/types/activity";
 
 type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
 type SessionWithAttendances = ActivitySession & { attendances: AttendanceWithUser[] };
@@ -53,14 +53,14 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
     { value: "ABSENT", label: t.attendanceStatus.ABSENT, icon: XCircle, color: "text-destructive" },
   ];
   const [loading, setLoading] = useState(false);
-  const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
+  const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [attendances, setAttendances] = useState<AttendanceWithUser[]>(session.attendances);
   const [attendanceLoading, setAttendanceLoading] = useState<string | null>(null);
 
   const form = useForm<UpdateSessionFormData>({
     resolver: zodResolver(buildUpdateSessionSchema(t)),
     defaultValues: {
-      ekskulId: session.ekskulId,
+      activityId: session.activityId,
       title: session.title,
       date: format(new Date(session.date), "yyyy-MM-dd"),
       startTime: session.startTime,
@@ -74,10 +74,10 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
   });
 
   useEffect(() => {
-    fetch("/api/ekskul")
+    fetch("/api/activities")
       .then((r) => r.json())
-      .then((data: { ekskuls?: EkskulOption[] }) => setEkskuls(data.ekskuls ?? []))
-      .catch(() => setEkskuls([]));
+      .then((data: { activities?: ActivityOption[] }) => setActivities(data.activities ?? []))
+      .catch(() => setActivities([]));
   }, []);
 
   async function onSubmit(data: UpdateSessionFormData) {
@@ -179,18 +179,18 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="ekskulId"
+              name="activityId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t.ekskul.label}</FormLabel>
+                  <FormLabel>{t.activity.label}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder={t.ekskul.selectPlaceholder} />
+                        <SelectValue placeholder={t.activity.selectPlaceholder} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {ekskuls.map((e) => (
+                      {activities.map((e) => (
                         <SelectItem key={e.id} value={e.id}>
                           {e.name}
                         </SelectItem>

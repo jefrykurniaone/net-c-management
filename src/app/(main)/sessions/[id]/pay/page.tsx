@@ -23,7 +23,7 @@ interface SessionInfo {
     id: string;
     title: string;
     fee: number;
-    ekskul: { name: string };
+    activity: { name: string };
 }
 
 export default function SessionPayPage() {
@@ -87,7 +87,7 @@ export default function SessionPayPage() {
 
     const owedLabel = session
         ? t.payments.sessionOwedFor
-              .split('{activity}').join(session.ekskul.name)
+              .split('{activity}').join(session.activity.name)
               .split('{session}').join(session.title)
         : '';
 

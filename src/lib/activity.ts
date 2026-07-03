@@ -1,29 +1,29 @@
 import 'server-only';
 import { prisma } from './prisma';
-import { Prisma, type Ekskul } from '@prisma/client';
+import { Prisma, type Activity } from '@prisma/client';
 
 /**
- * Server-only helpers for ekskul scoping. Used by member-facing queries and
- * route handlers to limit data to the ekskul a user belongs to.
+ * Server-only helpers for activity scoping. Used by member-facing queries and
+ * route handlers to limit data to the activity a user belongs to.
  */
 
 /**
- * Active ekskul ids the user is an active member of.
+ * Active activity ids the user is an active member of.
  * Returns an empty array if the user has no memberships.
  */
-export async function getUserEkskulIds(userId: string): Promise<string[]> {
+export async function getUserActivityIds(userId: string): Promise<string[]> {
     const memberships = await prisma.membership.findMany({
-        where: { userId, isActive: true, ekskul: { isActive: true } },
-        select: { ekskulId: true },
+        where: { userId, isActive: true, activity: { isActive: true } },
+        select: { activityId: true },
     });
-    return memberships.map((m) => m.ekskulId);
+    return memberships.map((m) => m.activityId);
 }
 
 /**
- * All active ekskul, ordered by name. Used to populate filters and selects.
+ * All active activity, ordered by name. Used to populate filters and selects.
  */
-export async function getEkskuls(): Promise<Ekskul[]> {
-    return prisma.ekskul.findMany({
+export async function getActivities(): Promise<Activity[]> {
+    return prisma.activity.findMany({
         where: { isActive: true },
         orderBy: { name: 'asc' },
     });
@@ -31,22 +31,22 @@ export async function getEkskuls(): Promise<Ekskul[]> {
 
 /**
  * Join-on-register: activate (or create) the user's membership in an active
- * ekskul. Registering for a session implies joining its Activity, so the
+ * activity. Registering for a session implies joining its Activity, so the
  * session-register paths call this instead of rejecting non-members.
- * Returns false when the ekskul does not exist or is inactive.
+ * Returns false when the activity does not exist or is inactive.
  */
 export async function ensureMembership(
     userId: string,
-    ekskulId: string,
+    activityId: string,
 ): Promise<boolean> {
-    const ekskul = await prisma.ekskul.findFirst({
-        where: { id: ekskulId, isActive: true },
+    const activity = await prisma.activity.findFirst({
+        where: { id: activityId, isActive: true },
         select: { id: true },
     });
-    if (!ekskul) return false;
+    if (!activity) return false;
 
     const existing = await prisma.membership.findUnique({
-        where: { userId_ekskulId: { userId, ekskulId } },
+        where: { userId_activityId: { userId, activityId } },
         select: { isActive: true },
     });
     if (existing?.isActive) return true;
@@ -54,7 +54,7 @@ export async function ensureMembership(
     if (!existing) {
         try {
             await prisma.membership.create({
-                data: { userId, ekskulId, isActive: true },
+                data: { userId, activityId, isActive: true },
             });
             return true;
         } catch (err) {
@@ -73,7 +73,7 @@ export async function ensureMembership(
     // selection (and any queued switch) no longer applies — the member picks a
     // mode again at join time (register free = Monthly, pay page = Per-session).
     await prisma.membership.update({
-        where: { userId_ekskulId: { userId, ekskulId } },
+        where: { userId_activityId: { userId, activityId } },
         data: {
             isActive: true,
             paymentMode: null,
@@ -86,14 +86,14 @@ export async function ensureMembership(
 }
 
 /**
- * Whether the user is an active member of the given ekskul.
+ * Whether the user is an active member of the given activity.
  */
 export async function assertMembership(
     userId: string,
-    ekskulId: string,
+    activityId: string,
 ): Promise<boolean> {
     const membership = await prisma.membership.findUnique({
-        where: { userId_ekskulId: { userId, ekskulId } },
+        where: { userId_activityId: { userId, activityId } },
         select: { isActive: true },
     });
     return membership?.isActive ?? false;

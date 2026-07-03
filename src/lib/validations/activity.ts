@@ -8,22 +8,22 @@ const LAST_WEEKDAY = 6;
 const MAX_MIN_MEMBERS = 100;
 
 /**
- * Base object shape for an Activity (Ekskul). Kept as a plain object schema so
+ * Base object shape for an Activity (Activity). Kept as a plain object schema so
  * the create builder can add a cross-field refine while the update builder can
  * still `.partial()` it (a refined schema is a ZodEffects and has no `.partial`).
  */
-function ekskulObjectSchema(t: Dictionary) {
+function activityObjectSchema(t: Dictionary) {
     return z.object({
         name: z
             .string()
-            .min(2, t.validation.ekskulNameMin)
-            .max(100, t.validation.ekskulNameMax),
+            .min(2, t.validation.activityNameMin)
+            .max(100, t.validation.activityNameMax),
         slug: z
             .string()
-            .min(1, t.validation.ekskulSlugRequired)
+            .min(1, t.validation.activitySlugRequired)
             .max(50)
-            .regex(SLUG_REGEX, t.validation.ekskulSlugFormat),
-        color: z.string().regex(HEX_COLOR_REGEX, t.validation.ekskulColorFormat),
+            .regex(SLUG_REGEX, t.validation.activitySlugFormat),
+        color: z.string().regex(HEX_COLOR_REGEX, t.validation.activityColorFormat),
         description: z.string().max(1000).optional(),
         // Explicit-required money fields — a blank submit is a validation error,
         // never a silent 0 (UX-DR14, FR-8). `min(0)` still allows a deliberate 0.
@@ -81,19 +81,19 @@ function bothModesDisabled(data: {
     return data.allowsMonthly === false && data.allowsPerSession === false;
 }
 
-export function buildCreateEkskulSchema(t: Dictionary) {
-    return ekskulObjectSchema(t).refine((d) => !bothModesDisabled(d), {
+export function buildCreateActivitySchema(t: Dictionary) {
+    return activityObjectSchema(t).refine((d) => !bothModesDisabled(d), {
         error: t.validation.paymentModeAtLeastOne,
         path: ['paymentModes'],
     });
 }
 
-export type CreateEkskulFormData = z.infer<
-    ReturnType<typeof buildCreateEkskulSchema>
+export type CreateActivityFormData = z.infer<
+    ReturnType<typeof buildCreateActivitySchema>
 >;
 
-export function buildUpdateEkskulSchema(t: Dictionary) {
-    return ekskulObjectSchema(t)
+export function buildUpdateActivitySchema(t: Dictionary) {
+    return activityObjectSchema(t)
         .partial()
         .extend({ isActive: z.boolean().optional() })
         .refine((d) => !bothModesDisabled(d), {
@@ -102,6 +102,6 @@ export function buildUpdateEkskulSchema(t: Dictionary) {
         });
 }
 
-export type UpdateEkskulFormData = z.infer<
-    ReturnType<typeof buildUpdateEkskulSchema>
+export type UpdateActivityFormData = z.infer<
+    ReturnType<typeof buildUpdateActivitySchema>
 >;

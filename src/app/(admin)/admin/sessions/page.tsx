@@ -5,26 +5,26 @@ import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
-import { EkskulFilter } from '@/components/ekskul/ekskul-filter';
+import { ActivityBadge } from '@/components/activity/activity-badge';
+import { ActivityFilter } from '@/components/activity/activity-filter';
 import { SessionCards } from './session-cards';
 import Link from 'next/link';
 import { CalendarDays, Plus, ExternalLink } from 'lucide-react';
 import type { ActivitySession } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { getEkskuls } from '@/lib/ekskul';
+import { getActivities } from '@/lib/activity';
 import { ensureRecurringSessions } from '@/lib/recurring-sessions';
 import { sessionStatusVariant, isAdminRole } from '@/lib/utils';
 
 type SessionRow = ActivitySession & {
     _count: { attendances: number };
-    ekskul: { id: string; name: string; color: string; icon: string | null };
+    activity: { id: string; name: string; color: string; icon: string | null };
 };
 
 export default async function AdminSessionsPage({
     searchParams,
-}: Readonly<{ searchParams: Promise<{ ekskulId?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ activityId?: string }> }>) {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
     if (!session?.user?.id || !isAdminRole(session.user.role))
         redirect('/dashboard');
@@ -33,14 +33,14 @@ export default async function AdminSessionsPage({
     const dateLocale = locale === 'id' ? localeId : enUS;
 
     const sp = await searchParams;
-    const selected = sp.ekskulId || undefined;
+    const selected = sp.activityId || undefined;
 
     // Lazy idempotent generation of this month's weekly sessions (no cron).
     await ensureRecurringSessions();
 
-    const [sessions, ekskuls] = await Promise.all([
+    const [sessions, activities] = await Promise.all([
         prisma.activitySession.findMany({
-            where: selected ? { ekskulId: selected } : {},
+            where: selected ? { activityId: selected } : {},
             orderBy: { date: 'desc' },
             take: 50,
             include: {
@@ -53,12 +53,12 @@ export default async function AdminSessionsPage({
                         },
                     },
                 },
-                ekskul: {
+                activity: {
                     select: { id: true, name: true, color: true, icon: true },
                 },
             },
         }),
-        getEkskuls(),
+        getActivities(),
     ]);
 
     return (
@@ -74,10 +74,10 @@ export default async function AdminSessionsPage({
                     </p>
                 </div>
                 <div className='flex items-center gap-2'>
-                    <EkskulFilter
-                        ekskuls={ekskuls}
+                    <ActivityFilter
+                        activities={activities}
                         selected={selected}
-                        allLabel={t.ekskul.filterAll}
+                        allLabel={t.activity.filterAll}
                     />
                     <Link href='/admin/sessions/new'>
                         <Button className='gap-2'>
@@ -131,16 +131,16 @@ export default async function AdminSessionsPage({
                                                     className='absolute left-0 top-0 h-full w-[3px]'
                                                     style={{
                                                         backgroundColor:
-                                                            s.ekskul.color,
+                                                            s.activity.color,
                                                     }}
                                                 />
                                                 <span className='truncate block'>
                                                     {s.title}
                                                 </span>
-                                                <EkskulBadge
-                                                    name={s.ekskul.name}
-                                                    color={s.ekskul.color}
-                                                    icon={s.ekskul.icon}
+                                                <ActivityBadge
+                                                    name={s.activity.name}
+                                                    color={s.activity.color}
+                                                    icon={s.activity.icon}
                                                     className='mt-1'
                                                 />
                                             </td>

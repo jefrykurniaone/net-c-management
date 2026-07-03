@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ensureMembership } from "@/lib/ekskul";
+import { ensureMembership } from "@/lib/activity";
 import { isFreeRegisterAllowed, releaseSessionSeat } from "@/lib/payments";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -46,11 +46,11 @@ export async function POST(
   if (activitySession.fee === 0) {
     const joined = await ensureMembership(
       session.user.id,
-      activitySession.ekskulId
+      activitySession.activityId
     );
     if (!joined) {
       const t = getDictionary(await getLocale());
-      return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
+      return NextResponse.json({ error: t.activity.notMember }, { status: 403 });
     }
   }
 

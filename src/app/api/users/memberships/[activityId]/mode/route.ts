@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { assertMembership } from '@/lib/ekskul';
+import { assertMembership } from '@/lib/activity';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildUpdatePaymentModeSchema } from '@/lib/validations/membership';
@@ -15,12 +15,12 @@ import { NextResponse } from 'next/server';
 
 /** Whether the Activity offers the requested mode (FR-9). */
 function offersMode(
-    ekskul: { allowsMonthly: boolean; allowsPerSession: boolean },
+    activity: { allowsMonthly: boolean; allowsPerSession: boolean },
     mode: PaymentMode,
 ): boolean {
     return mode === PaymentMode.MONTHLY
-        ? ekskul.allowsMonthly
-        : ekskul.allowsPerSession;
+        ? activity.allowsMonthly
+        : activity.allowsPerSession;
 }
 
 /**
@@ -69,12 +69,12 @@ const MEMBERSHIP_MODE_SELECT = {
     pendingEffectiveFrom: true,
 } as const;
 
-// PATCH /api/users/memberships/[ekskulId]/mode — a member sets or changes their
-// payment mode for an Activity (Story 3.3, FR-10). Auth-gated, ekskul-scoped;
+// PATCH /api/users/memberships/[activityId]/mode — a member sets or changes their
+// payment mode for an Activity (Story 3.3, FR-10). Auth-gated, activity-scoped;
 // the effective period is derived server-side (AD-2, AD-7).
 export async function PATCH(
     req: Request,
-    { params }: { params: Promise<{ ekskulId: string }> },
+    { params }: { params: Promise<{ activityId: string }> },
 ) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -82,11 +82,11 @@ export async function PATCH(
     }
 
     const t = getDictionary(await getLocale());
-    const { ekskulId } = await params;
+    const { activityId } = await params;
     const userId = session.user.id;
 
-    if (!(await assertMembership(userId, ekskulId))) {
-        return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
+    if (!(await assertMembership(userId, activityId))) {
+        return NextResponse.json({ error: t.activity.notMember }, { status: 403 });
     }
 
     let body: unknown;
@@ -107,14 +107,14 @@ export async function PATCH(
         );
     }
 
-    const ekskul = await prisma.ekskul.findUnique({
-        where: { id: ekskulId, isActive: true },
+    const activity = await prisma.activity.findUnique({
+        where: { id: activityId, isActive: true },
         select: { allowsMonthly: true, allowsPerSession: true },
     });
-    if (!ekskul) {
+    if (!activity) {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    if (!offersMode(ekskul, parsed.data.mode)) {
+    if (!offersMode(activity, parsed.data.mode)) {
         return NextResponse.json(
             { error: t.validation.paymentModeNotOffered },
             { status: 400 },
@@ -122,11 +122,11 @@ export async function PATCH(
     }
 
     const membership = await prisma.membership.findUnique({
-        where: { userId_ekskulId: { userId, ekskulId }, isActive: true },
+        where: { userId_activityId: { userId, activityId }, isActive: true },
         select: MEMBERSHIP_MODE_SELECT,
     });
     if (!membership) {
-        return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
+        return NextResponse.json({ error: t.activity.notMember }, { status: 403 });
     }
 
     const now = new Date();
@@ -139,7 +139,7 @@ export async function PATCH(
             // read them, this update matches nothing and throws P2025 instead
             // of silently clobbering that write.
             where: {
-                userId_ekskulId: { userId, ekskulId },
+                userId_activityId: { userId, activityId },
                 isActive: true,
                 paymentMode: membership.paymentMode,
                 pendingMode: membership.pendingMode,

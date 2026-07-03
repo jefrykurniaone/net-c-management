@@ -54,7 +54,7 @@ export function getAdminNav(t: Dict): NavItem[] {
             icon: CreditCard,
         },
         { label: t.nav.adminMembers, href: '/admin/members', icon: Users },
-        { label: t.nav.adminEkskul, href: '/admin/ekskul', icon: Shapes },
+        { label: t.nav.adminActivity, href: '/admin/activities', icon: Shapes },
         { label: t.nav.adminSettings, href: '/admin/settings', icon: Settings },
     ];
 }

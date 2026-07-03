@@ -15,7 +15,7 @@ const MIN_SESSION_FEE = 1;
 
 interface RSVPButtonProps {
     sessionId: string;
-    ekskulId: string;
+    activityId: string;
     isRegistered: boolean;
     isFull: boolean;
     isCancelled: boolean;
@@ -30,7 +30,7 @@ interface RSVPButtonProps {
 
 export function RSVPButton({
     sessionId,
-    ekskulId,
+    activityId,
     isRegistered,
     isFull,
     isCancelled,
@@ -94,15 +94,15 @@ export function RSVPButton({
             const join = await fetch('/api/users/memberships', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ekskulId, action: 'join' }),
+                body: JSON.stringify({ activityId, action: 'join' }),
             });
-            if (!join.ok) throw new Error(t.ekskul.actionFailed);
-            const mode = await fetch(`/api/users/memberships/${ekskulId}/mode`, {
+            if (!join.ok) throw new Error(t.activity.actionFailed);
+            const mode = await fetch(`/api/users/memberships/${activityId}/mode`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mode: 'MONTHLY' }),
             });
-            if (!mode.ok) throw new Error(t.ekskul.actionFailed);
+            if (!mode.ok) throw new Error(t.activity.actionFailed);
             router.push('/payments/upload');
         } catch (err) {
             toast.error(err instanceof Error ? err.message : t.common.error);

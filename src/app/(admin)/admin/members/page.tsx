@@ -2,21 +2,21 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { ActivityBadge } from "@/components/activity/activity-badge";
 import { Users } from "lucide-react";
 import Link from "next/link";
 import { MemberActions } from "./member-actions";
 import { MemberCards } from "./member-cards";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getEkskuls } from "@/lib/ekskul";
+import { getActivities } from "@/lib/activity";
 import { isAdminRole, roleBadgeVariant } from "@/lib/utils";
 import type { Prisma } from "@prisma/client";
 
 export default async function AdminMembersPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ search?: string; ekskulId?: string }>;
+  searchParams: Promise<{ search?: string; activityId?: string }>;
 }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
@@ -25,7 +25,7 @@ export default async function AdminMembersPage({
 
   const sp = await searchParams;
   const search = sp.search ?? "";
-  const ekskulId = sp.ekskulId ?? "";
+  const activityId = sp.activityId ?? "";
 
   const where: Prisma.UserWhereInput = {
     ...(search
@@ -36,12 +36,12 @@ export default async function AdminMembersPage({
           ],
         }
       : {}),
-    ...(ekskulId
-      ? { memberships: { some: { ekskulId, isActive: true } } }
+    ...(activityId
+      ? { memberships: { some: { activityId, isActive: true } } }
       : {}),
   };
 
-  const [users, ekskuls] = await Promise.all([
+  const [users, activities] = await Promise.all([
     prisma.user.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -56,13 +56,13 @@ export default async function AdminMembersPage({
         phone: true,
         createdAt: true,
         memberships: {
-          where: { isActive: true, ekskul: { isActive: true } },
-          select: { ekskul: { select: { id: true, name: true, color: true } } },
+          where: { isActive: true, activity: { isActive: true } },
+          select: { activity: { select: { id: true, name: true, color: true } } },
         },
         _count: { select: { attendances: true, payments: true } },
       },
     }),
-    getEkskuls(),
+    getActivities(),
   ]);
 
   return (
@@ -79,7 +79,7 @@ export default async function AdminMembersPage({
         </div>
       </div>
 
-      {/* Search + ekskul filter */}
+      {/* Search + activity filter */}
       <form className="flex flex-wrap gap-2" method="GET">
         <input
           name="search"
@@ -88,12 +88,12 @@ export default async function AdminMembersPage({
           className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full max-w-sm"
         />
         <select
-          name="ekskulId"
-          defaultValue={ekskulId}
+          name="activityId"
+          defaultValue={activityId}
           className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
         >
-          <option value="">{t.ekskul.filterAll}</option>
-          {ekskuls.map((e) => (
+          <option value="">{t.activity.filterAll}</option>
+          {activities.map((e) => (
             <option key={e.id} value={e.id}>
               {e.name}
             </option>
@@ -119,7 +119,7 @@ export default async function AdminMembersPage({
             <thead>
               <tr className="bg-muted border-b border-border">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colName}</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.ekskul.label}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.activity.label}</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colAttendance}</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colPayments}</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colMemberStatus}</th>
@@ -163,10 +163,10 @@ export default async function AdminMembersPage({
                         <span className="text-xs text-muted-foreground">—</span>
                       ) : (
                         u.memberships.map((m) => (
-                          <EkskulBadge
-                            key={m.ekskul.id}
-                            name={m.ekskul.name}
-                            color={m.ekskul.color}
+                          <ActivityBadge
+                            key={m.activity.id}
+                            name={m.activity.name}
+                            color={m.activity.color}
                           />
                         ))
                       )}

@@ -5,8 +5,8 @@ import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
-import { EkskulFilter } from "@/components/ekskul/ekskul-filter";
+import { ActivityBadge } from "@/components/activity/activity-badge";
+import { ActivityFilter } from "@/components/activity/activity-filter";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { getLocale } from "@/lib/i18n/locale";
@@ -19,7 +19,7 @@ import { sessionStatusVariant } from "@/lib/utils";
 
 export default async function SessionsPage({
   searchParams,
-}: Readonly<{ searchParams: Promise<{ ekskulId?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ activityId?: string }> }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
 
@@ -35,21 +35,21 @@ export default async function SessionsPage({
   // Every session of every active Activity is visible — joining happens at the
   // session level (registering also joins the Activity), so nothing is hidden
   // behind a prior "join activity" step.
-  const allEkskuls = await prisma.ekskul.findMany({
+  const allActivities = await prisma.activity.findMany({
     where: { isActive: true },
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
   const sp = await searchParams;
-  const selected = allEkskuls.some((e) => e.id === sp.ekskulId)
-    ? sp.ekskulId
+  const selected = allActivities.some((e) => e.id === sp.activityId)
+    ? sp.activityId
     : undefined;
 
   const sessions = await prisma.activitySession.findMany({
     where: {
       date: { gte: today },
       status: { in: ["SCHEDULED", "ONGOING"] },
-      ekskulId: selected ?? { in: allEkskuls.map((e) => e.id) },
+      activityId: selected ?? { in: allActivities.map((e) => e.id) },
     },
     orderBy: { date: "asc" },
     include: {
@@ -62,7 +62,7 @@ export default async function SessionsPage({
           },
         },
       },
-      ekskul: { select: { id: true, name: true, color: true, icon: true } },
+      activity: { select: { id: true, name: true, color: true, icon: true } },
       attendances: {
         where: {
           userId: session.user.id,
@@ -84,11 +84,11 @@ export default async function SessionsPage({
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{t.sessions.subtitle}</p>
         </div>
-        {allEkskuls.length > 1 && (
-          <EkskulFilter
-            ekskuls={allEkskuls}
+        {allActivities.length > 1 && (
+          <ActivityFilter
+            activities={allActivities}
             selected={selected}
-            allLabel={t.ekskul.filterAll}
+            allLabel={t.activity.filterAll}
           />
         )}
       </div>
@@ -108,7 +108,7 @@ export default async function SessionsPage({
                   <span
                     aria-hidden
                     className="absolute left-0 top-0 h-full w-[3px]"
-                    style={{ backgroundColor: s.ekskul.color }}
+                    style={{ backgroundColor: s.activity.color }}
                   />
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
@@ -116,7 +116,7 @@ export default async function SessionsPage({
                         <h3 className="font-semibold text-foreground">
                           {s.title}
                         </h3>
-                        <EkskulBadge name={s.ekskul.name} color={s.ekskul.color} icon={s.ekskul.icon} />
+                        <ActivityBadge name={s.activity.name} color={s.activity.color} icon={s.activity.icon} />
                         <Badge
                           variant={sessionStatusVariant(s.status)}
                         >

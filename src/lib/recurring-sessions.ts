@@ -23,7 +23,7 @@ import { syncMonthlyAttendances } from '@/lib/payments';
 /** Default title for auto-generated weekly sessions (admin may edit later). */
 const RECURRING_TITLE = 'Sesi Rutin Mingguan';
 
-interface RecurringEkskul {
+interface RecurringActivity {
   id: string;
   name: string;
   recurringDay: number | null;
@@ -47,8 +47,8 @@ function weeklyDatesInMonth(day: number, now: Date): Date[] {
   return dates;
 }
 
-function sessionKey(ekskulId: string, date: Date): string {
-  return `${ekskulId}:${date.toISOString().slice(0, 10)}`;
+function sessionKey(activityId: string, date: Date): string {
+  return `${activityId}:${date.toISOString().slice(0, 10)}`;
 }
 
 /**
@@ -59,7 +59,7 @@ function sessionKey(ekskulId: string, date: Date): string {
  * is not backfilled.
  */
 export async function ensureRecurringSessions(now = new Date()): Promise<void> {
-  const ekskuls: RecurringEkskul[] = await prisma.ekskul.findMany({
+  const activities: RecurringActivity[] = await prisma.activity.findMany({
     where: { isActive: true, allowsMonthly: true, recurringDay: { not: null } },
     select: {
       id: true,
@@ -72,7 +72,7 @@ export async function ensureRecurringSessions(now = new Date()): Promise<void> {
       sessionFee: true,
     },
   });
-  if (ekskuls.length === 0) return;
+  if (activities.length === 0) return;
 
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const nextMonthStart = new Date(
@@ -84,26 +84,26 @@ export async function ensureRecurringSessions(now = new Date()): Promise<void> {
 
   const existing = await prisma.activitySession.findMany({
     where: {
-      ekskulId: { in: ekskuls.map((e) => e.id) },
+      activityId: { in: activities.map((e) => e.id) },
       date: { gte: monthStart, lt: nextMonthStart },
     },
-    select: { ekskulId: true, date: true },
+    select: { activityId: true, date: true },
   });
-  const taken = new Set(existing.map((s) => sessionKey(s.ekskulId, s.date)));
+  const taken = new Set(existing.map((s) => sessionKey(s.activityId, s.date)));
 
-  const creates = ekskuls.flatMap((ekskul) =>
-    weeklyDatesInMonth(ekskul.recurringDay!, now)
+  const creates = activities.flatMap((activity) =>
+    weeklyDatesInMonth(activity.recurringDay!, now)
       .filter((date) => date >= todayUtc)
-      .filter((date) => !taken.has(sessionKey(ekskul.id, date)))
+      .filter((date) => !taken.has(sessionKey(activity.id, date)))
       .map((date) => ({
-        ekskulId: ekskul.id,
+        activityId: activity.id,
         title: RECURRING_TITLE,
         date,
-        startTime: ekskul.recurringStartTime,
-        endTime: ekskul.recurringEndTime,
-        location: ekskul.defaultLocation,
-        maxPlayers: ekskul.maxPlayers,
-        fee: ekskul.sessionFee,
+        startTime: activity.recurringStartTime,
+        endTime: activity.recurringEndTime,
+        location: activity.defaultLocation,
+        maxPlayers: activity.maxPlayers,
+        fee: activity.sessionFee,
         status: SessionStatus.SCHEDULED,
       })),
   );
@@ -116,8 +116,8 @@ export async function ensureRecurringSessions(now = new Date()): Promise<void> {
   // too. Runs even when nothing was created — idempotent, and it also repairs
   // gaps (e.g. dues paid before the sessions existed).
   const { month, year } = currentPeriod(now);
-  for (const ekskul of ekskuls) {
-    await syncMonthlyAttendances({ ekskulId: ekskul.id, month, year });
+  for (const activity of activities) {
+    await syncMonthlyAttendances({ activityId: activity.id, month, year });
   }
 }
 
@@ -133,7 +133,7 @@ export interface SessionQuota {
 
 interface QuotaSession {
   id: string;
-  ekskulId: string;
+  activityId: string;
 }
 
 /**
@@ -156,11 +156,11 @@ export async function getSessionQuotas(
   const quotas = new Map<string, SessionQuota>();
   if (sessions.length === 0) return quotas;
 
-  const ekskulIds = [...new Set(sessions.map((s) => s.ekskulId))];
+  const activityIds = [...new Set(sessions.map((s) => s.activityId))];
   const sessionIds = sessions.map((s) => s.id);
-  const [ekskuls, seats, sessionPayments] = await Promise.all([
-    prisma.ekskul.findMany({
-      where: { id: { in: ekskulIds } },
+  const [activities, seats, sessionPayments] = await Promise.all([
+    prisma.activity.findMany({
+      where: { id: { in: activityIds } },
       select: { id: true, minMembers: true },
     }),
     prisma.attendance.findMany({
@@ -180,14 +180,14 @@ export async function getSessionQuotas(
     }),
   ]);
 
-  const ekskulById = new Map(ekskuls.map((e) => [e.id, e]));
+  const activityById = new Map(activities.map((e) => [e.id, e]));
   const perSessionPayers = new Set(
     sessionPayments.map((p) => `${p.sessionId}:${p.userId}`),
   );
 
   for (const session of sessions) {
-    const ekskul = ekskulById.get(session.ekskulId);
-    if (!ekskul) continue;
+    const activity = activityById.get(session.activityId);
+    if (!activity) continue;
     const attendees = seats.filter((a) => a.sessionId === session.id);
     const perSessionCount = attendees.filter((a) =>
       perSessionPayers.has(`${a.sessionId}:${a.userId}`),
@@ -195,7 +195,7 @@ export async function getSessionQuotas(
     const monthlyCount = attendees.length - perSessionCount;
     const committed =
       monthlyCount + Math.floor(perSessionCount / PER_SESSION_QUOTA_DIVISOR);
-    const needed = ekskul.minMembers;
+    const needed = activity.minMembers;
     quotas.set(session.id, { committed, needed, isMet: committed >= needed });
   }
   return quotas;

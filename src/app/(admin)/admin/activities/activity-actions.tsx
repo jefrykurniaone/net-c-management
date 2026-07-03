@@ -5,9 +5,9 @@ import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import {
-    buildCreateEkskulSchema,
-    type CreateEkskulFormData,
-} from '@/lib/validations/ekskul';
+    buildCreateActivitySchema,
+    type CreateActivityFormData,
+} from '@/lib/validations/activity';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -40,7 +40,7 @@ import { Plus, Pencil } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
-export interface EkskulRow {
+export interface ActivityRow {
     id: string;
     name: string;
     slug: string;
@@ -72,12 +72,12 @@ function slugify(value: string): string {
         .replace(/^-+|-+$/g, '');
 }
 
-function EkskulFormDialog({
-    ekskul,
+function ActivityFormDialog({
+    activity,
     open,
     onOpenChange,
 }: Readonly<{
-    ekskul?: EkskulRow;
+    activity?: ActivityRow;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }>) {
@@ -85,28 +85,28 @@ function EkskulFormDialog({
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const [loading, setLoading] = useState(false);
-    const isEdit = !!ekskul;
+    const isEdit = !!activity;
 
-    const form = useForm<CreateEkskulFormData>({
-        resolver: zodResolver(buildCreateEkskulSchema(t)),
+    const form = useForm<CreateActivityFormData>({
+        resolver: zodResolver(buildCreateActivitySchema(t)),
         defaultValues: {
-            name: ekskul?.name ?? '',
-            slug: ekskul?.slug ?? '',
-            color: ekskul?.color ?? '#16a34a',
-            description: ekskul?.description ?? '',
+            name: activity?.name ?? '',
+            slug: activity?.slug ?? '',
+            color: activity?.color ?? '#16a34a',
+            description: activity?.description ?? '',
             // Empty (undefined) on create so the admin must enter a fee
             // explicitly — a blank submit is rejected, never a silent 0.
-            monthlyFee: ekskul?.monthlyFee,
-            sessionFee: ekskul?.sessionFee,
-            allowsMonthly: ekskul?.allowsMonthly ?? true,
-            allowsPerSession: ekskul?.allowsPerSession ?? false,
-            minMembers: ekskul?.minMembers ?? 0,
-            recurringDay: ekskul?.recurringDay ?? null,
-            recurringStartTime: ekskul?.recurringStartTime ?? '08:00',
-            recurringEndTime: ekskul?.recurringEndTime ?? '10:00',
-            defaultLocation: ekskul?.defaultLocation ?? '',
-            maxPlayers: ekskul?.maxPlayers ?? 20,
-            adminWhatsapp: ekskul?.adminWhatsapp ?? '',
+            monthlyFee: activity?.monthlyFee,
+            sessionFee: activity?.sessionFee,
+            allowsMonthly: activity?.allowsMonthly ?? true,
+            allowsPerSession: activity?.allowsPerSession ?? false,
+            minMembers: activity?.minMembers ?? 0,
+            recurringDay: activity?.recurringDay ?? null,
+            recurringStartTime: activity?.recurringStartTime ?? '08:00',
+            recurringEndTime: activity?.recurringEndTime ?? '10:00',
+            defaultLocation: activity?.defaultLocation ?? '',
+            maxPlayers: activity?.maxPlayers ?? 20,
+            adminWhatsapp: activity?.adminWhatsapp ?? '',
         },
     });
 
@@ -114,16 +114,16 @@ function EkskulFormDialog({
     // `paymentModes` path (not a real form field) so it never misattributes
     // to whichever mode checkbox happens to be named in the path.
     const paymentModesError = (
-        form.formState.errors as FieldErrors<CreateEkskulFormData> & {
+        form.formState.errors as FieldErrors<CreateActivityFormData> & {
             paymentModes?: { message?: string };
         }
     ).paymentModes;
 
-    async function onSubmit(data: CreateEkskulFormData) {
+    async function onSubmit(data: CreateActivityFormData) {
         setLoading(true);
         try {
             const res = await fetch(
-                isEdit ? `/api/ekskul/${ekskul.id}` : '/api/ekskul',
+                isEdit ? `/api/activities/${activity.id}` : '/api/activities',
                 {
                     method: isEdit ? 'PATCH' : 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -135,11 +135,11 @@ function EkskulFormDialog({
                 throw new Error(
                     err.error ??
                         (isEdit
-                            ? t.admin.ekskulUpdateFailed
-                            : t.admin.ekskulCreateFailed),
+                            ? t.admin.activityUpdateFailed
+                            : t.admin.activityCreateFailed),
                 );
             }
-            toast.success(isEdit ? t.admin.ekskulUpdated : t.admin.ekskulCreated);
+            toast.success(isEdit ? t.admin.activityUpdated : t.admin.activityCreated);
             onOpenChange(false);
             form.reset();
             router.refresh();
@@ -155,7 +155,7 @@ function EkskulFormDialog({
             <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>
-                        {isEdit ? t.admin.editEkskul : t.admin.newEkskul}
+                        {isEdit ? t.admin.editActivity : t.admin.newActivity}
                     </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
@@ -167,10 +167,10 @@ function EkskulFormDialog({
                             name='name'
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t.admin.ekskulName}</FormLabel>
+                                    <FormLabel>{t.admin.activityName}</FormLabel>
                                     <FormControl>
                                         <Input
-                                            placeholder={t.admin.ekskulNamePlaceholder}
+                                            placeholder={t.admin.activityNamePlaceholder}
                                             {...field}
                                             onChange={(e) => {
                                                 field.onChange(e);
@@ -193,12 +193,12 @@ function EkskulFormDialog({
                             name='slug'
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t.admin.ekskulSlug}</FormLabel>
+                                    <FormLabel>{t.admin.activitySlug}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder={t.admin.ekskulSlugPlaceholder} {...field} />
+                                        <Input placeholder={t.admin.activitySlugPlaceholder} {...field} />
                                     </FormControl>
                                     <FormDescription>
-                                        {t.admin.ekskulSlugHint}
+                                        {t.admin.activitySlugHint}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -209,7 +209,7 @@ function EkskulFormDialog({
                             name='color'
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t.admin.ekskulColor}</FormLabel>
+                                    <FormLabel>{t.admin.activityColor}</FormLabel>
                                     <div className='flex items-center gap-2'>
                                         <FormControl>
                                             <Input
@@ -235,7 +235,7 @@ function EkskulFormDialog({
                                 name='monthlyFee'
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>{t.admin.ekskulFee}</FormLabel>
+                                        <FormLabel>{t.admin.activityFee}</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type='number'
@@ -264,7 +264,7 @@ function EkskulFormDialog({
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>
-                                            {t.admin.ekskulSessionFee}
+                                            {t.admin.activitySessionFee}
                                         </FormLabel>
                                         <FormControl>
                                             <Input
@@ -291,7 +291,7 @@ function EkskulFormDialog({
                         </div>
                         <FormItem>
                             <div className='text-sm font-medium leading-none'>
-                                {t.admin.ekskulPaymentModes}
+                                {t.admin.activityPaymentModes}
                             </div>
                             <div className='flex gap-6 pt-1'>
                                 <FormField
@@ -308,7 +308,7 @@ function EkskulFormDialog({
                                                 />
                                             </FormControl>
                                             <FormLabel className='text-sm font-normal'>
-                                                {t.admin.ekskulModeMonthly}
+                                                {t.admin.activityModeMonthly}
                                             </FormLabel>
                                         </FormItem>
                                     )}
@@ -327,7 +327,7 @@ function EkskulFormDialog({
                                                 />
                                             </FormControl>
                                             <FormLabel className='text-sm font-normal'>
-                                                {t.admin.ekskulModePerSession}
+                                                {t.admin.activityModePerSession}
                                             </FormLabel>
                                         </FormItem>
                                     )}
@@ -345,7 +345,7 @@ function EkskulFormDialog({
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>
-                                        {t.admin.ekskulMinMembers}
+                                        {t.admin.activityMinMembers}
                                     </FormLabel>
                                     <FormControl>
                                         <Input
@@ -367,7 +367,7 @@ function EkskulFormDialog({
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        {t.admin.ekskulMinMembersHint}
+                                        {t.admin.activityMinMembersHint}
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>
@@ -376,10 +376,10 @@ function EkskulFormDialog({
                         {form.watch('allowsMonthly') && (
                             <div className='space-y-3 rounded-lg border border-border p-3'>
                                 <div className='text-sm font-medium leading-none'>
-                                    {t.admin.ekskulRecurringTitle}
+                                    {t.admin.activityRecurringTitle}
                                 </div>
                                 <p className='text-xs text-muted-foreground'>
-                                    {t.admin.ekskulRecurringHint}
+                                    {t.admin.activityRecurringHint}
                                 </p>
                                 <FormField
                                     control={form.control}
@@ -387,7 +387,7 @@ function EkskulFormDialog({
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>
-                                                {t.admin.ekskulRecurringDay}
+                                                {t.admin.activityRecurringDay}
                                             </FormLabel>
                                             <Select
                                                 value={
@@ -416,7 +416,7 @@ function EkskulFormDialog({
                                                         value={RECURRING_OFF}>
                                                         {
                                                             t.admin
-                                                                .ekskulRecurringOff
+                                                                .activityRecurringOff
                                                         }
                                                     </SelectItem>
                                                     {WEEKDAYS.map((d) => (
@@ -480,7 +480,7 @@ function EkskulFormDialog({
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>
-                                        {t.admin.ekskulMaxPlayers}
+                                        {t.admin.activityMaxPlayers}
                                     </FormLabel>
                                     <FormControl>
                                         <Input
@@ -510,7 +510,7 @@ function EkskulFormDialog({
                             name='defaultLocation'
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t.admin.ekskulLocation}</FormLabel>
+                                    <FormLabel>{t.admin.activityLocation}</FormLabel>
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
@@ -523,7 +523,7 @@ function EkskulFormDialog({
                             name='adminWhatsapp'
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t.admin.ekskulWhatsapp}</FormLabel>
+                                    <FormLabel>{t.admin.activityWhatsapp}</FormLabel>
                                     <FormControl>
                                         <Input placeholder='628...' {...field} />
                                     </FormControl>
@@ -547,7 +547,7 @@ function EkskulFormDialog({
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>
-                                        {t.admin.ekskulDescription}
+                                        {t.admin.activityDescription}
                                     </FormLabel>
                                     <FormControl>
                                         <Textarea rows={2} {...field} />
@@ -561,8 +561,8 @@ function EkskulFormDialog({
                             className='w-full'
                             loading={loading}>
                             {isEdit
-                                ? t.admin.updateEkskulBtn
-                                : t.admin.createEkskulBtn}
+                                ? t.admin.updateActivityBtn
+                                : t.admin.createActivityBtn}
                         </Button>
                     </form>
                 </Form>
@@ -571,7 +571,7 @@ function EkskulFormDialog({
     );
 }
 
-export function NewEkskulButton() {
+export function NewActivityButton() {
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const [open, setOpen] = useState(false);
@@ -580,14 +580,14 @@ export function NewEkskulButton() {
         <>
             <Button className='gap-2' onClick={() => setOpen(true)}>
                 <Plus className='w-4 h-4' />
-                {t.admin.newEkskul}
+                {t.admin.newActivity}
             </Button>
-            {open && <EkskulFormDialog open={open} onOpenChange={setOpen} />}
+            {open && <ActivityFormDialog open={open} onOpenChange={setOpen} />}
         </>
     );
 }
 
-export function EkskulActions({ ekskul }: Readonly<{ ekskul: EkskulRow }>) {
+export function ActivityActions({ activity }: Readonly<{ activity: ActivityRow }>) {
     const router = useRouter();
     const { locale } = useLocale();
     const t = getDictionary(locale);
@@ -595,23 +595,23 @@ export function EkskulActions({ ekskul }: Readonly<{ ekskul: EkskulRow }>) {
     const [loading, setLoading] = useState(false);
 
     async function toggleActive() {
-        const confirmMsg = ekskul.isActive
-            ? t.admin.confirmDeactivateEkskul
-            : t.admin.confirmActivateEkskul;
+        const confirmMsg = activity.isActive
+            ? t.admin.confirmDeactivateActivity
+            : t.admin.confirmActivateActivity;
         if (!confirm(confirmMsg)) return;
         setLoading(true);
         try {
-            const res = await fetch(`/api/ekskul/${ekskul.id}`, {
+            const res = await fetch(`/api/activities/${activity.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isActive: !ekskul.isActive }),
+                body: JSON.stringify({ isActive: !activity.isActive }),
             });
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.error ?? t.admin.ekskulUpdateFailed);
+                throw new Error(err.error ?? t.admin.activityUpdateFailed);
             }
             toast.success(
-                ekskul.isActive ? t.admin.ekskulDeleted : t.admin.ekskulUpdated,
+                activity.isActive ? t.admin.activityDeleted : t.admin.activityUpdated,
             );
             router.refresh();
         } catch (err) {
@@ -637,11 +637,11 @@ export function EkskulActions({ ekskul }: Readonly<{ ekskul: EkskulRow }>) {
                 className='h-7 text-xs'
                 loading={loading}
                 onClick={toggleActive}>
-                {ekskul.isActive ? t.admin.deactivate : t.admin.activate}
+                {activity.isActive ? t.admin.deactivate : t.admin.activate}
             </Button>
             {editOpen && (
-                <EkskulFormDialog
-                    ekskul={ekskul}
+                <ActivityFormDialog
+                    activity={activity}
                     open={editOpen}
                     onOpenChange={setEditOpen}
                 />

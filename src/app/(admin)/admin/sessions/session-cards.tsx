@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import type { Locale as DateFnsLocale } from "date-fns";
 import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { ActivityBadge } from "@/components/activity/activity-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
 import { sessionStatusVariant } from "@/lib/utils";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
@@ -12,7 +12,7 @@ import type { ActivitySession } from "@prisma/client";
 
 type SessionRow = ActivitySession & {
   _count: { attendances: number };
-  ekskul: { id: string; name: string; color: string; icon: string | null };
+  activity: { id: string; name: string; color: string; icon: string | null };
 };
 
 function SessionCard({
@@ -21,10 +21,10 @@ function SessionCard({
   dateLocale,
 }: Readonly<{ s: SessionRow; t: Dictionary; dateLocale: DateFnsLocale }>) {
   return (
-    <MobileCard accentColor={s.ekskul.color}>
+    <MobileCard accentColor={s.activity.color}>
       <div className="min-w-0 space-y-1">
         <p className="truncate font-medium text-foreground">{s.title}</p>
-        <EkskulBadge name={s.ekskul.name} color={s.ekskul.color} icon={s.ekskul.icon} />
+        <ActivityBadge name={s.activity.name} color={s.activity.color} icon={s.activity.icon} />
       </div>
       <CardField label={t.admin.colDate}>
         <div>
