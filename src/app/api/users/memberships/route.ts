@@ -18,6 +18,9 @@ type ActivityRow = {
     allowsMonthly: boolean;
     allowsPerSession: boolean;
     adminWhatsapp: string;
+    bankName: string;
+    bankAccountNumber: string;
+    bankAccountHolder: string;
 };
 
 // Shape each Activity for the profile "Your activities" card: identity + fees +
@@ -70,6 +73,9 @@ export async function GET() {
                 allowsMonthly: true,
                 allowsPerSession: true,
                 adminWhatsapp: true,
+                bankName: true,
+                bankAccountNumber: true,
+                bankAccountHolder: true,
             },
         }),
         prisma.membership.findMany({

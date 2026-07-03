@@ -138,6 +138,11 @@ model Activity {
   defaultLocation String   @default("")
   maxPlayers      Int      @default(20)
   adminWhatsapp   String   @default("")
+  // Bank account members transfer dues/fees to. Shown (with a copy button)
+  // on the payment-upload pages; empty strings mean "not configured yet".
+  bankName          String @default("")
+  bankAccountNumber String @default("")
+  bankAccountHolder String @default("")
   logoUrl         String   @default("")
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())

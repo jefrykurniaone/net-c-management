@@ -66,6 +66,15 @@ function activityObjectSchema(t: Dictionary) {
             .min(2, t.validation.sessionMaxPlayersMin)
             .max(100, t.validation.sessionMaxPlayersMax),
         adminWhatsapp: z.string().max(20).optional(),
+        // Bank account shown to members on the payment-upload pages. All
+        // optional — an activity without one simply shows no transfer info.
+        bankName: z.string().max(50).optional(),
+        bankAccountNumber: z
+            .string()
+            .max(30)
+            .regex(/^\d*$/, t.validation.bankAccountNumberFormat)
+            .optional(),
+        bankAccountHolder: z.string().max(100).optional(),
     });
 }
 

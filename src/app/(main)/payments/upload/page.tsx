@@ -20,21 +20,22 @@ import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { EmptyState } from '@/components/ui/empty-state';
+import {
+    BankAccountInfo,
+    type BankAccount,
+} from '@/components/payments/bank-account-info';
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
 
 /** An Activity the member is billed monthly for this period. */
-interface MonthlyActivity {
+interface MonthlyActivity extends BankAccount {
     id: string;
     name: string;
     monthlyFee: number;
 }
 
-type MembershipRow = {
-    id: string;
-    name: string;
-    monthlyFee: number;
+type MembershipRow = MonthlyActivity & {
     joined: boolean;
     effectiveMode: PaymentMode | null;
 };
@@ -64,7 +65,14 @@ export default function UploadPaymentPage() {
             .then((data: { activities?: MembershipRow[] }) => {
                 const list = (data.activities ?? [])
                     .filter((e) => e.joined && e.effectiveMode === 'MONTHLY')
-                    .map((e) => ({ id: e.id, name: e.name, monthlyFee: e.monthlyFee }));
+                    .map((e) => ({
+                        id: e.id,
+                        name: e.name,
+                        monthlyFee: e.monthlyFee,
+                        bankName: e.bankName,
+                        bankAccountNumber: e.bankAccountNumber,
+                        bankAccountHolder: e.bankAccountHolder,
+                    }));
                 setActivities(list);
                 if (list.length === 1) setActivityId(list[0].id);
                 setStatus('loaded');
@@ -218,6 +226,9 @@ export default function UploadPaymentPage() {
                             </p>
                         )}
                     </div>
+
+                    {/* Where to transfer — the activity's configured account */}
+                    <BankAccountInfo account={chosen ?? null} />
 
                     {/* File Upload */}
                     <div className='space-y-2'>
