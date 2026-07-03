@@ -112,9 +112,11 @@ model User {
   memberships Membership[]
 }
 
-// An extracurricular activity (ekskul) — e.g. Badminton, Music. Each piece of
-// activity data (sessions, payments, memberships) is scoped to one Ekskul.
-model Ekskul {
+// A community activity — e.g. Badminton, Yoga, Futsal. Each piece of
+// activity data (sessions, payments, memberships) is scoped to one Activity.
+// Mapped to the legacy "Ekskul" table so no DB migration (and no RLS policy
+// change) is needed for the rename.
+model Activity {
   id              String   @id @default(cuid())
   name            String
   slug            String   @unique // e.g. "badminton"
@@ -136,6 +138,11 @@ model Ekskul {
   defaultLocation String   @default("")
   maxPlayers      Int      @default(20)
   adminWhatsapp   String   @default("")
+  // Bank account members transfer dues/fees to. Shown (with a copy button)
+  // on the payment-upload pages; empty strings mean "not configured yet".
+  bankName          String @default("")
+  bankAccountNumber String @default("")
+  bankAccountHolder String @default("")
   logoUrl         String   @default("")
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
@@ -144,15 +151,18 @@ model Ekskul {
   memberships Membership[]
   sessions    ActivitySession[]
   payments    Payment[]
+
+  @@map("Ekskul")
 }
 
-// Many-to-many join between User and Ekskul. A member can join several ekskul.
+// Many-to-many join between User and Activity. A member can join several
+// activities. The activityId column keeps its legacy "ekskulId" name via @map.
 model Membership {
-  id       String   @id @default(cuid())
-  userId   String
-  ekskulId String
-  isActive Boolean  @default(true)
-  joinedAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  userId     String
+  activityId String   @map("ekskulId")
+  isActive   Boolean  @default(true)
+  joinedAt   DateTime @default(now())
 
   // Payment mode is owned by the Membership and period-resolved (AD-7). A null
   // paymentMode is the explicit "unselected" state (the member has not chosen
@@ -165,14 +175,14 @@ model Membership {
   pendingMode          PaymentMode?
   pendingEffectiveFrom Int?
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ekskul Ekskul @relation(fields: [ekskulId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, ekskulId])
-  @@index([ekskulId])
+  @@unique([userId, activityId])
+  @@index([activityId])
 }
 
-// A generic activity session scoped to an Ekskul. Named ActivitySession (not
+// A generic activity session scoped to an Activity. Named ActivitySession (not
 // Session) to avoid colliding with the NextAuth `Session` model.
 model ActivitySession {
   id          String        @id @default(cuid())
@@ -185,15 +195,15 @@ model ActivitySession {
   fee         Int           @default(0) // iuran per sesi, dalam Rupiah
   notes       String?       @db.Text
   status      SessionStatus @default(SCHEDULED)
-  ekskulId    String
+  activityId  String        @map("ekskulId")
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  ekskul      Ekskul       @relation(fields: [ekskulId], references: [id])
+  activity    Activity     @relation(fields: [activityId], references: [id])
   attendances Attendance[]
   payments    Payment[]
 
-  @@index([ekskulId])
+  @@index([activityId])
 }
 
 model Attendance {
@@ -214,13 +224,13 @@ model Attendance {
 model Payment {
   id          String        @id @default(cuid())
   userId      String
-  ekskulId    String
+  activityId  String        @map("ekskulId")
   // What this row bills for. MONTHLY (sessionId = null) is one row per
   // member/Activity/month/year; SESSION carries a sessionId and is one row per
   // member/ActivitySession (AD-4). Defaults to MONTHLY so pre-existing rows and
   // the monthly proof-upload flow keep working unchanged (NFR-8).
   type        PaymentType   @default(MONTHLY)
-  // Set only on SESSION rows. Its month/year/ekskulId are derived server-side
+  // Set only on SESSION rows. Its month/year/activityId are derived server-side
   // from the ActivitySession (AD-4). Restrict so a paid session cannot be
   // silently deleted out from under a payment record.
   sessionId   String?
@@ -236,16 +246,16 @@ model Payment {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
-  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ekskul  Ekskul           @relation(fields: [ekskulId], references: [id])
-  session ActivitySession? @relation(fields: [sessionId], references: [id], onDelete: Restrict)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity         @relation(fields: [activityId], references: [id])
+  session  ActivitySession? @relation(fields: [sessionId], references: [id], onDelete: Restrict)
 
   // SESSION uniqueness: one payment per member per session. NULLs are distinct
   // in Postgres, so MONTHLY rows (sessionId = null) are unaffected here — their
   // uniqueness is enforced by a PARTIAL unique index applied via raw SQL (see
   // prisma/payment-monthly-unique.sql), which `db push` cannot express (AD-5).
   @@unique([userId, sessionId])
-  @@index([ekskulId])
+  @@index([activityId])
   @@index([sessionId])
 }
 

@@ -5,25 +5,25 @@ import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
+import { ActivityBadge } from "@/components/activity/activity-badge";
 import { CreditCard, Download } from "lucide-react";
 import { PaymentActions } from "./payment-actions";
 import { PaymentCards } from "./payment-cards";
 import type { Payment } from "@prisma/client";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getEkskuls } from "@/lib/ekskul";
+import { getActivities } from "@/lib/activity";
 import { paymentStatusVariant, isAdminRole } from "@/lib/utils";
 
 type PaymentRow = Payment & {
   user: { name: string | null; email: string | null };
-  ekskul: { id: string; name: string; color: string; icon: string | null };
+  activity: { id: string; name: string; color: string; icon: string | null };
 };
 
 export default async function AdminPaymentsPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ month?: string; year?: string; status?: string; ekskulId?: string }>;
+  searchParams: Promise<{ month?: string; year?: string; status?: string; activityId?: string }>;
 }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
@@ -35,28 +35,28 @@ export default async function AdminPaymentsPage({
   const filterMonth = sp.month ? Number.parseInt(sp.month) : undefined;
   const filterYear = sp.year ? Number.parseInt(sp.year) : undefined;
   const filterStatus = sp.status as "PENDING" | "CONFIRMED" | "REJECTED" | undefined;
-  const filterEkskul = sp.ekskulId || undefined;
+  const filterActivity = sp.activityId || undefined;
 
   const now = new Date();
   const currentMonth = filterMonth ?? now.getMonth() + 1;
   const currentYear = filterYear ?? now.getFullYear();
 
-  const [payments, ekskuls] = await Promise.all([
+  const [payments, activities] = await Promise.all([
     prisma.payment.findMany({
       where: {
         ...(filterMonth ? { month: filterMonth } : {}),
         ...(filterYear ? { year: filterYear } : {}),
         ...(filterStatus ? { status: filterStatus } : {}),
-        ...(filterEkskul ? { ekskulId: filterEkskul } : {}),
+        ...(filterActivity ? { activityId: filterActivity } : {}),
       },
       orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
       take: 100,
       include: {
         user: { select: { name: true, email: true } },
-        ekskul: { select: { id: true, name: true, color: true, icon: true } },
+        activity: { select: { id: true, name: true, color: true, icon: true } },
       },
     }),
-    getEkskuls(),
+    getActivities(),
   ]);
 
   return (
@@ -70,7 +70,7 @@ export default async function AdminPaymentsPage({
           <p className="text-sm text-muted-foreground mt-1">{t.admin.paymentsSubtitle}</p>
         </div>
         <a
-          href={`/api/payments/export?month=${currentMonth}&year=${currentYear}${filterEkskul ? `&ekskulId=${filterEkskul}` : ""}`}
+          href={`/api/payments/export?month=${currentMonth}&year=${currentYear}${filterActivity ? `&activityId=${filterActivity}` : ""}`}
           download
           className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline border border-border rounded-lg px-3 py-2"
         >
@@ -116,12 +116,12 @@ export default async function AdminPaymentsPage({
           <option value="REJECTED">{t.paymentStatus.REJECTED}</option>
         </select>
         <select
-          name="ekskulId"
-          defaultValue={filterEkskul ?? ""}
+          name="activityId"
+          defaultValue={filterActivity ?? ""}
           className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
         >
-          <option value="">{t.ekskul.filterAll}</option>
-          {ekskuls.map((e) => (
+          <option value="">{t.activity.filterAll}</option>
+          {activities.map((e) => (
             <option key={e.id} value={e.id}>
               {e.name}
             </option>
@@ -144,7 +144,7 @@ export default async function AdminPaymentsPage({
             <thead>
               <tr className="bg-muted border-b border-border">
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colMember}</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.ekskul.label}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.activity.label}</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colMonth}</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t.admin.colAmount}</th>
                 <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colStatus}</th>
@@ -163,7 +163,7 @@ export default async function AdminPaymentsPage({
                       <span
                         aria-hidden
                         className="absolute left-0 top-0 h-full w-[3px]"
-                        style={{ backgroundColor: p.ekskul.color }}
+                        style={{ backgroundColor: p.activity.color }}
                       />
                       <p className="font-medium text-foreground">
                         {p.user.name ?? p.user.email}
@@ -171,7 +171,7 @@ export default async function AdminPaymentsPage({
                       <p className="text-xs text-muted-foreground">{p.user.email}</p>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <EkskulBadge name={p.ekskul.name} color={p.ekskul.color} icon={p.ekskul.icon} />
+                      <ActivityBadge name={p.activity.name} color={p.activity.color} icon={p.activity.icon} />
                     </td>
                     <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                       {t.months[p.month]} {p.year}

@@ -1,5 +1,5 @@
-/** Shape returned by GET /api/ekskul — used to populate selects and filters. */
-export interface EkskulOption {
+/** Shape returned by GET /api/activities — used to populate selects and filters. */
+export interface ActivityOption {
     id: string;
     name: string;
     slug: string;

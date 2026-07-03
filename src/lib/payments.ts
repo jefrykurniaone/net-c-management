@@ -13,7 +13,7 @@ import { resolvePaymentMode, currentPeriod, toPeriodKey } from '@/lib/payment-mo
 /**
  * Server-only payment writes (Story 3.2, AD-5).
  *
- * MONTHLY uniqueness is a PARTIAL unique index — `(userId, ekskulId, month,
+ * MONTHLY uniqueness is a PARTIAL unique index — `(userId, activityId, month,
  * year) WHERE type = 'MONTHLY'` (see prisma/payment-monthly-unique.sql).
  * `prisma.payment.upsert` cannot target a partial index, so the monthly
  * insert-or-update is done by hand here: update-first, then create, with the
@@ -30,7 +30,7 @@ const MIN_MONTHLY_FEE = 1;
 /** Identity + billing period a monthly charge is resolved for. */
 export interface MonthlyOwedInput {
   userId: string;
-  ekskulId: string;
+  activityId: string;
   month: number;
   year: number;
 }
@@ -52,11 +52,11 @@ export type MonthlyOwed =
  * from the client (AD-2). A per-session/unselected period raises no charge.
  */
 export async function resolveMonthlyOwed(input: MonthlyOwedInput): Promise<MonthlyOwed> {
-  const { userId, ekskulId, month, year } = input;
+  const { userId, activityId, month, year } = input;
 
-  const [membership, ekskul] = await Promise.all([
+  const [membership, activity] = await Promise.all([
     prisma.membership.findUnique({
-      where: { userId_ekskulId: { userId, ekskulId } },
+      where: { userId_activityId: { userId, activityId } },
       select: {
         isActive: true,
         paymentMode: true,
@@ -65,31 +65,31 @@ export async function resolveMonthlyOwed(input: MonthlyOwedInput): Promise<Month
         pendingEffectiveFrom: true,
       },
     }),
-    prisma.ekskul.findUnique({
-      where: { id: ekskulId, isActive: true },
+    prisma.activity.findUnique({
+      where: { id: activityId, isActive: true },
       select: { allowsMonthly: true, allowsPerSession: true, monthlyFee: true },
     }),
   ]);
 
   // Defensive: the caller already 403s non-members, but never assume. A missing
-  // or deactivated Activity resolves the same as `!ekskul` here.
-  if (!membership?.isActive || !ekskul) return { ok: false, reason: 'notMonthly' };
+  // or deactivated Activity resolves the same as `!activity` here.
+  if (!membership?.isActive || !activity) return { ok: false, reason: 'notMonthly' };
 
   const offered = {
-    allowsMonthly: ekskul.allowsMonthly,
-    allowsPerSession: ekskul.allowsPerSession,
+    allowsMonthly: activity.allowsMonthly,
+    allowsPerSession: activity.allowsPerSession,
   };
   const effective = resolvePaymentMode(membership, offered, month, year);
   if (effective !== PaymentMode.MONTHLY) return { ok: false, reason: 'notMonthly' };
-  if (ekskul.monthlyFee < MIN_MONTHLY_FEE) return { ok: false, reason: 'noFee' };
+  if (activity.monthlyFee < MIN_MONTHLY_FEE) return { ok: false, reason: 'noFee' };
 
-  return { ok: true, amount: ekskul.monthlyFee };
+  return { ok: true, amount: activity.monthlyFee };
 }
 
 /** The fields a monthly proof-upload writes. `amount` snapshots the fee. */
 export interface MonthlyPaymentInput {
   userId: string;
-  ekskulId: string;
+  activityId: string;
   amount: number;
   month: number;
   year: number;
@@ -103,8 +103,8 @@ export interface MonthlyPaymentInput {
  * confirmation, matching the pre-migration upsert behavior (NFR-8).
  */
 export async function upsertMonthlyPayment(input: MonthlyPaymentInput) {
-  const { userId, ekskulId, amount, month, year, proofUrl, proofPath } = input;
-  const filter = { userId, ekskulId, month, year, type: PaymentType.MONTHLY };
+  const { userId, activityId, amount, month, year, proofUrl, proofPath } = input;
+  const filter = { userId, activityId, month, year, type: PaymentType.MONTHLY };
   const mutable = {
     amount,
     status: PaymentStatus.PENDING,
@@ -121,7 +121,7 @@ export async function upsertMonthlyPayment(input: MonthlyPaymentInput) {
 
   try {
     return await prisma.payment.create({
-      data: { userId, ekskulId, month, year, type: PaymentType.MONTHLY, ...mutable },
+      data: { userId, activityId, month, year, type: PaymentType.MONTHLY, ...mutable },
     });
   } catch (error) {
     // A concurrent create won the race and the partial unique index rejected
@@ -175,7 +175,7 @@ export class SessionAlreadyConfirmedError extends Error {
 /** The Session fields the register transaction needs (all server-sourced). */
 export interface SessionForCharge {
   id: string;
-  ekskulId: string;
+  activityId: string;
   fee: number;
   date: Date;
   maxPlayers: number;
@@ -205,13 +205,13 @@ export type SessionCharge =
  */
 export async function adoptModeIfUnselected(
   userId: string,
-  ekskulId: string,
+  activityId: string,
   mode: PaymentMode,
   now = new Date(),
 ): Promise<void> {
-  const [membership, ekskul] = await Promise.all([
+  const [membership, activity] = await Promise.all([
     prisma.membership.findUnique({
-      where: { userId_ekskulId: { userId, ekskulId } },
+      where: { userId_activityId: { userId, activityId } },
       select: {
         isActive: true,
         paymentMode: true,
@@ -220,26 +220,26 @@ export async function adoptModeIfUnselected(
         pendingEffectiveFrom: true,
       },
     }),
-    prisma.ekskul.findUnique({
-      where: { id: ekskulId, isActive: true },
+    prisma.activity.findUnique({
+      where: { id: activityId, isActive: true },
       select: { allowsMonthly: true, allowsPerSession: true },
     }),
   ]);
-  if (!membership?.isActive || !ekskul) return;
+  if (!membership?.isActive || !activity) return;
 
   const offersMode =
-    mode === PaymentMode.MONTHLY ? ekskul.allowsMonthly : ekskul.allowsPerSession;
+    mode === PaymentMode.MONTHLY ? activity.allowsMonthly : activity.allowsPerSession;
   if (!offersMode) return;
 
   const { month, year } = currentPeriod(now);
   const offered = {
-    allowsMonthly: ekskul.allowsMonthly,
-    allowsPerSession: ekskul.allowsPerSession,
+    allowsMonthly: activity.allowsMonthly,
+    allowsPerSession: activity.allowsPerSession,
   };
   if (resolvePaymentMode(membership, offered, month, year) !== null) return;
 
   await prisma.membership.update({
-    where: { userId_ekskulId: { userId, ekskulId } },
+    where: { userId_activityId: { userId, activityId } },
     data: {
       paymentMode: mode,
       effectiveFrom: toPeriodKey(month, year),
@@ -266,15 +266,15 @@ export async function resolveSessionCharge(input: {
     where: { id: sessionId },
     select: {
       id: true,
-      ekskulId: true,
+      activityId: true,
       fee: true,
       date: true,
       maxPlayers: true,
       status: true,
-      ekskul: { select: { isActive: true, allowsMonthly: true, allowsPerSession: true } },
+      activity: { select: { isActive: true, allowsMonthly: true, allowsPerSession: true } },
     },
   });
-  if (!session?.ekskul.isActive) return { ok: false, reason: 'notFound' };
+  if (!session?.activity.isActive) return { ok: false, reason: 'notFound' };
   if (
     session.status === SessionStatus.CANCELLED ||
     session.status === SessionStatus.COMPLETED
@@ -283,7 +283,7 @@ export async function resolveSessionCharge(input: {
   }
 
   const membership = await prisma.membership.findUnique({
-    where: { userId_ekskulId: { userId, ekskulId: session.ekskulId } },
+    where: { userId_activityId: { userId, activityId: session.activityId } },
     select: {
       isActive: true,
       paymentMode: true,
@@ -296,16 +296,16 @@ export async function resolveSessionCharge(input: {
 
   const { month, year } = currentPeriod(session.date);
   const offered = {
-    allowsMonthly: session.ekskul.allowsMonthly,
-    allowsPerSession: session.ekskul.allowsPerSession,
+    allowsMonthly: session.activity.allowsMonthly,
+    allowsPerSession: session.activity.allowsPerSession,
   };
   if (resolvePaymentMode(membership, offered, month, year) !== PaymentMode.PER_SESSION) {
     return { ok: false, reason: 'notPerSession' };
   }
   if (session.fee < MIN_SESSION_FEE) return { ok: false, reason: 'noFee' };
 
-  const { id, ekskulId, fee, date, maxPlayers } = session;
-  return { ok: true, amount: fee, month, year, session: { id, ekskulId, fee, date, maxPlayers } };
+  const { id, activityId, fee, date, maxPlayers } = session;
+  return { ok: true, amount: fee, month, year, session: { id, activityId, fee, date, maxPlayers } };
 }
 
 /** The fields the atomic per-session register writes. `amount` snapshots the fee. */
@@ -361,7 +361,7 @@ export async function registerAndPaySession(input: SessionRegistrationInput) {
       where: key,
       create: {
         userId,
-        ekskulId: session.ekskulId,
+        activityId: session.activityId,
         type: PaymentType.SESSION,
         sessionId: session.id,
         amount,
@@ -439,13 +439,13 @@ export async function releaseSessionSeat(input: {
 
     const session = await tx.activitySession.findUniqueOrThrow({
       where: { id: sessionId },
-      select: { ekskulId: true, date: true },
+      select: { activityId: true, date: true },
     });
     const { month, year } = currentPeriod(session.date);
     const monthlyPaid = await tx.payment.findFirst({
       where: {
         userId,
-        ekskulId: session.ekskulId,
+        activityId: session.activityId,
         type: PaymentType.MONTHLY,
         month,
         year,
@@ -475,14 +475,14 @@ const LIVE_PAYMENT_STATUSES: PaymentStatus[] = [
 /** Whether the member has uploaded/confirmed this period's monthly dues. */
 export async function hasLiveMonthlyPayment(input: {
   userId: string;
-  ekskulId: string;
+  activityId: string;
   month: number;
   year: number;
 }): Promise<boolean> {
   const payment = await prisma.payment.findFirst({
     where: {
       userId: input.userId,
-      ekskulId: input.ekskulId,
+      activityId: input.activityId,
       type: PaymentType.MONTHLY,
       month: input.month,
       year: input.year,
@@ -503,13 +503,13 @@ export async function hasLiveMonthlyPayment(input: {
  */
 export async function isFreeRegisterAllowed(input: {
   userId: string;
-  session: { ekskulId: string; date: Date; fee: number };
+  session: { activityId: string; date: Date; fee: number };
 }): Promise<boolean> {
   const { userId, session } = input;
 
-  const [membership, ekskul] = await Promise.all([
+  const [membership, activity] = await Promise.all([
     prisma.membership.findUnique({
-      where: { userId_ekskulId: { userId, ekskulId: session.ekskulId } },
+      where: { userId_activityId: { userId, activityId: session.activityId } },
       select: {
         isActive: true,
         paymentMode: true,
@@ -518,23 +518,23 @@ export async function isFreeRegisterAllowed(input: {
         pendingEffectiveFrom: true,
       },
     }),
-    prisma.ekskul.findUnique({
-      where: { id: session.ekskulId, isActive: true },
+    prisma.activity.findUnique({
+      where: { id: session.activityId, isActive: true },
       select: { allowsMonthly: true, allowsPerSession: true },
     }),
   ]);
-  if (!membership?.isActive || !ekskul) return false;
+  if (!membership?.isActive || !activity) return false;
 
   // A free session has nothing to charge — any member may register, regardless
   // of mode, so a PER_SESSION member on a fee-0 session isn't left with no path.
   if (session.fee < MIN_SESSION_FEE) return true;
 
   const { month, year } = currentPeriod(session.date);
-  const offered = { allowsMonthly: ekskul.allowsMonthly, allowsPerSession: ekskul.allowsPerSession };
+  const offered = { allowsMonthly: activity.allowsMonthly, allowsPerSession: activity.allowsPerSession };
   if (resolvePaymentMode(membership, offered, month, year) !== PaymentMode.MONTHLY) {
     return false;
   }
-  return hasLiveMonthlyPayment({ userId, ekskulId: session.ekskulId, month, year });
+  return hasLiveMonthlyPayment({ userId, activityId: session.activityId, month, year });
 }
 
 /**
@@ -546,23 +546,23 @@ export async function isFreeRegisterAllowed(input: {
  * only SCHEDULED/ONGOING sessions are touched.
  */
 export async function syncMonthlyAttendances(input: {
-  ekskulId: string;
+  activityId: string;
   month: number;
   year: number;
   /** Limit to these members (e.g. the one who just paid); omit for all. */
   userIds?: string[];
 }): Promise<void> {
-  const { ekskulId, month, year, userIds } = input;
+  const { activityId, month, year, userIds } = input;
 
-  const ekskul = await prisma.ekskul.findUnique({
-    where: { id: ekskulId, isActive: true },
+  const activity = await prisma.activity.findUnique({
+    where: { id: activityId, isActive: true },
     select: { allowsMonthly: true, allowsPerSession: true },
   });
-  if (!ekskul?.allowsMonthly) return;
+  if (!activity?.allowsMonthly) return;
 
   const memberships = await prisma.membership.findMany({
     where: {
-      ekskulId,
+      activityId,
       isActive: true,
       ...(userIds ? { userId: { in: userIds } } : {}),
     },
@@ -575,8 +575,8 @@ export async function syncMonthlyAttendances(input: {
     },
   });
   const offered = {
-    allowsMonthly: ekskul.allowsMonthly,
-    allowsPerSession: ekskul.allowsPerSession,
+    allowsMonthly: activity.allowsMonthly,
+    allowsPerSession: activity.allowsPerSession,
   };
   const monthlyIds = memberships
     .filter((m) => resolvePaymentMode(m, offered, month, year) === PaymentMode.MONTHLY)
@@ -585,7 +585,7 @@ export async function syncMonthlyAttendances(input: {
 
   const paid = await prisma.payment.findMany({
     where: {
-      ekskulId,
+      activityId,
       type: PaymentType.MONTHLY,
       month,
       year,
@@ -601,7 +601,7 @@ export async function syncMonthlyAttendances(input: {
   const nextMonthStart = new Date(Date.UTC(year, month, 1));
   const sessions = await prisma.activitySession.findMany({
     where: {
-      ekskulId,
+      activityId,
       date: { gte: monthStart, lt: nextMonthStart },
       status: { in: [SessionStatus.SCHEDULED, SessionStatus.ONGOING] },
     },

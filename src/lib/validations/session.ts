@@ -9,7 +9,7 @@ const sessionStatusValues = Object.values(SessionStatus) as [
 
 export function buildCreateSessionSchema(t: Dictionary) {
     return z.object({
-        ekskulId: z.string().min(1, t.validation.ekskulRequired),
+        activityId: z.string().min(1, t.validation.activityRequired),
         title: z
             .string()
             .min(3, t.validation.sessionTitleMin)
@@ -26,11 +26,14 @@ export function buildCreateSessionSchema(t: Dictionary) {
             .min(3, t.validation.sessionLocationMin)
             .max(200, t.validation.sessionLocationMax),
         maxPlayers: z
-            .number()
+            .number({ error: t.validation.maxPlayersRequired })
             .int()
             .min(2, t.validation.sessionMaxPlayersMin)
             .max(100, t.validation.sessionMaxPlayersMax),
-        fee: z.number().int().min(0, t.validation.sessionFeeMin),
+        fee: z
+            .number({ error: t.validation.feeRequired })
+            .int()
+            .min(0, t.validation.sessionFeeMin),
         notes: z.string().max(1000).optional(),
     });
 }

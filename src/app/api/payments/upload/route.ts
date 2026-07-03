@@ -13,7 +13,7 @@ import {
     SessionAlreadyConfirmedError,
     type SessionCharge,
 } from '@/lib/payments';
-import { ensureMembership } from '@/lib/ekskul';
+import { ensureMembership } from '@/lib/activity';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { NextResponse } from 'next/server';
@@ -76,19 +76,19 @@ function validateProofFile(file: File | null, t: Dictionary): NextResponse | nul
 // ─── Monthly flow (Story 3.4 — unchanged behavior) ───────────────────────────
 async function handleMonthlyUpload({ userId, formData, t }: UploadCtx) {
     const file = formData.get('file') as File | null;
-    const ekskulId = (formData.get('ekskulId') as string | null) ?? '';
+    const activityId = (formData.get('activityId') as string | null) ?? '';
     const month = Number.parseInt(formData.get('month') as string);
     const year = Number.parseInt(formData.get('year') as string);
 
-    if (!ekskulId) {
-        return NextResponse.json({ error: t.validation.ekskulRequired }, { status: 400 });
+    if (!activityId) {
+        return NextResponse.json({ error: t.validation.activityRequired }, { status: 400 });
     }
     // Paying monthly dues implies joining the Activity (join-on-pay) and is
     // itself the MONTHLY mode choice for a member who hasn't selected one.
-    if (!(await ensureMembership(userId, ekskulId))) {
-        return NextResponse.json({ error: t.ekskul.notMember }, { status: 403 });
+    if (!(await ensureMembership(userId, activityId))) {
+        return NextResponse.json({ error: t.activity.notMember }, { status: 403 });
     }
-    await adoptModeIfUnselected(userId, ekskulId, 'MONTHLY');
+    await adoptModeIfUnselected(userId, activityId, 'MONTHLY');
     const maxYear = new Date().getFullYear() + MAX_FUTURE_YEARS;
     if (!month || month < MIN_MONTH || month > MAX_MONTH || !year || year < MIN_PAYMENT_YEAR || year > maxYear) {
         return NextResponse.json({ error: t.validation.monthYearInvalid }, { status: 400 });
@@ -96,7 +96,7 @@ async function handleMonthlyUpload({ userId, formData, t }: UploadCtx) {
 
     // Resolve the owed amount + mode gate BEFORE any storage write, so a rejected
     // request never leaves an orphaned proof object. The client amount is ignored.
-    const owed = await resolveMonthlyOwed({ userId, ekskulId, month, year });
+    const owed = await resolveMonthlyOwed({ userId, activityId, month, year });
     if (!owed.ok) {
         const error = owed.reason === 'noFee' ? t.payments.noMonthlyFee : t.payments.notMonthlyMode;
         return NextResponse.json({ error }, { status: owed.reason === 'noFee' ? 400 : 403 });
@@ -108,7 +108,7 @@ async function handleMonthlyUpload({ userId, formData, t }: UploadCtx) {
     const { url, path } = await storeProof(file!, userId, year, month);
     const payment = await upsertMonthlyPayment({
         userId,
-        ekskulId,
+        activityId,
         amount: owed.amount,
         month,
         year,
@@ -117,7 +117,7 @@ async function handleMonthlyUpload({ userId, formData, t }: UploadCtx) {
     });
     // A paid month buys the whole month: register this member into every open
     // session of the Activity for the period (idempotent, capacity-respecting).
-    await syncMonthlyAttendances({ ekskulId, month, year, userIds: [userId] });
+    await syncMonthlyAttendances({ activityId, month, year, userIds: [userId] });
     return NextResponse.json(payment, { status: 201 });
 }
 
@@ -129,12 +129,12 @@ async function handleSessionUpload({ userId, formData, t }: UploadCtx, sessionId
     // so activate the membership before the charge gate evaluates it.
     const target = await prisma.activitySession.findUnique({
         where: { id: sessionId },
-        select: { ekskulId: true },
+        select: { activityId: true },
     });
     if (target) {
-        await ensureMembership(userId, target.ekskulId);
+        await ensureMembership(userId, target.activityId);
         // Paying per session is itself the mode choice for an unselected member.
-        await adoptModeIfUnselected(userId, target.ekskulId, 'PER_SESSION');
+        await adoptModeIfUnselected(userId, target.activityId, 'PER_SESSION');
     }
 
     // Gate BEFORE storage: wrong mode / no fee / closed session never orphan an
@@ -179,7 +179,7 @@ async function handleSessionUpload({ userId, formData, t }: UploadCtx, sessionId
 function sessionChargeError(reason: Extract<SessionCharge, { ok: false }>['reason'], t: Dictionary) {
     const map = {
         notFound: { status: 404, error: t.sessions.notFound },
-        notMember: { status: 403, error: t.ekskul.notMember },
+        notMember: { status: 403, error: t.activity.notMember },
         notRegisterable: { status: 400, error: t.sessions.notRegisterable },
         notPerSession: { status: 403, error: t.payments.notPerSessionMode },
         noFee: { status: 400, error: t.payments.noSessionFee },

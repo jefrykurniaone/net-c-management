@@ -72,7 +72,7 @@ export async function PATCH(
             sessionId: true,
             userId: true,
             status: true,
-            ekskulId: true,
+            activityId: true,
             month: true,
             year: true,
         },
@@ -126,7 +126,7 @@ export async function PATCH(
                     userId: payment.userId,
                     status: 'REGISTERED',
                     session: {
-                        ekskulId: payment.ekskulId,
+                        activityId: payment.activityId,
                         date: { gte: monthStart, lt: nextMonthStart },
                     },
                 },

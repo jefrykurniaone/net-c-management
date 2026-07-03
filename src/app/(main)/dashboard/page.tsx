@@ -7,15 +7,15 @@ import { CalendarDays, CheckCircle, TrendingUp, Shapes } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
+import { ActivityBadge } from '@/components/activity/activity-badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { getUserEkskulIds } from '@/lib/ekskul';
+import { getUserActivityIds } from '@/lib/activity';
 import { sessionStatusVariant, paymentStatusVariant } from '@/lib/utils';
 
-const UPCOMING_PER_EKSKUL = 3;
+const UPCOMING_PER_ACTIVITY = 3;
 
 export default async function DashboardPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -33,24 +33,24 @@ export default async function DashboardPage() {
     const yearStart = new Date(`${currentYear}-01-01`);
     const yearEnd = new Date(`${currentYear}-12-31`);
 
-    const myEkskulIds = await getUserEkskulIds(userId);
+    const myActivityIds = await getUserActivityIds(userId);
 
-    const [myEkskuls, upcomingSessions, monthPayments, attendanceCount, totalSessions] =
+    const [myActivities, upcomingSessions, monthPayments, attendanceCount, totalSessions] =
         await Promise.all([
-            prisma.ekskul.findMany({
-                where: { id: { in: myEkskulIds }, isActive: true },
+            prisma.activity.findMany({
+                where: { id: { in: myActivityIds }, isActive: true },
                 orderBy: { name: 'asc' },
                 select: { id: true, name: true, color: true },
             }),
             prisma.activitySession.findMany({
                 where: {
-                    ekskulId: { in: myEkskulIds },
+                    activityId: { in: myActivityIds },
                     date: { gte: today },
                     status: { in: ['SCHEDULED', 'ONGOING'] },
                 },
                 orderBy: { date: 'asc' },
                 include: {
-                    ekskul: { select: { id: true, name: true, color: true } },
+                    activity: { select: { id: true, name: true, color: true } },
                     attendances: {
                         where: {
                             userId,
@@ -74,23 +74,23 @@ export default async function DashboardPage() {
                     userId,
                     month: currentMonth,
                     year: currentYear,
-                    ekskulId: { in: myEkskulIds },
+                    activityId: { in: myActivityIds },
                 },
-                select: { ekskulId: true, status: true, amount: true },
+                select: { activityId: true, status: true, amount: true },
             }),
             prisma.attendance.count({
                 where: {
                     userId,
                     status: 'PRESENT',
                     session: {
-                        ekskulId: { in: myEkskulIds },
+                        activityId: { in: myActivityIds },
                         date: { gte: yearStart, lte: yearEnd },
                     },
                 },
             }),
             prisma.activitySession.count({
                 where: {
-                    ekskulId: { in: myEkskulIds },
+                    activityId: { in: myActivityIds },
                     date: { gte: yearStart, lte: yearEnd },
                     status: { not: 'CANCELLED' },
                 },
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
         totalSessions > 0
             ? Math.round((attendanceCount / totalSessions) * 100)
             : 0;
-    const paymentByEkskul = new Map(monthPayments.map((p) => [p.ekskulId, p]));
+    const paymentByActivity = new Map(monthPayments.map((p) => [p.activityId, p]));
     const paidCount = monthPayments.filter(
         (p) => p.status === 'CONFIRMED',
     ).length;
@@ -128,7 +128,7 @@ export default async function DashboardPage() {
                         <>
                             {paidCount}
                             <span className='text-sm font-normal text-muted-foreground'>
-                                /{myEkskuls.length}
+                                /{myActivities.length}
                             </span>
                         </>
                     }
@@ -160,35 +160,35 @@ export default async function DashboardPage() {
                 />
             </div>
 
-            {/* Per-ekskul sections */}
-            {myEkskuls.length === 0 ? (
+            {/* Per-activity sections */}
+            {myActivities.length === 0 ? (
                 <EmptyState
                     icon={Shapes}
-                    title={t.ekskul.noneJoined}
+                    title={t.activity.noneJoined}
                     action={
                         <Link href='/sessions'>
                             <Button variant='outline' size='sm'>
-                                {t.ekskul.join}
+                                {t.activity.join}
                             </Button>
                         </Link>
                     }
                 />
             ) : (
                 <div className='space-y-5'>
-                    {myEkskuls.map((ekskul) => {
+                    {myActivities.map((activity) => {
                         const sessions = upcomingSessions
-                            .filter((s) => s.ekskulId === ekskul.id)
-                            .slice(0, UPCOMING_PER_EKSKUL);
-                        const payment = paymentByEkskul.get(ekskul.id);
+                            .filter((s) => s.activityId === activity.id)
+                            .slice(0, UPCOMING_PER_ACTIVITY);
+                        const payment = paymentByActivity.get(activity.id);
                         return (
                             <div
-                                key={ekskul.id}
+                                key={activity.id}
                                 className='bg-card rounded-xl border border-border overflow-hidden'
-                                style={{ borderTop: `3px solid ${ekskul.color}` }}>
+                                style={{ borderTop: `3px solid ${activity.color}` }}>
                                 <div className='flex items-center justify-between gap-3 p-4 border-b border-border'>
-                                    <EkskulBadge
-                                        name={ekskul.name}
-                                        color={ekskul.color}
+                                    <ActivityBadge
+                                        name={activity.name}
+                                        color={activity.color}
                                     />
                                     {payment ? (
                                         <Badge

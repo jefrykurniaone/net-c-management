@@ -53,3 +53,6 @@ public/uploads/
 
 # local planning notes (not part of the project)
 plans/
+
+# Playwright MCP browser artifacts
+.playwright-mcp/

@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { communityAbbr } from '@/lib/utils';
-import type { EkskulOption } from '@/types/ekskul';
+import type { ActivityOption } from '@/types/activity';
 
 export default function OnboardingPage() {
     const router = useRouter();
@@ -33,7 +33,7 @@ export default function OnboardingPage() {
     const [communityName, setCommunityName] = useState(
         t.brand.defaultCommunityName,
     );
-    const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
+    const [activities, setActivities] = useState<ActivityOption[]>([]);
 
     useEffect(() => {
         fetch('/api/settings')
@@ -45,12 +45,12 @@ export default function OnboardingPage() {
                 console.error('[Onboarding] fetchSettings:', err);
                 return undefined;
             });
-        fetch('/api/ekskul')
+        fetch('/api/activities')
             .then((r) => r.json())
-            .then((data: { ekskuls?: EkskulOption[] }) =>
-                setEkskuls(data.ekskuls ?? []),
+            .then((data: { activities?: ActivityOption[] }) =>
+                setActivities(data.activities ?? []),
             )
-            .catch(() => setEkskuls([]));
+            .catch(() => setActivities([]));
     }, []);
 
     const form = useForm<OnboardingFormData>({
@@ -58,7 +58,7 @@ export default function OnboardingPage() {
         defaultValues: {
             name: '',
             phone: '',
-            ekskulIds: [],
+            activityIds: [],
         },
     });
 
@@ -150,14 +150,14 @@ export default function OnboardingPage() {
 
                         <FormField
                             control={form.control}
-                            name='ekskulIds'
+                            name='activityIds'
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>
-                                        {t.onboarding.ekskulLabel}
+                                        {t.onboarding.activityLabel}
                                     </FormLabel>
                                     <div className='flex flex-wrap gap-2'>
-                                        {ekskuls.map((e) => {
+                                        {activities.map((e) => {
                                             const selected =
                                                 field.value?.includes(e.id) ??
                                                 false;
@@ -199,7 +199,7 @@ export default function OnboardingPage() {
                                         })}
                                     </div>
                                     <p className='text-xs text-muted-foreground'>
-                                        {t.onboarding.ekskulHint}
+                                        {t.onboarding.activityHint}
                                     </p>
                                     <FormMessage />
                                 </FormItem>

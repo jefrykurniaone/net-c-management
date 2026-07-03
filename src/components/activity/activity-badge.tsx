@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 // ─── Activity icon resolution ────────────────────────────────────────────────
-// `Ekskul.icon` is an optional lucide icon name. It is resolved against a small
+// `Activity.icon` is an optional lucide icon name. It is resolved against a small
 // curated, statically-imported map — no `lucide-react/dynamic` and no whole-icon
 // barrel import — so this stays a server component and the bundle stays lean. An
 // unset/unknown name falls back to a neutral icon (the same `Shapes` glyph the
@@ -142,7 +142,7 @@ function readableText(hex: string): string {
     return darkRatio > lightRatio ? FOREGROUND_DARK : FOREGROUND_LIGHT;
 }
 
-export function EkskulBadge({
+export function ActivityBadge({
     name,
     color,
     icon,

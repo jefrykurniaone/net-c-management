@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
 import { sessionStatusVariant } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
+import { ActivityBadge } from '@/components/activity/activity-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { RSVPButton } from '@/components/sessions/rsvp-button';
@@ -45,7 +45,7 @@ export default async function SessionDetailPage({
     const activitySession = await prisma.activitySession.findUnique({
         where: { id },
         include: {
-            ekskul: {
+            activity: {
                 select: {
                     id: true,
                     name: true,
@@ -91,9 +91,9 @@ export default async function SessionDetailPage({
     const [membership, sessionPayment, monthlyPayment] = await Promise.all([
         prisma.membership.findUnique({
             where: {
-                userId_ekskulId: {
+                userId_activityId: {
                     userId: authSession.user.id,
-                    ekskulId: activitySession.ekskulId,
+                    activityId: activitySession.activityId,
                 },
             },
             select: {
@@ -115,7 +115,7 @@ export default async function SessionDetailPage({
         prisma.payment.findFirst({
             where: {
                 userId: authSession.user.id,
-                ekskulId: activitySession.ekskulId,
+                activityId: activitySession.activityId,
                 type: 'MONTHLY',
                 month: period.month,
                 year: period.year,
@@ -125,8 +125,8 @@ export default async function SessionDetailPage({
         }),
     ]);
     const offered = {
-        allowsMonthly: activitySession.ekskul.allowsMonthly,
-        allowsPerSession: activitySession.ekskul.allowsPerSession,
+        allowsMonthly: activitySession.activity.allowsMonthly,
+        allowsPerSession: activitySession.activity.allowsPerSession,
     };
     // Non-members may register too (join-on-register), so a missing membership
     // resolves like an unselected one: the offered set decides — a single
@@ -141,7 +141,7 @@ export default async function SessionDetailPage({
     ]);
     const quota = quotas.get(activitySession.id);
     const whatsapp =
-        activitySession.ekskul.adminWhatsapp || settings.adminWhatsapp || '';
+        activitySession.activity.adminWhatsapp || settings.adminWhatsapp || '';
 
     const myAttendance = activitySession.attendances.find(
         (a) => a.userId === authSession.user.id,
@@ -166,9 +166,9 @@ export default async function SessionDetailPage({
                         <h1 className='text-xl font-bold text-foreground'>
                             {activitySession.title}
                         </h1>
-                        <EkskulBadge
-                            name={activitySession.ekskul.name}
-                            color={activitySession.ekskul.color}
+                        <ActivityBadge
+                            name={activitySession.activity.name}
+                            color={activitySession.activity.color}
                         />
                     </div>
                     <Badge
@@ -257,17 +257,21 @@ export default async function SessionDetailPage({
 
                 <RSVPButton
                     sessionId={activitySession.id}
-                    ekskulId={activitySession.ekskulId}
+                    activityId={activitySession.activityId}
                     isRegistered={isRegistered}
                     isFull={isFull && !isRegistered}
                     isCancelled={activitySession.status === 'CANCELLED'}
                     isCompleted={activitySession.status === 'COMPLETED'}
                     paymentMode={effectiveMode}
+                    allowsBothModes={
+                        offered.allowsMonthly && offered.allowsPerSession
+                    }
                     sessionFee={activitySession.fee}
-                    monthlyFee={activitySession.ekskul.monthlyFee}
+                    monthlyFee={activitySession.activity.monthlyFee}
                     hasMonthlyPaid={monthlyPayment !== null}
                     sessionPaymentStatus={sessionPayment?.status ?? null}
                     sessionPaymentNotes={sessionPayment?.notes ?? null}
+                    adminWhatsapp={whatsapp}
                 />
 
                 {whatsapp && (

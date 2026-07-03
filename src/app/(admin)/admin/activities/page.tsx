@@ -3,21 +3,21 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { Shapes } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { EkskulBadge } from '@/components/ekskul/ekskul-badge';
+import { ActivityBadge } from '@/components/activity/activity-badge';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { isAdminRole } from '@/lib/utils';
-import { NewEkskulButton, EkskulActions } from './ekskul-actions';
-import { EkskulCards } from './ekskul-cards';
+import { NewActivityButton, ActivityActions } from './activity-actions';
+import { ActivityCards } from './activity-cards';
 
-export default async function AdminEkskulPage() {
+export default async function AdminActivityPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
     if (!session?.user?.id || !isAdminRole(session.user.role))
         redirect('/dashboard');
 
     const t = getDictionary(locale);
 
-    const ekskuls = await prisma.ekskul.findMany({
+    const activities = await prisma.activity.findMany({
         orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
         include: {
             _count: { select: { memberships: true, sessions: true } },
@@ -30,19 +30,19 @@ export default async function AdminEkskulPage() {
                 <div>
                     <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
                         <Shapes className='w-6 h-6 text-primary' />
-                        {t.admin.ekskulTitle}
+                        {t.admin.activityTitle}
                     </h1>
                     <p className='text-sm text-muted-foreground mt-1'>
-                        {ekskuls.length} {t.admin.ekskulRegistered} ·{' '}
-                        {t.admin.ekskulSubtitle}
+                        {activities.length} {t.admin.activityRegistered} ·{' '}
+                        {t.admin.activitySubtitle}
                     </p>
                 </div>
-                <NewEkskulButton />
+                <NewActivityButton />
             </div>
 
             {/* Mobile: stacked cards (< md) */}
             <div className='md:hidden'>
-                <EkskulCards ekskuls={ekskuls} t={t} />
+                <ActivityCards activities={activities} t={t} />
             </div>
 
             {/* Desktop: full table (>= md) */}
@@ -52,16 +52,16 @@ export default async function AdminEkskulPage() {
                         <thead>
                             <tr className='bg-muted border-b border-border'>
                                 <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
-                                    {t.admin.colEkskul}
+                                    {t.admin.colActivity}
                                 </th>
                                 <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
-                                    {t.admin.ekskulSlug}
+                                    {t.admin.activitySlug}
                                 </th>
                                 <th className='text-center px-4 py-3 font-medium text-muted-foreground'>
                                     {t.admin.colMembers}
                                 </th>
                                 <th className='text-right px-4 py-3 font-medium text-muted-foreground'>
-                                    {t.admin.ekskulFee}
+                                    {t.admin.activityFee}
                                 </th>
                                 <th className='text-center px-4 py-3 font-medium text-muted-foreground'>
                                     {t.admin.colStatus}
@@ -72,13 +72,13 @@ export default async function AdminEkskulPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {ekskuls.map((e) => (
+                            {activities.map((e) => (
                                 <tr
                                     key={e.id}
                                     className='border-b border-border hover:bg-muted'>
                                     <td className='px-4 py-3'>
                                         <div className='flex items-center gap-2'>
-                                            <EkskulBadge
+                                            <ActivityBadge
                                                 name={e.name}
                                                 color={e.color}
                                             />
@@ -111,8 +111,8 @@ export default async function AdminEkskulPage() {
                                         </Badge>
                                     </td>
                                     <td className='px-4 py-3'>
-                                        <EkskulActions
-                                            ekskul={{
+                                        <ActivityActions
+                                            activity={{
                                                 id: e.id,
                                                 name: e.name,
                                                 slug: e.slug,
@@ -133,18 +133,23 @@ export default async function AdminEkskulPage() {
                                                     e.defaultLocation,
                                                 maxPlayers: e.maxPlayers,
                                                 adminWhatsapp: e.adminWhatsapp,
+                                                bankName: e.bankName,
+                                                bankAccountNumber:
+                                                    e.bankAccountNumber,
+                                                bankAccountHolder:
+                                                    e.bankAccountHolder,
                                                 isActive: e.isActive,
                                             }}
                                         />
                                     </td>
                                 </tr>
                             ))}
-                            {ekskuls.length === 0 && (
+                            {activities.length === 0 && (
                                 <tr>
                                     <td
                                         colSpan={6}
                                         className='px-4 py-8 text-center text-muted-foreground'>
-                                        {t.admin.noEkskul}
+                                        {t.admin.noActivity}
                                     </td>
                                 </tr>
                             )}

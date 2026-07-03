@@ -28,19 +28,21 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import type { EkskulOption } from "@/types/ekskul";
+import type { ActivityOption } from "@/types/activity";
+import { parseIntInput } from "@/lib/form-utils";
+import { FormSection } from "@/components/ui/form-section";
 
 export default function NewSessionPage() {
   const router = useRouter();
   const { locale } = useLocale();
   const t = getDictionary(locale);
   const [loading, setLoading] = useState(false);
-  const [ekskuls, setEkskuls] = useState<EkskulOption[]>([]);
+  const [activities, setActivities] = useState<ActivityOption[]>([]);
 
   const form = useForm<CreateSessionFormData>({
     resolver: zodResolver(buildCreateSessionSchema(t)),
     defaultValues: {
-      ekskulId: "",
+      activityId: "",
       title: "",
       date: "",
       startTime: "08:00",
@@ -53,15 +55,15 @@ export default function NewSessionPage() {
   });
 
   useEffect(() => {
-    fetch("/api/ekskul")
+    fetch("/api/activities")
       .then((r) => r.json())
-      .then((data: { ekskuls?: EkskulOption[] }) => setEkskuls(data.ekskuls ?? []))
-      .catch(() => setEkskuls([]));
+      .then((data: { activities?: ActivityOption[] }) => setActivities(data.activities ?? []))
+      .catch(() => setActivities([]));
   }, []);
 
-  function handleEkskulChange(id: string) {
-    form.setValue("ekskulId", id, { shouldValidate: true });
-    const chosen = ekskuls.find((e) => e.id === id);
+  function handleActivityChange(id: string) {
+    form.setValue("activityId", id, { shouldValidate: true });
+    const chosen = activities.find((e) => e.id === id);
     if (!chosen) return;
     form.setValue("fee", chosen.sessionFee);
     form.setValue("maxPlayers", chosen.maxPlayers);
@@ -108,21 +110,22 @@ export default function NewSessionPage() {
         </h1>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <FormSection title={t.admin.sectionBasicInfo}>
             <FormField
               control={form.control}
-              name="ekskulId"
+              name="activityId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t.ekskul.label}</FormLabel>
-                  <Select onValueChange={handleEkskulChange} value={field.value}>
+                  <FormLabel>{t.activity.label}</FormLabel>
+                  <Select onValueChange={handleActivityChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder={t.ekskul.selectPlaceholder} />
+                        <SelectValue placeholder={t.activity.selectPlaceholder} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {ekskuls.map((e) => (
+                      {activities.map((e) => (
                         <SelectItem key={e.id} value={e.id}>
                           {e.name}
                         </SelectItem>
@@ -147,7 +150,9 @@ export default function NewSessionPage() {
                 </FormItem>
               )}
             />
+            </FormSection>
 
+            <FormSection title={t.admin.sectionScheduleLocation}>
             <FormField
               control={form.control}
               name="date"
@@ -204,7 +209,9 @@ export default function NewSessionPage() {
                 </FormItem>
               )}
             />
+            </FormSection>
 
+            <FormSection title={t.admin.sectionParticipantsFee}>
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -217,7 +224,8 @@ export default function NewSessionPage() {
                         type="number"
                         min={2}
                         {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(parseIntInput(e))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -235,7 +243,8 @@ export default function NewSessionPage() {
                         type="number"
                         min={0}
                         {...field}
-                        onChange={(e) => field.onChange(Number.parseInt(e.target.value))}
+                        value={field.value ?? ''}
+                        onChange={(e) => field.onChange(parseIntInput(e))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -243,6 +252,7 @@ export default function NewSessionPage() {
                 )}
               />
             </div>
+            </FormSection>
 
             <FormField
               control={form.control}

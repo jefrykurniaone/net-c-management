@@ -17,13 +17,17 @@ import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { EmptyState } from '@/components/ui/empty-state';
+import {
+    BankAccountInfo,
+    type BankAccount,
+} from '@/components/payments/bank-account-info';
 
 /** The session prefill the register-&-pay uploader needs (display only). */
 interface SessionInfo {
     id: string;
     title: string;
     fee: number;
-    ekskul: { name: string };
+    activity: { name: string } & BankAccount;
 }
 
 export default function SessionPayPage() {
@@ -87,7 +91,7 @@ export default function SessionPayPage() {
 
     const owedLabel = session
         ? t.payments.sessionOwedFor
-              .split('{activity}').join(session.ekskul.name)
+              .split('{activity}').join(session.activity.name)
               .split('{session}').join(session.title)
         : '';
 
@@ -138,6 +142,9 @@ export default function SessionPayPage() {
                             </p>
                         )}
                     </div>
+
+                    {/* Where to transfer — the activity's configured account */}
+                    <BankAccountInfo account={session?.activity ?? null} />
 
                     {/* File Upload */}
                     <div className='space-y-2'>

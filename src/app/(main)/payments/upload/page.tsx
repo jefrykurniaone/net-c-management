@@ -20,21 +20,22 @@ import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { EmptyState } from '@/components/ui/empty-state';
+import {
+    BankAccountInfo,
+    type BankAccount,
+} from '@/components/payments/bank-account-info';
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
 
 /** An Activity the member is billed monthly for this period. */
-interface MonthlyEkskul {
+interface MonthlyActivity extends BankAccount {
     id: string;
     name: string;
     monthlyFee: number;
 }
 
-type MembershipRow = {
-    id: string;
-    name: string;
-    monthlyFee: number;
+type MembershipRow = MonthlyActivity & {
     joined: boolean;
     effectiveMode: PaymentMode | null;
 };
@@ -49,8 +50,8 @@ export default function UploadPaymentPage() {
     const [status, setStatus] = useState<LoadStatus>('loading');
     const [preview, setPreview] = useState<string | null>(null);
     const [file, setFile] = useState<File | null>(null);
-    const [ekskuls, setEkskuls] = useState<MonthlyEkskul[]>([]);
-    const [ekskulId, setEkskulId] = useState('');
+    const [activities, setActivities] = useState<MonthlyActivity[]>([]);
+    const [activityId, setActivityId] = useState('');
 
     useEffect(() => {
         // Only Activities the member is billed monthly for THIS period can raise a
@@ -61,12 +62,19 @@ export default function UploadPaymentPage() {
                 if (!r.ok) throw new Error('fetch failed');
                 return r.json();
             })
-            .then((data: { ekskuls?: MembershipRow[] }) => {
-                const list = (data.ekskuls ?? [])
+            .then((data: { activities?: MembershipRow[] }) => {
+                const list = (data.activities ?? [])
                     .filter((e) => e.joined && e.effectiveMode === 'MONTHLY')
-                    .map((e) => ({ id: e.id, name: e.name, monthlyFee: e.monthlyFee }));
-                setEkskuls(list);
-                if (list.length === 1) setEkskulId(list[0].id);
+                    .map((e) => ({
+                        id: e.id,
+                        name: e.name,
+                        monthlyFee: e.monthlyFee,
+                        bankName: e.bankName,
+                        bankAccountNumber: e.bankAccountNumber,
+                        bankAccountHolder: e.bankAccountHolder,
+                    }));
+                setActivities(list);
+                if (list.length === 1) setActivityId(list[0].id);
                 setStatus('loaded');
             })
             .catch(() => setStatus('error'));
@@ -81,8 +89,8 @@ export default function UploadPaymentPage() {
 
     async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
         e.preventDefault();
-        if (!ekskulId) {
-            toast.error(t.validation.ekskulRequired);
+        if (!activityId) {
+            toast.error(t.validation.activityRequired);
             return;
         }
         if (!file) {
@@ -94,7 +102,7 @@ export default function UploadPaymentPage() {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('ekskulId', ekskulId);
+            formData.append('activityId', activityId);
             formData.append('month', String(currentMonth));
             formData.append('year', String(currentYear));
 
@@ -118,7 +126,7 @@ export default function UploadPaymentPage() {
         }
     }
 
-    const chosen = ekskuls.find((e) => e.id === ekskulId);
+    const chosen = activities.find((e) => e.id === activityId);
     const owedLabel = chosen
         ? t.payments.owedFor
               .split('{activity}').join(chosen.name)
@@ -142,7 +150,7 @@ export default function UploadPaymentPage() {
         );
     }
 
-    if (ekskuls.length === 0) {
+    if (activities.length === 0) {
         return (
             <div className='max-w-lg mx-auto space-y-6'>
                 <Link
@@ -151,7 +159,7 @@ export default function UploadPaymentPage() {
                     <ArrowLeft className='w-4 h-4' />
                     {t.payments.backToHistory}
                 </Link>
-                <EmptyState title={t.payments.noMonthlyEkskul} />
+                <EmptyState title={t.payments.noMonthlyActivity} />
             </div>
         );
     }
@@ -174,17 +182,17 @@ export default function UploadPaymentPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className='space-y-5'>
-                    {/* Ekskul */}
+                    {/* Activity */}
                     <div className='space-y-1.5'>
-                        <Label>{t.ekskul.label}</Label>
-                        <Select value={ekskulId} onValueChange={setEkskulId}>
+                        <Label>{t.activity.label}</Label>
+                        <Select value={activityId} onValueChange={setActivityId}>
                             <SelectTrigger className='w-full'>
                                 <SelectValue
-                                    placeholder={t.ekskul.selectPlaceholder}
+                                    placeholder={t.activity.selectPlaceholder}
                                 />
                             </SelectTrigger>
                             <SelectContent>
-                                {ekskuls.map((e) => (
+                                {activities.map((e) => (
                                     <SelectItem key={e.id} value={e.id}>
                                         {e.name}
                                     </SelectItem>
@@ -218,6 +226,9 @@ export default function UploadPaymentPage() {
                             </p>
                         )}
                     </div>
+
+                    {/* Where to transfer — the activity's configured account */}
+                    <BankAccountInfo account={chosen ?? null} />
 
                     {/* File Upload */}
                     <div className='space-y-2'>
@@ -261,7 +272,7 @@ export default function UploadPaymentPage() {
                     <Button
                         type='submit'
                         className='w-full'
-                        disabled={!file || !ekskulId || loading}
+                        disabled={!file || !activityId || loading}
                         loading={loading}>
                         {loading ? t.payments.submitting : t.payments.submit}
                     </Button>

@@ -2,12 +2,12 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { buildUpdateEkskulSchema } from '@/lib/validations/ekskul';
+import { buildUpdateActivitySchema } from '@/lib/validations/activity';
 import { isAdminRole } from '@/lib/utils';
 import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
-// GET /api/ekskul/[id] — single ekskul (all authenticated users)
+// GET /api/activities/[id] — single activity (all authenticated users)
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> },
@@ -18,18 +18,18 @@ export async function GET(
     }
 
     const { id } = await params;
-    const ekskul = await prisma.ekskul.findUnique({
+    const activity = await prisma.activity.findUnique({
         where: { id },
         include: { _count: { select: { memberships: true } } },
     });
 
-    if (!ekskul) {
+    if (!activity) {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    return NextResponse.json(ekskul);
+    return NextResponse.json(activity);
 }
 
-// PATCH /api/ekskul/[id] — update ekskul (admin only)
+// PATCH /api/activities/[id] — update activity (admin only)
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> },
@@ -47,7 +47,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const parsed = buildUpdateEkskulSchema(t).safeParse(body);
+    const parsed = buildUpdateActivitySchema(t).safeParse(body);
     if (!parsed.success) {
         return NextResponse.json(
             { error: t.common.error, details: parsed.error.issues },
@@ -56,16 +56,16 @@ export async function PATCH(
     }
 
     try {
-        const ekskul = await prisma.ekskul.update({
+        const activity = await prisma.activity.update({
             where: { id },
             data: parsed.data,
         });
-        return NextResponse.json(ekskul);
+        return NextResponse.json(activity);
     } catch (err) {
         if (err instanceof Prisma.PrismaClientKnownRequestError) {
             if (err.code === 'P2002') {
                 return NextResponse.json(
-                    { error: t.validation.ekskulSlugTaken },
+                    { error: t.validation.activitySlugTaken },
                     { status: 409 },
                 );
             }
@@ -80,8 +80,8 @@ export async function PATCH(
     }
 }
 
-// DELETE /api/ekskul/[id] — admin only.
-// Blocks (409) if the ekskul has sessions or payments; admins should
+// DELETE /api/activities/[id] — admin only.
+// Blocks (409) if the activity has sessions or payments; admins should
 // deactivate (PATCH isActive=false) instead to preserve historical data.
 export async function DELETE(
     _req: Request,
@@ -100,19 +100,19 @@ export async function DELETE(
 
     const { id } = await params;
     const [sessionCount, paymentCount] = await Promise.all([
-        prisma.activitySession.count({ where: { ekskulId: id } }),
-        prisma.payment.count({ where: { ekskulId: id } }),
+        prisma.activitySession.count({ where: { activityId: id } }),
+        prisma.payment.count({ where: { activityId: id } }),
     ]);
 
     if (sessionCount > 0 || paymentCount > 0) {
         return NextResponse.json(
-            { error: t.admin.ekskulDeleteHasDataError },
+            { error: t.admin.activityDeleteHasDataError },
             { status: 409 },
         );
     }
 
     try {
-        await prisma.ekskul.delete({ where: { id } });
+        await prisma.activity.delete({ where: { id } });
     } catch (err) {
         if (
             err instanceof Prisma.PrismaClientKnownRequestError &&

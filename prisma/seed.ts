@@ -43,7 +43,7 @@ const CURRENT_PERIOD = now.getFullYear() * 100 + (now.getMonth() + 1);
 const SATURDAY = 6;
 const WEDNESDAY = 3;
 
-const EKSKULS = [
+const ACTIVITIES = [
     {
         slug: 'badminton',
         name: 'Badminton',
@@ -156,25 +156,25 @@ async function seedSettings() {
     console.log(`[ok] Settings: ${SETTINGS.communityName}`);
 }
 
-async function seedEkskuls(): Promise<Map<string, string>> {
+async function seedActivities(): Promise<Map<string, string>> {
     const idBySlug = new Map<string, string>();
-    for (const e of EKSKULS) {
+    for (const e of ACTIVITIES) {
         const { slug, ...data } = e;
-        const ekskul = await prisma.ekskul.upsert({
+        const activity = await prisma.activity.upsert({
             where: { slug },
             update: data,
             create: { slug, ...data },
         });
-        idBySlug.set(slug, ekskul.id);
+        idBySlug.set(slug, activity.id);
         console.log(
-            `[ok] Activity: ${ekskul.name} (min ${ekskul.minMembers} members, weekly day ${ekskul.recurringDay})`,
+            `[ok] Activity: ${activity.name} (min ${activity.minMembers} members, weekly day ${activity.recurringDay})`,
         );
     }
     return idBySlug;
 }
 
 async function seedUsers(
-    ekskulIdBySlug: Map<string, string>,
+    activityIdBySlug: Map<string, string>,
 ): Promise<Map<string, string>> {
     const userIdByEmail = new Map<string, string>();
     for (const u of USERS) {
@@ -197,8 +197,8 @@ async function seedUsers(
         });
 
         for (const m of u.memberships) {
-            const ekskulId = ekskulIdBySlug.get(m.slug);
-            if (!ekskulId) continue;
+            const activityId = activityIdBySlug.get(m.slug);
+            if (!activityId) continue;
             const modeFields = {
                 paymentMode: m.mode,
                 effectiveFrom: m.mode ? CURRENT_PERIOD : 0,
@@ -206,9 +206,9 @@ async function seedUsers(
                 pendingEffectiveFrom: null,
             };
             await prisma.membership.upsert({
-                where: { userId_ekskulId: { userId: user.id, ekskulId } },
+                where: { userId_activityId: { userId: user.id, activityId } },
                 update: { isActive: true, ...modeFields },
-                create: { userId: user.id, ekskulId, ...modeFields },
+                create: { userId: user.id, activityId, ...modeFields },
             });
         }
         const joined = u.memberships.map((m) => `${m.slug}:${m.mode}`).join(', ');
@@ -224,7 +224,7 @@ async function seedUsers(
  * kicks in the moment the weekly sessions are generated on first page load.
  */
 async function seedMonthlyPayments(
-    ekskulIdBySlug: Map<string, string>,
+    activityIdBySlug: Map<string, string>,
     userIdByEmail: Map<string, string>,
 ) {
     const month = now.getMonth() + 1;
@@ -235,13 +235,13 @@ async function seedMonthlyPayments(
     for (const u of USERS) {
         for (const m of u.memberships) {
             if (m.mode !== PaymentMode.MONTHLY) continue;
-            const ekskulId = ekskulIdBySlug.get(m.slug);
+            const activityId = activityIdBySlug.get(m.slug);
             const userId = userIdByEmail.get(u.email);
-            const ekskul = EKSKULS.find((e) => e.slug === m.slug);
-            if (!ekskulId || !userId || !ekskul) continue;
+            const activity = ACTIVITIES.find((e) => e.slug === m.slug);
+            if (!activityId || !userId || !activity) continue;
 
             const existing = await prisma.payment.findFirst({
-                where: { userId, ekskulId, month, year, type: 'MONTHLY' },
+                where: { userId, activityId, month, year, type: 'MONTHLY' },
                 select: { id: true },
             });
             if (existing) continue;
@@ -249,9 +249,9 @@ async function seedMonthlyPayments(
             await prisma.payment.create({
                 data: {
                     userId,
-                    ekskulId,
+                    activityId,
                     type: 'MONTHLY',
-                    amount: ekskul.monthlyFee,
+                    amount: activity.monthlyFee,
                     month,
                     year,
                     status: 'CONFIRMED',
@@ -268,9 +268,9 @@ async function seedMonthlyPayments(
 
 async function main() {
     await seedSettings();
-    const ekskulIdBySlug = await seedEkskuls();
-    const userIdByEmail = await seedUsers(ekskulIdBySlug);
-    await seedMonthlyPayments(ekskulIdBySlug, userIdByEmail);
+    const activityIdBySlug = await seedActivities();
+    const userIdByEmail = await seedUsers(activityIdBySlug);
+    await seedMonthlyPayments(activityIdBySlug, userIdByEmail);
     console.log('Done. Seed complete.');
     console.log(
         'Sessions + attendances appear on first sessions-page load: paid monthly',

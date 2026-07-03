@@ -3,43 +3,51 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { EkskulBadge } from "@/components/ekskul/ekskul-badge";
-import { EkskulFilter } from "@/components/ekskul/ekskul-filter";
+import { ActivityBadge } from "@/components/activity/activity-badge";
+import { ActivityFilter } from "@/components/activity/activity-filter";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
-import { CreditCard, Upload, ExternalLink } from "lucide-react";
+import { CreditCard, Upload, ExternalLink, MessageCircle } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getUserEkskulIds } from "@/lib/ekskul";
+import { getUserActivityIds } from "@/lib/activity";
 import { paymentStatusVariant } from "@/lib/utils";
 
 export default async function PaymentsPage({
   searchParams,
-}: Readonly<{ searchParams: Promise<{ ekskulId?: string }> }>) {
+}: Readonly<{ searchParams: Promise<{ activityId?: string }> }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
 
   const t = getDictionary(locale);
 
-  const myEkskulIds = await getUserEkskulIds(session.user.id);
+  const myActivityIds = await getUserActivityIds(session.user.id);
   const sp = await searchParams;
   const selected =
-    sp.ekskulId && myEkskulIds.includes(sp.ekskulId) ? sp.ekskulId : undefined;
+    sp.activityId && myActivityIds.includes(sp.activityId) ? sp.activityId : undefined;
 
-  const [payments, myEkskuls] = await Promise.all([
+  const [payments, myActivities] = await Promise.all([
     prisma.payment.findMany({
       where: {
         userId: session.user.id,
-        ...(selected ? { ekskulId: selected } : {}),
+        ...(selected ? { activityId: selected } : {}),
       },
       orderBy: [{ year: "desc" }, { month: "desc" }],
       include: {
-        ekskul: { select: { id: true, name: true, color: true, icon: true } },
+        activity: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+            icon: true,
+            adminWhatsapp: true,
+          },
+        },
       },
     }),
-    prisma.ekskul.findMany({
-      where: { id: { in: myEkskulIds }, isActive: true },
+    prisma.activity.findMany({
+      where: { id: { in: myActivityIds }, isActive: true },
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
@@ -62,11 +70,11 @@ export default async function PaymentsPage({
           <p className="text-sm text-muted-foreground mt-1">{t.payments.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
-          {myEkskuls.length > 1 && (
-            <EkskulFilter
-              ekskuls={myEkskuls}
+          {myActivities.length > 1 && (
+            <ActivityFilter
+              activities={myActivities}
               selected={selected}
-              allLabel={t.ekskul.filterAll}
+              allLabel={t.activity.filterAll}
             />
           )}
           <Link href="/payments/upload">
@@ -109,7 +117,7 @@ export default async function PaymentsPage({
               <span
                 aria-hidden
                 className="absolute left-0 top-0 h-full w-[3px]"
-                style={{ backgroundColor: payment.ekskul.color }}
+                style={{ backgroundColor: payment.activity.color }}
               />
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -117,10 +125,10 @@ export default async function PaymentsPage({
                     <p className="font-semibold text-foreground">
                       {t.months[payment.month]} {payment.year}
                     </p>
-                    <EkskulBadge
-                      name={payment.ekskul.name}
-                      color={payment.ekskul.color}
-                      icon={payment.ekskul.icon}
+                    <ActivityBadge
+                      name={payment.activity.name}
+                      color={payment.activity.color}
+                      icon={payment.activity.icon}
                     />
                   </div>
                   <p className="text-sm text-muted-foreground mt-0.5 tabular-nums">
@@ -136,6 +144,25 @@ export default async function PaymentsPage({
                         {payment.notes}
                       </p>
                     )
+                  )}
+                  {payment.status === "REJECTED" && (
+                    <p className="text-xs text-warning mt-1">
+                      {t.payments.rejectedRefundWarning}
+                      {payment.activity.adminWhatsapp && (
+                        <>
+                          {" "}
+                          <a
+                            href={`https://wa.me/${payment.activity.adminWhatsapp.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-success hover:underline"
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            {t.sessions.contactAdmin}
+                          </a>
+                        </>
+                      )}
+                    </p>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-2">

@@ -23,24 +23,24 @@ export async function PATCH(req: Request) {
         );
     }
 
-    const { name, phone, ekskulIds } = parsed.data;
+    const { name, phone, activityIds } = parsed.data;
     const userId = session.user.id;
 
-    // Only allow joining ekskul that are active.
-    const validEkskuls = await prisma.ekskul.findMany({
-        where: { id: { in: ekskulIds }, isActive: true },
+    // Only allow joining activity that are active.
+    const validActivities = await prisma.activity.findMany({
+        where: { id: { in: activityIds }, isActive: true },
         select: { id: true },
     });
-    if (validEkskuls.length === 0) {
+    if (validActivities.length === 0) {
         return NextResponse.json(
-            { error: t.validation.ekskulMembershipRequired },
+            { error: t.validation.activityMembershipRequired },
             { status: 400 },
         );
     }
 
     const updated = await prisma.$transaction(async (tx) => {
         await tx.membership.createMany({
-            data: validEkskuls.map((e) => ({ userId, ekskulId: e.id })),
+            data: validActivities.map((e) => ({ userId, activityId: e.id })),
             skipDuplicates: true,
         });
         return tx.user.update({

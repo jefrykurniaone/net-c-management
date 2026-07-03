@@ -25,7 +25,7 @@ export async function GET(req: Request) {
         Math.max(1, Number.parseInt(searchParams.get('limit') ?? String(DEFAULT_SESSION_LIMIT))),
     );
     const skip = (page - 1) * limit;
-    const ekskulIdParam = searchParams.get('ekskulId') ?? undefined;
+    const activityIdParam = searchParams.get('activityId') ?? undefined;
     const isAdmin = isAdminRole(session.user.role);
 
     const where: Prisma.ActivitySessionWhereInput = upcoming
@@ -35,13 +35,13 @@ export async function GET(req: Request) {
           }
         : {};
 
-    // Members see sessions of every ACTIVE ekskul (join happens at the session
-    // level now); admins additionally see sessions of inactive ekskul.
+    // Members see sessions of every ACTIVE activity (join happens at the session
+    // level now); admins additionally see sessions of inactive activity.
     if (!isAdmin) {
-        where.ekskul = { isActive: true };
+        where.activity = { isActive: true };
     }
-    if (ekskulIdParam) {
-        where.ekskulId = ekskulIdParam;
+    if (activityIdParam) {
+        where.activityId = activityIdParam;
     }
 
     const [sessions, total] = await Promise.all([
@@ -52,7 +52,7 @@ export async function GET(req: Request) {
             take: limit,
             include: {
                 _count: { select: { attendances: true } },
-                ekskul: { select: { id: true, name: true, color: true } },
+                activity: { select: { id: true, name: true, color: true } },
                 attendances: {
                     where: { userId: session.user.id },
                     select: { id: true, status: true },
