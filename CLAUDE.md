@@ -17,7 +17,7 @@ There are no automated tests in this project.
 
 ## Architecture
 
-**PB Net-C** is a Next.js 16 (App Router) full-stack app for managing a badminton community. The stack is: Next.js + React 19 + TypeScript, Prisma 7 (with `@prisma/adapter-pg` driver adapter), Supabase (PostgreSQL + Storage), NextAuth v5 (Google OAuth, database sessions), Tailwind CSS v4, and shadcn/ui.
+This is a white-label **sports community management app** — a Next.js 16 (App Router) full-stack app for managing a sports/hobby community (activities, sessions, attendance, dues). Community name/branding is runtime-configured via Settings; the repo name (`net-c-management`) is historical. The stack is: Next.js + React 19 + TypeScript, Prisma 7 (with `@prisma/adapter-pg` driver adapter), Supabase (PostgreSQL + Storage), NextAuth v5 (Google OAuth, database sessions), Tailwind CSS v4, and shadcn/ui.
 
 ### Route groups and auth flow
 
