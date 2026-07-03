@@ -1,21 +1,23 @@
-# PB Net-C — Badminton Community Management App
+# Sports Community Management App
 
-A full-stack web app for managing a badminton community: training sessions, member attendance, monthly dues, and member profiles.
+A white-label, full-stack web app for managing a sports (or any hobby) community: activities, recurring sessions, member attendance, dues collection (monthly or per-session), and member profiles.
+
+> The community name, logo, and branding are configured at runtime via the admin **Settings** page — nothing sport-specific is baked into the code. The repository name (`net-c-management`) is historical, from the badminton community this project originally served.
 
 ---
 
 ## 1. Brief Project Description
 
-A full-stack web application that centralizes the management of a badminton community — training sessions, member attendance, monthly dues, and member profiles — in one platform. It replaces scattered chat messages and manual spreadsheets with a single source of truth, giving members self-service RSVP and dues uploads while giving admins a dedicated panel to schedule sessions, confirm payments, and manage members.
+A full-stack web application that centralizes the management of a sports community — activities (e.g. badminton, futsal, yoga), session scheduling, member attendance, dues, and member profiles — in one platform. It replaces scattered chat messages and manual spreadsheets with a single source of truth: members get self-service RSVP, payment-proof uploads, and a choice of payment mode (monthly dues or pay-per-session), while admins get a dedicated panel to manage activities, schedule sessions, confirm payments, and manage members.
 
 ## 2. What business problem are you trying to solve?
 
-Most amateur badminton communities are run manually, which creates recurring friction for both members and the organizers:
+Most amateur sports communities are run manually, which creates recurring friction for both members and the organizers:
 
 - **Scattered scheduling.** Session announcements live in chat groups (e.g. WhatsApp), so RSVPs are hard to count, attendance caps are easy to overshoot, and there is no reliable record of who is coming.
 - **Manual attendance tracking.** Presence is recorded on paper or ad-hoc spreadsheets, making it tedious to maintain and error-prone to report.
-- **Painful dues collection.** Treasurers chase monthly payments one by one and verify transfer proofs by hand, with no clear, shared view of who has paid, who is pending, and who is overdue.
-- **No central member record.** Member data, play level, and payment history are fragmented, so admins lack the visibility needed to manage the community and produce reports.
+- **Painful dues collection.** Treasurers chase payments one by one and verify transfer proofs by hand, with no clear, shared view of who has paid, who is pending, and who is overdue — made worse when some members pay monthly and others pay per session.
+- **No central member record.** Member data, activity memberships, and payment history are fragmented, so admins lack the visibility needed to manage the community and produce reports.
 
 This solution automates and centralizes those workflows — reducing the operational/administrative effort on organizers and treasurers, removing manual bookkeeping errors, and giving members transparent, self-service access to schedules and their own dues status.
 
@@ -62,12 +64,15 @@ This solution automates and centralizes those workflows — reducing the operati
 
 ## Features
 
-- **Authentication** — Login via Google OAuth
-- **Onboarding** — Complete your profile on first login
+- **Authentication** — Login via Google OAuth (roles: OWNER / ADMIN / MEMBER)
+- **Onboarding** — Complete your profile and pick your activities on first login
+- **Activities** — Multiple activities per community (e.g. badminton, futsal, yoga), each with its own fees, schedule, capacity, and bank account
 - **Member Dashboard** — Overview of upcoming sessions, attendance, and dues status
-- **Training Sessions** — View and RSVP to sessions
-- **Payments** — Upload monthly dues proof
-- **Admin Panel** — Manage sessions, attendance, payments, members, and community settings
+- **Sessions** — View and RSVP to sessions per activity, with capacity limits
+- **Payments** — Two payment modes per activity: monthly dues or pay-per-session, with proof upload and admin confirmation
+- **Admin Panel** — Manage activities, sessions, attendance, payments, members, and community settings
+- **i18n** — English and Indonesian, switchable at runtime
+- **White-label branding** — Community name and logo configured from the Settings page
 
 ---
 
