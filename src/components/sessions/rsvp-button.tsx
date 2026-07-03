@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { PaymentMode, PaymentStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { JoinModeDialog } from '@/components/sessions/join-mode-dialog';
+import { DisabledCta, PerSessionCta } from '@/components/sessions/per-session-cta';
 import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -21,11 +22,13 @@ interface RSVPButtonProps {
     isCancelled: boolean;
     isCompleted: boolean;
     paymentMode: PaymentMode | null;
+    allowsBothModes: boolean;
     sessionFee: number;
     monthlyFee: number;
     hasMonthlyPaid: boolean;
     sessionPaymentStatus: PaymentStatus | null;
     sessionPaymentNotes: string | null;
+    adminWhatsapp: string;
 }
 
 export function RSVPButton({
@@ -36,11 +39,13 @@ export function RSVPButton({
     isCancelled,
     isCompleted,
     paymentMode,
+    allowsBothModes,
     sessionFee,
     monthlyFee,
     hasMonthlyPaid,
     sessionPaymentStatus,
     sessionPaymentNotes,
+    adminWhatsapp,
 }: Readonly<RSVPButtonProps>) {
     const router = useRouter();
     const { locale } = useLocale();
@@ -86,9 +91,11 @@ export function RSVPButton({
         }
     }
 
-    // Joining Monthly = pay dues first; the upload path joins the Activity,
-    // adopts the mode, and auto-registers the member for the month's sessions.
-    async function chooseMonthly(): Promise<void> {
+    // Ensure membership, persist the chosen mode (the server decides whether it
+    // applies this period or queues for the next), then continue to `next`.
+    // Registering through a payment path IS the mode choice — there is no
+    // selector in the profile anymore.
+    async function chooseMode(mode: PaymentMode, next: string): Promise<void> {
         setLoading(true);
         try {
             const join = await fetch('/api/users/memberships', {
@@ -97,18 +104,49 @@ export function RSVPButton({
                 body: JSON.stringify({ activityId, action: 'join' }),
             });
             if (!join.ok) throw new Error(t.activity.actionFailed);
-            const mode = await fetch(`/api/users/memberships/${activityId}/mode`, {
+            const res = await fetch(`/api/users/memberships/${activityId}/mode`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode: 'MONTHLY' }),
+                body: JSON.stringify({ mode }),
             });
-            if (!mode.ok) throw new Error(t.activity.actionFailed);
-            router.push('/payments/upload');
+            if (!res.ok) throw new Error(t.activity.actionFailed);
+            router.push(next);
         } catch (err) {
             toast.error(err instanceof Error ? err.message : t.common.error);
             setLoading(false);
         }
     }
+
+    // Joining Monthly = pay dues first; paying auto-registers the member for
+    // the month's sessions. Per-session = pre-pay this session's fee.
+    const chooseMonthly = () => chooseMode('MONTHLY', '/payments/upload');
+    const choosePerSession = () =>
+        chooseMode('PER_SESSION', `/sessions/${sessionId}/pay`);
+
+    // A member who has not paid anything this period may still switch modes
+    // right here (the server applies it immediately); once a payment is in,
+    // the server queues the switch for the next period instead.
+    const modeSwitch = allowsBothModes && (
+        <>
+            <Button
+                variant='ghost'
+                size='sm'
+                disabled={loading}
+                onClick={() => setModeDialogOpen(true)}
+                className='w-full text-xs text-muted-foreground'>
+                {t.sessions.changePaymentMode}
+            </Button>
+            <JoinModeDialog
+                open={modeDialogOpen}
+                onOpenChange={setModeDialogOpen}
+                monthlyFee={monthlyFee}
+                sessionFee={sessionFee}
+                loading={loading}
+                onMonthly={chooseMonthly}
+                onPerSession={choosePerSession}
+            />
+        </>
+    );
 
     if (isCancelled) {
         return <DisabledCta label={t.sessions.sessionCancelled} />;
@@ -140,14 +178,17 @@ export function RSVPButton({
             );
         }
         return (
-            <Link href='/payments/upload'>
-                <Button className='w-full'>
-                    {t.sessions.payMonthlyFirst} ·{' '}
-                    <span className='tabular-nums'>
-                        Rp {monthlyFee.toLocaleString('id-ID')}
-                    </span>
-                </Button>
-            </Link>
+            <div className='space-y-2'>
+                <Link href='/payments/upload'>
+                    <Button className='w-full'>
+                        {t.sessions.payMonthlyFirst} ·{' '}
+                        <span className='tabular-nums'>
+                            Rp {monthlyFee.toLocaleString('id-ID')}
+                        </span>
+                    </Button>
+                </Link>
+                {modeSwitch}
+            </div>
         );
     }
 
@@ -181,28 +222,35 @@ export function RSVPButton({
                     sessionFee={sessionFee}
                     loading={loading}
                     onMonthly={chooseMonthly}
-                    onPerSession={() =>
-                        router.push(`/sessions/${sessionId}/pay`)
-                    }
+                    onPerSession={choosePerSession}
                 />
             </>
         );
     }
 
-    // Per-session members pay to secure a slot — never free.
+    // Per-session members pay to secure a slot — never free. A live payment
+    // (pending or confirmed) locks the mode for the period, so the switch
+    // affordance only shows while nothing has been paid for this session.
     if (!isFreeEligible) {
+        const hasLiveSessionPayment =
+            sessionPaymentStatus === 'PENDING' ||
+            sessionPaymentStatus === 'CONFIRMED';
         return (
-            <PerSessionCta
-                sessionId={sessionId}
-                isRegistered={isRegistered}
-                isFull={isFull}
-                sessionFee={sessionFee}
-                status={sessionPaymentStatus}
-                rejectNotes={sessionPaymentNotes}
-                loading={loading}
-                onCancel={cancelRegistration}
-                t={t}
-            />
+            <div className='space-y-2'>
+                <PerSessionCta
+                    sessionId={sessionId}
+                    isRegistered={isRegistered}
+                    isFull={isFull}
+                    sessionFee={sessionFee}
+                    status={sessionPaymentStatus}
+                    rejectNotes={sessionPaymentNotes}
+                    adminWhatsapp={adminWhatsapp}
+                    loading={loading}
+                    onCancel={cancelRegistration}
+                    t={t}
+                />
+                {!isRegistered && !hasLiveSessionPayment && modeSwitch}
+            </div>
         );
     }
 
@@ -222,99 +270,5 @@ export function RSVPButton({
             }>
             {isRegistered ? t.sessions.cancelRegistration : t.sessions.register}
         </Button>
-    );
-}
-
-function DisabledCta({ label }: Readonly<{ label: string }>) {
-    return (
-        <Button disabled variant='outline' className='w-full'>
-            {label}
-        </Button>
-    );
-}
-
-interface PerSessionCtaProps {
-    sessionId: string;
-    isRegistered: boolean;
-    isFull: boolean;
-    sessionFee: number;
-    status: PaymentStatus | null;
-    rejectNotes: string | null;
-    loading: boolean;
-    onCancel: () => void;
-    t: ReturnType<typeof getDictionary>;
-}
-
-function PerSessionCta({
-    sessionId,
-    isRegistered,
-    isFull,
-    sessionFee,
-    status,
-    rejectNotes,
-    loading,
-    onCancel,
-    t,
-}: Readonly<PerSessionCtaProps>) {
-    const payHref = `/sessions/${sessionId}/pay`;
-    const feeLabel = `Rp ${sessionFee.toLocaleString('id-ID')}`;
-
-    if (isRegistered && status === 'CONFIRMED') {
-        return (
-            <p className='text-sm font-medium text-success text-center py-2'>
-                {t.sessions.registeredPaid}
-            </p>
-        );
-    }
-
-    // A reject deletes the Attendance row, so isRegistered is already false by
-    // the time status is REJECTED — check status alone, not isRegistered too.
-    if (status === 'REJECTED') {
-        return (
-            <div className='space-y-2'>
-                <p className='text-sm font-medium text-destructive text-center'>
-                    {t.sessions.paymentRejected}
-                </p>
-                {rejectNotes && (
-                    <p className='text-xs text-destructive text-center'>
-                        {t.payments.rejectReason}: {rejectNotes}
-                    </p>
-                )}
-                <Link href={payHref}>
-                    <Button className='w-full'>
-                        {t.sessions.registerAndPay} · <span className='tabular-nums'>{feeLabel}</span>
-                    </Button>
-                </Link>
-            </div>
-        );
-    }
-
-    if (isRegistered) {
-        return (
-            <div className='space-y-2'>
-                <p className='text-sm font-medium text-warning text-center'>
-                    {t.sessions.registeredPending}
-                </p>
-                <Button
-                    onClick={onCancel}
-                    loading={loading}
-                    variant='outline'
-                    className='w-full text-destructive hover:bg-destructive/10'>
-                    {t.sessions.cancelRegistration}
-                </Button>
-            </div>
-        );
-    }
-
-    if (isFull) {
-        return <DisabledCta label={t.sessions.sessionFull} />;
-    }
-
-    return (
-        <Link href={payHref}>
-            <Button className='w-full'>
-                {t.sessions.registerAndPay} · <span className='tabular-nums'>{feeLabel}</span>
-            </Button>
-        </Link>
     );
 }

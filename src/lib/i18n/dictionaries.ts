@@ -142,6 +142,7 @@ const en = {
         joinPerSessionDesc: 'Pay only for the sessions you join',
         payMonthlyFirst: 'Pay monthly dues first',
         paymentRejected: 'Payment rejected · upload again',
+        changePaymentMode: 'Change payment mode',
         cancelBlockedConfirmed:
             "A confirmed payment can't be self-cancelled — contact an admin.",
     },
@@ -156,6 +157,8 @@ const en = {
         uploadProofBtn: 'Upload Payment Proof',
         viewProof: 'View Proof',
         rejectReason: 'Rejection reason',
+        rejectedRefundWarning:
+            'If you already transferred the money, contact the admin on WhatsApp for a refund.',
         confirmedAt: 'Confirmed:',
         rejectedNote: 'Rejection note:',
         backToHistory: 'Back to dues history',
@@ -396,6 +399,8 @@ const en = {
         pendingNote: 'Change takes effect next period',
         noModesOffered: 'No payment mode is configured for this activity',
         saved: 'Payment mode updated',
+        chooseAtRegistration:
+            'Chosen when you register for a session. You can switch it there until you pay for the current period.',
     },
     common: {
         loading: 'Loading...',
@@ -633,6 +638,7 @@ const id: typeof en = {
         joinPerSessionDesc: 'Bayar hanya sesi yang kamu ikuti',
         payMonthlyFirst: 'Bayar iuran bulanan dulu',
         paymentRejected: 'Pembayaran ditolak · upload ulang',
+        changePaymentMode: 'Ganti metode pembayaran',
         cancelBlockedConfirmed:
             'Pembayaran yang sudah dikonfirmasi tidak bisa dibatalkan sendiri — hubungi admin.',
     },
@@ -647,6 +653,8 @@ const id: typeof en = {
         uploadProofBtn: 'Upload Bukti Bayar',
         viewProof: 'Lihat Bukti',
         rejectReason: 'Alasan penolakan',
+        rejectedRefundWarning:
+            'Jika kamu sudah terlanjur transfer, hubungi admin via WhatsApp untuk pengembalian dana.',
         confirmedAt: 'Dikonfirmasi:',
         rejectedNote: 'Catatan penolakan:',
         backToHistory: 'Kembali ke riwayat iuran',
@@ -890,6 +898,8 @@ const id: typeof en = {
         pendingNote: 'Perubahan berlaku mulai periode berikutnya',
         noModesOffered: 'Tidak ada metode pembayaran yang dikonfigurasi untuk aktivitas ini',
         saved: 'Metode pembayaran diperbarui',
+        chooseAtRegistration:
+            'Dipilih saat mendaftar ke sesi. Bisa diganti di sana selama kamu belum membayar periode berjalan.',
     },
     common: {
         loading: 'Memuat...',

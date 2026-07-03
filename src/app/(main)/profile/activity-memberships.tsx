@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { PaymentMode } from '@prisma/client';
+import { PaymentMode } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { ActivityBadge } from '@/components/activity/activity-badge';
-import { PaymentModeSelector } from './payment-mode-selector';
 import { toast } from 'sonner';
 import { MessageCircle, Shapes } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
+
+/** Radix for decoding a YYYYMM period key back into month + year. */
+const PERIOD_RADIX = 100;
 
 interface MembershipActivity {
     id: string;
@@ -24,6 +26,68 @@ interface MembershipActivity {
     pendingMode: PaymentMode | null;
     pendingEffectiveFrom: number | null;
     effectiveMode: PaymentMode | null;
+}
+
+function money(n: number): string {
+    return `Rp ${n.toLocaleString('id-ID')}`;
+}
+
+/** Human label for a YYYYMM period key using the localized month names. */
+function periodLabel(key: number, months: string[]): string {
+    const year = Math.floor(key / PERIOD_RADIX);
+    const month = key % PERIOD_RADIX;
+    return `${months[month] ?? ''} ${year}`.trim();
+}
+
+/**
+ * Read-only payment-mode summary. The mode itself is chosen (and switched)
+ * in the session-registration flow, never here — this only reflects the
+ * server-resolved state for the current period.
+ */
+function PaymentModeLine({
+    activity,
+    t,
+}: Readonly<{ activity: MembershipActivity; t: Dictionary }>) {
+    if (!activity.allowsMonthly && !activity.allowsPerSession) {
+        return (
+            <p className='mt-2 text-xs text-muted-foreground'>
+                {t.paymentMode.noModesOffered}
+            </p>
+        );
+    }
+    const mode = activity.effectiveMode;
+    if (!mode) {
+        return (
+            <p className='mt-2 text-xs text-muted-foreground'>
+                {t.paymentMode.chooseAtRegistration}
+            </p>
+        );
+    }
+    const isMonthly = mode === PaymentMode.MONTHLY;
+    const label = isMonthly ? t.paymentMode.monthly : t.paymentMode.perSession;
+    const fee = isMonthly
+        ? `${money(activity.monthlyFee)}${t.paymentMode.perMonthSuffix}`
+        : `${money(activity.sessionFee)}${t.paymentMode.perSessionSuffix}`;
+    const pendingLabel =
+        activity.pendingMode === PaymentMode.MONTHLY
+            ? t.paymentMode.monthly
+            : t.paymentMode.perSession;
+    return (
+        <div className='mt-2 text-xs text-muted-foreground'>
+            <p>
+                {t.paymentMode.youPay}:{' '}
+                <span className='font-medium text-foreground'>{label}</span>{' '}
+                <span className='tabular-nums'>{fee}</span>
+            </p>
+            {activity.pendingMode && activity.pendingEffectiveFrom && (
+                <p className='mt-1 text-warning'>
+                    {pendingLabel} · {t.paymentMode.pendingNote} ·{' '}
+                    {t.paymentMode.effectivePrefix}{' '}
+                    {periodLabel(activity.pendingEffectiveFrom, t.months)}
+                </p>
+            )}
+        </div>
+    );
 }
 
 function fetchMemberships(): Promise<MembershipActivity[] | null> {
@@ -124,21 +188,7 @@ export function ActivityMemberships() {
                                     </Button>
                                 </div>
                             </div>
-                            {e.joined && (
-                                <PaymentModeSelector
-                                    membership={{
-                                        activityId: e.id,
-                                        monthlyFee: e.monthlyFee,
-                                        sessionFee: e.sessionFee,
-                                        allowsMonthly: e.allowsMonthly,
-                                        allowsPerSession: e.allowsPerSession,
-                                        pendingMode: e.pendingMode,
-                                        pendingEffectiveFrom: e.pendingEffectiveFrom,
-                                        effectiveMode: e.effectiveMode,
-                                    }}
-                                    onChanged={refresh}
-                                />
-                            )}
+                            {e.joined && <PaymentModeLine activity={e} t={t} />}
                         </div>
                     ))}
                 </div>

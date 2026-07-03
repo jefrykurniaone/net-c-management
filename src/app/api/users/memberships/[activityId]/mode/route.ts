@@ -9,9 +9,40 @@ import {
     nextPeriod,
     toPeriodKey,
     graduateStanding,
+    type BillingPeriod,
 } from '@/lib/payment-mode';
-import { PaymentMode, Prisma } from '@prisma/client';
+import { PaymentMode, PaymentStatus, Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
+
+/** Payment statuses that count as "already paid" — REJECTED funds nothing. */
+const LIVE_PAYMENT_STATUSES: PaymentStatus[] = [
+    PaymentStatus.PENDING,
+    PaymentStatus.CONFIRMED,
+];
+
+/**
+ * Whether the member has any live payment (monthly dues or a session fee)
+ * for this Activity in the given billing period. Gates when a mode switch
+ * takes effect: an unpaid period may still be re-decided; a paid one is
+ * locked in, so the switch queues for the next period instead.
+ */
+async function hasPaidPeriod(
+    userId: string,
+    activityId: string,
+    period: BillingPeriod,
+): Promise<boolean> {
+    const payment = await prisma.payment.findFirst({
+        where: {
+            userId,
+            activityId,
+            month: period.month,
+            year: period.year,
+            status: { in: LIVE_PAYMENT_STATUSES },
+        },
+        select: { id: true },
+    });
+    return payment !== null;
+}
 
 /** Whether the Activity offers the requested mode (FR-9). */
 function offersMode(
@@ -28,15 +59,21 @@ function offersMode(
  * already-graduated standing mode (see `graduateStanding`). A first-ever
  * selection (no standing mode) applies THIS period — nothing is owed yet.
  * Re-picking the standing mode cancels any queued switch, persisting the
- * graduation. A genuine change is queued for the NEXT period, leaving the
- * (graduated) standing mode — and thus the current period — untouched.
+ * graduation. A genuine change applies THIS period while the member has no
+ * live payment for it (an unpaid period may still be re-decided); once a
+ * payment is in, the change is queued for the NEXT period, leaving the paid
+ * period untouched.
  */
 function resolveSwitch(
     standing: { paymentMode: PaymentMode | null; effectiveFrom: number },
     mode: PaymentMode,
     now: Date,
+    hasPaidCurrentPeriod: boolean,
 ): Prisma.MembershipUpdateInput {
-    if (standing.paymentMode === null) {
+    const isFirstSelection = standing.paymentMode === null;
+    const isUnpaidChange =
+        !isFirstSelection && mode !== standing.paymentMode && !hasPaidCurrentPeriod;
+    if (isFirstSelection || isUnpaidChange) {
         const cur = currentPeriod(now);
         return {
             paymentMode: mode,
@@ -130,7 +167,9 @@ export async function PATCH(
     }
 
     const now = new Date();
-    const standing = graduateStanding(membership, currentPeriod(now));
+    const period = currentPeriod(now);
+    const standing = graduateStanding(membership, period);
+    const hasPaid = await hasPaidPeriod(userId, activityId, period);
 
     try {
         const updated = await prisma.membership.update({
@@ -145,7 +184,7 @@ export async function PATCH(
                 pendingMode: membership.pendingMode,
                 pendingEffectiveFrom: membership.pendingEffectiveFrom,
             },
-            data: resolveSwitch(standing, parsed.data.mode, now),
+            data: resolveSwitch(standing, parsed.data.mode, now, hasPaid),
             select: MEMBERSHIP_MODE_SELECT,
         });
         return NextResponse.json(updated, { status: 200 });

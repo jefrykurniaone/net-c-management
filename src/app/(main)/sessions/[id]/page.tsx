@@ -263,11 +263,15 @@ export default async function SessionDetailPage({
                     isCancelled={activitySession.status === 'CANCELLED'}
                     isCompleted={activitySession.status === 'COMPLETED'}
                     paymentMode={effectiveMode}
+                    allowsBothModes={
+                        offered.allowsMonthly && offered.allowsPerSession
+                    }
                     sessionFee={activitySession.fee}
                     monthlyFee={activitySession.activity.monthlyFee}
                     hasMonthlyPaid={monthlyPayment !== null}
                     sessionPaymentStatus={sessionPayment?.status ?? null}
                     sessionPaymentNotes={sessionPayment?.notes ?? null}
+                    adminWhatsapp={whatsapp}
                 />
 
                 {whatsapp && (
