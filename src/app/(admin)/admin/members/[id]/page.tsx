@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { id as localeId, enUS } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import Link from "next/link";
@@ -13,27 +13,11 @@ import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { PaymentMode } from "@prisma/client";
 
-const STATUS_LABELS = {
-  REGISTERED: "Terdaftar",
-  PRESENT: "Hadir",
-  ABSENT: "Absen",
-};
-
 const ATTENDANCE_BADGE_VARIANTS: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
   PRESENT: "default",
   ABSENT: "destructive",
   REGISTERED: "secondary",
 };
-
-const PAYMENT_STATUS_LABELS = {
-  PENDING: "Pending",
-  CONFIRMED: "Dikonfirmasi",
-  REJECTED: "Ditolak",
-};
-const MONTH_NAMES = [
-  "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-];
 
 export default async function MemberDetailPage({
   params,
@@ -43,6 +27,7 @@ export default async function MemberDetailPage({
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
   const t = getDictionary(locale);
+  const dateLocale = locale === "id" ? localeId : enUS;
 
   const { id } = await params;
   const member = await prisma.user.findUnique({
@@ -85,7 +70,7 @@ export default async function MemberDetailPage({
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="w-4 h-4" />
-        Kembali ke daftar anggota
+        {t.admin.memberDetailBack}
       </Link>
 
       {/* Profile */}
@@ -105,16 +90,16 @@ export default async function MemberDetailPage({
           )}
           <div>
             <h1 className="text-xl font-bold text-foreground">
-              {member.name ?? "(Belum diisi)"}
+              {member.name ?? t.admin.memberNameEmpty}
             </h1>
             <p className="text-sm text-muted-foreground">{member.email}</p>
             <div className="flex gap-2 mt-1">
               <Badge variant={roleBadgeVariant(member.role)}>
-                {member.role}
+                {t.roles[member.role]}
               </Badge>
               {!member.isActive && (
                 <Badge variant="destructive">
-                  Non-aktif
+                  {t.admin.inactive2}
                 </Badge>
               )}
             </div>
@@ -150,21 +135,21 @@ export default async function MemberDetailPage({
         </div>
         {member.phone && (
           <p className="mt-4 text-sm text-muted-foreground">
-            Telepon: <span className="text-foreground">{member.phone}</span>
+            {t.admin.colPhone}: <span className="text-foreground">{member.phone}</span>
           </p>
         )}
         <p className="text-sm text-muted-foreground mt-1">
-          Bergabung {format(new Date(member.createdAt), "d MMMM yyyy", { locale: localeId })}
+          {t.admin.memberJoined} {format(new Date(member.createdAt), "d MMMM yyyy", { locale: dateLocale })}
         </p>
       </div>
 
       {/* Attendances */}
       <div className="bg-card rounded-xl border border-border p-6">
         <h2 className="font-bold text-foreground mb-4">
-          Riwayat Kehadiran ({member.attendances.length})
+          {t.admin.attendanceHistory} ({member.attendances.length})
         </h2>
         {member.attendances.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada data kehadiran.</p>
+          <p className="text-sm text-muted-foreground">{t.admin.noAttendanceData}</p>
         ) : (
           <div className="space-y-2">
             {member.attendances.map((a) => (
@@ -177,11 +162,11 @@ export default async function MemberDetailPage({
                     {a.session.title}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(a.session.date), "d MMM yyyy", { locale: localeId })}
+                    {format(new Date(a.session.date), "d MMM yyyy", { locale: dateLocale })}
                   </p>
                 </div>
                 <Badge variant={ATTENDANCE_BADGE_VARIANTS[a.status] ?? "secondary"}>
-                  {STATUS_LABELS[a.status]}
+                  {t.attendanceStatus[a.status]}
                 </Badge>
               </div>
             ))}
@@ -192,10 +177,10 @@ export default async function MemberDetailPage({
       {/* Payments */}
       <div className="bg-card rounded-xl border border-border p-6">
         <h2 className="font-bold text-foreground mb-4">
-          Riwayat Iuran ({member.payments.length})
+          {t.admin.duesHistory} ({member.payments.length})
         </h2>
         {member.payments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Belum ada data iuran.</p>
+          <p className="text-sm text-muted-foreground">{t.admin.noDuesData}</p>
         ) : (
           <div className="space-y-2">
             {member.payments.map((p) => (
@@ -205,14 +190,14 @@ export default async function MemberDetailPage({
               >
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    {MONTH_NAMES[p.month]} {p.year}
+                    {t.months[p.month]} {p.year}
                   </p>
                   <p className="text-xs text-muted-foreground tabular-nums">
                     Rp {p.amount.toLocaleString("id-ID")}
                   </p>
                 </div>
                 <Badge variant={paymentStatusVariant(p.status)}>
-                  {PAYMENT_STATUS_LABELS[p.status]}
+                  {t.paymentStatus[p.status]}
                 </Badge>
               </div>
             ))}
