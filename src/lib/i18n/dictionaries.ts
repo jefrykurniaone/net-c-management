@@ -274,6 +274,12 @@ const en = {
         toastSuccess: 'Profile updated successfully!',
         toastPhotoSuccess: 'Profile photo updated!',
         toastPhotoError: 'Failed to upload photo',
+        leaveButton: 'Leave',
+        leaveTitle: 'Leave {name}?',
+        leaveBody:
+            "You'll be removed from this activity. Upcoming reserved sessions you haven't paid for will be released. Sessions you've already paid for and had confirmed stay booked. Paid dues are not refunded.",
+        leaveConfirm: 'Leave activity',
+        leaveToast: 'You left {name}',
     },
     admin: {
         dashboardTitle: 'Admin Dashboard',
@@ -896,6 +902,12 @@ const id: typeof en = {
         toastSuccess: 'Profil berhasil diperbarui!',
         toastPhotoSuccess: 'Foto profil berhasil diperbarui!',
         toastPhotoError: 'Gagal mengupload foto',
+        leaveButton: 'Keluar',
+        leaveTitle: 'Keluar dari {name}?',
+        leaveBody:
+            'Anda akan dikeluarkan dari aktivitas ini. Sesi mendatang yang belum Anda bayar akan dilepas. Sesi yang sudah Anda bayar dan dikonfirmasi tetap terpesan. Iuran yang sudah dibayar tidak dikembalikan.',
+        leaveConfirm: 'Keluar dari aktivitas',
+        leaveToast: 'Anda keluar dari {name}',
     },
     admin: {
         dashboardTitle: 'Admin Dashboard',

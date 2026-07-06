@@ -35,7 +35,7 @@ export default async function ProfilePage() {
             orderBy: { joinedAt: 'asc' },
             select: {
                 joinedAt: true,
-                activity: { select: { name: true, color: true } },
+                activity: { select: { id: true, name: true, color: true } },
             },
         }),
     ]);
@@ -58,6 +58,7 @@ export default async function ProfilePage() {
                     locale: dateLocale,
                 })}
                 memberships={memberships.map((m) => ({
+                    activityId: m.activity.id,
                     name: m.activity.name,
                     color: m.activity.color,
                     joinedDate: format(m.joinedAt, MONTH_YEAR, {

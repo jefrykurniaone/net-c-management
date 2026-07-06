@@ -1,6 +1,6 @@
 import 'server-only';
 import { prisma } from './prisma';
-import { Prisma, type Activity } from '@prisma/client';
+import { Prisma, PaymentStatus, PaymentType, type Activity } from '@prisma/client';
 
 /**
  * Server-only helpers for activity scoping. Used by member-facing queries and
@@ -97,4 +97,63 @@ export async function assertMembership(
         select: { isActive: true },
     });
     return membership?.isActive ?? false;
+}
+
+/**
+ * Member self-cancel of an activity membership. Deactivates the membership and,
+ * in the same transaction, releases every UPCOMING seat the member has not
+ * already paid-and-confirmed for that activity — unpaid holds, monthly-funded
+ * seats, and PENDING per-session reservations are deleted so their capacity
+ * returns to the pool (no ghost seats). A future CONFIRMED per-session seat is
+ * kept (the member paid for that specific session and an admin verified it);
+ * past attendance and paid MONTHLY dues rows are left untouched (history / no
+ * refund). Re-joining later starts fresh — see `ensureMembership`.
+ */
+export async function leaveActivity(
+    userId: string,
+    activityId: string,
+): Promise<void> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    await prisma.$transaction(async (tx) => {
+        await tx.membership.updateMany({
+            where: { userId, activityId },
+            data: { isActive: false },
+        });
+
+        // Seats kept: future sessions with a CONFIRMED per-session payment.
+        const confirmed = await tx.payment.findMany({
+            where: {
+                userId,
+                activityId,
+                type: PaymentType.SESSION,
+                status: PaymentStatus.CONFIRMED,
+                session: { date: { gte: today } },
+            },
+            select: { sessionId: true },
+        });
+        const kept = new Set(
+            confirmed
+                .map((p) => p.sessionId)
+                .filter((sessionId): sessionId is string => sessionId !== null),
+        );
+
+        const seats = await tx.attendance.findMany({
+            where: { userId, session: { activityId, date: { gte: today } } },
+            select: { sessionId: true },
+        });
+        const release = seats
+            .map((s) => s.sessionId)
+            .filter((sessionId) => !kept.has(sessionId));
+        if (release.length === 0) return;
+
+        // Drop the unpaid/unconfirmed charge first, then free the seat.
+        await tx.payment.deleteMany({
+            where: { userId, type: PaymentType.SESSION, sessionId: { in: release } },
+        });
+        await tx.attendance.deleteMany({
+            where: { userId, sessionId: { in: release } },
+        });
+    });
 }

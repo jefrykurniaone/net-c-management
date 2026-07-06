@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { ensureMembership } from '@/lib/activity';
+import { ensureMembership, leaveActivity } from '@/lib/activity';
 import {
     currentPeriod,
     resolvePaymentMode,
@@ -123,10 +123,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Not found' }, { status: 404 });
         }
     } else {
-        await prisma.membership.updateMany({
-            where: { userId, activityId },
-            data: { isActive: false },
-        });
+        // Deactivate + release upcoming unpaid/unconfirmed seats atomically.
+        await leaveActivity(userId, activityId);
     }
 
     return NextResponse.json({ success: true });
