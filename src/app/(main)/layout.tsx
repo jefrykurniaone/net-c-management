@@ -22,7 +22,7 @@ export default async function MainLayout({
     const isAdmin = isAdminRole(session.user.role);
 
     return (
-        <div className='flex flex-col h-screen overflow-hidden bg-muted'>
+        <div className='flex flex-col h-screen overflow-hidden bg-background'>
             <MemberTopBar
                 communityName={settings.communityName}
                 logoUrl={settings.logoUrl}

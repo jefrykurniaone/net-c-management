@@ -63,8 +63,7 @@ export default async function PaymentsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">
             {t.payments.title}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{t.payments.subtitle}</p>

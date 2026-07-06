@@ -1,9 +1,8 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
-import { Shapes } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { ActivityBadge } from '@/components/activity/activity-badge';
+import { ActivityInitial } from '@/components/activity/activity-badge';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { isAdminRole } from '@/lib/utils';
@@ -28,8 +27,7 @@ export default async function AdminActivityPage() {
         <div className='space-y-6'>
             <div className='flex items-center justify-between flex-wrap gap-3'>
                 <div>
-                    <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
-                        <Shapes className='w-6 h-6 text-primary' />
+                    <h1 className='text-2xl font-bold text-foreground'>
                         {t.admin.activityTitle}
                     </h1>
                     <p className='text-sm text-muted-foreground mt-1'>
@@ -50,23 +48,23 @@ export default async function AdminActivityPage() {
                 <div className='overflow-x-auto'>
                     <table className='w-full text-sm'>
                         <thead>
-                            <tr className='bg-muted border-b border-border'>
-                                <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
+                            <tr className='bg-muted/50 border-b border-border'>
+                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colActivity}
                                 </th>
-                                <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.activitySlug}
                                 </th>
-                                <th className='text-center px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colMembers}
                                 </th>
-                                <th className='text-right px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.activityFee}
                                 </th>
-                                <th className='text-center px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colStatus}
                                 </th>
-                                <th className='text-right px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colActions}
                                 </th>
                             </tr>
@@ -75,34 +73,39 @@ export default async function AdminActivityPage() {
                             {activities.map((e) => (
                                 <tr
                                     key={e.id}
-                                    className='border-b border-border hover:bg-muted'>
-                                    <td className='px-4 py-3'>
-                                        <div className='flex items-center gap-2'>
-                                            <ActivityBadge
+                                    className='border-b border-border last:border-b-0 hover:bg-muted/40'>
+                                    <td className='px-5 py-3'>
+                                        <div className='flex items-center gap-2.5'>
+                                            <ActivityInitial
                                                 name={e.name}
                                                 color={e.color}
                                             />
+                                            <div className='min-w-0'>
+                                                <p className='font-semibold text-foreground'>
+                                                    {e.name}
+                                                </p>
+                                                {e.description && (
+                                                    <p className='text-xs text-subtle-foreground max-w-xs truncate'>
+                                                        {e.description}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                        {e.description && (
-                                            <p className='text-xs text-muted-foreground mt-1 max-w-xs truncate'>
-                                                {e.description}
-                                            </p>
-                                        )}
                                     </td>
-                                    <td className='px-4 py-3 text-muted-foreground font-mono text-xs'>
+                                    <td className='px-5 py-3 text-muted-foreground font-mono text-xs'>
                                         {e.slug}
                                     </td>
-                                    <td className='px-4 py-3 text-center text-muted-foreground tabular-nums'>
+                                    <td className='px-5 py-3 text-center text-secondary-foreground tabular-nums'>
                                         {e._count.memberships}
                                     </td>
-                                    <td className='px-4 py-3 text-right text-muted-foreground whitespace-nowrap tabular-nums'>
+                                    <td className='px-5 py-3 text-right text-foreground font-semibold whitespace-nowrap tabular-nums'>
                                         Rp {e.monthlyFee.toLocaleString('id-ID')}
                                     </td>
-                                    <td className='px-4 py-3 text-center'>
+                                    <td className='px-5 py-3 text-center'>
                                         <Badge
                                             variant={
                                                 e.isActive
-                                                    ? 'default'
+                                                    ? 'success'
                                                     : 'secondary'
                                             }>
                                             {e.isActive
@@ -110,7 +113,7 @@ export default async function AdminActivityPage() {
                                                 : t.admin.inactive2}
                                         </Badge>
                                     </td>
-                                    <td className='px-4 py-3'>
+                                    <td className='px-5 py-3'>
                                         <ActivityActions
                                             activity={{
                                                 id: e.id,

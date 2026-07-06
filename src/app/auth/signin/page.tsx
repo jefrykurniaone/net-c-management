@@ -12,27 +12,32 @@ export default async function SignInPage() {
     ]);
     const t = getDictionary(locale);
     return (
-        <div className='min-h-screen flex items-center justify-center bg-muted'>
-            <div className='bg-card rounded-2xl shadow-xl p-8 w-full max-w-sm flex flex-col items-center gap-6'>
+        <div className='relative min-h-screen flex items-center justify-center bg-primary-soft px-6 py-10'>
+            <div
+                aria-hidden
+                className='absolute inset-x-0 top-0 h-1.5 bg-primary-solid'
+            />
+            <div className='w-full max-w-sm flex flex-col items-center gap-6'>
                 {/* Logo / Branding */}
-                <div className='flex flex-col items-center gap-2'>
+                <div className='flex flex-col items-center gap-3'>
                     <CommunityIdentityMark
                         communityName={communityName}
                         logoUrl={logoUrl}
                         size='lg'
+                        className='shadow-[0_8px_24px_rgba(15,118,110,0.25)]'
                     />
-                    <h1 className='text-2xl font-bold text-foreground'>
-                        {communityName}
-                    </h1>
-                    <p className='text-sm text-muted-foreground text-center'>
-                        {t.auth.signInSubtitle}
-                    </p>
+                    <div className='flex flex-col items-center gap-1'>
+                        <h1 className='text-[22px] font-bold text-foreground'>
+                            {communityName}
+                        </h1>
+                        <p className='text-sm text-primary text-center max-w-[260px] leading-relaxed'>
+                            {t.auth.signInSubtitle}
+                        </p>
+                    </div>
                 </div>
 
-                <div className='w-full border-t border-border' />
-
-                <div className='flex flex-col items-center gap-3 w-full'>
-                    <p className='text-sm text-muted-foreground'>
+                <div className='bg-card rounded-2xl border border-primary-soft-border shadow-[0_4px_16px_rgba(15,118,110,0.08)] p-6 w-full flex flex-col items-center gap-4'>
+                    <p className='text-sm font-medium text-muted-foreground'>
                         {t.auth.signInTitle}
                     </p>
                     <form
@@ -46,7 +51,8 @@ export default async function SignInPage() {
                         <Button
                             type='submit'
                             variant='outline'
-                            className='w-full flex items-center gap-3'>
+                            size='lg'
+                            className='w-full flex items-center gap-3 rounded-[11px]'>
                             {/* Google Icon */}
                             <svg
                                 viewBox='0 0 24 24'
@@ -72,11 +78,10 @@ export default async function SignInPage() {
                             {t.auth.signInButton}
                         </Button>
                     </form>
+                    <p className='text-xs text-subtle-foreground text-center leading-relaxed'>
+                        {t.auth.signInNote}
+                    </p>
                 </div>
-
-                <p className='text-xs text-muted-foreground text-center'>
-                    {t.auth.signInNote}
-                </p>
 
                 {/* Dev-only shortcut to the OAuth-bypass login page. */}
                 {process.env.NODE_ENV !== 'production' && (

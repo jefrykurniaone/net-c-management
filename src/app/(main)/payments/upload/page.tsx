@@ -244,12 +244,14 @@ export default function UploadPaymentPage() {
                                     className='object-cover rounded-xl'
                                 />
                             ) : (
-                                <div className='flex flex-col items-center gap-2 text-muted-foreground pointer-events-none'>
-                                    <ImageIcon className='w-8 h-8' />
-                                    <p className='text-sm'>
+                                <div className='flex flex-col items-center gap-2 pointer-events-none'>
+                                    <span className='flex size-10 items-center justify-center rounded-xl bg-accent'>
+                                        <ImageIcon className='w-5 h-5 text-primary' />
+                                    </span>
+                                    <p className='text-sm font-semibold text-foreground'>
                                         {t.payments.selectImage}
                                     </p>
-                                    <p className='text-xs'>
+                                    <p className='text-xs text-subtle-foreground'>
                                         {t.payments.fileDesc}
                                     </p>
                                 </div>

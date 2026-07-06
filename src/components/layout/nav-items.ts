@@ -6,7 +6,8 @@ import {
     Users,
     Shapes,
     Settings,
-    ShieldCheck,
+    Home,
+    ArrowLeft,
 } from 'lucide-react';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 
@@ -18,6 +19,13 @@ export type NavItem = {
     shortLabel?: string;
     href: string;
     icon: LucideIcon;
+    /** Count pill shown after the label (e.g. pending payments). Hidden when 0. */
+    badge?: number;
+};
+
+/** Live counts surfaced as nav badges. */
+export type AdminNavBadges = {
+    pendingPayments?: number;
 };
 
 /** Member primary nav — the single source of truth for both member shell surfaces. */
@@ -40,9 +48,9 @@ export function getMemberNav(t: Dict): NavItem[] {
 }
 
 /** Admin primary nav — rendered by the admin shell (sidebar + sheet). */
-export function getAdminNav(t: Dict): NavItem[] {
+export function getAdminNav(t: Dict, badges?: AdminNavBadges): NavItem[] {
     return [
-        { label: t.nav.adminDashboard, href: '/admin', icon: ShieldCheck },
+        { label: t.nav.adminDashboard, href: '/admin', icon: Home },
         {
             label: t.nav.adminSessions,
             href: '/admin/sessions',
@@ -52,6 +60,7 @@ export function getAdminNav(t: Dict): NavItem[] {
             label: t.nav.adminPayments,
             href: '/admin/payments',
             icon: CreditCard,
+            badge: badges?.pendingPayments,
         },
         { label: t.nav.adminMembers, href: '/admin/members', icon: Users },
         { label: t.nav.adminActivity, href: '/admin/activities', icon: Shapes },
@@ -67,5 +76,5 @@ export function isNavActive(pathname: string, href: string): boolean {
 
 /** Cross-shell "back to member view" link — shown by both admin nav surfaces. */
 export function getMemberViewLink(t: Dict): NavItem {
-    return { label: t.nav.memberView, href: '/dashboard', icon: LayoutDashboard };
+    return { label: t.nav.memberView, href: '/dashboard', icon: ArrowLeft };
 }

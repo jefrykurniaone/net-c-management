@@ -25,10 +25,12 @@ function NavLinks({
     onClose,
     communityName,
     logoUrl,
+    pendingPayments,
 }: Readonly<{
     onClose?: () => void;
     communityName: string;
     logoUrl?: string;
+    pendingPayments?: number;
 }>) {
     const pathname = usePathname();
     const { data: session } = useSession();
@@ -42,7 +44,7 @@ function NavLinks({
             .join('')
             .toUpperCase() ?? '?';
 
-    const ADMIN_NAV = getAdminNav(t);
+    const ADMIN_NAV = getAdminNav(t, { pendingPayments });
     const memberViewLink = getMemberViewLink(t);
 
     return (
@@ -63,7 +65,7 @@ function NavLinks({
                 <p className='px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2'>
                     {t.nav.adminLabel}
                 </p>
-                {ADMIN_NAV.map(({ label, href, icon: Icon }) => {
+                {ADMIN_NAV.map(({ label, href, icon: Icon, badge }) => {
                     const active = isNavActive(pathname, href);
                     return (
                         <Link
@@ -74,11 +76,16 @@ function NavLinks({
                             className={cn(
                                 'flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 active
-                                    ? 'bg-primary/10 text-primary'
+                                    ? 'bg-accent text-accent-foreground font-semibold'
                                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                             )}>
                             <Icon className='w-4 h-4 shrink-0' />
-                            {label}
+                            <span className='flex-1'>{label}</span>
+                            {badge !== undefined && badge > 0 && (
+                                <span className='ml-auto rounded-full bg-warning px-1.5 py-0.5 text-[10.5px] font-semibold leading-none text-warning-foreground tabular-nums'>
+                                    {badge}
+                                </span>
+                            )}
                         </Link>
                     );
                 })}
@@ -135,7 +142,12 @@ function NavLinks({
 export function MobileNav({
     communityName,
     logoUrl,
-}: Readonly<{ communityName: string; logoUrl?: string }>) {
+    pendingPayments,
+}: Readonly<{
+    communityName: string;
+    logoUrl?: string;
+    pendingPayments?: number;
+}>) {
     const [open, setOpen] = useState(false);
     const { locale } = useLocale();
     const t = getDictionary(locale);
@@ -154,6 +166,7 @@ export function MobileNav({
                     onClose={() => setOpen(false)}
                     communityName={communityName}
                     logoUrl={logoUrl}
+                    pendingPayments={pendingPayments}
                 />
             </SheetContent>
         </Sheet>

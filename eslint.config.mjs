@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Design handoff — vendored design artifact, not app source.
+    "Sports Community Management UI-handoff/**",
   ]),
 ]);
 

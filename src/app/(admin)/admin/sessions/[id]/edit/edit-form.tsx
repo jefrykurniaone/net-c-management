@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { buildUpdateSessionSchema, type UpdateSessionFormData } from "@/lib/validations/session";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Form,
   FormControl,
@@ -55,6 +56,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
     { value: "ABSENT", label: t.attendanceStatus.ABSENT, icon: XCircle, color: "text-destructive" },
   ];
   const [loading, setLoading] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"delete" | "markAll" | null>(null);
   const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [attendances, setAttendances] = useState<AttendanceWithUser[]>(session.attendances);
   const [attendanceLoading, setAttendanceLoading] = useState<string | null>(null);
@@ -105,7 +107,6 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
   }
 
   async function handleDelete() {
-    if (!confirm(t.admin.confirmDelete)) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/sessions/${session.id}`, { method: "DELETE" });
@@ -141,7 +142,6 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
   }
 
   async function handleMarkAllPresent() {
-    if (!confirm(t.admin.confirmMarkAll)) return;
     setLoading(true);
     try {
       await Promise.all(
@@ -369,14 +369,22 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               </Button>
               <Button
                 type="button"
-                variant="outline"
-                className="text-destructive hover:bg-destructive/10"
-                onClick={handleDelete}
+                variant="destructive-outline"
+                onClick={() => setConfirmAction("delete")}
                 loading={loading}
               >
                 {t.admin.deleteBtn}
               </Button>
             </div>
+            <ConfirmDialog
+              open={confirmAction === "delete"}
+              onOpenChange={(open) => !open && setConfirmAction(null)}
+              title={t.admin.deleteBtn}
+              description={t.admin.confirmDelete}
+              confirmLabel={t.admin.deleteBtn}
+              cancelLabel={t.common.cancel}
+              onConfirm={handleDelete}
+            />
           </form>
         </Form>
       </div>
@@ -391,12 +399,23 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
             <Button
               type="button"
               size="sm"
-              onClick={handleMarkAllPresent}
+              onClick={() => setConfirmAction("markAll")}
               loading={loading}
             >
               {!loading && <CheckCircle className="w-4 h-4 mr-1" />}
               {t.admin.markAllPresent}
             </Button>
+            <ConfirmDialog
+              open={confirmAction === "markAll"}
+              onOpenChange={(open) => !open && setConfirmAction(null)}
+              tone="primary"
+              icon={CheckCircle}
+              title={t.admin.markAllPresent}
+              description={t.admin.confirmMarkAll}
+              confirmLabel={t.admin.markAllPresent}
+              cancelLabel={t.common.cancel}
+              onConfirm={handleMarkAllPresent}
+            />
           </div>
           <div className="space-y-2">
             {attendances.map((a) => {

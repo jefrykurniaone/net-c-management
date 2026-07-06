@@ -53,7 +53,7 @@ function IdentityMark({
                 logoUrl={logoUrl}
                 size='sm'
             />
-            <span className='font-bold text-foreground text-sm truncate'>
+            <span className='font-heading font-semibold text-foreground text-sm truncate'>
                 {communityName}
             </span>
         </div>
@@ -135,7 +135,7 @@ export function MemberTopBar({ communityName, logoUrl, isAdmin }: ShellProps) {
                             className={cn(
                                 'flex items-center gap-2 px-3 min-h-11 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 active
-                                    ? 'bg-primary/10 text-primary'
+                                    ? 'bg-accent text-accent-foreground font-semibold'
                                     : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                             )}>
                             <Icon className='w-4 h-4 shrink-0' />
@@ -161,7 +161,7 @@ export function MemberBottomNav({ isAdmin }: Readonly<{ isAdmin: boolean }>) {
     return (
         <nav
             aria-label={t.nav.mainLabel}
-            className='md:hidden fixed bottom-0 inset-x-0 z-30 flex items-stretch justify-around bg-card border-t border-border pb-[env(safe-area-inset-bottom)]'>
+            className='md:hidden fixed bottom-0 inset-x-0 z-30 flex items-stretch justify-around gap-1 bg-card border-t border-border px-3 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.375rem)]'>
             {items.map(({ label, shortLabel, href, icon: Icon }) => {
                 const active = isNavActive(pathname, href);
                 return (
@@ -170,10 +170,10 @@ export function MemberBottomNav({ isAdmin }: Readonly<{ isAdmin: boolean }>) {
                         href={href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 py-2 min-h-14 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                            'flex flex-1 flex-col items-center justify-center gap-1 py-1.5 min-h-14 rounded-[10px] text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                             active
-                                ? 'text-primary'
-                                : 'text-muted-foreground hover:text-foreground',
+                                ? 'bg-accent text-accent-foreground font-semibold'
+                                : 'text-subtle-foreground hover:text-foreground',
                         )}>
                         <Icon className='w-5 h-5 shrink-0' />
                         <span className='truncate max-w-full px-1'>

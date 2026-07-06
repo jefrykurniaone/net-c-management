@@ -9,7 +9,7 @@ import { ActivityBadge } from '@/components/activity/activity-badge';
 import { ActivityFilter } from '@/components/activity/activity-filter';
 import { SessionCards } from './session-cards';
 import Link from 'next/link';
-import { CalendarDays, Plus, ExternalLink } from 'lucide-react';
+import { Plus, ExternalLink } from 'lucide-react';
 import type { ActivitySession } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -65,8 +65,7 @@ export default async function AdminSessionsPage({
         <div className='space-y-6'>
             <div className='flex items-center justify-between flex-wrap gap-3'>
                 <div>
-                    <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
-                        <CalendarDays className='w-6 h-6 text-primary' />
+                    <h1 className='text-2xl font-bold text-foreground'>
                         {t.admin.sessionsTitle}
                     </h1>
                     <p className='text-sm text-muted-foreground mt-1'>
@@ -98,43 +97,41 @@ export default async function AdminSessionsPage({
                 <div className='overflow-x-auto'>
                     <table className='w-full text-sm'>
                         <thead>
-                            <tr className='bg-muted border-b border-border'>
-                                <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
+                            <tr className='bg-muted/50 border-b border-border'>
+                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colSession}
                                 </th>
-                                <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colDate}
                                 </th>
-                                <th className='text-left px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colLocation}
                                 </th>
-                                <th className='text-center px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colParticipants}
                                 </th>
-                                <th className='text-center px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colStatus}
                                 </th>
-                                <th className='text-right px-4 py-3 font-medium text-muted-foreground'>
+                                <th className='text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colActions}
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             {sessions.map((s: SessionRow) => {
+                                    const fillPct = Math.min(
+                                        (s._count.attendances / s.maxPlayers) *
+                                            100,
+                                        100,
+                                    );
+                                    const isUnderBooked = fillPct < 60;
                                     return (
                                         <tr
                                             key={s.id}
-                                            className='border-b border-border hover:bg-muted'>
-                                            <td className='relative px-4 py-3 font-medium text-foreground max-w-50'>
-                                                <span
-                                                    aria-hidden
-                                                    className='absolute left-0 top-0 h-full w-[3px]'
-                                                    style={{
-                                                        backgroundColor:
-                                                            s.activity.color,
-                                                    }}
-                                                />
-                                                <span className='truncate block'>
+                                            className='border-b border-border last:border-b-0 hover:bg-muted/40'>
+                                            <td className='px-5 py-3.5 max-w-50'>
+                                                <span className='truncate block font-semibold text-foreground'>
                                                     {s.title}
                                                 </span>
                                                 <ActivityBadge
@@ -144,7 +141,7 @@ export default async function AdminSessionsPage({
                                                     className='mt-1'
                                                 />
                                             </td>
-                                            <td className='px-4 py-3 text-muted-foreground whitespace-nowrap'>
+                                            <td className='px-5 py-3.5 text-secondary-foreground whitespace-nowrap tabular-nums'>
                                                 {format(
                                                     new Date(s.date),
                                                     'd MMM yyyy',
@@ -154,35 +151,50 @@ export default async function AdminSessionsPage({
                                                     {s.startTime} – {s.endTime}
                                                 </span>
                                             </td>
-                                            <td className='px-4 py-3 text-muted-foreground max-w-37.5 truncate'>
+                                            <td className='px-5 py-3.5 text-muted-foreground max-w-37.5 truncate'>
                                                 {s.location}
                                             </td>
-                                            <td className='px-4 py-3 text-center text-muted-foreground tabular-nums'>
-                                                {s._count.attendances}/
-                                                {s.maxPlayers}
+                                            <td className='px-5 py-3.5'>
+                                                <span className='block text-[13px] font-semibold text-foreground tabular-nums'>
+                                                    {s._count.attendances}/
+                                                    {s.maxPlayers}
+                                                </span>
+                                                <span className='mt-1 block h-1 w-16 overflow-hidden rounded-full bg-muted'>
+                                                    <span
+                                                        className={
+                                                            'block h-full rounded-full ' +
+                                                            (isUnderBooked
+                                                                ? 'bg-warning-solid'
+                                                                : 'bg-primary')
+                                                        }
+                                                        style={{
+                                                            width: `${fillPct}%`,
+                                                        }}
+                                                    />
+                                                </span>
                                             </td>
-                                            <td className='px-4 py-3 text-center'>
+                                            <td className='px-5 py-3.5'>
                                                 <Badge
                                                     variant={sessionStatusVariant(s.status)}>
                                                     {t.sessionStatus[s.status]}
                                                 </Badge>
                                             </td>
-                                            <td className='px-4 py-3 text-right'>
-                                                <div className='flex items-center justify-end gap-2'>
+                                            <td className='px-5 py-3.5 text-right'>
+                                                <div className='flex items-center justify-end gap-2.5'>
                                                     <Link
                                                         href={`/sessions/${s.id}`}
-                                                        className='text-xs text-primary hover:underline flex items-center gap-1'>
+                                                        className='text-xs font-semibold text-primary hover:underline flex items-center gap-1'>
                                                         <ExternalLink className='w-3 h-3' />
                                                         {t.admin.detail}
                                                     </Link>
                                                     <Link
                                                         href={`/admin/sessions/${s.id}/edit`}
-                                                        className='text-xs text-muted-foreground hover:text-foreground hover:underline'>
+                                                        className='text-xs font-semibold text-secondary-foreground hover:text-foreground hover:underline'>
                                                         {t.admin.edit}
                                                     </Link>
                                                     <a
                                                         href={`/api/sessions/${s.id}/export`}
-                                                        className='text-xs text-primary hover:underline'
+                                                        className='text-xs font-semibold text-primary hover:underline'
                                                         download>
                                                         CSV
                                                     </a>

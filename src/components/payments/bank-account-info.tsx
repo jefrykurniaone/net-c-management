@@ -43,28 +43,32 @@ export function BankAccountInfo({
     }
 
     return (
-        <div className='rounded-lg border border-border bg-muted/50 p-3'>
-            <p className='text-xs text-muted-foreground'>{t.payments.transferTo}</p>
-            <div className='mt-1 flex items-center justify-between gap-2'>
-                <p className='text-sm font-semibold text-foreground tabular-nums'>
-                    {account.bankName && `${account.bankName} · `}
-                    {account.bankAccountNumber}
-                </p>
+        <div className='rounded-xl border border-primary-soft-border bg-primary-soft px-4 py-3.5'>
+            <p className='text-[11px] font-semibold uppercase tracking-[0.08em] text-primary'>
+                {t.payments.transferTo}
+            </p>
+            <div className='mt-1.5 flex items-center justify-between gap-2'>
+                <div className='min-w-0'>
+                    <p className='font-heading text-[15px] font-bold text-foreground tabular-nums truncate'>
+                        {account.bankName && `${account.bankName} · `}
+                        {account.bankAccountNumber}
+                    </p>
+                    {account.bankAccountHolder && (
+                        <p className='mt-0.5 text-xs text-primary'>
+                            a.n. {account.bankAccountHolder}
+                        </p>
+                    )}
+                </div>
                 <button
                     type='button'
                     onClick={copyNumber}
                     aria-label={t.common.copy}
                     title={t.common.copy}
-                    className='inline-flex h-8 items-center gap-1 rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-muted hover:text-foreground'>
+                    className='inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-primary-soft-border bg-card px-2.5 text-xs font-semibold text-primary hover:bg-accent'>
                     <Copy className='h-3.5 w-3.5' />
                     {t.common.copy}
                 </button>
             </div>
-            {account.bankAccountHolder && (
-                <p className='mt-0.5 text-xs text-muted-foreground'>
-                    a.n. {account.bankAccountHolder}
-                </p>
-            )}
         </div>
     );
 }

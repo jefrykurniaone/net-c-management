@@ -3,8 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, ChevronRight, User } from 'lucide-react';
+import { LogOut, User, ChevronsUpDown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -13,10 +20,21 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { getAdminNav, getMemberViewLink, isNavActive } from './nav-items';
 
+/** OWNER → "Owner", ADMIN → "Admin" — role shown under the user's name. */
+function formatRole(role?: string): string {
+    if (!role) return '';
+    return role.charAt(0) + role.slice(1).toLowerCase();
+}
+
 export function Sidebar({
     communityName,
     logoUrl,
-}: Readonly<{ communityName: string; logoUrl?: string }>) {
+    pendingPayments,
+}: Readonly<{
+    communityName: string;
+    logoUrl?: string;
+    pendingPayments?: number;
+}>) {
     const pathname = usePathname();
     const { data: session } = useSession();
     const { locale } = useLocale();
@@ -30,21 +48,24 @@ export function Sidebar({
             .join('')
             .toUpperCase() ?? '?';
 
-    const ADMIN_NAV = getAdminNav(t);
+    const ADMIN_NAV = getAdminNav(t, { pendingPayments });
     const memberViewLink = getMemberViewLink(t);
 
     return (
         <aside className='flex flex-col h-full w-64 bg-card border-r border-border'>
             {/* Logo */}
-            <div className='flex items-center gap-3 px-6 py-5 border-b border-border'>
+            <div className='flex items-center gap-3 px-5 py-5'>
                 <CommunityIdentityMark
                     communityName={communityName}
                     logoUrl={logoUrl}
                     size='md'
                 />
-                <div>
-                    <p className='font-bold text-foreground text-sm leading-tight'>
+                <div className='min-w-0'>
+                    <p className='font-heading font-semibold text-foreground text-[13px] leading-tight truncate'>
                         {communityName}
+                    </p>
+                    <p className='text-[10px] font-medium text-subtle-foreground uppercase tracking-wider'>
+                        {t.nav.adminLabel}
                     </p>
                 </div>
             </div>
@@ -52,11 +73,8 @@ export function Sidebar({
             {/* Navigation */}
             <nav
                 aria-label={t.nav.adminLabel}
-                className='flex-1 px-3 py-4 space-y-1 overflow-y-auto'>
-                <p className='px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2'>
-                    {t.nav.adminLabel}
-                </p>
-                {ADMIN_NAV.map(({ label, href, icon: Icon }) => {
+                className='flex-1 px-3 py-1 space-y-0.5 overflow-y-auto'>
+                {ADMIN_NAV.map(({ label, href, icon: Icon, badge }) => {
                     const active = isNavActive(pathname, href);
                     return (
                         <Link
@@ -64,15 +82,17 @@ export function Sidebar({
                             href={href}
                             aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                'flex items-center gap-2.5 px-3 min-h-10 rounded-[9px] text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 active
-                                    ? 'bg-primary/10 text-primary'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                    ? 'bg-accent text-accent-foreground font-semibold'
+                                    : 'text-secondary-foreground font-medium hover:bg-muted hover:text-foreground',
                             )}>
                             <Icon className='w-4 h-4 shrink-0' />
-                            {label}
-                            {active && (
-                                <ChevronRight className='w-3 h-3 ml-auto text-primary' />
+                            <span className='flex-1'>{label}</span>
+                            {badge !== undefined && badge > 0 && (
+                                <span className='ml-auto rounded-full bg-warning px-1.5 py-0.5 text-[10.5px] font-semibold leading-none text-warning-foreground tabular-nums'>
+                                    {badge}
+                                </span>
                             )}
                         </Link>
                     );
@@ -80,50 +100,63 @@ export function Sidebar({
             </nav>
 
             {/* Cross-shell: back to member view (its own landmark, not part of Admin nav) */}
-            <nav aria-label={t.nav.mainLabel} className='px-3'>
+            <nav aria-label={t.nav.mainLabel} className='px-3 pb-3'>
                 <Link
                     href={memberViewLink.href}
-                    className='flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                    className='flex items-center gap-2 px-3 min-h-10 rounded-lg text-[13px] font-semibold text-primary hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                     <memberViewLink.icon className='w-4 h-4 shrink-0' />
                     {memberViewLink.label}
                 </Link>
             </nav>
 
-            {/* User info + logout */}
-            <div className='border-t border-border p-4'>
-                <div className='flex items-center gap-3 mb-3'>
-                    <Avatar className='w-8 h-8'>
-                        <AvatarImage
-                            src={session?.user?.image ?? ''}
-                            alt={session?.user?.name ?? ''}
-                        />
-                        <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
-                            {initials}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className='flex-1 min-w-0'>
-                        <p className='text-sm font-medium text-foreground truncate'>
-                            {session?.user?.name ?? '—'}
-                        </p>
-                        <p className='text-xs text-muted-foreground truncate'>
-                            {session?.user?.email ?? '—'}
-                        </p>
-                    </div>
-                </div>
-                <Link
-                    href='/profile'
-                    className='flex items-center gap-2 px-2 py-1.5 min-h-11 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-                    <User className='w-4 h-4 shrink-0' />
-                    {t.nav.profile}
-                </Link>
-                <LanguageSwitcher />
-                <ThemeToggle />
-                <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className='flex items-center gap-2 text-sm text-destructive hover:bg-destructive/10 transition-colors px-1 py-1 mt-1 w-full min-h-11 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-                    <LogOut className='w-4 h-4' />
-                    {t.nav.signOut}
-                </button>
+            {/* User block — compact row that opens a menu (profile, language, theme, sign out) */}
+            <div className='border-t border-border p-3'>
+                <DropdownMenu>
+                    <DropdownMenuTrigger className='flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                        <Avatar className='w-8 h-8'>
+                            <AvatarImage
+                                src={session?.user?.image ?? ''}
+                                alt={session?.user?.name ?? ''}
+                            />
+                            <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
+                                {initials}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className='flex-1 min-w-0'>
+                            <p className='text-[13px] font-semibold text-foreground truncate'>
+                                {session?.user?.name ?? '—'}
+                            </p>
+                            <p className='text-[11px] text-subtle-foreground truncate'>
+                                {formatRole(session?.user?.role) || t.nav.admin}
+                            </p>
+                        </div>
+                        <ChevronsUpDown className='w-4 h-4 shrink-0 text-subtle-foreground' />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        side='top'
+                        align='start'
+                        sideOffset={8}
+                        className='w-[13.5rem]'>
+                        <DropdownMenuItem asChild>
+                            <Link href='/profile'>
+                                <User className='w-4 h-4 shrink-0' />
+                                {t.nav.profile}
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <div className='px-1 py-0.5'>
+                            <LanguageSwitcher />
+                            <ThemeToggle />
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            variant='destructive'
+                            onSelect={() => signOut({ callbackUrl: '/' })}>
+                            <LogOut className='w-4 h-4 shrink-0' />
+                            {t.nav.signOut}
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </aside>
     );

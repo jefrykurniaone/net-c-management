@@ -22,7 +22,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
-import { User } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { roleBadgeVariant } from '@/lib/utils';
@@ -132,8 +131,7 @@ export default function ProfilePage() {
     return (
         <div className='max-w-lg space-y-6'>
             <div>
-                <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
-                    <User className='w-6 h-6 text-primary' />
+                <h1 className='text-2xl font-bold text-foreground'>
                     {t.profile.title}
                 </h1>
                 <p className='text-sm text-muted-foreground mt-1'>

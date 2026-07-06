@@ -3,11 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
-import { CalendarDays, CheckCircle, TrendingUp, Shapes } from 'lucide-react';
+import { Shapes } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { ActivityBadge } from '@/components/activity/activity-badge';
+import { ActivityInitial } from '@/components/activity/activity-badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getLocale } from '@/lib/i18n/locale';
@@ -109,25 +109,24 @@ export default async function DashboardPage() {
     return (
         <div className='space-y-6'>
             {/* Page header */}
-            <div>
-                <h1 className='text-2xl font-bold text-foreground'>
-                    {t.dashboard.welcomeGreeting}{' '}
-                    {session.user.name?.split(' ')[0]} 👋
-                </h1>
-                <p className='text-sm text-muted-foreground mt-1'>
+            <div className='space-y-0.5'>
+                <p className='text-xs font-medium text-muted-foreground uppercase tracking-[0.08em]'>
                     {format(now, 'EEEE, d MMMM yyyy', { locale: dateLocale })}
                 </p>
+                <h1 className='text-2xl font-bold text-foreground'>
+                    {t.dashboard.welcomeGreeting}{' '}
+                    {session.user.name?.split(' ')[0]}
+                </h1>
             </div>
 
             {/* Summary strip */}
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+            <div className='grid grid-cols-3 gap-2.5 sm:gap-4'>
                 <StatCard
                     label={`${t.dashboard.duesTitle} ${t.months[currentMonth]}`}
-                    icon={Shapes}
                     value={
                         <>
                             {paidCount}
-                            <span className='text-sm font-normal text-muted-foreground'>
+                            <span className='text-sm font-normal text-subtle-foreground'>
                                 /{myActivities.length}
                             </span>
                         </>
@@ -135,11 +134,10 @@ export default async function DashboardPage() {
                 />
                 <StatCard
                     label={`${t.dashboard.attendanceTitle} ${currentYear}`}
-                    icon={CheckCircle}
                     value={
                         <>
                             {attendanceCount}
-                            <span className='text-sm font-normal text-muted-foreground'>
+                            <span className='text-sm font-normal text-subtle-foreground'>
                                 /{totalSessions} {t.dashboard.sessions}
                             </span>
                         </>
@@ -147,7 +145,6 @@ export default async function DashboardPage() {
                 />
                 <StatCard
                     label={t.dashboard.attendanceRateTitle}
-                    icon={TrendingUp}
                     value={`${attendanceRate}%`}
                     sub={
                         <div className='w-full bg-muted rounded-full h-1.5'>
@@ -185,11 +182,14 @@ export default async function DashboardPage() {
                                 key={activity.id}
                                 className='bg-card rounded-xl border border-border overflow-hidden'
                                 style={{ borderTop: `3px solid ${activity.color}` }}>
-                                <div className='flex items-center justify-between gap-3 p-4 border-b border-border'>
-                                    <ActivityBadge
+                                <div className='flex items-center gap-2.5 p-4 pb-3'>
+                                    <ActivityInitial
                                         name={activity.name}
                                         color={activity.color}
                                     />
+                                    <span className='flex-1 font-heading text-[15px] font-semibold text-foreground truncate'>
+                                        {activity.name}
+                                    </span>
                                     {payment ? (
                                         <Badge
                                             variant={paymentStatusVariant(
@@ -208,11 +208,7 @@ export default async function DashboardPage() {
                                         </Link>
                                     )}
                                 </div>
-                                <div className='p-4 space-y-2'>
-                                    <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1'>
-                                        <CalendarDays className='w-3.5 h-3.5' />
-                                        {t.dashboard.upcomingTitle}
-                                    </p>
+                                <div className='px-4 pb-4 space-y-2'>
                                     {sessions.length === 0 ? (
                                         <p className='text-sm text-muted-foreground py-2'>
                                             {t.dashboard.noUpcoming}
@@ -225,27 +221,35 @@ export default async function DashboardPage() {
                                                 <Link
                                                     key={s.id}
                                                     href={`/sessions/${s.id}`}
-                                                    className='flex items-center justify-between gap-3 rounded-lg border border-border p-3 hover:border-primary/40 transition-colors'>
-                                                    <div className='min-w-0'>
-                                                        <p className='text-sm font-medium text-foreground truncate'>
-                                                            {s.title}
-                                                        </p>
-                                                        <p className='text-xs text-muted-foreground'>
-                                                            📅{' '}
+                                                    className='flex items-center gap-3 rounded-[10px] bg-muted/60 p-2.5 pr-3 hover:bg-accent transition-colors'>
+                                                    <span className='flex w-10 shrink-0 flex-col items-center'>
+                                                        <span className='text-[10px] font-semibold uppercase text-primary'>
                                                             {format(
                                                                 new Date(s.date),
-                                                                'd MMM yyyy',
-                                                                {
-                                                                    locale: dateLocale,
-                                                                },
-                                                            )}{' '}
-                                                            · {s.startTime}
-                                                        </p>
-                                                    </div>
+                                                                'EEE',
+                                                                { locale: dateLocale },
+                                                            )}
+                                                        </span>
+                                                        <span className='font-heading text-[17px] font-bold text-foreground leading-tight'>
+                                                            {format(
+                                                                new Date(s.date),
+                                                                'dd',
+                                                            )}
+                                                        </span>
+                                                    </span>
+                                                    <span className='min-w-0 flex-1'>
+                                                        <span className='block text-sm font-semibold text-foreground truncate'>
+                                                            {s.title}
+                                                        </span>
+                                                        <span className='block text-xs text-muted-foreground truncate'>
+                                                            {s.startTime}
+                                                            {s.location
+                                                                ? ` · ${s.location}`
+                                                                : ''}
+                                                        </span>
+                                                    </span>
                                                     {isRegistered ? (
-                                                        <Badge
-                                                            variant='default'
-                                                            className='text-xs shrink-0'>
+                                                        <Badge className='text-xs shrink-0'>
                                                             {t.dashboard.registered}
                                                         </Badge>
                                                     ) : (

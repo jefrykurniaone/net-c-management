@@ -161,26 +161,26 @@ export default async function SessionDetailPage({
 
             {/* Header */}
             <div className='bg-card rounded-xl border border-border p-6 space-y-4'>
-                <div className='flex items-start justify-between gap-3'>
-                    <div className='space-y-2'>
-                        <h1 className='text-xl font-bold text-foreground'>
-                            {activitySession.title}
-                        </h1>
+                <div className='space-y-2.5'>
+                    <div className='flex items-center gap-2 flex-wrap'>
                         <ActivityBadge
                             name={activitySession.activity.name}
                             color={activitySession.activity.color}
                         />
+                        <Badge
+                            variant={sessionStatusVariant(activitySession.status)}
+                        >
+                            {t.sessionStatus[activitySession.status]}
+                        </Badge>
                     </div>
-                    <Badge
-                        variant={sessionStatusVariant(activitySession.status)}
-                    >
-                        {t.sessionStatus[activitySession.status]}
-                    </Badge>
+                    <h1 className='text-[22px] font-bold text-foreground leading-tight'>
+                        {activitySession.title}
+                    </h1>
                 </div>
 
-                <div className='space-y-2 text-sm text-muted-foreground'>
-                    <div className='flex items-center gap-2'>
-                        <Clock className='w-4 h-4 shrink-0 text-muted-foreground' />
+                <div className='space-y-2 text-sm text-secondary-foreground'>
+                    <div className='flex items-center gap-2.5'>
+                        <Clock className='w-4 h-4 shrink-0 text-primary' />
                         <span>
                             {format(
                                 new Date(activitySession.date),
@@ -193,12 +193,12 @@ export default async function SessionDetailPage({
                             {activitySession.endTime}
                         </span>
                     </div>
-                    <div className='flex items-center gap-2'>
-                        <MapPin className='w-4 h-4 shrink-0 text-muted-foreground' />
+                    <div className='flex items-center gap-2.5'>
+                        <MapPin className='w-4 h-4 shrink-0 text-primary' />
                         <span>{activitySession.location}</span>
                     </div>
-                    <div className='flex items-center gap-2'>
-                        <Users className='w-4 h-4 shrink-0 text-muted-foreground' />
+                    <div className='flex items-center gap-2.5'>
+                        <Users className='w-4 h-4 shrink-0 text-primary' />
                         <span className='tabular-nums'>
                             {activitySession._count.attendances}/
                             {activitySession.maxPlayers}
@@ -211,19 +211,15 @@ export default async function SessionDetailPage({
                         )}
                     </div>
                     {quota && quota.needed > 0 && (
-                        <div className='flex items-center gap-2'>
-                            <Users className='w-4 h-4 shrink-0 text-muted-foreground' />
+                        <div className='flex items-center gap-2.5'>
+                            <Users className='w-4 h-4 shrink-0 text-primary' />
                             <span className='tabular-nums'>
                                 {quota.committed}/{quota.needed}
                             </span>
                             <span>{t.sessions.quotaLabel}</span>
                             <Badge
-                                variant='outline'
-                                className={
-                                    quota.isMet
-                                        ? 'text-success border-success/40 text-xs'
-                                        : 'text-warning border-warning/40 text-xs'
-                                }>
+                                variant={quota.isMet ? 'success' : 'warning'}
+                                className='text-xs'>
                                 {quota.isMet
                                     ? t.sessions.quotaMet
                                     : t.sessions.quotaNeedMore.replace(
@@ -234,8 +230,8 @@ export default async function SessionDetailPage({
                         </div>
                     )}
                     {activitySession.fee > 0 && (
-                        <div className='flex items-center gap-2'>
-                            <Banknote className='w-4 h-4 shrink-0 text-muted-foreground' />
+                        <div className='flex items-center gap-2.5'>
+                            <Banknote className='w-4 h-4 shrink-0 text-primary' />
                             <span>
                                 <span className='tabular-nums'>
                                     Rp{' '}
@@ -246,8 +242,8 @@ export default async function SessionDetailPage({
                         </div>
                     )}
                     {activitySession.notes && (
-                        <div className='flex items-start gap-2'>
-                            <FileText className='w-4 h-4 shrink-0 text-muted-foreground mt-0.5' />
+                        <div className='flex items-start gap-2.5'>
+                            <FileText className='w-4 h-4 shrink-0 text-primary mt-0.5' />
                             <span className='whitespace-pre-wrap'>
                                 {activitySession.notes}
                             </span>
@@ -284,9 +280,30 @@ export default async function SessionDetailPage({
 
             {/* Participants list */}
             <div className='bg-card rounded-xl border border-border p-6'>
-                <h2 className='font-semibold text-foreground mb-4'>
-                    {t.sessions.attendeeList} ({activitySession._count.attendances})
-                </h2>
+                <div className='flex items-center justify-between mb-3'>
+                    <h2 className='font-semibold text-foreground'>
+                        {t.sessions.attendeeList}
+                    </h2>
+                    <p className='text-[13px] font-semibold text-foreground tabular-nums'>
+                        {activitySession._count.attendances}
+                        <span className='font-normal text-subtle-foreground'>
+                            /{activitySession.maxPlayers}
+                        </span>
+                    </p>
+                </div>
+                <div className='mb-4 h-[5px] rounded-full bg-muted overflow-hidden'>
+                    <div
+                        className='h-full rounded-full bg-primary'
+                        style={{
+                            width: `${Math.min(
+                                (activitySession._count.attendances /
+                                    activitySession.maxPlayers) *
+                                    100,
+                                100,
+                            )}%`,
+                        }}
+                    />
+                </div>
                 {activitySession.attendances.length === 0 ? (
                     <p className='text-sm text-muted-foreground text-center py-4'>
                         {t.sessions.noAttendees}

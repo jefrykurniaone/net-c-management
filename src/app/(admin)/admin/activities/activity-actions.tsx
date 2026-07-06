@@ -9,6 +9,7 @@ import {
     type CreateActivityFormData,
 } from '@/lib/validations/activity';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
     Dialog,
     DialogContent,
@@ -187,13 +188,10 @@ export function ActivityActions({ activity }: Readonly<{ activity: ActivityRow }
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const [editOpen, setEditOpen] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
     async function toggleActive() {
-        const confirmMsg = activity.isActive
-            ? t.admin.confirmDeactivateActivity
-            : t.admin.confirmActivateActivity;
-        if (!confirm(confirmMsg)) return;
         setLoading(true);
         try {
             const res = await fetch(`/api/activities/${activity.id}`, {
@@ -227,13 +225,29 @@ export function ActivityActions({ activity }: Readonly<{ activity: ActivityRow }
                 {t.admin.edit}
             </Button>
             <Button
-                variant='outline'
+                variant={activity.isActive ? 'destructive-outline' : 'outline'}
                 size='sm'
                 className='h-7 text-xs'
                 loading={loading}
-                onClick={toggleActive}>
+                onClick={() => setConfirmOpen(true)}>
                 {activity.isActive ? t.admin.deactivate : t.admin.activate}
             </Button>
+            <ConfirmDialog
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                tone={activity.isActive ? 'destructive' : 'primary'}
+                title={activity.isActive ? t.admin.deactivate : t.admin.activate}
+                description={
+                    activity.isActive
+                        ? t.admin.confirmDeactivateActivity
+                        : t.admin.confirmActivateActivity
+                }
+                confirmLabel={
+                    activity.isActive ? t.admin.deactivate : t.admin.activate
+                }
+                cancelLabel={t.common.cancel}
+                onConfirm={toggleActive}
+            />
             {editOpen && (
                 <ActivityFormDialog
                     activity={activity}

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, XCircle, CheckCircle2 } from "lucide-react";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
@@ -15,42 +16,28 @@ interface Payment {
   notes: string | null;
 }
 
+type PendingAction = "CONFIRMED" | "REJECTED" | null;
+
 export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
   const router = useRouter();
   const { locale } = useLocale();
   const t = getDictionary(locale);
-  const [loading, setLoading] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
-  async function handleAction(action: "CONFIRMED" | "REJECTED") {
-    let notes: string | undefined;
-    if (action === "REJECTED") {
-      // Rejection requires a reason (UX-DR12); the server enforces it too.
-      const reason = window.prompt(t.payments.rejectReasonPrompt);
-      if (reason === null) return;
-      if (!reason.trim()) {
-        toast.error(t.validation.rejectReasonRequired);
-        return;
-      }
-      notes = reason.trim();
-    } else if (!confirm(t.admin.confirmConfirm)) {
+  async function applyAction(action: "CONFIRMED" | "REJECTED", notes?: string) {
+    const res = await fetch(`/api/payments/${payment.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: action, notes }),
+    });
+    if (!res.ok) {
+      toast.error(t.admin.paymentUpdateFailed);
       return;
     }
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/payments/${payment.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: action, notes }),
-      });
-      if (!res.ok) throw new Error(t.admin.paymentUpdateFailed);
-      toast.success(action === "CONFIRMED" ? t.admin.paymentConfirmed : t.admin.paymentRejected);
-      router.refresh();
-    } catch (err) {
-      console.error('[PaymentActions] handleAction:', err);
-      toast.error(t.admin.paymentUpdateFailed);
-    } finally {
-      setLoading(false);
-    }
+    toast.success(
+      action === "CONFIRMED" ? t.admin.paymentConfirmed : t.admin.paymentRejected,
+    );
+    router.refresh();
   }
 
   return (
@@ -60,7 +47,7 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
           href={payment.proofUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs text-primary hover:underline flex items-center gap-1"
+          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
         >
           <ExternalLink className="w-3 h-3" />
           {t.admin.proof}
@@ -69,23 +56,40 @@ export function PaymentActions({ payment }: Readonly<{ payment: Payment }>) {
       {payment.status === "PENDING" && (
         <>
           <Button
-            variant="outline"
             size="sm"
-            className="h-7 text-xs text-success hover:bg-success/10"
-            onClick={() => handleAction("CONFIRMED")}
-            loading={loading}
+            onClick={() => setPendingAction("CONFIRMED")}
           >
             {t.admin.confirmBtn}
           </Button>
           <Button
-            variant="outline"
+            variant="destructive-outline"
             size="sm"
-            className="h-7 text-xs text-destructive hover:bg-destructive/10"
-            onClick={() => handleAction("REJECTED")}
-            loading={loading}
+            onClick={() => setPendingAction("REJECTED")}
           >
             {t.admin.rejectBtn}
           </Button>
+          <ConfirmDialog
+            open={pendingAction === "CONFIRMED"}
+            onOpenChange={(open) => !open && setPendingAction(null)}
+            tone="primary"
+            icon={CheckCircle2}
+            title={t.admin.confirmBtn}
+            description={t.admin.confirmConfirm}
+            confirmLabel={t.admin.confirmBtn}
+            cancelLabel={t.common.cancel}
+            onConfirm={() => applyAction("CONFIRMED")}
+          />
+          <ConfirmDialog
+            open={pendingAction === "REJECTED"}
+            onOpenChange={(open) => !open && setPendingAction(null)}
+            icon={XCircle}
+            title={t.admin.rejectBtn}
+            description={t.payments.rejectReasonPrompt}
+            confirmLabel={t.admin.rejectBtn}
+            cancelLabel={t.common.cancel}
+            reasonLabel={t.payments.rejectReason}
+            onConfirm={(reason) => applyAction("REJECTED", reason)}
+          />
         </>
       )}
     </div>

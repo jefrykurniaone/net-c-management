@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
+import { UserX, ShieldCheck } from "lucide-react";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 
@@ -13,6 +15,8 @@ interface Member {
   role: "ADMIN" | "MEMBER" | "OWNER";
   isActive: boolean;
 }
+
+type PendingAction = "toggleActive" | "toggleRole" | null;
 
 export function MemberActions({
   member,
@@ -25,6 +29,7 @@ export function MemberActions({
   const { locale } = useLocale();
   const t = getDictionary(locale);
   const [loading, setLoading] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
 
   async function patch(data: { role?: "ADMIN" | "MEMBER"; isActive?: boolean }) {
     setLoading(true);
@@ -49,14 +54,18 @@ export function MemberActions({
 
   const isSelf = member.id === currentUserId;
   const isOwner = member.role === "OWNER";
+  const memberName = member.name ?? "—";
 
   return (
     <div className="flex items-center justify-center gap-1 flex-wrap">
       <Button
-        variant="outline"
+        variant={member.isActive ? "destructive-outline" : "outline"}
         size="sm"
-        className="h-7 text-xs"
-        onClick={() => patch({ isActive: !member.isActive })}
+        onClick={() =>
+          member.isActive
+            ? setPendingAction("toggleActive")
+            : patch({ isActive: true })
+        }
         loading={loading}
         disabled={isSelf || isOwner}
       >
@@ -66,15 +75,43 @@ export function MemberActions({
         <Button
           variant="outline"
           size="sm"
-          className="h-7 text-xs"
-          onClick={() =>
-            patch({ role: member.role === "ADMIN" ? "MEMBER" : "ADMIN" })
-          }
+          onClick={() => setPendingAction("toggleRole")}
           loading={loading}
         >
           {member.role === "ADMIN" ? t.admin.makeMember : t.admin.makeAdmin}
         </Button>
       )}
+      {/* Deactivation is high-impact: type-to-confirm (Club Premium dialogs). */}
+      <ConfirmDialog
+        open={pendingAction === "toggleActive"}
+        onOpenChange={(open) => !open && setPendingAction(null)}
+        icon={UserX}
+        title={t.admin.deactivateConfirmTitle.replace("{name}", memberName)}
+        description={t.admin.deactivateConfirmDesc}
+        confirmLabel={t.admin.deactivateMember}
+        cancelLabel={t.common.cancel}
+        typeToConfirm={t.admin.typeToConfirmWord}
+        typeToConfirmLabel={t.admin.typeToConfirmPrompt.replace(
+          "{word}",
+          t.admin.typeToConfirmWord,
+        )}
+        onConfirm={() => patch({ isActive: false })}
+      />
+      <ConfirmDialog
+        open={pendingAction === "toggleRole"}
+        onOpenChange={(open) => !open && setPendingAction(null)}
+        tone="primary"
+        icon={ShieldCheck}
+        title={t.admin.roleChangeConfirmTitle.replace("{name}", memberName)}
+        description={t.admin.roleChangeConfirmDesc}
+        confirmLabel={
+          member.role === "ADMIN" ? t.admin.makeMember : t.admin.makeAdmin
+        }
+        cancelLabel={t.common.cancel}
+        onConfirm={() =>
+          patch({ role: member.role === "ADMIN" ? "MEMBER" : "ADMIN" })
+        }
+      />
     </div>
   );
 }

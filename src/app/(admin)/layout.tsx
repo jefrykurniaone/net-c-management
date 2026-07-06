@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { MobileNav } from '@/components/layout/mobile-nav';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { getSettings } from '@/lib/settings';
+import { prisma } from '@/lib/prisma';
 import { isAdminRole } from '@/lib/utils';
 
 export default async function AdminLayout({
@@ -25,12 +26,18 @@ export default async function AdminLayout({
         redirect('/dashboard');
     }
 
+    // Pending-payment count powers the Payments nav badge (Club Premium).
+    const pendingPayments = await prisma.payment.count({
+        where: { status: 'PENDING' },
+    });
+
     return (
-        <div className='flex h-screen overflow-hidden bg-muted'>
+        <div className='flex h-screen overflow-hidden bg-background'>
             <div className='hidden md:flex md:shrink-0'>
                 <Sidebar
                     communityName={settings.communityName}
                     logoUrl={settings.logoUrl}
+                    pendingPayments={pendingPayments}
                 />
             </div>
             <div className='flex flex-col flex-1 overflow-hidden'>
@@ -38,6 +45,7 @@ export default async function AdminLayout({
                     <MobileNav
                         communityName={settings.communityName}
                         logoUrl={settings.logoUrl}
+                        pendingPayments={pendingPayments}
                     />
                     <div className='flex items-center gap-2'>
                         <CommunityIdentityMark
@@ -45,12 +53,12 @@ export default async function AdminLayout({
                             logoUrl={settings.logoUrl}
                             size='sm'
                         />
-                        <span className='font-bold text-foreground text-sm'>
+                        <span className='font-heading font-semibold text-foreground text-sm'>
                             {settings.communityName}
                         </span>
                     </div>
                 </header>
-                <main className='flex-1 overflow-y-auto p-4 md:p-6'>
+                <main className='flex-1 overflow-y-auto p-4 md:px-8 md:py-6'>
                     {children}
                 </main>
             </div>

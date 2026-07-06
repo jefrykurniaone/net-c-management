@@ -6,7 +6,7 @@ import { id as localeId, enUS } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ActivityBadge } from "@/components/activity/activity-badge";
-import { CreditCard, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { PaymentActions } from "./payment-actions";
 import { PaymentCards } from "./payment-cards";
 import type { Payment } from "@prisma/client";
@@ -63,8 +63,7 @@ export default async function AdminPaymentsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">
             {t.admin.paymentsTitle}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{t.admin.paymentsSubtitle}</p>
@@ -72,7 +71,7 @@ export default async function AdminPaymentsPage({
         <a
           href={`/api/payments/export?month=${currentMonth}&year=${currentYear}${filterActivity ? `&activityId=${filterActivity}` : ""}`}
           download
-          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline border border-border rounded-lg px-3 py-2"
+          className="inline-flex items-center gap-1.5 h-9 text-sm font-semibold text-secondary-foreground bg-card border border-input rounded-lg px-3.5 hover:bg-muted transition-colors"
         >
           <Download className="w-4 h-4" />
           {t.admin.exportCSV}
@@ -84,7 +83,7 @@ export default async function AdminPaymentsPage({
         <select
           name="month"
           defaultValue={String(filterMonth ?? "")}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
+          className="h-9 border border-input rounded-lg px-3 text-sm font-medium text-secondary-foreground bg-card w-full sm:w-auto"
         >
           <option value="">{t.admin.allMonths}</option>
           {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -96,7 +95,7 @@ export default async function AdminPaymentsPage({
         <select
           name="year"
           defaultValue={String(filterYear ?? "")}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
+          className="h-9 border border-input rounded-lg px-3 text-sm font-medium text-secondary-foreground bg-card w-full sm:w-auto"
         >
           <option value="">{t.admin.allYears}</option>
           {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
@@ -108,7 +107,7 @@ export default async function AdminPaymentsPage({
         <select
           name="status"
           defaultValue={filterStatus ?? ""}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
+          className="h-9 border border-input rounded-lg px-3 text-sm font-medium text-secondary-foreground bg-card w-full sm:w-auto"
         >
           <option value="">{t.admin.allStatuses}</option>
           <option value="PENDING">{t.paymentStatus.PENDING}</option>
@@ -118,7 +117,7 @@ export default async function AdminPaymentsPage({
         <select
           name="activityId"
           defaultValue={filterActivity ?? ""}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
+          className="h-9 border border-input rounded-lg px-3 text-sm font-medium text-secondary-foreground bg-card w-full sm:w-auto"
         >
           <option value="">{t.activity.filterAll}</option>
           {activities.map((e) => (
@@ -127,7 +126,7 @@ export default async function AdminPaymentsPage({
             </option>
           ))}
         </select>
-          <Button type="submit" variant="outline" size="sm">
+          <Button type="submit" variant="outline">
             {t.admin.filterBtn}
         </Button>
       </form>
@@ -142,14 +141,14 @@ export default async function AdminPaymentsPage({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-muted border-b border-border">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colMember}</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.activity.label}</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colMonth}</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t.admin.colAmount}</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colStatus}</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colDate}</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colActions}</th>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colMember}</th>
+                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.activity.label}</th>
+                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colMonth}</th>
+                <th className="text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colAmount}</th>
+                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colStatus}</th>
+                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colDate}</th>
+                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colActions}</th>
               </tr>
             </thead>
             <tbody>
@@ -157,39 +156,34 @@ export default async function AdminPaymentsPage({
                 return (
                   <tr
                     key={p.id}
-                    className="border-b border-border hover:bg-muted"
+                    className="border-b border-border last:border-b-0 hover:bg-muted/40"
                   >
-                    <td className="relative px-4 py-3">
-                      <span
-                        aria-hidden
-                        className="absolute left-0 top-0 h-full w-[3px]"
-                        style={{ backgroundColor: p.activity.color }}
-                      />
-                      <p className="font-medium text-foreground">
+                    <td className="px-5 py-3">
+                      <p className="font-semibold text-foreground">
                         {p.user.name ?? p.user.email}
                       </p>
-                      <p className="text-xs text-muted-foreground">{p.user.email}</p>
+                      <p className="text-xs text-subtle-foreground">{p.user.email}</p>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-5 py-3 whitespace-nowrap">
                       <ActivityBadge name={p.activity.name} color={p.activity.color} icon={p.activity.icon} />
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                    <td className="px-5 py-3 text-secondary-foreground whitespace-nowrap">
                       {t.months[p.month]} {p.year}
                     </td>
-                    <td className="px-4 py-3 text-right text-foreground font-medium whitespace-nowrap tabular-nums">
+                    <td className="px-5 py-3 text-right text-foreground font-semibold whitespace-nowrap tabular-nums">
                       Rp {p.amount.toLocaleString("id-ID")}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-5 py-3 text-center">
                       <Badge
                         variant={paymentStatusVariant(p.status)}
                       >
                         {t.paymentStatus[p.status]}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                    <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
                       {format(new Date(p.createdAt), "d MMM yyyy", { locale: dateLocale })}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-5 py-3 text-center">
                       <PaymentActions payment={p} />
                     </td>
                   </tr>

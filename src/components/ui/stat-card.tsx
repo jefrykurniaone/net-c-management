@@ -23,18 +23,20 @@ export function StatCard({
     href?: string;
 }>) {
     const card = (
-        <Card>
-            <CardHeader className='flex flex-row items-center justify-between pb-2'>
-                <CardTitle className='text-sm font-medium text-muted-foreground'>
+        <Card className='gap-1.5'>
+            <CardHeader className='flex flex-row items-center justify-between pb-0'>
+                <CardTitle className='font-sans text-[11px] font-medium uppercase tracking-wider text-muted-foreground'>
                     {label}
                 </CardTitle>
-                {Icon && <Icon className='w-4 h-4 text-muted-foreground' />}
+                {Icon && <Icon className='w-4 h-4 text-subtle-foreground' />}
             </CardHeader>
             <CardContent>
-                <p className='text-2xl font-bold tabular-nums text-foreground'>
+                <p className='font-heading text-2xl font-bold tabular-nums text-foreground'>
                     {value}
                 </p>
-                {sub && <div className='text-xs text-muted-foreground mt-1'>{sub}</div>}
+                {sub && (
+                    <div className='text-xs text-subtle-foreground mt-1'>{sub}</div>
+                )}
             </CardContent>
         </Card>
     );
@@ -45,5 +47,47 @@ export function StatCard({
         </Link>
     ) : (
         card
+    );
+}
+
+/**
+ * Joined stat strip (Club Premium admin): one bordered card, cells divided by
+ * hairlines in both directions. Denser than a grid of StatCards — the admin
+ * dashboard/list headers use this.
+ */
+export function StatStrip({
+    items,
+}: Readonly<{
+    items: ReadonlyArray<{
+        label: ReactNode;
+        value: ReactNode;
+        sub?: ReactNode;
+        valueClassName?: string;
+    }>;
+}>) {
+    return (
+        <div className='grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-xl border border-border bg-border'>
+            {items.map((item, i) => (
+                <div key={i} className='flex flex-col gap-1 bg-card px-5 py-4'>
+                    <p className='text-[11px] font-medium uppercase tracking-wider text-muted-foreground'>
+                        {item.label}
+                    </p>
+                    <p className='flex items-baseline gap-1.5'>
+                        <span
+                            className={
+                                'font-heading text-2xl font-bold tabular-nums ' +
+                                (item.valueClassName ?? 'text-foreground')
+                            }>
+                            {item.value}
+                        </span>
+                        {item.sub && (
+                            <span className='text-xs text-subtle-foreground'>
+                                {item.sub}
+                            </span>
+                        )}
+                    </p>
+                </div>
+            ))}
+        </div>
     );
 }

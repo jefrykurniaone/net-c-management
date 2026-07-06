@@ -56,3 +56,9 @@ plans/
 
 # Playwright MCP browser artifacts
 .playwright-mcp/
+
+# Design handoff (vendored design artifact — not app source)
+Sports Community Management UI-handoff/
+
+# Throwaway UI-verification screenshots
+app-*.png

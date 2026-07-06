@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { ActivityBadge } from "@/components/activity/activity-badge";
-import { Users } from "lucide-react";
 import Link from "next/link";
 import { MemberActions } from "./member-actions";
 import { MemberCards } from "./member-cards";
@@ -69,8 +68,7 @@ export default async function AdminMembersPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">
             {t.admin.membersTitle}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -85,12 +83,12 @@ export default async function AdminMembersPage({
           name="search"
           defaultValue={search}
           placeholder={t.admin.searchPlaceholder}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full max-w-sm"
+          className="h-9 border border-input rounded-lg px-3 text-sm bg-card w-full max-w-sm placeholder:text-subtle-foreground"
         />
         <select
           name="activityId"
           defaultValue={activityId}
-          className="border rounded-lg px-3 py-1.5 text-sm bg-background w-full sm:w-auto"
+          className="h-9 border border-input rounded-lg px-3 text-sm font-medium text-secondary-foreground bg-card w-full sm:w-auto"
         >
           <option value="">{t.activity.filterAll}</option>
           {activities.map((e) => (
@@ -101,7 +99,7 @@ export default async function AdminMembersPage({
         </select>
         <button
           type="submit"
-          className="border rounded-lg px-4 py-1.5 text-sm bg-background hover:bg-muted w-full sm:w-auto"
+          className="h-9 border border-input rounded-lg px-4 text-sm font-semibold text-secondary-foreground bg-card hover:bg-muted w-full sm:w-auto transition-colors"
         >
           {t.admin.searchBtn}
         </button>
@@ -117,22 +115,22 @@ export default async function AdminMembersPage({
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-muted border-b border-border">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.admin.colName}</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.activity.label}</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colAttendance}</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colPayments}</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colMemberStatus}</th>
-                <th className="text-center px-4 py-3 font-medium text-muted-foreground">{t.admin.colActions}</th>
+              <tr className="bg-muted/50 border-b border-border">
+                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colName}</th>
+                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.activity.label}</th>
+                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colAttendance}</th>
+                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colPayments}</th>
+                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colMemberStatus}</th>
+                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colActions}</th>
               </tr>
             </thead>
             <tbody>
               {users.map((u) => (
                 <tr
                   key={u.id}
-                  className="border-b border-border hover:bg-muted"
+                  className="border-b border-border last:border-b-0 hover:bg-muted/40"
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       {u.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -142,22 +140,22 @@ export default async function AdminMembersPage({
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
+                        <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-primary font-heading font-semibold text-xs">
                           {(u.name ?? u.email ?? "?")[0].toUpperCase()}
                         </div>
                       )}
                       <div>
                         <Link
                           href={`/admin/members/${u.id}`}
-                          className="font-medium text-foreground hover:underline"
+                          className="font-semibold text-foreground hover:underline"
                         >
                           {u.name ?? `(${t.admin.profileIncomplete})`}
                         </Link>
-                        <p className="text-xs text-muted-foreground">{u.email}</p>
+                        <p className="text-xs text-subtle-foreground">{u.email}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-3">
                     <div className="flex flex-wrap gap-1">
                       {u.memberships.length === 0 ? (
                         <span className="text-xs text-muted-foreground">—</span>
@@ -172,13 +170,13 @@ export default async function AdminMembersPage({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-center text-muted-foreground tabular-nums">
+                  <td className="px-5 py-3 text-center text-muted-foreground tabular-nums">
                     {u._count.attendances}
                   </td>
-                  <td className="px-4 py-3 text-center text-muted-foreground tabular-nums">
+                  <td className="px-5 py-3 text-center text-muted-foreground tabular-nums">
                     {u._count.payments}
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-5 py-3 text-center">
                     <div className="flex items-center justify-center gap-1">
                       <Badge variant={roleBadgeVariant(u.role)} className="text-xs">
                         {t.roles[u.role]}
@@ -190,7 +188,7 @@ export default async function AdminMembersPage({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-5 py-3 text-center">
                     <MemberActions member={u} currentUserId={session.user.id} />
                   </td>
                 </tr>

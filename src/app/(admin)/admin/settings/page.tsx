@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Settings, Upload } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { FormSkeleton } from '@/components/skeletons/page-skeletons';
@@ -115,8 +115,7 @@ export default function AdminSettingsPage() {
     return (
         <div className='max-w-lg space-y-6'>
             <div>
-                <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>
-                    <Settings className='w-6 h-6 text-primary' />
+                <h1 className='text-2xl font-bold text-foreground'>
                     {t.admin.settingsTitle}
                 </h1>
                 <p className='text-sm text-muted-foreground mt-1'>

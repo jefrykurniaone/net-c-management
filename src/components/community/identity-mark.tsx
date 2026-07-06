@@ -1,13 +1,13 @@
 import Image from 'next/image';
 import { cn, communityAbbr } from '@/lib/utils';
 
-// Community identity mark (UX-DR9): the configured logo if set, else a circular
-// abbreviation token in the platform accent (`primary`) on `muted` — never a
+// Community identity mark (UX-DR9): the configured logo if set, else a rounded
+// square abbreviation token — white on solid teal (Club Premium) — never a
 // placeholder graphic. Renders the mark only; callers add the name label.
 const MARK = {
-    sm: { box: 'w-7 h-7', text: 'text-xs', px: 28 },
-    md: { box: 'w-9 h-9', text: 'text-sm', px: 36 },
-    lg: { box: 'w-16 h-16', text: 'text-2xl', px: 64 },
+    sm: { box: 'w-8 h-8 rounded-[9px]', text: 'text-xs', px: 32 },
+    md: { box: 'w-9 h-9 rounded-[10px]', text: 'text-sm', px: 36 },
+    lg: { box: 'w-16 h-16 rounded-2xl', text: 'text-2xl', px: 64 },
 } as const;
 
 export function CommunityIdentityMark({
@@ -30,7 +30,7 @@ export function CommunityIdentityMark({
                 alt={communityName}
                 width={px}
                 height={px}
-                className={cn(box, 'rounded-full object-cover shrink-0', className)}
+                className={cn(box, 'object-cover shrink-0', className)}
             />
         );
     }
@@ -39,10 +39,14 @@ export function CommunityIdentityMark({
         <div
             className={cn(
                 box,
-                'bg-muted rounded-full flex items-center justify-center shrink-0',
+                'bg-primary-solid flex items-center justify-center shrink-0',
                 className,
             )}>
-            <span className={cn('font-bold text-primary', text)}>
+            <span
+                className={cn(
+                    'font-heading font-bold text-primary-solid-foreground',
+                    text,
+                )}>
                 {communityAbbr(communityName)}
             </span>
         </div>
