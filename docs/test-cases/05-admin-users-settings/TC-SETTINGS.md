@@ -19,7 +19,7 @@ Code references: `src/app/(admin)/admin/settings/page.tsx`, `src/app/api/setting
 - **Preconditions**: Fresh DB with no `communityName` setting row.
 - **Steps**:
   1. Load the app with locale `en`, then with locale `id`.
-- **Expected result**: Name falls back to "Sports Community" (en) / "Komunitas Olahraga" (id) — no hardcoded legacy brand anywhere.
+- **Expected result**: Name falls back to "XClub Community" (en/id) — no hardcoded legacy brand anywhere.
 
 ### TC-SET-003 — PATCH as MEMBER
 - **Priority**: P0 | **Type**: Negative

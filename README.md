@@ -2,7 +2,7 @@
 
 A white-label, full-stack web app for managing a sports (or any hobby) community: activities, recurring sessions, member attendance, dues collection (monthly or per-session), and member profiles.
 
-> The community name, logo, and branding are configured at runtime via the admin **Settings** page — nothing sport-specific is baked into the code. The repository name (`net-c-management`) is historical, from the badminton community this project originally served.
+> The community name, logo, and branding are configured at runtime via the admin **Settings** page — nothing sport-specific is baked into the code. The default brand is **XClub Community**.
 
 ---
 

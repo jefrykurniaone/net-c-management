@@ -13,9 +13,8 @@ export interface AppSettings {
 /**
  * Static fallbacks for settings whose default is locale-independent.
  * `communityName` is intentionally excluded — its neutral default is
- * locale-resolved through the i18n dictionary (AD-10): "Sports Community"
- * (en) / "Komunitas Olahraga" (id). No sport-specific or "PB Net-C" brand
- * string is baked in here.
+ * locale-resolved through the i18n dictionary (AD-10): "XClub Community"
+ * (en/id). No legacy or sport-specific brand string is baked in here.
  */
 const DEFAULTS: Omit<AppSettings, 'communityName'> = {
     defaultLocation: '',

@@ -6,8 +6,8 @@ export const LOCALE_COOKIE = 'NEXT_LOCALE';
 
 const en = {
     brand: {
-        defaultCommunityName: 'Sports Community',
-        tagline: 'Sports Community Management',
+        defaultCommunityName: 'XClub Community',
+        tagline: 'XClub Community Management',
     },
     nav: {
         mainLabel: 'Main Menu',
@@ -34,7 +34,7 @@ const en = {
     },
     landing: {
         signIn: 'Sign In',
-        badge: 'Sports Community Platform',
+        badge: 'XClub Community Platform',
         heroTitle: 'Manage Your Community',
         heroHighlight: 'More Easily',
         heroParagraph:
@@ -62,7 +62,7 @@ const en = {
     },
     auth: {
         signInTitle: 'Sign In',
-        signInSubtitle: 'Sports Community Management System',
+        signInSubtitle: 'XClub Community Management System',
         signInButton: 'Sign in with Google',
         signInNote: 'Only registered members can sign in.',
         errorTitle: 'Sign In Failed',
@@ -561,8 +561,8 @@ const en = {
 
 const id: typeof en = {
     brand: {
-        defaultCommunityName: 'Komunitas Olahraga',
-        tagline: 'Manajemen Komunitas Olahraga',
+        defaultCommunityName: 'XClub Community',
+        tagline: 'Manajemen XClub Community',
     },
     nav: {
         mainLabel: 'Menu Utama',
@@ -589,7 +589,7 @@ const id: typeof en = {
     },
     landing: {
         signIn: 'Masuk',
-        badge: 'Platform Komunitas Olahraga',
+        badge: 'Platform XClub Community',
         heroTitle: 'Kelola Komunitas Anda',
         heroHighlight: 'Lebih Mudah',
         heroParagraph:
@@ -617,7 +617,7 @@ const id: typeof en = {
     },
     auth: {
         signInTitle: 'Masuk',
-        signInSubtitle: 'Sistem Manajemen Komunitas Olahraga',
+        signInSubtitle: 'Sistem Manajemen XClub Community',
         signInButton: 'Masuk dengan Google',
         signInNote: 'Hanya anggota terdaftar yang dapat masuk.',
         errorTitle: 'Gagal Masuk',
