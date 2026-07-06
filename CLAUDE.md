@@ -13,7 +13,7 @@ npx prisma db push   # Push schema changes to the database
 npx prisma studio    # Open GUI for the database
 ```
 
-There are no automated tests in this project.
+There are no automated tests in this project. 
 
 ## Architecture
 
