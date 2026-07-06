@@ -14,6 +14,7 @@ import {
     type SessionCharge,
 } from '@/lib/payments';
 import { ensureMembership } from '@/lib/activity';
+import { releaseExpiredHolds } from '@/lib/holds';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { NextResponse } from 'next/server';
@@ -48,6 +49,10 @@ export async function POST(req: Request) {
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Free lapsed holds first: a re-register after a member's own hold expired
+    // then re-acquires the seat cleanly (capacity permitting).
+    await releaseExpiredHolds();
 
     const t = getDictionary(await getLocale());
     const formData = await req.formData();

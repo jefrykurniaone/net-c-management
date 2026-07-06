@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import type { PaymentMode, PaymentStatus } from '@prisma/client';
+import type { AttendanceStatus, PaymentMode, PaymentStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { JoinModeDialog } from '@/components/sessions/join-mode-dialog';
+import { RsvpChoice, type RsvpChoiceValue } from '@/components/sessions/rsvp-choice';
 import { DisabledCta, PerSessionCta } from '@/components/sessions/per-session-cta';
 import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
@@ -16,11 +16,13 @@ const MIN_SESSION_FEE = 1;
 
 interface RSVPButtonProps {
     sessionId: string;
-    activityId: string;
     isRegistered: boolean;
     isFull: boolean;
     isCancelled: boolean;
     isCompleted: boolean;
+    isRsvpClosed: boolean;
+    isFreeSession: boolean;
+    rsvpStatus: AttendanceStatus | null;
     paymentMode: PaymentMode | null;
     allowsBothModes: boolean;
     sessionFee: number;
@@ -28,16 +30,20 @@ interface RSVPButtonProps {
     hasMonthlyPaid: boolean;
     sessionPaymentStatus: PaymentStatus | null;
     sessionPaymentNotes: string | null;
+    /** ISO instant this member's reservation hold lapses, or null when none. */
+    holdExpiresAtISO: string | null;
     adminWhatsapp: string;
 }
 
 export function RSVPButton({
     sessionId,
-    activityId,
     isRegistered,
     isFull,
     isCancelled,
     isCompleted,
+    isRsvpClosed,
+    isFreeSession,
+    rsvpStatus,
     paymentMode,
     allowsBothModes,
     sessionFee,
@@ -45,6 +51,7 @@ export function RSVPButton({
     hasMonthlyPaid,
     sessionPaymentStatus,
     sessionPaymentNotes,
+    holdExpiresAtISO,
     adminWhatsapp,
 }: Readonly<RSVPButtonProps>) {
     const router = useRouter();
@@ -91,37 +98,58 @@ export function RSVPButton({
         }
     }
 
-    // Ensure membership, persist the chosen mode (the server decides whether it
-    // applies this period or queues for the next), then continue to `next`.
-    // Registering through a payment path IS the mode choice — there is no
-    // selector in the profile anymore.
-    async function chooseMode(mode: PaymentMode, next: string): Promise<void> {
+    // Tentative RSVP — a "maybe" holds no seat and costs nothing, so it is only
+    // offered on free sessions. The route reads the intent from the body.
+    async function markMaybe(): Promise<void> {
         setLoading(true);
         try {
-            const join = await fetch('/api/users/memberships', {
+            const res = await fetch(`/api/sessions/${sessionId}/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ activityId, action: 'join' }),
+                body: JSON.stringify({ intent: 'MAYBE' }),
             });
-            if (!join.ok) throw new Error(t.activity.actionFailed);
-            const res = await fetch(`/api/users/memberships/${activityId}/mode`, {
-                method: 'PATCH',
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error ?? t.sessions.toastRegisterError);
+            }
+            toast.success(t.sessions.toastMaybeSuccess);
+            router.refresh();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t.common.error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // Reserve-then-pay: hold the seat now (join-on-reserve + adopt the chosen
+    // mode server-side) and go settle the bill the server hands back. A
+    // free-eligible seat returns no payUrl — just refresh to show the RSVP.
+    async function reserve(mode: PaymentMode): Promise<void> {
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/sessions/${sessionId}/reserve`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mode }),
             });
-            if (!res.ok) throw new Error(t.activity.actionFailed);
-            router.push(next);
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error ?? t.sessions.toastRegisterError);
+            if (data.payUrl) {
+                router.push(data.payUrl);
+                return;
+            }
+            toast.success(t.sessions.toastRegisterSuccess);
+            router.refresh();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : t.common.error);
             setLoading(false);
         }
     }
 
-    // Joining Monthly = pay dues first; paying auto-registers the member for
-    // the month's sessions. Per-session = pre-pay this session's fee.
-    const chooseMonthly = () => chooseMode('MONTHLY', '/payments/upload');
-    const choosePerSession = () =>
-        chooseMode('PER_SESSION', `/sessions/${sessionId}/pay`);
+    // Monthly = reserve, then pay this period's dues (which registers the member
+    // for the month). Per-session = reserve, then pre-pay this session's fee.
+    const chooseMonthly = () => reserve('MONTHLY');
+    const choosePerSession = () => reserve('PER_SESSION');
 
     // A member who has not paid anything this period may still switch modes
     // right here (the server applies it immediately); once a payment is in,
@@ -154,6 +182,11 @@ export function RSVPButton({
     if (isCompleted) {
         return <DisabledCta label={t.sessions.sessionCompleted} />;
     }
+    // Past the RSVP deadline the seat/intent is frozen — nobody joins, leaves,
+    // or switches. Members keep seeing their standing via the players list.
+    if (isRsvpClosed) {
+        return <DisabledCta label={t.sessions.rsvpClosed} />;
+    }
 
     // A fee-0 session has nothing to charge — everyone registers free. A seat
     // on a paid session always has money behind it: a MONTHLY member may only
@@ -179,14 +212,15 @@ export function RSVPButton({
         }
         return (
             <div className='space-y-2'>
-                <Link href='/payments/upload'>
-                    <Button className='w-full'>
-                        {t.sessions.payMonthlyFirst} ·{' '}
-                        <span className='tabular-nums'>
-                            Rp {monthlyFee.toLocaleString('id-ID')}
-                        </span>
-                    </Button>
-                </Link>
+                <Button
+                    onClick={chooseMonthly}
+                    loading={loading}
+                    className='w-full'>
+                    {t.sessions.payMonthlyFirst} ·{' '}
+                    <span className='tabular-nums'>
+                        Rp {monthlyFee.toLocaleString('id-ID')}
+                    </span>
+                </Button>
                 {modeSwitch}
             </div>
         );
@@ -246,6 +280,8 @@ export function RSVPButton({
                     rejectNotes={sessionPaymentNotes}
                     adminWhatsapp={adminWhatsapp}
                     loading={loading}
+                    holdExpiresAtISO={holdExpiresAtISO}
+                    onReserve={choosePerSession}
                     onCancel={cancelRegistration}
                     t={t}
                 />
@@ -254,21 +290,30 @@ export function RSVPButton({
         );
     }
 
-    if (!isRegistered && isFull) {
-        return <DisabledCta label={t.sessions.sessionFull} />;
-    }
+    // Free-eligible: seat costs nothing (fee-0 session, or a monthly member whose
+    // dues are in). Rendered as the segmented Going / (Maybe) / Can't-make-it
+    // control from the design. "Maybe" is only offered on truly free sessions,
+    // where a tentative RSVP holds no seat and owes nothing.
+    const active: RsvpChoiceValue = isRegistered
+        ? 'GOING'
+        : rsvpStatus === 'MAYBE'
+          ? 'MAYBE'
+          : 'NONE';
 
     return (
-        <Button
-            onClick={isRegistered ? cancelRegistration : registerFree}
-            loading={loading}
-            variant={isRegistered ? 'outline' : 'default'}
-            className={
-                isRegistered
-                    ? 'w-full text-destructive hover:bg-destructive/10'
-                    : 'w-full'
-            }>
-            {isRegistered ? t.sessions.cancelRegistration : t.sessions.register}
-        </Button>
+        <RsvpChoice
+            active={active}
+            showMaybe={isFreeSession}
+            disabled={loading}
+            goingDisabled={isFull}
+            labels={{
+                going: t.sessions.going,
+                maybe: t.sessions.maybe,
+                cantMakeIt: t.sessions.cantMakeIt,
+            }}
+            onGoing={registerFree}
+            onMaybe={markMaybe}
+            onCancel={cancelRegistration}
+        />
     );
 }

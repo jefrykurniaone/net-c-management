@@ -23,8 +23,21 @@ interface PerSessionCtaProps {
     rejectNotes: string | null;
     adminWhatsapp: string;
     loading: boolean;
+    /** ISO instant the reservation hold lapses, or null when there is none. */
+    holdExpiresAtISO: string | null;
+    onReserve: () => void;
     onCancel: () => void;
     t: Dictionary;
+}
+
+/** "Reserved · pay before 14:32" from the hold instant, or null when no hold. */
+function payBeforeLabel(iso: string | null, template: string): string | null {
+    if (!iso) return null;
+    const time = new Date(iso).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+    return template.replace('{time}', time);
 }
 
 export function PerSessionCta({
@@ -36,6 +49,8 @@ export function PerSessionCta({
     rejectNotes,
     adminWhatsapp,
     loading,
+    holdExpiresAtISO,
+    onReserve,
     onCancel,
     t,
 }: Readonly<PerSessionCtaProps>) {
@@ -72,17 +87,16 @@ export function PerSessionCta({
                         label={t.sessions.contactAdmin}
                     />
                 )}
-                <Link href={payHref}>
-                    <Button className='w-full'>
-                        {t.sessions.registerAndPay} ·{' '}
-                        <span className='tabular-nums'>{feeLabel}</span>
-                    </Button>
-                </Link>
+                <Button onClick={onReserve} loading={loading} className='w-full'>
+                    {t.sessions.registerAndPay} ·{' '}
+                    <span className='tabular-nums'>{feeLabel}</span>
+                </Button>
             </div>
         );
     }
 
-    if (isRegistered) {
+    // Proof uploaded, awaiting admin confirmation.
+    if (isRegistered && status === 'PENDING') {
         return (
             <div className='space-y-2'>
                 <p className='text-sm font-medium text-warning text-center'>
@@ -99,16 +113,42 @@ export function PerSessionCta({
         );
     }
 
+    // Registered with nothing paid yet = an active reservation hold: route the
+    // member to settle it before the seat is released.
+    if (isRegistered) {
+        const before = payBeforeLabel(holdExpiresAtISO, t.sessions.reservedPayBefore);
+        return (
+            <div className='space-y-2'>
+                {before && (
+                    <p className='text-sm font-medium text-warning text-center'>
+                        {before}
+                    </p>
+                )}
+                <Link href={payHref}>
+                    <Button className='w-full'>
+                        {t.sessions.payNow} ·{' '}
+                        <span className='tabular-nums'>{feeLabel}</span>
+                    </Button>
+                </Link>
+                <Button
+                    onClick={onCancel}
+                    loading={loading}
+                    variant='outline'
+                    className='w-full text-destructive hover:bg-destructive/10'>
+                    {t.sessions.cancelRegistration}
+                </Button>
+            </div>
+        );
+    }
+
     if (isFull) {
         return <DisabledCta label={t.sessions.sessionFull} />;
     }
 
     return (
-        <Link href={payHref}>
-            <Button className='w-full'>
-                {t.sessions.registerAndPay} ·{' '}
-                <span className='tabular-nums'>{feeLabel}</span>
-            </Button>
-        </Link>
+        <Button onClick={onReserve} loading={loading} className='w-full'>
+            {t.sessions.registerAndPay} ·{' '}
+            <span className='tabular-nums'>{feeLabel}</span>
+        </Button>
     );
 }

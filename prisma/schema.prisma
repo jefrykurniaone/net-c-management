@@ -27,6 +27,7 @@ enum SessionStatus {
 
 enum AttendanceStatus {
   REGISTERED
+  MAYBE
   PRESENT
   ABSENT
 }
@@ -208,6 +209,12 @@ model Attendance {
   sessionId String
   status    AttendanceStatus @default(REGISTERED)
   note      String?
+  // Set while a seat is an unpaid reservation (a "hold"): the reserving member
+  // has one hour to pay before it expires. Cleared to null once the seat is
+  // payment-backed (monthly dues in, per-session proof uploaded) or free — a
+  // null hold is a permanent seat. Expired holds (holdExpiresAt < now) are swept
+  // and released; see src/lib/holds.ts.
+  holdExpiresAt DateTime?
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
@@ -215,6 +222,7 @@ model Attendance {
   session ActivitySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, sessionId])
+  @@index([holdExpiresAt])
 }
 
 model Payment {

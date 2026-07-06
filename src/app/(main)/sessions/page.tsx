@@ -9,17 +9,19 @@ import { ActivityDot } from "@/components/activity/activity-badge";
 import {
   SessionsFilter,
   type SessionTab,
+  type SessionView,
 } from "@/components/activity/sessions-filter";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getUserActivityIds } from "@/lib/activity";
+import { releaseExpiredHolds } from "@/lib/holds";
 import {
   ensureRecurringSessions,
   getSessionQuotas,
 } from "@/lib/recurring-sessions";
-import { sessionStatusVariant } from "@/lib/utils";
 
 const SESSION_INCLUDE = {
   // Seat-holding rows only — ABSENT (a cancelled monthly member) neither
@@ -40,7 +42,9 @@ type SessionRow = Prisma.ActivitySessionGetPayload<{
 
 export default async function SessionsPage({
   searchParams,
-}: Readonly<{ searchParams: Promise<{ activityId?: string; tab?: string }> }>) {
+}: Readonly<{
+  searchParams: Promise<{ activityId?: string; tab?: string; view?: string }>;
+}>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
 
@@ -51,19 +55,28 @@ export default async function SessionsPage({
   today.setHours(0, 0, 0, 0);
   const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
 
-  // Lazy idempotent generation of this month's weekly sessions (no cron).
+  // Lazy, idempotent housekeeping on load (no cron): generate this month's
+  // weekly sessions, then release any lapsed reservation holds so freed seats
+  // are reflected in the counts below.
+  await releaseExpiredHolds();
   await ensureRecurringSessions();
 
-  // Every session of every active Activity is visible — joining happens at the
-  // session level (registering also joins the Activity), so nothing is hidden
-  // behind a prior "join activity" step.
-  const allActivities = await prisma.activity.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, color: true },
-  });
+  const [allActivities, myActivityIds] = await Promise.all([
+    prisma.activity.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, color: true },
+    }),
+    getUserActivityIds(session.user.id),
+  ]);
   const sp = await searchParams;
-  const selected = allActivities.some((e) => e.id === sp.activityId)
+  // Default to the member's own activities; "all" reveals every active Activity
+  // so members can discover and register into others (join-on-register).
+  const view: SessionView = sp.view === "all" ? "all" : "mine";
+  const myActivities = allActivities.filter((a) => myActivityIds.includes(a.id));
+  const baseActivities = view === "all" ? allActivities : myActivities;
+  const baseIds = baseActivities.map((e) => e.id);
+  const selected = baseActivities.some((e) => e.id === sp.activityId)
     ? sp.activityId
     : undefined;
   const tab: SessionTab = sp.tab === "past" ? "past" : "upcoming";
@@ -71,7 +84,7 @@ export default async function SessionsPage({
 
   const sessions = await prisma.activitySession.findMany({
     where: {
-      activityId: selected ?? { in: allActivities.map((e) => e.id) },
+      activityId: selected ?? { in: baseIds },
       ...(isPast
         ? { date: { lt: today } }
         : { date: { gte: today }, status: { in: ["SCHEDULED", "ONGOING"] } }),
@@ -147,13 +160,11 @@ export default async function SessionsPage({
           </div>
           <div className="shrink-0 flex flex-col items-end gap-1">
             {isRegistered ? (
-              <Badge>{t.sessions.registered}</Badge>
+              <Badge>{t.sessions.going}</Badge>
             ) : isFull ? (
               <Badge variant="secondary">{t.sessions.full}</Badge>
             ) : (
-              <Badge variant={sessionStatusVariant(s.status)}>
-                {t.sessionStatus[s.status]}
-              </Badge>
+              <Badge variant="outline">{t.sessions.rsvp}</Badge>
             )}
           </div>
         </div>
@@ -180,16 +191,23 @@ export default async function SessionsPage({
           <h1 className="text-2xl font-bold text-foreground">
             {t.sessions.title}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">{t.sessions.subtitle}</p>
+          {t.sessions.subtitle && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {t.sessions.subtitle}
+            </p>
+          )}
         </div>
         <SessionsFilter
-          activities={allActivities.length > 1 ? allActivities : []}
+          activities={baseActivities.length > 1 ? baseActivities : []}
           selected={selected}
           tab={tab}
+          view={view}
           labels={{
             all: t.sessions.chipAll,
             upcoming: t.sessions.tabUpcoming,
             past: t.sessions.tabPast,
+            viewMine: t.sessions.viewMine,
+            viewAll: t.sessions.viewAll,
           }}
         />
       </div>
@@ -197,7 +215,13 @@ export default async function SessionsPage({
       {sessions.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
-          title={isPast ? t.sessions.noPast : t.sessions.noSessions}
+          title={
+            view === "mine" && myActivities.length === 0
+              ? t.sessions.noJoinedActivities
+              : isPast
+                ? t.sessions.noPast
+                : t.sessions.noSessions
+          }
         />
       ) : isPast ? (
         <div className="space-y-3">{later.map(renderCard)}</div>

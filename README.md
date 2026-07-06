@@ -112,11 +112,12 @@ This solution automates and centralizes those workflows — reducing the operati
 
     ```env
     # Database — local Postgres. This is the safe default for dev.
-    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/netc?schema=public"
+    DATABASE_URL="postgresql://postgres:postgres@localhost:5432/xclub?schema=public"
 
-    # NextAuth
+    # NextAuth (Auth.js v5). AUTH_URL is only needed for local dev —
+    # on Vercel the host is auto-detected, so leave it unset in production.
     AUTH_SECRET="generate with: openssl rand -base64 32"
-    NEXTAUTH_URL="http://localhost:3000"
+    AUTH_URL="http://localhost:3000"
 
     # Google OAuth (from Google Cloud Console)
     AUTH_GOOGLE_ID="xxx.apps.googleusercontent.com"
@@ -138,14 +139,14 @@ This solution automates and centralizes those workflows — reducing the operati
 
 4. **Set up the database (local)**
 
-    Install PostgreSQL locally (one time), then create the `netc` database:
+    Install PostgreSQL locally (one time), then create the `xclub` database:
 
     ```powershell
     # Install Postgres 17 (prompts for UAC). Sets the superuser password to "postgres".
     winget install -e --id PostgreSQL.PostgreSQL.17 --custom "--superpassword postgres"
 
-    # Create the netc database (adjust the version path if different)
-    & "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres netc
+    # Create the xclub database (adjust the version path if different)
+    & "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres xclub
     ```
 
     > If a corporate proxy blocks the EnterpriseDB download (HTTP 403), download the
@@ -154,7 +155,7 @@ This solution automates and centralizes those workflows — reducing the operati
     > `DATABASE_URL`.
 
     Confirm `DATABASE_URL` in `.env.local` points at this local DB:
-    `postgresql://postgres:postgres@localhost:5432/netc?schema=public`
+    `postgresql://postgres:postgres@localhost:5432/xclub?schema=public`
 
     Then apply the schema, the raw-SQL extras, and seed initial data:
 

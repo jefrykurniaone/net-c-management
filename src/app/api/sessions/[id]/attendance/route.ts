@@ -2,15 +2,31 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureMembership } from "@/lib/activity";
 import { isFreeRegisterAllowed, releaseSessionSeat } from "@/lib/payments";
+import { releaseExpiredHolds } from "@/lib/holds";
+import { isRsvpClosed } from "@/lib/rsvp";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { NextResponse } from "next/server";
 
-// POST /api/sessions/[id]/attendance — free RSVP. Only MONTHLY-mode members may
-// register here; PER_SESSION (or unselected) members must pre-pay-on-register via
-// POST /api/payments/upload so a seat is never held without a charge (AD-6).
+/** RSVP intent the client may send. Absent/GOING = a seat-holding registration. */
+type RsvpIntent = "GOING" | "MAYBE";
+
+async function readIntent(req: Request): Promise<RsvpIntent> {
+  try {
+    const body = await req.json();
+    return body?.intent === "MAYBE" ? "MAYBE" : "GOING";
+  } catch {
+    return "GOING";
+  }
+}
+
+// POST /api/sessions/[id]/attendance — free RSVP. GOING holds a seat: only
+// MONTHLY-mode members (dues in) or fee-0 sessions may take one here; everyone
+// else pre-pays via POST /api/payments/upload so a seat is never held without a
+// charge (AD-6). MAYBE is a tentative RSVP that holds no seat and owes nothing,
+// so it is allowed only on fee-0 sessions.
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
@@ -19,9 +35,14 @@ export async function POST(
   }
 
   const { id: sessionId } = await params;
+  const intent = await readIntent(req);
+
+  // Free lapsed holds before capacity is read, so an expired reservation's seat
+  // is available to this registration.
+  await releaseExpiredHolds();
 
   // Capacity counts only seat-holding rows — an ABSENT row (a monthly member
-  // who cancelled this session) has released its seat.
+  // who cancelled this session) or a MAYBE row holds no seat.
   const activitySession = await prisma.activitySession.findUnique({
     where: { id: sessionId },
     include: {
@@ -39,6 +60,20 @@ export async function POST(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
+  if (activitySession.status === "CANCELLED") {
+    return NextResponse.json({ error: "Session is cancelled" }, { status: 400 });
+  }
+
+  if (activitySession.status === "COMPLETED") {
+    return NextResponse.json({ error: "Session already completed" }, { status: 400 });
+  }
+
+  // RSVP window closes a fixed lead time before start — no new intent after.
+  if (isRsvpClosed(activitySession.date, activitySession.startTime)) {
+    const t = getDictionary(await getLocale());
+    return NextResponse.json({ error: t.sessions.rsvpClosed }, { status: 403 });
+  }
+
   // Registering for a session implies joining its Activity — but only a fee-0
   // session may auto-join here (nothing to charge). Paid sessions join through
   // a payment path instead (dues upload or per-session pre-pay), so a failed
@@ -54,12 +89,19 @@ export async function POST(
     }
   }
 
-  if (activitySession.status === "CANCELLED") {
-    return NextResponse.json({ error: "Session is cancelled" }, { status: 400 });
-  }
-
-  if (activitySession.status === "COMPLETED") {
-    return NextResponse.json({ error: "Session already completed" }, { status: 400 });
+  // A tentative "maybe" holds no seat and costs nothing — only meaningful on a
+  // free session (a paid seat must be committed + funded, never tentative).
+  if (intent === "MAYBE") {
+    if (activitySession.fee !== 0) {
+      const t = getDictionary(await getLocale());
+      return NextResponse.json({ error: t.sessions.payRequired }, { status: 403 });
+    }
+    const attendance = await prisma.attendance.upsert({
+      where: { userId_sessionId: { userId: session.user.id, sessionId } },
+      create: { userId: session.user.id, sessionId, status: "MAYBE" },
+      update: { status: "MAYBE" },
+    });
+    return NextResponse.json(attendance, { status: 201 });
   }
 
   // Per-session (and unselected) members are payment-gated — reject the free
@@ -79,7 +121,7 @@ export async function POST(
     return NextResponse.json({ error: "Session is full" }, { status: 400 });
   }
 
-  // Upsert to handle re-registration
+  // Upsert to handle re-registration (including switching from MAYBE to GOING).
   const attendance = await prisma.attendance.upsert({
     where: {
       userId_sessionId: {
@@ -113,6 +155,8 @@ export async function DELETE(
   }
 
   const { id: sessionId } = await params;
+
+  await releaseExpiredHolds();
 
   const result = await releaseSessionSeat({ userId: session.user.id, sessionId });
   if (!result.released) {
