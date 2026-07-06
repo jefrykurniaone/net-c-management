@@ -32,7 +32,7 @@ const SESSION_INCLUDE = {
     },
   },
   activity: { select: { id: true, name: true, color: true, icon: true } },
-} as const;
+} satisfies Prisma.ActivitySessionInclude;
 
 type SessionRow = Prisma.ActivitySessionGetPayload<{
   include: typeof SESSION_INCLUDE;
