@@ -14,7 +14,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Upload, ArrowLeft, ImageIcon } from 'lucide-react';
+import { ArrowLeft, ImageIcon, Lock } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
@@ -165,17 +165,15 @@ export default function UploadPaymentPage() {
     }
 
     return (
-        <div className='max-w-lg mx-auto space-y-6'>
-            <Link
-                href='/payments'
-                className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
-                <ArrowLeft className='w-4 h-4' />
-                {t.payments.backToHistory}
-            </Link>
-
+        <div className='max-w-lg mx-auto'>
             <div className='bg-card rounded-xl border border-border p-6'>
-                <div className='flex items-center gap-2 mb-6'>
-                    <Upload className='w-5 h-5 text-primary' />
+                <div className='flex items-center gap-2.5 mb-6'>
+                    <Link
+                        href='/payments'
+                        aria-label={t.payments.backToHistory}
+                        className='inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground'>
+                        <ArrowLeft className='w-5 h-5' />
+                    </Link>
                     <h1 className='text-xl font-bold text-foreground'>
                     {t.payments.uploadTitle}
                     </h1>
@@ -201,31 +199,41 @@ export default function UploadPaymentPage() {
                         </Select>
                     </div>
 
-                    {/* Amount — server-authoritative from the Activity's monthly fee */}
-                    <div className='space-y-1.5'>
-                        <Label htmlFor='amount'>{t.payments.amountLabel}</Label>
-                        <Input
-                            id='amount'
-                            type='text'
-                            readOnly
-                            className='tabular-nums bg-muted'
-                            value={
-                                chosen
-                                    ? `Rp ${chosen.monthlyFee.toLocaleString('id-ID')}`
-                                    : ''
-                            }
-                        />
-                        {chosen && (
-                            <p className='text-xs text-muted-foreground'>
-                                {t.payments.amountLocked}
-                            </p>
-                        )}
-                        {owedLabel && (
-                            <p className='text-sm text-muted-foreground'>
-                                {owedLabel}
-                            </p>
-                        )}
+                    {/* Period + Amount — both server-authoritative, read-only */}
+                    <div className='grid grid-cols-2 gap-3'>
+                        <div className='space-y-1.5'>
+                            <Label htmlFor='period'>{t.payments.periodLabel}</Label>
+                            <Input
+                                id='period'
+                                type='text'
+                                readOnly
+                                className='bg-muted'
+                                value={`${t.months[currentMonth]} ${currentYear}`}
+                            />
+                        </div>
+                        <div className='space-y-1.5'>
+                            <Label htmlFor='amount'>{t.payments.amountLabel}</Label>
+                            <div className='relative'>
+                                <Input
+                                    id='amount'
+                                    type='text'
+                                    readOnly
+                                    className='tabular-nums bg-muted pr-8'
+                                    value={
+                                        chosen
+                                            ? `Rp ${chosen.monthlyFee.toLocaleString('id-ID')}`
+                                            : ''
+                                    }
+                                />
+                                <Lock className='pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground' />
+                            </div>
+                        </div>
                     </div>
+                    {owedLabel && (
+                        <p className='-mt-2 text-xs text-muted-foreground'>
+                            {owedLabel}
+                        </p>
+                    )}
 
                     {/* Where to transfer — the activity's configured account */}
                     <BankAccountInfo account={chosen ?? null} />
@@ -249,7 +257,7 @@ export default function UploadPaymentPage() {
                                         <ImageIcon className='w-5 h-5 text-primary' />
                                     </span>
                                     <p className='text-sm font-semibold text-foreground'>
-                                        {t.payments.selectImage}
+                                        {t.payments.uploadReceipt}
                                     </p>
                                     <p className='text-xs text-subtle-foreground'>
                                         {t.payments.fileDesc}
@@ -276,8 +284,12 @@ export default function UploadPaymentPage() {
                         className='w-full'
                         disabled={!file || !activityId || loading}
                         loading={loading}>
-                        {loading ? t.payments.submitting : t.payments.submit}
+                        {loading ? t.payments.submitting : t.payments.submitReview}
                     </Button>
+
+                    <p className='text-center text-xs text-muted-foreground'>
+                        {t.payments.verifyNote}
+                    </p>
                 </form>
             </div>
         </div>

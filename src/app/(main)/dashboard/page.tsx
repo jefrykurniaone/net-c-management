@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
-import { Shapes } from 'lucide-react';
+import { Shapes, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -13,7 +13,9 @@ import { Button } from '@/components/ui/button';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getUserActivityIds } from '@/lib/activity';
-import { sessionStatusVariant, paymentStatusVariant } from '@/lib/utils';
+import { resolvePaymentMode } from '@/lib/payment-mode';
+import { getOutstandingSessionBills } from '@/lib/payments';
+import { releaseExpiredHolds } from '@/lib/holds';
 
 const UPCOMING_PER_ACTIVITY = 3;
 
@@ -30,17 +32,32 @@ export default async function DashboardPage() {
     today.setHours(0, 0, 0, 0);
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
-    const yearStart = new Date(`${currentYear}-01-01`);
-    const yearEnd = new Date(`${currentYear}-12-31`);
+    const monthStart = new Date(currentYear, now.getMonth(), 1);
 
+    // Release lapsed reservation holds before deriving dues + session counts.
+    await releaseExpiredHolds();
     const myActivityIds = await getUserActivityIds(userId);
 
-    const [myActivities, upcomingSessions, monthPayments, attendanceCount, totalSessions] =
+    const [memberships, upcomingSessions, monthPayments, attendanceCount, totalSessions, outstandingBills] =
         await Promise.all([
-            prisma.activity.findMany({
-                where: { id: { in: myActivityIds }, isActive: true },
-                orderBy: { name: 'asc' },
-                select: { id: true, name: true, color: true },
+            prisma.membership.findMany({
+                where: { userId, isActive: true, activity: { isActive: true } },
+                select: {
+                    paymentMode: true,
+                    effectiveFrom: true,
+                    pendingMode: true,
+                    pendingEffectiveFrom: true,
+                    activity: {
+                        select: {
+                            id: true,
+                            name: true,
+                            color: true,
+                            monthlyFee: true,
+                            allowsMonthly: true,
+                            allowsPerSession: true,
+                        },
+                    },
+                },
             }),
             prisma.activitySession.findMany({
                 where: {
@@ -74,6 +91,7 @@ export default async function DashboardPage() {
                     userId,
                     month: currentMonth,
                     year: currentYear,
+                    type: 'MONTHLY',
                     activityId: { in: myActivityIds },
                 },
                 select: { activityId: true, status: true, amount: true },
@@ -84,27 +102,61 @@ export default async function DashboardPage() {
                     status: 'PRESENT',
                     session: {
                         activityId: { in: myActivityIds },
-                        date: { gte: yearStart, lte: yearEnd },
+                        date: { gte: monthStart, lte: now },
                     },
                 },
             }),
+            // Attendance rate measures sessions that have already happened this
+            // month — cap the denominator at `now` so upcoming sessions (which
+            // nobody can have attended yet) don't drag the percentage down.
             prisma.activitySession.count({
                 where: {
                     activityId: { in: myActivityIds },
-                    date: { gte: yearStart, lte: yearEnd },
+                    date: { gte: monthStart, lte: now },
                     status: { not: 'CANCELLED' },
                 },
             }),
+            getOutstandingSessionBills({ userId }),
         ]);
 
     const attendanceRate =
         totalSessions > 0
             ? Math.round((attendanceCount / totalSessions) * 100)
             : 0;
+    const myActivities = memberships
+        .map((m) => m.activity)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    // Activities the member owes MONTHLY dues on this period (mode-resolved, fee
+    // set). PER_SESSION / unselected memberships are billed elsewhere / not yet.
+    const monthlyActivityIds = new Set(
+        memberships
+            .filter(
+                (m) =>
+                    resolvePaymentMode(
+                        m,
+                        {
+                            allowsMonthly: m.activity.allowsMonthly,
+                            allowsPerSession: m.activity.allowsPerSession,
+                        },
+                        currentMonth,
+                        currentYear,
+                    ) === 'MONTHLY' && m.activity.monthlyFee > 0,
+            )
+            .map((m) => m.activity.id),
+    );
     const paymentByActivity = new Map(monthPayments.map((p) => [p.activityId, p]));
-    const paidCount = monthPayments.filter(
-        (p) => p.status === 'CONFIRMED',
-    ).length;
+    const billsByActivity = new Map<string, number>();
+    for (const bill of outstandingBills) {
+        billsByActivity.set(bill.activity.id, (billsByActivity.get(bill.activity.id) ?? 0) + 1);
+    }
+    const upcomingCount = upcomingSessions.length;
+    const unpaidMonthly = myActivities.filter(
+        (a) =>
+            monthlyActivityIds.has(a.id) &&
+            paymentByActivity.get(a.id)?.status !== 'CONFIRMED',
+    );
+    const firstUnpaid = unpaidMonthly[0];
+    const duesCount = unpaidMonthly.length + outstandingBills.length;
 
     return (
         <div className='space-y-6'>
@@ -119,41 +171,68 @@ export default async function DashboardPage() {
                 </h1>
             </div>
 
+            {/* Dues alert banner — monthly dues take priority; otherwise surface
+                any per-session reservations still awaiting payment. */}
+            {firstUnpaid ? (
+                <Link
+                    href='/payments/upload'
+                    className='flex items-center gap-3 rounded-xl border border-warning-soft-border bg-warning-soft px-3.5 py-3 hover:bg-warning-soft/80 transition-colors'>
+                    <AlertTriangle className='size-[18px] shrink-0 text-warning-soft-foreground' />
+                    <div className='min-w-0 flex-1'>
+                        <p className='truncate text-[13px] font-semibold text-warning-soft-foreground'>
+                            {firstUnpaid.name} {t.dashboard.duesUnpaidBanner}
+                        </p>
+                        <p className='truncate text-xs text-warning-soft-foreground/80'>
+                            {t.months[currentMonth]} · Rp{' '}
+                            {firstUnpaid.monthlyFee.toLocaleString('id-ID')}
+                        </p>
+                    </div>
+                    <span className='shrink-0 rounded-lg bg-warning-solid px-3 py-1.5 text-xs font-semibold text-warning-solid-foreground'>
+                        {t.dashboard.payNow}
+                    </span>
+                </Link>
+            ) : outstandingBills.length > 0 ? (
+                <Link
+                    href='/payments'
+                    className='flex items-center gap-3 rounded-xl border border-warning-soft-border bg-warning-soft px-3.5 py-3 hover:bg-warning-soft/80 transition-colors'>
+                    <AlertTriangle className='size-[18px] shrink-0 text-warning-soft-foreground' />
+                    <div className='min-w-0 flex-1'>
+                        <p className='truncate text-[13px] font-semibold text-warning-soft-foreground'>
+                            {t.dashboard.reservationsToPay.replace(
+                                '{n}',
+                                String(outstandingBills.length),
+                            )}
+                        </p>
+                        <p className='truncate text-xs text-warning-soft-foreground/80'>
+                            {t.dashboard.reservationsToPaySub}
+                        </p>
+                    </div>
+                    <span className='shrink-0 rounded-lg bg-warning-solid px-3 py-1.5 text-xs font-semibold text-warning-solid-foreground'>
+                        {t.dashboard.payNow}
+                    </span>
+                </Link>
+            ) : null}
+
             {/* Summary strip */}
             <div className='grid grid-cols-3 gap-2.5 sm:gap-4'>
                 <StatCard
-                    label={`${t.dashboard.duesTitle} ${t.months[currentMonth]}`}
-                    value={
-                        <>
-                            {paidCount}
-                            <span className='text-sm font-normal text-subtle-foreground'>
-                                /{myActivities.length}
-                            </span>
-                        </>
-                    }
-                />
-                <StatCard
-                    label={`${t.dashboard.attendanceTitle} ${currentYear}`}
-                    value={
-                        <>
-                            {attendanceCount}
-                            <span className='text-sm font-normal text-subtle-foreground'>
-                                /{totalSessions} {t.dashboard.sessions}
-                            </span>
-                        </>
-                    }
-                />
-                <StatCard
-                    label={t.dashboard.attendanceRateTitle}
+                    label={t.dashboard.attendanceTitle}
                     value={`${attendanceRate}%`}
-                    sub={
-                        <div className='w-full bg-muted rounded-full h-1.5'>
-                            <div
-                                className='bg-primary h-1.5 rounded-full'
-                                style={{ width: `${attendanceRate}%` }}
-                            />
-                        </div>
+                    sub={t.dashboard.thisMonth}
+                />
+                <StatCard
+                    label={t.dashboard.upcomingLabel}
+                    value={upcomingCount}
+                    sub={t.dashboard.sessions}
+                />
+                <StatCard
+                    label={t.dashboard.duesTitle}
+                    value={
+                        <span className={duesCount > 0 ? 'text-warning' : ''}>
+                            {duesCount}
+                        </span>
                     }
+                    sub={t.dashboard.unpaid}
                 />
             </div>
 
@@ -171,12 +250,24 @@ export default async function DashboardPage() {
                     }
                 />
             ) : (
-                <div className='space-y-5'>
+                <div className='space-y-4'>
+                    <div className='flex items-baseline justify-between'>
+                        <p className='text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground'>
+                            {t.dashboard.yourActivities}
+                        </p>
+                        <Link
+                            href='/sessions'
+                            className='text-xs font-semibold text-primary hover:underline'>
+                            {t.dashboard.viewAllShort}
+                        </Link>
+                    </div>
                     {myActivities.map((activity) => {
                         const sessions = upcomingSessions
                             .filter((s) => s.activityId === activity.id)
                             .slice(0, UPCOMING_PER_ACTIVITY);
                         const payment = paymentByActivity.get(activity.id);
+                        const isMonthlyDue = monthlyActivityIds.has(activity.id);
+                        const outstanding = billsByActivity.get(activity.id) ?? 0;
                         return (
                             <div
                                 key={activity.id}
@@ -190,23 +281,28 @@ export default async function DashboardPage() {
                                     <span className='flex-1 font-heading text-[15px] font-semibold text-foreground truncate'>
                                         {activity.name}
                                     </span>
-                                    {payment ? (
-                                        <Badge
-                                            variant={paymentStatusVariant(
-                                                payment.status,
-                                            )}>
-                                            {t.paymentStatus[payment.status]}
-                                        </Badge>
-                                    ) : (
-                                        <Link href='/payments/upload'>
-                                            <Button
-                                                size='sm'
-                                                variant='outline'
-                                                className='h-7 text-xs text-warning'>
-                                                {t.dashboard.duesNotPaid}
-                                            </Button>
+                                    {isMonthlyDue ? (
+                                        payment?.status === 'CONFIRMED' ? (
+                                            <Badge variant='success'>
+                                                {t.dashboard.paid}
+                                            </Badge>
+                                        ) : (
+                                            <Link href='/payments/upload'>
+                                                <Badge variant='warning'>
+                                                    {t.dashboard.duesUnpaidBanner}
+                                                </Badge>
+                                            </Link>
+                                        )
+                                    ) : outstanding > 0 ? (
+                                        <Link href='/payments'>
+                                            <Badge variant='warning'>
+                                                {t.dashboard.toPay.replace(
+                                                    '{n}',
+                                                    String(outstanding),
+                                                )}
+                                            </Badge>
                                         </Link>
-                                    )}
+                                    ) : null}
                                 </div>
                                 <div className='px-4 pb-4 space-y-2'>
                                     {sessions.length === 0 ? (
@@ -249,16 +345,14 @@ export default async function DashboardPage() {
                                                         </span>
                                                     </span>
                                                     {isRegistered ? (
-                                                        <Badge className='text-xs shrink-0'>
-                                                            {t.dashboard.registered}
+                                                        <Badge className='shrink-0'>
+                                                            {t.dashboard.going}
                                                         </Badge>
                                                     ) : (
                                                         <Badge
-                                                            variant={sessionStatusVariant(
-                                                                s.status,
-                                                            )}
-                                                            className='text-xs shrink-0'>
-                                                            {t.sessionStatus[s.status]}
+                                                            variant='outline'
+                                                            className='shrink-0'>
+                                                            {t.dashboard.rsvp}
                                                         </Badge>
                                                     )}
                                                 </Link>
@@ -269,11 +363,6 @@ export default async function DashboardPage() {
                             </div>
                         );
                     })}
-                    <Link
-                        href='/sessions'
-                        className='inline-block text-sm text-primary hover:underline'>
-                        {t.dashboard.viewAll}
-                    </Link>
                 </div>
             )}
         </div>

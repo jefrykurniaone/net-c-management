@@ -37,9 +37,6 @@ export default async function SignInPage() {
                 </div>
 
                 <div className='bg-card rounded-2xl border border-primary-soft-border shadow-[0_4px_16px_rgba(15,118,110,0.08)] p-6 w-full flex flex-col items-center gap-4'>
-                    <p className='text-sm font-medium text-muted-foreground'>
-                        {t.auth.signInTitle}
-                    </p>
                     <form
                         action={async () => {
                             'use server';

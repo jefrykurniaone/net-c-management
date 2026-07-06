@@ -1,199 +1,253 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
+import { format } from "date-fns";
+import { id as localeId, enUS } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ActivityBadge } from "@/components/activity/activity-badge";
-import { ActivityFilter } from "@/components/activity/activity-filter";
+import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
-import { CreditCard, Upload, ExternalLink, MessageCircle } from "lucide-react";
+import { CreditCard, ExternalLink, MessageCircle } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getUserActivityIds } from "@/lib/activity";
+import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
+import { getOutstandingSessionBills } from "@/lib/payments";
+import { releaseExpiredHolds } from "@/lib/holds";
 import { paymentStatusVariant } from "@/lib/utils";
 
-export default async function PaymentsPage({
-  searchParams,
-}: Readonly<{ searchParams: Promise<{ activityId?: string }> }>) {
+export default async function PaymentsPage() {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
 
   const t = getDictionary(locale);
+  const dateLocale = locale === "id" ? localeId : enUS;
+  const userId = session.user.id;
+  const { month: currentMonth, year: currentYear } = currentPeriod(new Date());
 
-  const myActivityIds = await getUserActivityIds(session.user.id);
-  const sp = await searchParams;
-  const selected =
-    sp.activityId && myActivityIds.includes(sp.activityId) ? sp.activityId : undefined;
+  // Sweep lapsed holds before deriving bills so an expired reservation no longer
+  // shows as owed.
+  await releaseExpiredHolds();
 
-  const [payments, myActivities] = await Promise.all([
+  const [payments, memberships, monthPayments, outstandingBills] = await Promise.all([
     prisma.payment.findMany({
-      where: {
-        userId: session.user.id,
-        ...(selected ? { activityId: selected } : {}),
-      },
-      orderBy: [{ year: "desc" }, { month: "desc" }],
+      where: { userId },
+      orderBy: { createdAt: "desc" },
       include: {
+        activity: {
+          select: { id: true, name: true, color: true, icon: true, adminWhatsapp: true },
+        },
+      },
+    }),
+    prisma.membership.findMany({
+      where: { userId, isActive: true, activity: { isActive: true } },
+      select: {
+        paymentMode: true,
+        effectiveFrom: true,
+        pendingMode: true,
+        pendingEffectiveFrom: true,
         activity: {
           select: {
             id: true,
             name: true,
             color: true,
-            icon: true,
-            adminWhatsapp: true,
+            monthlyFee: true,
+            allowsMonthly: true,
+            allowsPerSession: true,
           },
         },
       },
     }),
-    prisma.activity.findMany({
-      where: { id: { in: myActivityIds }, isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
+    prisma.payment.findMany({
+      where: { userId, month: currentMonth, year: currentYear, type: "MONTHLY" },
+      select: { activityId: true, status: true },
     }),
+    getOutstandingSessionBills({ userId }),
   ]);
 
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
-  const hasCurrentMonth = payments.some(
-    (p) => p.month === currentMonth && p.year === currentYear
-  );
+  // Bill only for the mode the member actually chose: a MONTHLY membership owes
+  // this month's dues; a PER_SESSION membership owes per reserved session (the
+  // outstandingBills below); an unselected (null) mode owes nothing yet.
+  const monthlyActivities = memberships
+    .filter(
+      (m) =>
+        resolvePaymentMode(
+          m,
+          { allowsMonthly: m.activity.allowsMonthly, allowsPerSession: m.activity.allowsPerSession },
+          currentMonth,
+          currentYear,
+        ) === "MONTHLY" && m.activity.monthlyFee > 0,
+    )
+    .map((m) => m.activity)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const statusByActivity = new Map(monthPayments.map((p) => [p.activityId, p.status]));
+  const isPaid = (activityId: string) => statusByActivity.get(activityId) === "CONFIRMED";
+  const unpaidActivities = monthlyActivities.filter((a) => !isPaid(a.id));
+  const firstUnpaid = unpaidActivities[0];
+
+  const monthLabel = `${t.months[currentMonth]} ${currentYear}`;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {t.payments.title}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">{t.payments.subtitle}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {myActivities.length > 1 && (
-            <ActivityFilter
-              activities={myActivities}
-              selected={selected}
-              allLabel={t.activity.filterAll}
-            />
-          )}
-          <Link href="/payments/upload">
-            <Button className="gap-2">
-              <Upload className="w-4 h-4" />
-              {t.payments.uploadBtn}
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold text-foreground">{t.payments.title}</h1>
 
-      {/* Current month status banner */}
-      {!hasCurrentMonth && (
+      {/* Unpaid dues banner */}
+      {firstUnpaid && (
         <UnpaidBanner
-          title={`${t.months[currentMonth]} ${currentYear} ${t.payments.unpaidBannerTitle}`}
-          description={t.payments.unpaidBannerSub}
+          title={t.payments.unpaidDuesTitle
+            .replace("{count}", String(unpaidActivities.length))
+            .replace("{month}", t.months[currentMonth])}
+          description={`${firstUnpaid.name} · Rp ${firstUnpaid.monthlyFee.toLocaleString("id-ID")}`}
           ctaLabel={t.payments.payNow}
           href="/payments/upload"
         />
       )}
 
-      {/* Payment list */}
-      {payments.length === 0 ? (
-        <EmptyState
-          icon={CreditCard}
-          title={t.payments.noPayments}
-          action={
-            <Link href="/payments/upload">
-              <Button variant="outline">{t.payments.uploadProofBtn}</Button>
-            </Link>
-          }
-        />
-      ) : (
-        <div className="space-y-3">
-          {payments.map((payment) => (
-            <div
-              key={payment.id}
-              className="relative overflow-hidden bg-card rounded-xl border border-border p-5"
-            >
-              <span
-                aria-hidden
-                className="absolute left-0 top-0 h-full w-[3px]"
-                style={{ backgroundColor: payment.activity.color }}
-              />
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-foreground">
-                      {t.months[payment.month]} {payment.year}
-                    </p>
-                    <ActivityBadge
-                      name={payment.activity.name}
-                      color={payment.activity.color}
-                      icon={payment.activity.icon}
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-0.5 tabular-nums">
-                    Rp {payment.amount.toLocaleString("id-ID")}
+      {/* Outstanding per-session reservations — pay before the hold lapses */}
+      {outstandingBills.length > 0 && (
+        <section className="space-y-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            {t.payments.outstandingReservations}
+          </p>
+          <div className="bg-card rounded-xl border border-border divide-y divide-border overflow-hidden">
+            {outstandingBills.map((bill) => (
+              <Link
+                key={bill.sessionId}
+                href={`/sessions/${bill.sessionId}/pay`}
+                className="flex items-center gap-3 p-4 hover:bg-accent transition-colors"
+              >
+                <ActivityInitial name={bill.activity.name} color={bill.activity.color} />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-foreground truncate">{bill.title}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">
+                    Rp {bill.fee.toLocaleString("id-ID")} ·{" "}
+                    {format(new Date(bill.date), "d MMM", { locale: dateLocale })}
                   </p>
-                  {payment.notes && payment.status === "REJECTED" ? (
-                    <p className="text-xs text-destructive mt-1">
-                      {t.payments.rejectReason}: {payment.notes}
-                    </p>
-                  ) : (
-                    payment.notes && (
-                      <p className="text-xs text-muted-foreground mt-1 italic">
-                        {payment.notes}
-                      </p>
-                    )
-                  )}
-                  {payment.status === "REJECTED" && (
-                    <p className="text-xs text-warning mt-1">
-                      {t.payments.rejectedRefundWarning}
-                      {payment.activity.adminWhatsapp && (
-                        <>
-                          {" "}
-                          <a
-                            href={`https://wa.me/${payment.activity.adminWhatsapp.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 font-medium text-success hover:underline"
-                          >
-                            <MessageCircle className="w-3 h-3" />
-                            {t.sessions.contactAdmin}
-                          </a>
-                        </>
-                      )}
-                    </p>
-                  )}
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Badge
-                    variant={paymentStatusVariant(payment.status)}
-                  >
-                    {t.paymentStatus[payment.status]}
-                  </Badge>
-                  {payment.proofUrl && (
-                    <a
-                      href={payment.proofUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      {t.payments.viewProof}
-                    </a>
-                  )}
-                  {payment.status === "REJECTED" && (
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <Badge variant="warning">{t.payments.payNow}</Badge>
+                  <p className="text-[11px] text-warning tabular-nums">
+                    {t.payments.payBefore.replace(
+                      "{time}",
+                      format(new Date(bill.holdExpiresAt), "HH:mm", { locale: dateLocale }),
+                    )}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Current-month dues per activity */}
+      {monthlyActivities.length > 0 && (
+        <section className="space-y-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+            {monthLabel}
+          </p>
+          <div className="bg-card rounded-xl border border-border divide-y divide-border overflow-hidden">
+            {monthlyActivities.map((activity) => {
+              const paid = isPaid(activity.id);
+              return (
+                <div key={activity.id} className="flex items-center gap-3 p-4">
+                  <ActivityInitial name={activity.name} color={activity.color} />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-foreground truncate">{activity.name}</p>
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      Rp {activity.monthlyFee.toLocaleString("id-ID")} {t.payments.perMonth}
+                    </p>
+                  </div>
+                  {paid ? (
+                    <Badge variant="success">{t.payments.paid}</Badge>
+                  ) : (
                     <Link href="/payments/upload">
-                      <Button size="sm" variant="outline" className="text-xs h-7">
-                        {t.payments.uploadBtn}
-                      </Button>
+                      <Badge variant="warning">{t.payments.unpaid}</Badge>
                     </Link>
                   )}
                 </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        </section>
       )}
+
+      {/* Submission history */}
+      <section className="space-y-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+          {t.payments.historyLabel}
+        </p>
+        {payments.length === 0 ? (
+          <EmptyState icon={CreditCard} title={t.payments.noPayments} />
+        ) : (
+          <div className="space-y-3">
+            {payments.map((payment) => (
+              <div
+                key={payment.id}
+                className="relative overflow-hidden bg-card rounded-xl border border-border p-4"
+              >
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-0 h-full w-[3px]"
+                  style={{ backgroundColor: payment.activity.color }}
+                />
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground truncate">
+                      {payment.activity.name} · {t.months[payment.month]}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
+                      {t.payments.submitted}{" "}
+                      {format(new Date(payment.createdAt), "MMM d", { locale: dateLocale })} · Rp{" "}
+                      {payment.amount.toLocaleString("id-ID")}
+                    </p>
+                    {payment.status === "REJECTED" && payment.notes && (
+                      <p className="text-xs text-destructive mt-1">
+                        {t.payments.rejectReason}: {payment.notes}
+                      </p>
+                    )}
+                    {payment.status === "REJECTED" && (
+                      <p className="text-xs text-warning mt-1">
+                        {t.payments.rejectedRefundWarning}
+                        {payment.activity.adminWhatsapp && (
+                          <>
+                            {" "}
+                            <a
+                              href={`https://wa.me/${payment.activity.adminWhatsapp.replace(/\D/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 font-medium text-success hover:underline"
+                            >
+                              <MessageCircle className="w-3 h-3" />
+                              {t.sessions.contactAdmin}
+                            </a>
+                          </>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <Badge variant={paymentStatusVariant(payment.status)}>
+                      {t.payments.historyStatus[payment.status]}
+                    </Badge>
+                    {payment.proofUrl && (
+                      <a
+                        href={payment.proofUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        {t.payments.viewProof}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

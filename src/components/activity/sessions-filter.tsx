@@ -6,34 +6,46 @@ import { cn } from '@/lib/utils';
 import { ActivityDot } from './activity-badge';
 
 export type SessionTab = 'upcoming' | 'past';
+export type SessionView = 'mine' | 'all';
 
 type Activity = { id: string; name: string; color: string };
 
 /**
- * Club Premium sessions filter: a scrollable row of activity chips (colour dot +
- * name) plus an Upcoming/Past tab row. URL-driven — `?activityId=` and `?tab=` —
- * so the server component re-renders with the right query. Replaces the old
- * single dropdown.
+ * Club Premium sessions filter: a My/All view toggle, a scrollable row of
+ * activity chips (colour dot + name), and an Upcoming/Past tab row. URL-driven —
+ * `?view=`, `?activityId=`, `?tab=` — so the server component re-renders with
+ * the right query. "My" scopes to joined activities; "All" reveals every active
+ * Activity for discovery + join-on-register.
  */
 export function SessionsFilter({
     activities,
     selected,
     tab,
+    view,
     labels,
 }: Readonly<{
     activities: Activity[];
     selected?: string;
     tab: SessionTab;
-    labels: { all: string; upcoming: string; past: string };
+    view: SessionView;
+    labels: {
+        all: string;
+        upcoming: string;
+        past: string;
+        viewMine: string;
+        viewAll: string;
+    };
 }>) {
     const pathname = usePathname();
 
-    function href(next: { activityId?: string; tab?: SessionTab }) {
+    function href(next: { activityId?: string; tab?: SessionTab; view?: SessionView }) {
         const activityId = next.activityId ?? selected ?? '';
         const nextTab = next.tab ?? tab;
+        const nextView = next.view ?? view;
         const params = new URLSearchParams();
         if (activityId) params.set('activityId', activityId);
         if (nextTab === 'past') params.set('tab', 'past');
+        if (nextView === 'all') params.set('view', 'all');
         const qs = params.toString();
         return qs ? `${pathname}?${qs}` : pathname;
     }
@@ -43,6 +55,24 @@ export function SessionsFilter({
 
     return (
         <div className='space-y-3'>
+            {/* My / All view toggle — switching resets the activity chip filter */}
+            <div className='inline-flex rounded-full bg-muted/60 p-0.5 text-xs font-semibold'>
+                {(['mine', 'all'] as const).map((value) => (
+                    <Link
+                        key={value}
+                        href={href({ view: value, activityId: '' })}
+                        aria-current={view === value ? 'true' : undefined}
+                        className={cn(
+                            'rounded-full px-4 py-1.5 transition-colors',
+                            view === value
+                                ? 'bg-primary text-primary-foreground'
+                                : 'text-muted-foreground hover:text-foreground',
+                        )}>
+                        {value === 'mine' ? labels.viewMine : labels.viewAll}
+                    </Link>
+                ))}
+            </div>
+
             {/* Activity chips */}
             {activities.length > 0 && (
                 <div className='flex gap-2 overflow-x-auto pb-1 -mx-1 px-1'>

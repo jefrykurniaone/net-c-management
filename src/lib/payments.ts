@@ -384,10 +384,62 @@ export async function registerAndPaySession(input: SessionRegistrationInput) {
     });
     await tx.attendance.upsert({
       where: key,
-      create: { userId, sessionId: session.id, status: AttendanceStatus.REGISTERED },
-      update: { status: AttendanceStatus.REGISTERED },
+      // Paying makes the seat permanent — clear any 1-hour hold so the sweep
+      // (src/lib/holds.ts) can never release a now-funded seat.
+      create: { userId, sessionId: session.id, status: AttendanceStatus.REGISTERED, holdExpiresAt: null },
+      update: { status: AttendanceStatus.REGISTERED, holdExpiresAt: null },
     });
     return payment;
+  });
+}
+
+/**
+ * Reserve-then-pay: claim a seat before payment. In ONE transaction, lock the
+ * Session row (`SELECT … FOR UPDATE`) so reservations serialize, re-check its
+ * status + capacity (seat-held Attendance count is the authority, AD-6), then
+ * upsert a REGISTERED `Attendance`. `expiresAt` is the 1-hour hold instant for
+ * an unpaid reservation, or `null` to claim a permanent (funded/free) seat.
+ * Reserving a seat that is already funded (a permanent seat) is a no-op — a paid
+ * seat is never downgraded back into an expiring hold. No Payment is written
+ * here; the unpaid bill is derived from the hold and settled on the pay path.
+ */
+export async function reserveSeat(input: {
+  userId: string;
+  sessionId: string;
+  expiresAt: Date | null;
+}): Promise<void> {
+  const { userId, sessionId, expiresAt } = input;
+  const key = { userId_sessionId: { userId, sessionId } };
+
+  await prisma.$transaction(async (tx) => {
+    const [locked] = await tx.$queryRaw<{ maxPlayers: number; status: SessionStatus }[]>`
+      SELECT "maxPlayers", "status" FROM "ActivitySession" WHERE "id" = ${sessionId} FOR UPDATE
+    `;
+    if (
+      !locked ||
+      locked.status === SessionStatus.CANCELLED ||
+      locked.status === SessionStatus.COMPLETED
+    ) {
+      throw new SessionNotRegisterableError();
+    }
+
+    const mine = await tx.attendance.findUnique({ where: key, select: { status: true, holdExpiresAt: true } });
+    const mineHoldsSeat = mine !== null && SEAT_HELD_STATUSES.includes(mine.status);
+    // A funded permanent seat stays as-is when re-reserved (hold path only).
+    if (expiresAt !== null && mineHoldsSeat && mine.holdExpiresAt === null) return;
+
+    if (!mineHoldsSeat) {
+      const others = await tx.attendance.count({
+        where: { sessionId, userId: { not: userId }, status: { in: SEAT_HELD_STATUSES } },
+      });
+      if (others >= locked.maxPlayers) throw new SessionFullError();
+    }
+
+    await tx.attendance.upsert({
+      where: key,
+      create: { userId, sessionId, status: AttendanceStatus.REGISTERED, holdExpiresAt: expiresAt },
+      update: { status: AttendanceStatus.REGISTERED, holdExpiresAt: expiresAt },
+    });
   });
 }
 
@@ -599,6 +651,19 @@ export async function syncMonthlyAttendances(input: {
 
   const monthStart = new Date(Date.UTC(year, month - 1, 1));
   const nextMonthStart = new Date(Date.UTC(year, month, 1));
+
+  // A paid month makes the whole month's seats permanent: clear any 1-hour hold
+  // these members still carry for this Activity's sessions this period, so the
+  // sweep (src/lib/holds.ts) can't release a seat they have now funded.
+  await prisma.attendance.updateMany({
+    where: {
+      userId: { in: paidIds },
+      holdExpiresAt: { not: null },
+      session: { activityId, date: { gte: monthStart, lt: nextMonthStart } },
+    },
+    data: { holdExpiresAt: null },
+  });
+
   const sessions = await prisma.activitySession.findMany({
     where: {
       activityId,
@@ -632,4 +697,84 @@ export async function syncMonthlyAttendances(input: {
       skipDuplicates: true,
     });
   }
+}
+
+/** A member's unpaid per-session reservation — the bill the pay page settles. */
+export interface OutstandingSessionBill {
+  sessionId: string;
+  title: string;
+  fee: number;
+  date: Date;
+  /** The instant the 1-hour hold lapses and the seat is released. */
+  holdExpiresAt: Date;
+  activity: { id: string; name: string; color: string };
+}
+
+/**
+ * The member's outstanding per-session bills: seats they have reserved (a live
+ * hold, `holdExpiresAt` set) on an Activity whose effective mode for that
+ * session's period is PER_SESSION, and have not yet paid. A monthly member's
+ * unpaid hold is intentionally excluded — that is covered by the monthly dues
+ * bill, not a per-session one. Callers should sweep expired holds first
+ * (releaseExpiredHolds) so only still-valid reservations surface. Bills are
+ * returned soonest-session-first.
+ */
+export async function getOutstandingSessionBills(input: {
+  userId: string;
+}): Promise<OutstandingSessionBill[]> {
+  const holds = await prisma.attendance.findMany({
+    where: {
+      userId: input.userId,
+      holdExpiresAt: { not: null },
+      session: { status: { in: [SessionStatus.SCHEDULED, SessionStatus.ONGOING] } },
+    },
+    select: {
+      holdExpiresAt: true,
+      session: {
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          fee: true,
+          activityId: true,
+          activity: {
+            select: { id: true, name: true, color: true, allowsMonthly: true, allowsPerSession: true },
+          },
+        },
+      },
+    },
+  });
+  if (holds.length === 0) return [];
+
+  const activityIds = [...new Set(holds.map((h) => h.session.activityId))];
+  const memberships = await prisma.membership.findMany({
+    where: { userId: input.userId, activityId: { in: activityIds }, isActive: true },
+    select: {
+      activityId: true,
+      paymentMode: true,
+      effectiveFrom: true,
+      pendingMode: true,
+      pendingEffectiveFrom: true,
+    },
+  });
+  const byActivity = new Map(memberships.map((m) => [m.activityId, m]));
+
+  const bills: OutstandingSessionBill[] = [];
+  for (const hold of holds) {
+    const membership = byActivity.get(hold.session.activityId);
+    if (!membership) continue;
+    const { month, year } = currentPeriod(hold.session.date);
+    const { activity } = hold.session;
+    const offered = { allowsMonthly: activity.allowsMonthly, allowsPerSession: activity.allowsPerSession };
+    if (resolvePaymentMode(membership, offered, month, year) !== PaymentMode.PER_SESSION) continue;
+    bills.push({
+      sessionId: hold.session.id,
+      title: hold.session.title,
+      fee: hold.session.fee,
+      date: hold.session.date,
+      holdExpiresAt: hold.holdExpiresAt!,
+      activity: { id: activity.id, name: activity.name, color: activity.color },
+    });
+  }
+  return bills.sort((a, b) => a.date.getTime() - b.date.getTime());
 }

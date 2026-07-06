@@ -6,15 +6,15 @@ import { id as localeId, enUS } from 'date-fns/locale';
 import { sessionStatusVariant } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ActivityBadge } from '@/components/activity/activity-badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { RSVPButton } from '@/components/sessions/rsvp-button';
+import { PlayerList, type PlayerItem } from '@/components/sessions/player-list';
 import {
     ArrowLeft,
     MapPin,
     Clock,
     Users,
-    Banknote,
+    CalendarDays,
+    CreditCard,
     FileText,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -28,6 +28,32 @@ import {
 import { getSessionQuotas } from '@/lib/recurring-sessions';
 import { getSettings } from '@/lib/settings';
 import { WhatsappButton } from '@/components/sessions/whatsapp-button';
+import { isRsvpClosed, rsvpCloseAt } from '@/lib/rsvp';
+
+const MINUTES_PER_HOUR = 60;
+
+/** "19:00" + "21:00" → "2 hours" (or "1.5 hours"); empty when unparseable. */
+function formatDuration(
+    start: string,
+    end: string,
+    hourLabel: string,
+    hoursLabel: string,
+): string {
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+    const minutes =
+        endH * MINUTES_PER_HOUR + endM - (startH * MINUTES_PER_HOUR + startM);
+    if (!Number.isFinite(minutes) || minutes <= 0) return '';
+    const hours = minutes / MINUTES_PER_HOUR;
+    const value = Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
+    return `${value} ${hours === 1 ? hourLabel : hoursLabel}`;
+}
+
+function mapsUrl(location: string): string {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        location,
+    )}`;
+}
 
 export default async function SessionDetailPage({
     params,
@@ -59,8 +85,9 @@ export default async function SessionDetailPage({
             },
             attendances: {
                 // ABSENT rows (monthly members who cancelled) are opt-out
-                // markers, not participants — hide them from the list.
-                where: { status: { in: ['REGISTERED', 'PRESENT'] } },
+                // markers, not participants — hide them. MAYBE is a tentative
+                // RSVP: shown in the list, but it holds no seat (see _count).
+                where: { status: { in: ['REGISTERED', 'MAYBE', 'PRESENT'] } },
                 include: {
                     user: {
                         select: {
@@ -146,21 +173,75 @@ export default async function SessionDetailPage({
     const myAttendance = activitySession.attendances.find(
         (a) => a.userId === authSession.user.id,
     );
-    const isRegistered = !!myAttendance;
+    const rsvpStatus = myAttendance?.status ?? null;
+    // "Registered" means holding a seat — a MAYBE row is a tentative RSVP that
+    // does not, so it isn't treated as registered for capacity/CTA purposes.
+    const isRegistered =
+        rsvpStatus === 'REGISTERED' || rsvpStatus === 'PRESENT';
     const isFull =
         activitySession._count.attendances >= activitySession.maxPlayers;
-    return (
-        <div className='max-w-2xl mx-auto space-y-6'>
-            {/* Back */}
-            <Link
-                href='/sessions'
-                className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
-                <ArrowLeft className='w-4 h-4' />
-                {t.sessions.backToList}
-            </Link>
+    const isFreeSession = activitySession.fee === 0;
+    const rsvpClosed = isRsvpClosed(
+        activitySession.date,
+        activitySession.startTime,
+    );
+    const rsvpCloseLabel = format(
+        rsvpCloseAt(activitySession.date, activitySession.startTime),
+        'EEE, d MMM HH:mm',
+        { locale: dateLocale },
+    );
 
-            {/* Header */}
-            <div className='bg-card rounded-xl border border-border p-6 space-y-4'>
+    const attendeeCount = activitySession._count.attendances;
+    const dateFormat = locale === 'id' ? 'EEEE, d MMMM' : 'EEEE, MMMM d';
+    const duration = formatDuration(
+        activitySession.startTime,
+        activitySession.endTime,
+        t.sessions.durationHour,
+        t.sessions.durationHours,
+    );
+    const fillPercent = Math.min(
+        (attendeeCount / activitySession.maxPlayers) * 100,
+        100,
+    );
+    const players: PlayerItem[] = activitySession.attendances.map((a) => ({
+        id: a.id,
+        name: a.user.name ?? '—',
+        initials:
+            a.user.name
+                ?.split(' ')
+                .slice(0, 2)
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase() ?? '?',
+        image: a.user.image ?? '',
+        statusLabel:
+            a.status === 'PRESENT'
+                ? t.attendanceStatus.PRESENT
+                : a.status === 'MAYBE'
+                  ? t.sessions.maybe
+                  : t.sessions.going,
+        isPresent: a.status === 'PRESENT',
+        isMaybe: a.status === 'MAYBE',
+        isYou: a.userId === authSession.user.id,
+    }));
+
+    return (
+        <div className='max-w-2xl mx-auto'>
+            {/* Back header */}
+            <div className='mb-4 flex items-center gap-2 border-b border-border pb-4'>
+                <Link
+                    href='/sessions'
+                    className='text-muted-foreground hover:text-foreground'>
+                    <ArrowLeft className='w-5 h-5' />
+                    <span className='sr-only'>{t.sessions.backToList}</span>
+                </Link>
+                <span className='text-base font-semibold text-foreground'>
+                    {t.sessions.backTitle}
+                </span>
+            </div>
+
+            <div className='space-y-4'>
+                {/* Title */}
                 <div className='space-y-2.5'>
                     <div className='flex items-center gap-2 flex-wrap'>
                         <ActivityBadge
@@ -168,58 +249,77 @@ export default async function SessionDetailPage({
                             color={activitySession.activity.color}
                         />
                         <Badge
-                            variant={sessionStatusVariant(activitySession.status)}
-                        >
+                            variant={sessionStatusVariant(activitySession.status)}>
                             {t.sessionStatus[activitySession.status]}
                         </Badge>
                     </div>
-                    <h1 className='text-[22px] font-bold text-foreground leading-tight'>
+                    <h1 className='text-2xl font-bold text-foreground leading-tight'>
                         {activitySession.title}
                     </h1>
                 </div>
 
-                <div className='space-y-2 text-sm text-secondary-foreground'>
-                    <div className='flex items-center gap-2.5'>
-                        <Clock className='w-4 h-4 shrink-0 text-primary' />
-                        <span>
-                            {format(
-                                new Date(activitySession.date),
-                                'EEEE, d MMMM yyyy',
-                                {
-                                    locale: dateLocale,
-                                },
-                            )}{' '}
-                            · {activitySession.startTime} –{' '}
+                {/* Details card */}
+                <div className='bg-card rounded-xl border border-border p-5 text-sm text-secondary-foreground divide-y divide-border'>
+                    <div className='flex items-center gap-3 pb-3'>
+                        <CalendarDays className='w-[18px] h-[18px] shrink-0 text-primary' />
+                        <span className='text-foreground'>
+                            {format(new Date(activitySession.date), dateFormat, {
+                                locale: dateLocale,
+                            })}
+                        </span>
+                    </div>
+                    <div className='flex items-center gap-3 py-3'>
+                        <Clock className='w-[18px] h-[18px] shrink-0 text-primary' />
+                        <span className='tabular-nums text-foreground'>
+                            {activitySession.startTime} –{' '}
                             {activitySession.endTime}
+                            {duration && (
+                                <span className='ml-1.5 text-muted-foreground'>
+                                    ({duration})
+                                </span>
+                            )}
                         </span>
                     </div>
-                    <div className='flex items-center gap-2.5'>
-                        <MapPin className='w-4 h-4 shrink-0 text-primary' />
-                        <span>{activitySession.location}</span>
-                    </div>
-                    <div className='flex items-center gap-2.5'>
-                        <Users className='w-4 h-4 shrink-0 text-primary' />
-                        <span className='tabular-nums'>
-                            {activitySession._count.attendances}/
-                            {activitySession.maxPlayers}
+                    <div className='flex items-center gap-3 py-3'>
+                        <MapPin className='w-[18px] h-[18px] shrink-0 text-primary' />
+                        <span className='flex-1 text-foreground'>
+                            {activitySession.location}
                         </span>
-                        <span>{t.sessions.participants}</span>
-                        {isFull && (
-                            <Badge variant='secondary' className='text-xs ml-1'>
-                                {t.sessions.full}
-                            </Badge>
+                        {activitySession.location && (
+                            <a
+                                href={mapsUrl(activitySession.location)}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='shrink-0 font-medium text-primary hover:underline'>
+                                {t.sessions.mapLink}
+                            </a>
                         )}
                     </div>
+                    {activitySession.fee > 0 && (
+                        <div className='flex items-center gap-3 py-3'>
+                            <CreditCard className='w-[18px] h-[18px] shrink-0 text-primary' />
+                            <span className='text-foreground'>
+                                <span className='tabular-nums'>
+                                    Rp{' '}
+                                    {activitySession.fee.toLocaleString('id-ID')}
+                                </span>
+                                <span className='text-muted-foreground'>
+                                    {t.sessions.perPlayer}
+                                </span>
+                            </span>
+                        </div>
+                    )}
                     {quota && quota.needed > 0 && (
-                        <div className='flex items-center gap-2.5'>
-                            <Users className='w-4 h-4 shrink-0 text-primary' />
+                        <div className='flex items-center gap-3 py-3'>
+                            <Users className='w-[18px] h-[18px] shrink-0 text-primary' />
                             <span className='tabular-nums'>
                                 {quota.committed}/{quota.needed}
                             </span>
-                            <span>{t.sessions.quotaLabel}</span>
+                            <span className='flex-1'>
+                                {t.sessions.quotaLabel}
+                            </span>
                             <Badge
-                                variant={quota.isMet ? 'success' : 'warning'}
-                                className='text-xs'>
+                                variant={quota.isMet ? 'success' : 'warning'}>
                                 {quota.isMet
                                     ? t.sessions.quotaMet
                                     : t.sessions.quotaNeedMore.replace(
@@ -229,21 +329,9 @@ export default async function SessionDetailPage({
                             </Badge>
                         </div>
                     )}
-                    {activitySession.fee > 0 && (
-                        <div className='flex items-center gap-2.5'>
-                            <Banknote className='w-4 h-4 shrink-0 text-primary' />
-                            <span>
-                                <span className='tabular-nums'>
-                                    Rp{' '}
-                                    {activitySession.fee.toLocaleString('id-ID')}
-                                </span>
-                                {t.sessions.feePerPerson}
-                            </span>
-                        </div>
-                    )}
                     {activitySession.notes && (
-                        <div className='flex items-start gap-2.5'>
-                            <FileText className='w-4 h-4 shrink-0 text-primary mt-0.5' />
+                        <div className='flex items-start gap-3 pt-3'>
+                            <FileText className='w-[18px] h-[18px] shrink-0 text-primary mt-0.5' />
                             <span className='whitespace-pre-wrap'>
                                 {activitySession.notes}
                             </span>
@@ -251,129 +339,78 @@ export default async function SessionDetailPage({
                     )}
                 </div>
 
-                <RSVPButton
-                    sessionId={activitySession.id}
-                    activityId={activitySession.activityId}
-                    isRegistered={isRegistered}
-                    isFull={isFull && !isRegistered}
-                    isCancelled={activitySession.status === 'CANCELLED'}
-                    isCompleted={activitySession.status === 'COMPLETED'}
-                    paymentMode={effectiveMode}
-                    allowsBothModes={
-                        offered.allowsMonthly && offered.allowsPerSession
-                    }
-                    sessionFee={activitySession.fee}
-                    monthlyFee={activitySession.activity.monthlyFee}
-                    hasMonthlyPaid={monthlyPayment !== null}
-                    sessionPaymentStatus={sessionPayment?.status ?? null}
-                    sessionPaymentNotes={sessionPayment?.notes ?? null}
-                    adminWhatsapp={whatsapp}
-                />
-
-                {whatsapp && (
-                    <WhatsappButton
-                        phone={whatsapp}
-                        label={t.sessions.contactAdmin}
-                    />
-                )}
-            </div>
-
-            {/* Participants list */}
-            <div className='bg-card rounded-xl border border-border p-6'>
-                <div className='flex items-center justify-between mb-3'>
-                    <h2 className='font-semibold text-foreground'>
-                        {t.sessions.attendeeList}
-                    </h2>
-                    <p className='text-[13px] font-semibold text-foreground tabular-nums'>
-                        {activitySession._count.attendances}
-                        <span className='font-normal text-subtle-foreground'>
-                            /{activitySession.maxPlayers}
+                {/* RSVP card */}
+                <div className='bg-card rounded-xl border border-border p-5 space-y-3'>
+                    <div className='flex items-baseline justify-between gap-2'>
+                        <h2 className='font-semibold text-foreground'>
+                            {t.sessions.areYouPlaying}
+                        </h2>
+                        <span className='shrink-0 text-xs text-muted-foreground'>
+                            {t.sessions.rsvpCloses} {rsvpCloseLabel}
                         </span>
-                    </p>
-                </div>
-                <div className='mb-4 h-[5px] rounded-full bg-muted overflow-hidden'>
-                    <div
-                        className='h-full rounded-full bg-primary'
-                        style={{
-                            width: `${Math.min(
-                                (activitySession._count.attendances /
-                                    activitySession.maxPlayers) *
-                                    100,
-                                100,
-                            )}%`,
-                        }}
-                    />
-                </div>
-                {activitySession.attendances.length === 0 ? (
-                    <p className='text-sm text-muted-foreground text-center py-4'>
-                        {t.sessions.noAttendees}
-                    </p>
-                ) : (
-                    <div className='space-y-3'>
-                        {activitySession.attendances.map((attendance, i) => {
-                            const initials =
-                                attendance.user.name
-                                    ?.split(' ')
-                                    .slice(0, 2)
-                                    .map((n) => n[0])
-                                    .join('')
-                                    .toUpperCase() ?? '?';
-                            return (
-                                <div key={attendance.id}>
-                                    <div className='flex items-center gap-3'>
-                                        <span className='text-xs text-muted-foreground w-5 text-right tabular-nums'>
-                                            {i + 1}
-                                        </span>
-                                        <Avatar className='w-8 h-8'>
-                                            <AvatarImage
-                                                src={
-                                                    attendance.user.image ?? ''
-                                                }
-                                                alt=''
-                                            />
-                                            <AvatarFallback className='text-xs bg-primary/10 text-primary'>
-                                                {initials}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className='flex-1 min-w-0'>
-                                            <p className='text-sm font-medium text-foreground truncate'>
-                                                {attendance.user.name ?? '—'}
-                                                {attendance.userId ===
-                                                    authSession.user.id && (
-                                                    <span className='text-xs text-primary ml-1'>
-                                                        ({locale === 'id' ? 'Kamu' : 'you'})
-                                                    </span>
-                                                )}
-                                            </p>
-                                        </div>
-                                        <Badge
-                                            variant={(() => {
-                                                if (
-                                                    attendance.status ===
-                                                    'PRESENT'
-                                                )
-                                                    return 'default';
-                                                if (
-                                                    attendance.status ===
-                                                    'ABSENT'
-                                                )
-                                                    return 'destructive';
-                                                return 'secondary';
-                                            })()}
-                                            className='text-xs'>
-                                            {
-                                                t.attendanceStatus[attendance.status]
-                                            }
-                                        </Badge>
-                                    </div>
-                                    {i <
-                                        activitySession.attendances.length -
-                                            1 && <Separator className='mt-3' />}
-                                </div>
-                            );
-                        })}
                     </div>
-                )}
+                    <RSVPButton
+                        sessionId={activitySession.id}
+                        isRegistered={isRegistered}
+                        isFull={isFull && !isRegistered}
+                        isCancelled={activitySession.status === 'CANCELLED'}
+                        isCompleted={activitySession.status === 'COMPLETED'}
+                        isRsvpClosed={rsvpClosed}
+                        isFreeSession={isFreeSession}
+                        rsvpStatus={rsvpStatus}
+                        paymentMode={effectiveMode}
+                        allowsBothModes={
+                            offered.allowsMonthly && offered.allowsPerSession
+                        }
+                        sessionFee={activitySession.fee}
+                        monthlyFee={activitySession.activity.monthlyFee}
+                        hasMonthlyPaid={monthlyPayment !== null}
+                        sessionPaymentStatus={sessionPayment?.status ?? null}
+                        sessionPaymentNotes={sessionPayment?.notes ?? null}
+                        holdExpiresAtISO={
+                            myAttendance?.holdExpiresAt?.toISOString() ?? null
+                        }
+                        adminWhatsapp={whatsapp}
+                    />
+                    {whatsapp && (
+                        <WhatsappButton
+                            phone={whatsapp}
+                            label={t.sessions.contactAdmin}
+                        />
+                    )}
+                </div>
+
+                {/* Players card */}
+                <div className='bg-card rounded-xl border border-border p-5'>
+                    <div className='flex items-center justify-between mb-3'>
+                        <h2 className='font-semibold text-foreground'>
+                            {t.sessions.playersLabel}
+                        </h2>
+                        <p className='text-[13px] font-semibold text-foreground tabular-nums'>
+                            {attendeeCount}
+                            <span className='font-normal text-subtle-foreground'>
+                                /{activitySession.maxPlayers}
+                            </span>
+                        </p>
+                    </div>
+                    <div className='mb-3 h-[5px] rounded-full bg-muted overflow-hidden'>
+                        <div
+                            className='h-full rounded-full bg-primary'
+                            style={{ width: `${fillPercent}%` }}
+                        />
+                    </div>
+                    {players.length === 0 ? (
+                        <p className='text-sm text-muted-foreground text-center py-4'>
+                            {t.sessions.noAttendees}
+                        </p>
+                    ) : (
+                        <PlayerList
+                            players={players}
+                            youLabel={locale === 'id' ? 'Kamu' : 'you'}
+                            showAllTemplate={t.sessions.showAllPlayers}
+                        />
+                    )}
+                </div>
             </div>
         </div>
     );
