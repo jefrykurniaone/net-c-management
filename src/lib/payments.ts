@@ -669,6 +669,9 @@ export async function syncMonthlyAttendances(input: {
       activityId,
       date: { gte: monthStart, lt: nextMonthStart },
       status: { in: [SessionStatus.SCHEDULED, SessionStatus.ONGOING] },
+      // Free sessions (fee = 0) are open to anyone — monthly dues don't
+      // buy a seat there, so skip them from the auto-join sync.
+      fee: { gte: MIN_SESSION_FEE },
     },
     select: {
       id: true,

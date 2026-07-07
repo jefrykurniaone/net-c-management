@@ -19,7 +19,6 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getUserActivityIds } from "@/lib/activity";
 import { releaseExpiredHolds } from "@/lib/holds";
 import {
-  ensureRecurringSessions,
   getSessionQuotas,
 } from "@/lib/recurring-sessions";
 
@@ -55,11 +54,8 @@ export default async function SessionsPage({
   today.setHours(0, 0, 0, 0);
   const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
 
-  // Lazy, idempotent housekeeping on load (no cron): generate this month's
-  // weekly sessions, then release any lapsed reservation holds so freed seats
-  // are reflected in the counts below.
+  // Release any lapsed reservation holds so freed seats are reflected below.
   await releaseExpiredHolds();
-  await ensureRecurringSessions();
 
   const [allActivities, myActivityIds] = await Promise.all([
     prisma.activity.findMany({

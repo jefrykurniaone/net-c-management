@@ -39,7 +39,7 @@ export function RsvpChoice({
             )}>
             <Button
                 variant={active === 'GOING' ? 'default' : 'outline'}
-                disabled={disabled || active === 'GOING' || (goingDisabled && active !== 'GOING')}
+                disabled={disabled || active === 'GOING' || goingDisabled}
                 onClick={onGoing}
                 className='w-full'>
                 {active === 'GOING' && <Check className='size-4' />}
