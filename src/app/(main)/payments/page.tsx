@@ -6,6 +6,7 @@ import { id as localeId, enUS } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
+import { HoldTime } from "@/components/payments/hold-time";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { CreditCard, ExternalLink, MessageCircle } from "lucide-react";
@@ -128,10 +129,10 @@ export default async function PaymentsPage() {
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <Badge variant="warning">{t.payments.payNow}</Badge>
                   <p className="text-[11px] text-warning tabular-nums">
-                    {t.payments.payBefore.replace(
-                      "{time}",
-                      format(new Date(bill.holdExpiresAt), "HH:mm", { locale: dateLocale }),
-                    )}
+                    <HoldTime
+                      iso={new Date(bill.holdExpiresAt).toISOString()}
+                      template={t.payments.payBefore}
+                    />
                   </p>
                 </div>
               </Link>
