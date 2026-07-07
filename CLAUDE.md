@@ -38,7 +38,7 @@ New users are created by NextAuth on first login; until `isProfileComplete = tru
 
 Prisma uses the `driverAdapters` preview feature with `PrismaPg` (direct `pg` pool, not Prisma's built-in connector). The singleton is in `src/lib/prisma.ts` — production caps the pool at 1 connection per serverless function, so use Supabase's **Transaction pooler (port 6543)** in production and the **Session pooler (port 5432)** in development.
 
-Core models: `User`, `ActivitySession`, `Attendance`, `Payment`, `Settings`. Key enums: `Role` (MEMBER/ADMIN), `SessionStatus`, `AttendanceStatus`, `PaymentStatus`.
+Core models: `User`, `Activity`, `Membership`, `ActivitySession`, `Attendance`, `Payment`, `Settings`. Key enums: `Role` (MEMBER/ADMIN/OWNER), `SessionStatus`, `AttendanceStatus`, `PaymentStatus`, `PaymentMode` (MONTHLY/PER_SESSION, owned by `Membership`), `PaymentType` (what a `Payment` row bills for).
 
 Schema changes go through **Prisma Migrate**, never `prisma db push`. `prisma/migrations/` is the source of truth that keeps local and prod in sync: edit `schema.prisma`, run `npx prisma migrate dev --name <desc>`, and commit the generated migration folder with the change. Deploy to prod with `npm run db:deploy:prod` (`migrate deploy`) after the merge lands. Using `db push` mutates a DB without recording a migration — that untracked drift desyncs environments and is what broke prod once already.
 
@@ -53,6 +53,20 @@ The app supports English (`en`) and Indonesian (`id`). All user-facing strings l
 ### Settings
 
 Community-wide settings (name, logo, default fee, default location, etc.) are stored as key-value rows in the `Settings` table and fetched via `src/lib/settings.ts:getSettings()`. This is a server-only helper — call it from Server Components or Route Handlers.
+
+### Payments and reservation holds
+
+A seat is never held without money behind it: reserving a paid session (POST `/api/sessions/[id]/reserve`) claims the seat with a payment hold (`Attendance.holdExpiresAt`, duration from the `holdDurationMinutes` setting, default 1 hour). Paying clears the hold; unpaid holds are released by a lazy sweep (`src/lib/holds.ts:releaseExpiredHolds`) that runs at the top of capacity-sensitive reads/writes — there is no hold cron. All payment/registration writes live in `src/lib/payments.ts` (server-only) and use row-lock transactions (`SELECT ... FOR UPDATE`) for capacity races.
+
+### Email notifications
+
+All email goes through `src/lib/email/` (Gmail SMTP via nodemailer; `GMAIL_USER` / `GMAIL_APP_PASSWORD`). `transporter.ts` sends, `layout.ts` is the shared bilingual HTML shell, one file per template. Sends are best-effort: guarded by `isEmailConfigured()`, queued post-response with `after()` from `next/server`, failures logged, never thrown. Triggers: reserve hold created (payment deadline), hold expired (re-register), payment reviewed (approved/rejected), day-of attendance reminder (cron), admin under-booked reminder (POST `/api/sessions/[id]/remind`).
+
+### Cron jobs
+
+Declared in `vercel.json`, protected by the `CRON_SECRET` bearer token (auto-injected on Vercel):
+- `/api/cron/generate-sessions` — month-end 17:00 UTC (00:00 WIB): next month's recurring sessions
+- `/api/cron/day-reminders` — daily 22:00 UTC (05:00 WIB): day-of attendance emails; `ActivitySession.dayReminderSentAt` is the double-send guard
 
 ## Coding Standards (from AGENTS.md)
 

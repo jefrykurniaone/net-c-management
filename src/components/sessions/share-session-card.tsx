@@ -1,8 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { Share2, Copy, Check, MessageCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+
+/** The origin never changes during a page's lifetime — no updates to push. */
+function subscribeToNothing(): () => void {
+    return () => {};
+}
 
 export interface ShareSessionLabels {
     title: string;
@@ -22,12 +27,14 @@ export function ShareSessionCard({
     sessionTitle: string;
     labels: ShareSessionLabels;
 }>) {
-    const [origin, setOrigin] = useState('');
+    // window.location.origin is client-only external state; the empty server
+    // snapshot avoids a hydration mismatch and React re-renders once mounted.
+    const origin = useSyncExternalStore(
+        subscribeToNothing,
+        () => window.location.origin,
+        () => '',
+    );
     const [copied, setCopied] = useState(false);
-
-    useEffect(() => {
-        setOrigin(window.location.origin);
-    }, []);
 
     const shareUrl = `${origin}/s/${sessionId}`;
 

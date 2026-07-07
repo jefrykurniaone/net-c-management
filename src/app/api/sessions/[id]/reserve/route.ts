@@ -9,12 +9,14 @@ import {
   SessionNotRegisterableError,
 } from '@/lib/payments';
 import { currentPeriod, resolvePaymentMode } from '@/lib/payment-mode';
-import { releaseExpiredHolds, holdExpiresAt } from '@/lib/holds';
+import { releaseExpiredHolds, holdExpiresAt, getHoldDurationMinutes } from '@/lib/holds';
 import { isRsvpClosed } from '@/lib/rsvp';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getSettings } from '@/lib/settings';
+import { isEmailConfigured, sendHoldConfirmation } from '@/lib/email';
 import { PaymentMode } from '@prisma/client';
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 
 const SESSION_FULL_STATUS = 409;
 
@@ -51,7 +53,16 @@ export async function POST(
 
   const activitySession = await prisma.activitySession.findUnique({
     where: { id: sessionId },
-    select: { id: true, activityId: true, fee: true, date: true, startTime: true, status: true },
+    select: {
+      id: true,
+      activityId: true,
+      fee: true,
+      date: true,
+      startTime: true,
+      status: true,
+      title: true,
+      location: true,
+    },
   });
   if (!activitySession) {
     return NextResponse.json({ error: t.sessions.notFound }, { status: 404 });
@@ -85,7 +96,84 @@ export async function POST(
   }
   const payUrl =
     effective === PaymentMode.MONTHLY ? '/payments/upload' : `/sessions/${sessionId}/pay`;
-  return reserve(sessionId, userId, await holdExpiresAt(), payUrl, t);
+  const response = await reserve(sessionId, userId, await holdExpiresAt(), payUrl, t);
+  if (response.status === RESERVED_STATUS) {
+    queueHoldConfirmationEmail({
+      user: session.user,
+      activitySession,
+      mode: effective,
+      payUrl,
+    });
+  }
+  return response;
+}
+
+const RESERVED_STATUS = 201;
+
+/** Session fields the hold-confirmation email needs. */
+interface ReservedSessionInfo {
+  id: string;
+  activityId: string;
+  title: string;
+  date: Date;
+  startTime: string;
+  location: string;
+  fee: number;
+}
+
+/**
+ * Queue the "confirm your payment or the registration expires" email after the
+ * response is sent. Failures are logged, never surfaced — email is best-effort.
+ */
+function queueHoldConfirmationEmail(input: {
+  user: { email?: string | null; name?: string | null };
+  activitySession: ReservedSessionInfo;
+  mode: PaymentMode;
+  payUrl: string;
+}) {
+  const { user, activitySession, mode, payUrl } = input;
+  if (!isEmailConfigured() || !user.email) return;
+  const to = user.email;
+  const name = user.name ?? to;
+
+  after(async () => {
+    try {
+      const [locale, settings, holdMinutes, amountDue] = await Promise.all([
+        getLocale(),
+        getSettings(),
+        getHoldDurationMinutes(),
+        resolveAmountDue(mode, activitySession),
+      ]);
+      await sendHoldConfirmation({
+        to,
+        name,
+        sessionTitle: activitySession.title,
+        sessionDate: new Date(activitySession.date),
+        startTime: activitySession.startTime,
+        location: activitySession.location,
+        fee: amountDue,
+        holdMinutes,
+        payPath: payUrl,
+        communityName: settings.communityName,
+        locale,
+      });
+    } catch (err) {
+      console.error('[reserve] hold-confirmation email failed:', err);
+    }
+  });
+}
+
+/** The bill behind the hold: monthly dues for MONTHLY mode, session fee otherwise. */
+async function resolveAmountDue(
+  mode: PaymentMode,
+  activitySession: ReservedSessionInfo,
+): Promise<number> {
+  if (mode !== PaymentMode.MONTHLY) return activitySession.fee;
+  const activity = await prisma.activity.findUnique({
+    where: { id: activitySession.activityId },
+    select: { monthlyFee: true },
+  });
+  return activity?.monthlyFee ?? activitySession.fee;
 }
 
 /** Resolve the member's effective mode for the session's billing period. */

@@ -34,10 +34,13 @@ export function RemindMembersButton({
 
     const [isOpen, setIsOpen] = useState(false);
     const [isSending, setIsSending] = useState(false);
+    // Snapshot the clock once on mount — cooldown granularity is hours, so a
+    // static "now" keeps the render pure without a ticking subscription.
+    const [mountedAt] = useState(() => Date.now());
 
     // Cooldown: check if last reminder was within 24h
     const lastSent = lastReminderAt ? new Date(lastReminderAt) : null;
-    const elapsed = lastSent ? Date.now() - lastSent.getTime() : Infinity;
+    const elapsed = lastSent ? mountedAt - lastSent.getTime() : Infinity;
     const isCoolingDown = elapsed < COOLDOWN_MS;
     const hoursSinceSent = lastSent ? Math.floor(elapsed / (60 * 60 * 1000)) : 0;
     const remainingHours = Math.ceil((COOLDOWN_MS - elapsed) / (60 * 60 * 1000));
