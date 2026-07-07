@@ -62,3 +62,6 @@ Sports Community Management UI-handoff/
 
 # Throwaway UI-verification screenshots
 app-*.png
+
+# RTK (Rust Token Killer) local state
+.rtk/
