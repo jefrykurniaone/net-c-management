@@ -351,6 +351,7 @@ export default async function SessionDetailPage({
                     </div>
                     <RSVPButton
                         sessionId={activitySession.id}
+                        activityId={activitySession.activityId}
                         isRegistered={isRegistered}
                         isFull={isFull && !isRegistered}
                         isCancelled={activitySession.status === 'CANCELLED'}

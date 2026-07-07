@@ -16,6 +16,7 @@ const MIN_SESSION_FEE = 1;
 
 interface RSVPButtonProps {
     sessionId: string;
+    activityId: string;
     isRegistered: boolean;
     isFull: boolean;
     isCancelled: boolean;
@@ -37,6 +38,7 @@ interface RSVPButtonProps {
 
 export function RSVPButton({
     sessionId,
+    activityId,
     isRegistered,
     isFull,
     isCancelled,
@@ -151,6 +153,32 @@ export function RSVPButton({
     const chooseMonthly = () => reserve('MONTHLY');
     const choosePerSession = () => reserve('PER_SESSION');
 
+    // CHANGE an already-selected mode. This must hit the dedicated switch route
+    // (resolveSwitch: applies immediately while unpaid, queues to next period
+    // once a payment is in) — the reserve path only adopts a mode when NONE is
+    // selected (adoptModeIfUnselected), so it silently no-ops on a real change.
+    async function switchMode(mode: PaymentMode): Promise<void> {
+        setModeDialogOpen(false);
+        setLoading(true);
+        try {
+            const res = await fetch(`/api/users/memberships/${activityId}/mode`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode }),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error ?? t.common.error);
+            }
+            toast.success(t.sessions.toastModeSwitched);
+            router.refresh();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t.common.error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     // A member who has not paid anything this period may still switch modes
     // right here (the server applies it immediately); once a payment is in,
     // the server queues the switch for the next period instead.
@@ -170,8 +198,8 @@ export function RSVPButton({
                 monthlyFee={monthlyFee}
                 sessionFee={sessionFee}
                 loading={loading}
-                onMonthly={chooseMonthly}
-                onPerSession={choosePerSession}
+                onMonthly={() => switchMode('MONTHLY')}
+                onPerSession={() => switchMode('PER_SESSION')}
             />
         </>
     );
