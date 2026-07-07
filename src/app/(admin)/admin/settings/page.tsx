@@ -12,12 +12,16 @@ import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { FormSkeleton } from '@/components/skeletons/page-skeletons';
 import { PhonePicker } from '@/components/admin/phone-picker';
+import { HoldDurationField } from '@/components/admin/hold-duration-field';
+
+const DEFAULT_HOLD_DURATION_MINUTES = '60';
 
 interface SettingsMap {
     communityName?: string;
     defaultLocation?: string;
     adminWhatsapp?: string;
     logoUrl?: string;
+    holdDurationMinutes?: string;
 }
 
 export default function AdminSettingsPage() {
@@ -34,6 +38,7 @@ export default function AdminSettingsPage() {
         defaultLocation: '',
         adminWhatsapp: '',
         logoUrl: '',
+        holdDurationMinutes: DEFAULT_HOLD_DURATION_MINUTES,
     });
 
     useEffect(() => {
@@ -216,6 +221,16 @@ export default function AdminSettingsPage() {
                             onPick={(phone) => update('adminWhatsapp', phone)}
                         />
                     </div>
+
+                    <HoldDurationField
+                        value={
+                            settings.holdDurationMinutes ??
+                            DEFAULT_HOLD_DURATION_MINUTES
+                        }
+                        onChange={(minutes) =>
+                            update('holdDurationMinutes', minutes)
+                        }
+                    />
 
                     <Button
                         type='submit'

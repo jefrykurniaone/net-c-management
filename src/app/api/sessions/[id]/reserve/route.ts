@@ -30,7 +30,8 @@ function readMode(body: unknown): PaymentMode | null {
 // (join-on-reserve, capacity-checked), adopting the chosen payment mode, then
 // tells the client where to settle the resulting bill. A free-eligible seat
 // (fee-0 session, or a monthly member whose dues are in) is claimed permanently
-// with no bill (payUrl = null). Everyone else gets a 1-hour hold and is routed
+// with no bill (payUrl = null). Everyone else gets a payment hold (admin-set
+// duration, default 1 hour) and is routed
 // to the mode's bill: monthly dues upload, or the per-session pay page. The
 // sweep runs first so a lapsed hold frees its seat before capacity is re-checked.
 export async function POST(
@@ -84,7 +85,7 @@ export async function POST(
   }
   const payUrl =
     effective === PaymentMode.MONTHLY ? '/payments/upload' : `/sessions/${sessionId}/pay`;
-  return reserve(sessionId, userId, holdExpiresAt(), payUrl, t);
+  return reserve(sessionId, userId, await holdExpiresAt(), payUrl, t);
 }
 
 /** Resolve the member's effective mode for the session's billing period. */

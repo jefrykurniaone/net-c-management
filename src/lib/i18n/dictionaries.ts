@@ -185,7 +185,8 @@ const en = {
         noJoinedActivities:
             "You haven't joined any activities yet — switch to All to explore.",
         chooseModeFirst: 'Choose a payment option first.',
-        reservedPayBefore: 'Reserved · pay before {time}',
+        reservedPayWithin: 'Reserved · pay within {time}',
+        holdExpired: 'Reservation expired',
         payNow: 'Pay now',
     },
     payments: {
@@ -245,7 +246,7 @@ const en = {
         rejectReasonPrompt: 'Enter a reason for rejecting this payment',
         alreadyConfirmed: 'This payment has already been confirmed.',
         outstandingReservations: 'Reserved · pay now',
-        payBefore: 'Pay before {time}',
+        payWithin: 'Pay within {time}',
     },
     profile: {
         title: 'Profile',
@@ -367,6 +368,14 @@ const en = {
         defaultLocationPlaceholder: 'e.g. Community Sports Hall',
         adminWhatsappLabel: 'Admin WhatsApp Number',
         whatsappHint: 'Country code without + (e.g. 628...)',
+        holdDurationLabel: 'Payment hold duration',
+        holdDurationHint:
+            'How long a reserved seat waits for payment before it is released.',
+        holdDuration60: '1 hour',
+        holdDuration30: '30 minutes',
+        holdDuration15: '15 minutes',
+        holdDurationCustom: 'Custom',
+        holdDurationCustomLabel: 'Custom duration (minutes)',
         logoLabel: 'Community Logo',
         logoHint: 'JPG, PNG, WebP · Max 2MB',
         logoUpload: 'Upload Logo',
@@ -811,7 +820,8 @@ const id: typeof en = {
         noJoinedActivities:
             'Kamu belum bergabung ke aktivitas apa pun — beralih ke Semua untuk menjelajah.',
         chooseModeFirst: 'Pilih opsi pembayaran dulu.',
-        reservedPayBefore: 'Dipesan · bayar sebelum {time}',
+        reservedPayWithin: 'Dipesan · bayar dalam {time}',
+        holdExpired: 'Reservasi kedaluwarsa',
         payNow: 'Bayar sekarang',
     },
     payments: {
@@ -874,7 +884,7 @@ const id: typeof en = {
         rejectReasonPrompt: 'Masukkan alasan penolakan pembayaran ini',
         alreadyConfirmed: 'Pembayaran ini sudah dikonfirmasi.',
         outstandingReservations: 'Dipesan · bayar sekarang',
-        payBefore: 'Bayar sebelum {time}',
+        payWithin: 'Bayar dalam {time}',
     },
     profile: {
         title: 'Profil',
@@ -996,6 +1006,14 @@ const id: typeof en = {
         defaultLocationPlaceholder: 'Contoh: GOR Serbaguna Kelurahan X',
         adminWhatsappLabel: 'Nomor WhatsApp Admin',
         whatsappHint: 'Format: kode negara tanpa + (contoh: 628...)',
+        holdDurationLabel: 'Durasi batas bayar reservasi',
+        holdDurationHint:
+            'Berapa lama kursi yang dipesan menunggu pembayaran sebelum dilepas.',
+        holdDuration60: '1 jam',
+        holdDuration30: '30 menit',
+        holdDuration15: '15 menit',
+        holdDurationCustom: 'Custom',
+        holdDurationCustomLabel: 'Durasi custom (menit)',
         logoLabel: 'Logo Komunitas',
         logoHint: 'JPG, PNG, WebP · Maks 2MB',
         logoUpload: 'Upload Logo',

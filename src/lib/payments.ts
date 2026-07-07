@@ -384,7 +384,7 @@ export async function registerAndPaySession(input: SessionRegistrationInput) {
     });
     await tx.attendance.upsert({
       where: key,
-      // Paying makes the seat permanent — clear any 1-hour hold so the sweep
+      // Paying makes the seat permanent — clear any payment hold so the sweep
       // (src/lib/holds.ts) can never release a now-funded seat.
       create: { userId, sessionId: session.id, status: AttendanceStatus.REGISTERED, holdExpiresAt: null },
       update: { status: AttendanceStatus.REGISTERED, holdExpiresAt: null },
@@ -397,7 +397,7 @@ export async function registerAndPaySession(input: SessionRegistrationInput) {
  * Reserve-then-pay: claim a seat before payment. In ONE transaction, lock the
  * Session row (`SELECT … FOR UPDATE`) so reservations serialize, re-check its
  * status + capacity (seat-held Attendance count is the authority, AD-6), then
- * upsert a REGISTERED `Attendance`. `expiresAt` is the 1-hour hold instant for
+ * upsert a REGISTERED `Attendance`. `expiresAt` is the payment-hold instant for
  * an unpaid reservation, or `null` to claim a permanent (funded/free) seat.
  * Reserving a seat that is already funded (a permanent seat) is a no-op — a paid
  * seat is never downgraded back into an expiring hold. No Payment is written
@@ -652,7 +652,7 @@ export async function syncMonthlyAttendances(input: {
   const monthStart = new Date(Date.UTC(year, month - 1, 1));
   const nextMonthStart = new Date(Date.UTC(year, month, 1));
 
-  // A paid month makes the whole month's seats permanent: clear any 1-hour hold
+  // A paid month makes the whole month's seats permanent: clear any payment hold
   // these members still carry for this Activity's sessions this period, so the
   // sweep (src/lib/holds.ts) can't release a seat they have now funded.
   await prisma.attendance.updateMany({
@@ -705,7 +705,7 @@ export interface OutstandingSessionBill {
   title: string;
   fee: number;
   date: Date;
-  /** The instant the 1-hour hold lapses and the seat is released. */
+  /** The instant the payment hold lapses and the seat is released. */
   holdExpiresAt: Date;
   activity: { id: string; name: string; color: string };
 }
