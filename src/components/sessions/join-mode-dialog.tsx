@@ -3,6 +3,7 @@
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -46,9 +47,9 @@ export function JoinModeDialog({
                 <DialogHeader>
                     <DialogTitle>{t.sessions.joinDialogTitle}</DialogTitle>
                 </DialogHeader>
-                <p className='text-sm text-muted-foreground'>
+                <DialogDescription>
                     {t.sessions.joinDialogDesc}
-                </p>
+                </DialogDescription>
                 <div className='grid gap-3'>
                     <ModeOption
                         label={t.paymentMode.monthly}

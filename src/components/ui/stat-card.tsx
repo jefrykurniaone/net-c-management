@@ -63,6 +63,7 @@ export function StatStrip({
         value: ReactNode;
         sub?: ReactNode;
         valueClassName?: string;
+        subClassName?: string;
     }>;
 }>) {
     return (
@@ -81,7 +82,7 @@ export function StatStrip({
                             {item.value}
                         </span>
                         {item.sub && (
-                            <span className='text-xs text-subtle-foreground'>
+                            <span className={item.subClassName ?? 'text-xs text-subtle-foreground'}>
                                 {item.sub}
                             </span>
                         )}

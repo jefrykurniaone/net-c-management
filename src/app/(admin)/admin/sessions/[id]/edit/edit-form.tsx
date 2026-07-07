@@ -34,6 +34,8 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { ActivityOption } from "@/types/activity";
 import { parseIntInput } from "@/lib/form-utils";
 import { FormSection } from "@/components/ui/form-section";
+import { RemindMembersButton } from "@/components/admin/remind-members-button";
+import { ShareSessionCard } from "@/components/sessions/share-session-card";
 
 type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
 type SessionWithAttendances = ActivitySession & { attendances: AttendanceWithUser[] };
@@ -469,6 +471,39 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
           </div>
         </div>
       )}
+
+      {/* Remind members card */}
+      <div className="bg-card rounded-xl border border-border p-5">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              {t.admin.remindSectionTitle}
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t.admin.remindSectionDesc}
+            </p>
+          </div>
+        </div>
+        <RemindMembersButton
+          sessionId={session.id}
+          label={t.admin.remindMembers}
+          lastReminderAt={session.lastReminderAt?.toISOString() ?? null}
+        />
+      </div>
+
+      {/* Share session card — bottom */}
+      <ShareSessionCard
+        sessionId={session.id}
+        sessionTitle={session.title}
+        labels={{
+          title: t.admin.shareSession,
+          description: t.admin.shareSessionDesc,
+          copyLink: t.admin.copyLink,
+          copied: t.admin.linkCopied,
+          shareWhatsapp: t.admin.shareViaWhatsapp,
+          shareX: t.admin.shareViaTwitter,
+        }}
+      />
     </div>
   );
 }
