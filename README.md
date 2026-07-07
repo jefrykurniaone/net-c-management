@@ -157,10 +157,10 @@ This solution automates and centralizes those workflows — reducing the operati
     Confirm `DATABASE_URL` in `.env.local` points at this local DB:
     `postgresql://postgres:postgres@localhost:5432/xclub?schema=public`
 
-    Then apply the schema, the raw-SQL extras, and seed initial data:
+    Then apply the migrations, the raw-SQL extras, and seed initial data:
 
     ```bash
-    npx prisma db push     # apply prisma/schema.prisma to the local DB
+    npx prisma migrate deploy   # apply prisma/migrations/ to the local DB
     npx prisma db execute --file prisma/payment-monthly-unique.sql
     npx prisma db execute --file prisma/rls-policies.sql
     npm run db:seed        # activities + settings + sample members/payments (+ owner if SEED_OWNER_EMAIL set)
@@ -217,34 +217,42 @@ npm run lint         # ESLint
 
 ## Changing the Schema & Promoting to Production
 
-Both environments are managed with **`prisma db push`** (the `prisma/migrations/`
-folder only holds the original `init` and is not the source of truth). Safe flow:
-**local first, production is an explicit step.**
+Both environments are managed with **Prisma Migrate**. Every schema change is a
+committed migration under `prisma/migrations/`, which is the **single source of
+truth** — the same files you test locally are the ones that run in production, so
+the two environments stay in lockstep. **Do not use `prisma db push`**: it mutates
+a database without recording a migration, and that untracked drift is exactly what
+desyncs local from prod. Safe flow: **local first, production is an explicit step.**
 
-1. **Local:** edit `prisma/schema.prisma`, then:
+1. **Local:** edit `prisma/schema.prisma`, then create and apply a migration:
 
     ```bash
-    npx prisma generate   # regenerate the client
-    npx prisma db push    # apply to the local DB
+    npx prisma migrate dev --name describe_your_change
     ```
 
-    Test locally.
+    This writes a new `prisma/migrations/<timestamp>_describe_your_change/` folder,
+    applies it to the local DB, and regenerates the Prisma client. Test locally,
+    then **commit the migration folder together with the schema change**.
+
+    > After pulling teammate changes that include new migrations, catch your local
+    > DB up with `npx prisma migrate dev` (applies anything pending, no reset).
 
 2. **Promote to production** (opt-in via `DATABASE_TARGET=prod` → `.env.prod`):
 
     ```bash
-    cross-env DATABASE_TARGET=prod prisma db push
+    npm run db:deploy:prod   # = prisma migrate deploy against prod
     ```
 
-    Review the command's data-loss warnings before accepting them — `db push`
-    can drop columns, unlike `migrate deploy`.
+    `migrate deploy` applies only migrations not yet recorded in the production
+    `_prisma_migrations` table — it never drops columns and never resets data. Run
+    it after every merge that adds a migration.
 
 3. **Re-apply the raw-SQL extras** if the affected tables changed (both are
    idempotent, so re-running is always safe — and **mandatory after any reset**,
    which recreates tables without them):
 
     ```bash
-    # Partial unique index on MONTHLY payments (db push cannot express it)
+    # Partial unique index on MONTHLY payments (the Prisma schema cannot express it)
     cross-env DATABASE_TARGET=prod prisma db execute --file prisma/payment-monthly-unique.sql
 
     # Enable RLS + deny direct API access on every table (Supabase hardening)
@@ -299,6 +307,6 @@ prisma/
 ├── promote-owner.ts            # Promote a signed-in user to OWNER (local or prod)
 ├── payment-monthly-unique.sql  # Partial unique index (applied via prisma db execute)
 ├── rls-policies.sql            # Supabase RLS hardening (applied via prisma db execute)
-└── migrations/                 # Historical init migration (db push is the source of truth)
+└── migrations/                 # Prisma Migrate history — source of truth for the schema
 prisma.config.ts        # Prisma 7 config (selects local/prod via DATABASE_TARGET)
 ```

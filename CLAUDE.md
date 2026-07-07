@@ -8,9 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev          # Start development server (Turbopack)
 npm run build        # Production build
 npm run lint         # ESLint (enforced via pre-commit hook)
-npx prisma generate  # Regenerate Prisma client after schema changes
-npx prisma db push   # Push schema changes to the database
-npx prisma studio    # Open GUI for the database
+npx prisma generate                        # Regenerate Prisma client after schema changes
+npx prisma migrate dev --name <desc>       # Create + apply a migration after editing schema.prisma
+npm run db:deploy:prod                      # Apply pending migrations to production (migrate deploy)
+npx prisma studio                          # Open GUI for the database
 ```
 
 There are no automated tests in this project. 
@@ -38,6 +39,8 @@ New users are created by NextAuth on first login; until `isProfileComplete = tru
 Prisma uses the `driverAdapters` preview feature with `PrismaPg` (direct `pg` pool, not Prisma's built-in connector). The singleton is in `src/lib/prisma.ts` — production caps the pool at 1 connection per serverless function, so use Supabase's **Transaction pooler (port 6543)** in production and the **Session pooler (port 5432)** in development.
 
 Core models: `User`, `ActivitySession`, `Attendance`, `Payment`, `Settings`. Key enums: `Role` (MEMBER/ADMIN), `SessionStatus`, `AttendanceStatus`, `PaymentStatus`.
+
+Schema changes go through **Prisma Migrate**, never `prisma db push`. `prisma/migrations/` is the source of truth that keeps local and prod in sync: edit `schema.prisma`, run `npx prisma migrate dev --name <desc>`, and commit the generated migration folder with the change. Deploy to prod with `npm run db:deploy:prod` (`migrate deploy`) after the merge lands. Using `db push` mutates a DB without recording a migration — that untracked drift desyncs environments and is what broke prod once already.
 
 ### Storage
 
