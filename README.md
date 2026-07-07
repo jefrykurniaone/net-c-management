@@ -68,8 +68,15 @@ This solution automates and centralizes those workflows — reducing the operati
 - **Onboarding** — Complete your profile and pick your activities on first login
 - **Activities** — Multiple activities per community (e.g. badminton, futsal, yoga), each with its own fees, schedule, capacity, and bank account
 - **Member Dashboard** — Overview of upcoming sessions, attendance, and dues status
-- **Sessions** — View and RSVP to sessions per activity, with capacity limits
+- **Sessions** — View and RSVP to sessions per activity, with capacity limits, public share pages (`/s/[id]`), and weekly auto-generated recurring sessions
+- **Reserve-then-pay** — Reserving a paid session holds the seat for a configurable window (default 1 hour); unpaid holds expire automatically and the seat is released
 - **Payments** — Two payment modes per activity: monthly dues or pay-per-session, with proof upload and admin confirmation
+- **Email notifications** (Gmail SMTP) —
+    - payment-confirmation deadline after reserving a seat (pay before the hold expires)
+    - registration-expired notice when an unpaid hold lapses (please re-register)
+    - day-of attendance reminder to all registered members (daily cron)
+    - payment approved/rejected notice after admin review
+    - admin-triggered "session needs players" reminder for under-booked sessions
 - **Admin Panel** — Manage activities, sessions, attendance, payments, members, and community settings
 - **i18n** — English and Indonesian, switchable at runtime
 - **White-label branding** — Community name and logo configured from the Settings page
@@ -130,6 +137,17 @@ This solution automates and centralizes those workflows — reducing the operati
 
     # Seed owner (optional, dev) — your Google email so you can log straight in as OWNER
     SEED_OWNER_EMAIL="your-email@gmail.com"
+
+    # Cron secret — protects /api/cron/* endpoints. Any value locally;
+    # on Vercel it is injected automatically.
+    CRON_SECRET="dev-cron-secret-local"
+
+    # Email notifications (Gmail SMTP — free, ~500 emails/day).
+    # Create an App Password at https://myaccount.google.com/apppasswords
+    GMAIL_USER="you@gmail.com"
+    GMAIL_APP_PASSWORD="your-16-char-app-password"
+    # Public app URL used for CTA links inside emails
+    NEXT_PUBLIC_APP_URL="http://localhost:3000"
     ```
 
     > **Production:** also create `.env.prod` (gitignored) holding the production
@@ -211,6 +229,22 @@ npm start
 npm run db:studio    # local database GUI
 npm run db:reset     # reset the local DB (re-apply all migrations + seed)
 npm run lint         # ESLint
+```
+
+### Cron jobs (Vercel)
+
+Two scheduled jobs are declared in `vercel.json` and run automatically in
+production (both endpoints require the `CRON_SECRET` bearer token):
+
+| Endpoint | Schedule | Purpose |
+| -------- | -------- | ------- |
+| `/api/cron/generate-sessions` | month-end, 00:00 WIB | Generate next month's weekly recurring sessions |
+| `/api/cron/day-reminders` | daily, 05:00 WIB | Email registered members a day-of attendance reminder |
+
+Test locally with:
+
+```bash
+curl -H "Authorization: Bearer dev-cron-secret-local" http://localhost:3000/api/cron/day-reminders
 ```
 
 ---
@@ -296,7 +330,11 @@ src/
 │   └── ui/             # shadcn/ui components
 ├── lib/
 │   ├── auth.ts         # NextAuth configuration
+│   ├── email/          # Gmail SMTP transporter + notification templates
+│   ├── holds.ts        # Reservation-hold timing + expiry sweep
+│   ├── payments.ts     # Server-only payment/registration writes
 │   ├── prisma.ts       # Prisma client singleton
+│   ├── recurring-sessions.ts  # Weekly session auto-generation
 │   ├── supabase.ts     # Supabase admin client
 │   └── validations/    # Zod schemas
 └── types/              # TypeScript type augmentation

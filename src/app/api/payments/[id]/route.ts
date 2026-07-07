@@ -4,8 +4,16 @@ import { buildConfirmPaymentSchema } from '@/lib/validations/payment';
 import { isAdminRole } from '@/lib/utils';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getSettings } from '@/lib/settings';
+import {
+    formatMonthYear,
+    formatShortDate,
+    isEmailConfigured,
+    sendPaymentStatus,
+    type EmailLocale,
+} from '@/lib/email';
 import { PaymentType } from '@prisma/client';
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 
 // GET /api/payments/[id]
 export async function GET(
@@ -55,7 +63,8 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const t = getDictionary(await getLocale());
+    const locale = await getLocale();
+    const t = getDictionary(locale);
     const parsed = buildConfirmPaymentSchema(t).safeParse(body);
     if (!parsed.success) {
         return NextResponse.json(
@@ -75,6 +84,10 @@ export async function PATCH(
             activityId: true,
             month: true,
             year: true,
+            amount: true,
+            user: { select: { name: true, email: true } },
+            activity: { select: { name: true } },
+            session: { select: { title: true, date: true } },
         },
     });
     if (!payment) {
@@ -110,6 +123,7 @@ export async function PATCH(
                 where: { userId, sessionId, status: 'REGISTERED' },
             }),
         ]);
+        queuePaymentStatusEmail(payment, data.status, data.notes, locale);
         return NextResponse.json(updated);
     }
 
@@ -132,9 +146,59 @@ export async function PATCH(
                 },
             }),
         ]);
+        queuePaymentStatusEmail(payment, data.status, data.notes, locale);
         return NextResponse.json(updated);
     }
 
     const updated = await prisma.payment.update({ where: { id }, data });
+    queuePaymentStatusEmail(payment, data.status, data.notes, locale);
     return NextResponse.json(updated);
+}
+
+/** The reviewed payment's fields the member notification needs. */
+interface ReviewedPayment {
+    type: PaymentType;
+    amount: number;
+    month: number;
+    year: number;
+    user: { name: string | null; email: string | null };
+    activity: { name: string };
+    session: { title: string; date: Date } | null;
+}
+
+/**
+ * Queue the approve/reject notification to the member after the response.
+ * Best-effort: failures are logged, never surfaced to the reviewing admin.
+ */
+function queuePaymentStatusEmail(
+    payment: ReviewedPayment,
+    status: 'CONFIRMED' | 'REJECTED',
+    notes: string | null,
+    locale: EmailLocale,
+) {
+    if (!isEmailConfigured() || !payment.user.email) return;
+    const to = payment.user.email;
+
+    const billedFor =
+        payment.type === PaymentType.SESSION && payment.session
+            ? `${payment.session.title} — ${formatShortDate(new Date(payment.session.date), locale)}`
+            : `${payment.activity.name} — ${formatMonthYear(payment.month, payment.year, locale)}`;
+
+    after(async () => {
+        try {
+            const settings = await getSettings();
+            await sendPaymentStatus({
+                to,
+                name: payment.user.name ?? to,
+                status,
+                amount: payment.amount,
+                billedFor,
+                notes,
+                communityName: settings.communityName,
+                locale,
+            });
+        } catch (err) {
+            console.error(`[payments] status email to ${to} failed:`, err);
+        }
+    });
 }

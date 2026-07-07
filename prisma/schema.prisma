@@ -194,6 +194,7 @@ model ActivitySession {
   status      SessionStatus @default(SCHEDULED)
   activityId  String
   lastReminderAt DateTime?  // spam guard: set when reminder emails are sent
+  dayReminderSentAt DateTime? // set once the day-of attendance reminder cron has run
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
