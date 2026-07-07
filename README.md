@@ -287,10 +287,10 @@ desyncs local from prod. Safe flow: **local first, production is an explicit ste
 
     ```bash
     # Partial unique index on MONTHLY payments (the Prisma schema cannot express it)
-    cross-env DATABASE_TARGET=prod prisma db execute --file prisma/payment-monthly-unique.sql
+    npx cross-env DATABASE_TARGET=prod prisma db execute --file prisma/payment-monthly-unique.sql
 
     # Enable RLS + deny direct API access on every table (Supabase hardening)
-    cross-env DATABASE_TARGET=prod prisma db execute --file prisma/rls-policies.sql
+    npx cross-env DATABASE_TARGET=prod prisma db execute --file prisma/rls-policies.sql
     ```
 
 ### Production seed & owner
