@@ -181,7 +181,7 @@ This solution automates and centralizes those workflows — reducing the operati
     npx prisma migrate deploy   # apply prisma/migrations/ to the local DB
     npx prisma db execute --file prisma/payment-monthly-unique.sql
     npx prisma db execute --file prisma/rls-policies.sql
-    npm run db:seed        # activities + settings + sample members/payments (+ owner if SEED_OWNER_EMAIL set)
+    npm run db:seed        # full scenario seed (see "Reseeding" below); creates the owner if SEED_OWNER_EMAIL is set
     ```
 
 5. **Set up Supabase Storage**
@@ -203,6 +203,39 @@ This solution automates and centralizes those workflows — reducing the operati
     ```
 
     Reload — you are now OWNER and can access `/admin`.
+
+7. **Reseeding** (repeat anytime)
+
+    `npm run db:seed` is safe to re-run: it first wipes all transactional rows
+    (attendances, payments, sessions) and then reseeds them, while users,
+    activities, memberships and settings are upserted in place. No
+    `db:reset` needed between runs.
+
+    ```bash
+    # Reseed anchored to the real today
+    npm run db:seed
+
+    # Pretend "today" is another date — every relative date (upcoming sessions,
+    # payment holds, today's ONGOING/reminder sessions) shifts with it
+    npm run db:seed -- --date=2026-08-15
+
+    # Also control the range the 13 past COMPLETED sessions are spread over
+    # (defaults: 1st of the anchor month → anchor; must satisfy from ≤ to ≤ date)
+    npm run db:seed -- --date=2026-08-15 --from=2026-07-01 --to=2026-08-14
+    ```
+
+    Env fallbacks for the flags: `SEED_DATE`, `SEED_FROM`, `SEED_TO`.
+
+    The seed covers every feature scenario — log in as `member@xclub.local`
+    ("Adi Pratama") to see them: unpaid dues banner, per-session payment mode
+    (confirmed + pending session payments), live and expired reservation holds,
+    a free session with Maybe RSVPs, a full session, an under-booked session
+    (admin remind), a cancelled session, an ongoing session, and a same-day
+    session targeted by the day-reminder cron. The full list lives in the
+    header of `prisma/seed.ts`.
+
+    > If you only need a fresh schema first: `npm run db:reset`, re-apply the
+    > two raw-SQL files from step 4, then `npm run db:seed`.
 
 ---
 
@@ -311,6 +344,40 @@ login (`OAuthAccountNotLinked`). Therefore:
 1. Sign in once via Google on the production app (creates your User row).
 2. Re-run `npm run db:seed:prod` — it promotes the owner email — or run
    `npm run db:promote:prod -- your-email@gmail.com`.
+
+### Resetting & reseeding production
+
+`npm run db:seed:prod` is idempotent — for a plain reseed (refresh settings,
+activities, or the owner promotion) just re-run it, no reset needed.
+
+A full reset is only for starting production over from an empty database.
+
+> **Warning:** `migrate reset` permanently drops **all data in the production
+> database** — users, payments, sessions, attendance. There is no undo. Take a
+> backup first (Supabase Dashboard → Database → Backups) if anything might
+> still be needed.
+
+```bash
+# 1. DESTRUCTIVE — drops every table, then replays all migrations from scratch.
+#    Prisma asks for confirmation before proceeding. (Prisma 7 no longer runs
+#    any seed automatically here.)
+npx cross-env DATABASE_TARGET=prod prisma migrate reset
+
+# 2. Mandatory after any reset — the recreated tables lack the raw-SQL extras:
+npx cross-env DATABASE_TARGET=prod prisma db execute --file prisma/payment-monthly-unique.sql
+npx cross-env DATABASE_TARGET=prod prisma db execute --file prisma/rls-policies.sql
+
+# 3. Reseed the production catalog (settings + real Activities — no sample data)
+npm run db:seed:prod
+```
+
+Then redo the owner flow above: sign in once via Google (your User row was
+dropped by the reset), and re-run `npm run db:seed:prod` or
+`npm run db:promote:prod -- your-email@gmail.com`.
+
+Note: the reset touches only the database. Files already uploaded to the
+Supabase Storage buckets (`payment-proofs`, `avatars`, `logos`) are left as
+orphans — clean them up in Supabase Dashboard → Storage if needed.
 
 ---
 
