@@ -14,7 +14,6 @@ import type { ActivitySession } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getActivities } from '@/lib/activity';
-import { ensureRecurringSessions } from '@/lib/recurring-sessions';
 import { sessionStatusVariant, isAdminRole } from '@/lib/utils';
 
 type SessionRow = ActivitySession & {
@@ -34,9 +33,6 @@ export default async function AdminSessionsPage({
 
     const sp = await searchParams;
     const selected = sp.activityId || undefined;
-
-    // Lazy idempotent generation of this month's weekly sessions (no cron).
-    await ensureRecurringSessions();
 
     const [sessions, activities] = await Promise.all([
         prisma.activitySession.findMany({
