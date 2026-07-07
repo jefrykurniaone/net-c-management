@@ -2,9 +2,9 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { format, startOfWeek, endOfWeek, startOfMonth } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, differenceInCalendarDays } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
-import { Plus, CreditCard, AlertTriangle } from 'lucide-react';
+import { Plus, CreditCard, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatStrip } from '@/components/ui/stat-card';
 import { ActivityInitial } from '@/components/activity/activity-badge';
@@ -166,6 +166,7 @@ export default async function AdminDashboardPage() {
                 newThisMonth > 0
                     ? fill(t.admin.newThisMonth, { n: newThisMonth })
                     : undefined,
+            subClassName: newThisMonth > 0 ? 'text-xs text-green-600' : undefined,
         },
         {
             label: t.admin.statSessionsThisWeek,
@@ -260,8 +261,8 @@ export default async function AdminDashboardPage() {
                             )}
                             {underBooked && (
                                 <div className='flex items-center gap-3.5 px-5 py-3.5'>
-                                    <span className='flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-destructive-soft'>
-                                        <AlertTriangle className='w-4 h-4 text-destructive' />
+                                    <span className='flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft'>
+                                        <Users className='w-4 h-4 text-primary' />
                                     </span>
                                     <div className='flex-1 min-w-0'>
                                         <p className='text-sm font-semibold text-foreground truncate'>
@@ -277,12 +278,18 @@ export default async function AdminDashboardPage() {
                                                 'EEE, d MMM',
                                                 { locale: dateLocale },
                                             )}{' '}
-                                            · {underBooked.startTime}
+                                            ·{' '}
+                                            {fill(t.admin.rsvpClosesInDays, {
+                                                n: differenceInCalendarDays(
+                                                    new Date(underBooked.date),
+                                                    now,
+                                                ),
+                                            })}
                                         </p>
                                     </div>
-                                    <Link href='/admin/sessions'>
+                                    <Link href={`/admin/sessions/${underBooked.id}/edit`}>
                                         <Button size='sm' variant='outline'>
-                                            {t.admin.detail}
+                                            {t.admin.remindMembers}
                                         </Button>
                                     </Link>
                                 </div>

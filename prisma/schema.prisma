@@ -193,6 +193,7 @@ model ActivitySession {
   notes       String?       @db.Text
   status      SessionStatus @default(SCHEDULED)
   activityId  String
+  lastReminderAt DateTime?  // spam guard: set when reminder emails are sent
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 

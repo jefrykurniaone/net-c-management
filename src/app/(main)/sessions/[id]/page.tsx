@@ -28,6 +28,7 @@ import {
 import { getSessionQuotas } from '@/lib/recurring-sessions';
 import { getSettings } from '@/lib/settings';
 import { WhatsappButton } from '@/components/sessions/whatsapp-button';
+import { ShareSessionCard } from '@/components/sessions/share-session-card';
 import { isRsvpClosed, rsvpCloseAt } from '@/lib/rsvp';
 
 const MINUTES_PER_HOUR = 60;
@@ -412,6 +413,20 @@ export default async function SessionDetailPage({
                         />
                     )}
                 </div>
+
+                {/* Share session card */}
+                <ShareSessionCard
+                    sessionId={activitySession.id}
+                    sessionTitle={activitySession.title}
+                    labels={{
+                        title: t.sessions.shareSession,
+                        description: t.sessions.shareSessionDesc,
+                        copyLink: t.sessions.copyLink,
+                        copied: t.sessions.linkCopied,
+                        shareWhatsapp: t.sessions.shareViaWhatsapp,
+                        shareX: t.sessions.shareViaTwitter,
+                    }}
+                />
             </div>
         </div>
     );

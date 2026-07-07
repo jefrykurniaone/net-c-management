@@ -13,6 +13,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -134,7 +135,9 @@ function ActivityFormDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='max-h-[90vh] overflow-y-auto sm:max-w-md'>
+            <DialogContent
+                aria-describedby={undefined}
+                className='max-h-[90vh] overflow-y-auto sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>
                         {isEdit ? t.admin.editActivity : t.admin.newActivity}
