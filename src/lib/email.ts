@@ -1,19 +1,23 @@
 import 'server-only';
-import { Resend } from 'resend';
+import nodemailer, { type Transporter } from 'nodemailer';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
 
-const FROM_ADDRESS =
-    process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev';
+let _transporter: Transporter | null = null;
 
-let _resend: Resend | null = null;
-
-function getResend(): Resend {
-    if (!process.env.RESEND_API_KEY) {
-        throw new Error('RESEND_API_KEY is not set.');
+function getTransporter(): Transporter {
+    const user = process.env.GMAIL_USER;
+    const pass = process.env.GMAIL_APP_PASSWORD;
+    if (!user || !pass) {
+        throw new Error('GMAIL_USER / GMAIL_APP_PASSWORD is not set.');
     }
-    if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
-    return _resend;
+    if (!_transporter) {
+        _transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: { user, pass },
+        });
+    }
+    return _transporter;
 }
 
 export interface SessionReminderParams {
@@ -162,10 +166,13 @@ function buildHtml(p: SessionReminderParams, appUrl: string): string {
 export async function sendSessionReminder(
     p: SessionReminderParams,
 ): Promise<void> {
-    const resend = getResend();
+    const transporter = getTransporter();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-    await resend.emails.send({
-        from: FROM_ADDRESS,
+    // Gmail rewrites the From to the authenticated account; use it as sender
+    // with the community name as the display label.
+    const from = `"${p.communityName}" <${process.env.GMAIL_USER}>`;
+    await transporter.sendMail({
+        from,
         to: p.to,
         subject: buildSubject(p),
         html: buildHtml(p, appUrl),

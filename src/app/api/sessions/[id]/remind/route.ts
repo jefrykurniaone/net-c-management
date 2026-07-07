@@ -23,9 +23,12 @@ export async function POST(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (!process.env.RESEND_API_KEY) {
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
         return NextResponse.json(
-            { error: 'Email service is not configured (RESEND_API_KEY missing).' },
+            {
+                error:
+                    'Email service is not configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).',
+            },
             { status: 503 },
         );
     }
@@ -113,7 +116,8 @@ export async function POST(
                 locale,
             });
             sent++;
-        } catch {
+        } catch (err) {
+            console.error(`[remind] failed to send to ${user.email}:`, err);
             skipped++;
         }
     }
