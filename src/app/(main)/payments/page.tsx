@@ -6,7 +6,7 @@ import { id as localeId, enUS } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
-import { HoldTime } from "@/components/payments/hold-time";
+import { HoldCountdown } from "@/components/payments/hold-countdown";
 import { EmptyState } from "@/components/ui/empty-state";
 import Link from "next/link";
 import { CreditCard, ExternalLink, MessageCircle } from "lucide-react";
@@ -30,7 +30,7 @@ export default async function PaymentsPage() {
   // shows as owed.
   await releaseExpiredHolds();
 
-  const [payments, memberships, monthPayments, outstandingBills] = await Promise.all([
+  const [payments, memberships, monthPayments, outstandingBills, liveHolds] = await Promise.all([
     prisma.payment.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" },
@@ -64,11 +64,36 @@ export default async function PaymentsPage() {
       select: { activityId: true, status: true },
     }),
     getOutstandingSessionBills({ userId }),
+    prisma.attendance.findMany({
+      where: {
+        userId,
+        holdExpiresAt: { not: null },
+        session: { status: { in: ["SCHEDULED", "ONGOING"] } },
+      },
+      select: { holdExpiresAt: true, session: { select: { activityId: true } } },
+    }),
   ]);
+
+  // Earliest live hold per activity — a MONTHLY member's reserved seat lapses
+  // at this instant unless the dues are paid, so the dues card shows it.
+  const holdByActivity = new Map<string, Date>();
+  for (const hold of liveHolds) {
+    const current = holdByActivity.get(hold.session.activityId);
+    if (!current || hold.holdExpiresAt! < current) {
+      holdByActivity.set(hold.session.activityId, hold.holdExpiresAt!);
+    }
+  }
+
+  // Build the payment-status map before filtering monthly activities so the
+  // filter can check whether a payment record already exists this period.
+  const statusByActivity = new Map(monthPayments.map((p) => [p.activityId, p.status]));
 
   // Bill only for the mode the member actually chose: a MONTHLY membership owes
   // this month's dues; a PER_SESSION membership owes per reserved session (the
   // outstandingBills below); an unselected (null) mode owes nothing yet.
+  // Only surface the dues entry once the member has triggered a bill — either
+  // by reserving a session (live hold) or by having a payment record this period.
+  // Merely switching the payment-mode preference without registering owes nothing.
   const monthlyActivities = memberships
     .filter(
       (m) =>
@@ -77,12 +102,12 @@ export default async function PaymentsPage() {
           { allowsMonthly: m.activity.allowsMonthly, allowsPerSession: m.activity.allowsPerSession },
           currentMonth,
           currentYear,
-        ) === "MONTHLY" && m.activity.monthlyFee > 0,
+        ) === "MONTHLY" &&
+        m.activity.monthlyFee > 0 &&
+        (statusByActivity.has(m.activity.id) || holdByActivity.has(m.activity.id)),
     )
     .map((m) => m.activity)
     .sort((a, b) => a.name.localeCompare(b.name));
-
-  const statusByActivity = new Map(monthPayments.map((p) => [p.activityId, p.status]));
   const isPaid = (activityId: string) => statusByActivity.get(activityId) === "CONFIRMED";
   const unpaidActivities = monthlyActivities.filter((a) => !isPaid(a.id));
   const firstUnpaid = unpaidActivities[0];
@@ -129,9 +154,10 @@ export default async function PaymentsPage() {
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <Badge variant="warning">{t.payments.payNow}</Badge>
                   <p className="text-[11px] text-warning tabular-nums">
-                    <HoldTime
+                    <HoldCountdown
                       iso={new Date(bill.holdExpiresAt).toISOString()}
-                      template={t.payments.payBefore}
+                      template={t.payments.payWithin}
+                      expiredLabel={t.sessions.holdExpired}
                     />
                   </p>
                 </div>
@@ -150,6 +176,7 @@ export default async function PaymentsPage() {
           <div className="bg-card rounded-xl border border-border divide-y divide-border overflow-hidden">
             {monthlyActivities.map((activity) => {
               const paid = isPaid(activity.id);
+              const hold = paid ? undefined : holdByActivity.get(activity.id);
               return (
                 <div key={activity.id} className="flex items-center gap-3 p-4">
                   <ActivityInitial name={activity.name} color={activity.color} />
@@ -162,9 +189,20 @@ export default async function PaymentsPage() {
                   {paid ? (
                     <Badge variant="success">{t.payments.paid}</Badge>
                   ) : (
-                    <Link href="/payments/upload">
-                      <Badge variant="warning">{t.payments.unpaid}</Badge>
-                    </Link>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Link href="/payments/upload">
+                        <Badge variant="warning">{t.payments.unpaid}</Badge>
+                      </Link>
+                      {hold && (
+                        <p className="text-[11px] text-warning tabular-nums">
+                          <HoldCountdown
+                            iso={hold.toISOString()}
+                            template={t.payments.payWithin}
+                            expiredLabel={t.sessions.holdExpired}
+                          />
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               );

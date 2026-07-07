@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { PaymentStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { WhatsappButton } from '@/components/sessions/whatsapp-button';
+import { HoldCountdown } from '@/components/payments/hold-countdown';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 export function DisabledCta({ label }: Readonly<{ label: string }>) {
@@ -28,16 +29,6 @@ interface PerSessionCtaProps {
     onReserve: () => void;
     onCancel: () => void;
     t: Dictionary;
-}
-
-/** "Reserved · pay before 14:32" from the hold instant, or null when no hold. */
-function payBeforeLabel(iso: string | null, template: string): string | null {
-    if (!iso) return null;
-    const time = new Date(iso).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-    return template.replace('{time}', time);
 }
 
 export function PerSessionCta({
@@ -116,12 +107,15 @@ export function PerSessionCta({
     // Registered with nothing paid yet = an active reservation hold: route the
     // member to settle it before the seat is released.
     if (isRegistered) {
-        const before = payBeforeLabel(holdExpiresAtISO, t.sessions.reservedPayBefore);
         return (
             <div className='space-y-2'>
-                {before && (
+                {holdExpiresAtISO && (
                     <p className='text-sm font-medium text-warning text-center'>
-                        {before}
+                        <HoldCountdown
+                            iso={holdExpiresAtISO}
+                            template={t.sessions.reservedPayWithin}
+                            expiredLabel={t.sessions.holdExpired}
+                        />
                     </p>
                 )}
                 <Link href={payHref}>

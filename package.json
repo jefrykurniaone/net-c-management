@@ -10,6 +10,7 @@
         "lint": "eslint",
         "db:migrate": "prisma migrate dev",
         "db:seed": "tsx prisma/seed.ts",
+        "db:seed:maybe": "tsx prisma/seed-maybe.ts",
         "db:reset": "prisma migrate reset",
         "db:studio": "prisma studio",
         "db:deploy:prod": "cross-env DATABASE_TARGET=prod prisma migrate deploy",

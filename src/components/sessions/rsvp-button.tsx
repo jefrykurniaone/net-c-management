@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { JoinModeDialog } from '@/components/sessions/join-mode-dialog';
 import { RsvpChoice, type RsvpChoiceValue } from '@/components/sessions/rsvp-choice';
 import { DisabledCta, PerSessionCta } from '@/components/sessions/per-session-cta';
+import { HoldCountdown } from '@/components/payments/hold-countdown';
 import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -228,14 +229,38 @@ export function RSVPButton({
     // auto-registers them for every session of the month, including this one.
     if (!isFreeEligible && paymentMode === 'MONTHLY') {
         if (isRegistered) {
+            // A reserved-but-unpaid seat is a live hold — same countdown as the
+            // per-session flow, with the dues upload as the settle path.
             return (
-                <Button
-                    onClick={cancelRegistration}
-                    loading={loading}
-                    variant='outline'
-                    className='w-full text-destructive hover:bg-destructive/10'>
-                    {t.sessions.cancelRegistration}
-                </Button>
+                <div className='space-y-2'>
+                    {holdExpiresAtISO && (
+                        <p className='text-sm font-medium text-warning text-center'>
+                            <HoldCountdown
+                                iso={holdExpiresAtISO}
+                                template={t.sessions.reservedPayWithin}
+                                expiredLabel={t.sessions.holdExpired}
+                            />
+                        </p>
+                    )}
+                    {holdExpiresAtISO && (
+                        <Button
+                            onClick={chooseMonthly}
+                            loading={loading}
+                            className='w-full'>
+                            {t.sessions.payMonthlyFirst} ·{' '}
+                            <span className='tabular-nums'>
+                                Rp {monthlyFee.toLocaleString('id-ID')}
+                            </span>
+                        </Button>
+                    )}
+                    <Button
+                        onClick={cancelRegistration}
+                        loading={loading}
+                        variant='outline'
+                        className='w-full text-destructive hover:bg-destructive/10'>
+                        {t.sessions.cancelRegistration}
+                    </Button>
+                </div>
             );
         }
         return (
@@ -244,7 +269,7 @@ export function RSVPButton({
                     onClick={chooseMonthly}
                     loading={loading}
                     className='w-full'>
-                    {t.sessions.payMonthlyFirst} ·{' '}
+                    {t.sessions.registerAndPay} ·{' '}
                     <span className='tabular-nums'>
                         Rp {monthlyFee.toLocaleString('id-ID')}
                     </span>

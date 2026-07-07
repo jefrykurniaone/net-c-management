@@ -39,7 +39,7 @@ export function RsvpChoice({
             )}>
             <Button
                 variant={active === 'GOING' ? 'default' : 'outline'}
-                disabled={disabled || (goingDisabled && active !== 'GOING')}
+                disabled={disabled || active === 'GOING' || (goingDisabled && active !== 'GOING')}
                 onClick={onGoing}
                 className='w-full'>
                 {active === 'GOING' && <Check className='size-4' />}
@@ -49,7 +49,7 @@ export function RsvpChoice({
             {showMaybe && (
                 <Button
                     variant={active === 'MAYBE' ? 'secondary' : 'outline'}
-                    disabled={disabled}
+                    disabled={disabled || active === 'MAYBE'}
                     onClick={onMaybe}
                     className='w-full'>
                     {labels.maybe}

@@ -192,6 +192,10 @@ export default function SessionPayPage() {
                         loading={loading}>
                         {t.payments.submit}
                     </Button>
+
+                    <p className='text-center text-xs text-muted-foreground'>
+                        {t.payments.verifyNote}
+                    </p>
                 </form>
             </div>
         </div>
