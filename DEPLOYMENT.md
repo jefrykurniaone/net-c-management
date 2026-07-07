@@ -1,7 +1,7 @@
 # Deployment Guide — feat: Remind Members + Share Session
 
 ## Ringkasan Perubahan
-- Email reminder otomatis ke member via Resend
+- Email reminder otomatis ke member via Gmail SMTP (Nodemailer)
 - Halaman publik `/s/[id]` untuk share sesi ke sosmed
 - Schema DB: kolom baru `lastReminderAt` di tabel `ActivitySession`
 
@@ -13,12 +13,16 @@ Buka **Vercel Dashboard → Project → Settings → Environment Variables**, la
 
 | Key | Value | Keterangan |
 |-----|-------|------------|
-| `RESEND_API_KEY` | `re_Ki83GpTj_...` | API key dari resend.com |
-| `RESEND_FROM_EMAIL` | `onboarding@resend.dev` | Pengirim email (default OK untuk .vercel.app) |
+| `GMAIL_USER` | `you@gmail.com` | Alamat Gmail pengirim |
+| `GMAIL_APP_PASSWORD` | `abcd efgh ijkl mnop` (tanpa spasi) | App Password dari myaccount.google.com/apppasswords |
 | `NEXT_PUBLIC_APP_URL` | `https://xclub-community.vercel.app` | URL produksi kamu |
 
 > **Catatan:** `NEXT_PUBLIC_APP_URL` dipakai untuk CTA link di email reminder.
 > Ganti dengan URL production yang sebenarnya.
+>
+> **Gmail SMTP:** butuh 2-Step Verification aktif, lalu buat App Password
+> (16 karakter). Jangan pakai password login biasa. Gratis, tanpa domain,
+> bisa kirim ke email siapa saja. Limit ~500 email/hari.
 
 ---
 
@@ -73,8 +77,9 @@ Setelah `db:deploy:prod` selesai, cek di **Supabase Dashboard → Table Editor �
 7. Tombol menjadi disabled selama 24 jam
 
 **Jika email tidak terkirim**, cek:
-- `RESEND_API_KEY` sudah di-set di Vercel
-- Lihat Vercel Logs → Function logs untuk error
+- `GMAIL_USER` & `GMAIL_APP_PASSWORD` sudah di-set di Vercel
+- App Password benar (16 karakter, bukan password login), 2-Step Verification aktif
+- Lihat Vercel Logs → Function logs untuk error `[remind] failed to send to ...`
 
 ### ✅ Share Session
 1. Login sebagai admin → buka edit sesi mana saja
@@ -105,8 +110,8 @@ Lalu deploy commit sebelum feat ini dari Vercel dashboard (Deployments → Redep
 
 ## Checklist Deployment
 
-- [ ] `RESEND_API_KEY` di-set di Vercel
-- [ ] `RESEND_FROM_EMAIL` di-set di Vercel
+- [ ] `GMAIL_USER` di-set di Vercel
+- [ ] `GMAIL_APP_PASSWORD` di-set di Vercel
 - [ ] `NEXT_PUBLIC_APP_URL` di-set di Vercel (URL production)
 - [ ] Vercel deployment berhasil (no build errors)
 - [ ] `npm run db:deploy:prod` dijalankan
