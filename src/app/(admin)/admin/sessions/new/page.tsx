@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Info } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -136,6 +136,14 @@ export default function NewSessionPage() {
                 </FormItem>
               )}
             />
+
+            <div className="flex gap-2 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2.5 text-xs text-blue-700 dark:text-blue-300">
+              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <div className="space-y-0.5">
+                <p>{t.admin.activityLocked}</p>
+                <p>{t.admin.feeLocked}</p>
+              </div>
+            </div>
 
             <FormField
               control={form.control}

@@ -74,6 +74,16 @@ export async function PATCH(
     const t = getDictionary(locale);
 
     const { id } = await params;
+
+    // Check if the session has any attendances (fee becomes immutable once members register)
+    const existing = await prisma.activitySession.findUnique({
+        where: { id },
+        select: { _count: { select: { attendances: true } } },
+    });
+    if (!existing) {
+        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
     const body = await req.json();
     const parsed = buildUpdateSessionSchema(t).safeParse(body);
     if (!parsed.success) {
@@ -83,13 +93,16 @@ export async function PATCH(
         );
     }
 
-    const { date, ...rest } = parsed.data;
+    const { date, fee, ...rest } = parsed.data;
+    const hasAttendances = existing._count.attendances > 0;
 
     const updated = await prisma.activitySession.update({
         where: { id },
         data: {
             ...rest,
             ...(date ? { date: new Date(date) } : {}),
+            // Fee is immutable once members have registered
+            ...(!hasAttendances && fee !== undefined ? { fee } : {}),
         },
     });
 

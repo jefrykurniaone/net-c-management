@@ -16,6 +16,7 @@ export default async function EditSessionPage({
   const activitySession = await prisma.activitySession.findUnique({
     where: { id },
     include: {
+      activity: { select: { id: true, name: true } },
       attendances: {
         include: {
           user: { select: { id: true, name: true, image: true } },

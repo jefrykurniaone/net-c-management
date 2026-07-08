@@ -8,6 +8,8 @@ import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
 import { HoldCountdown } from "@/components/payments/hold-countdown";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { parsePagination } from "@/lib/table-params";
 import Link from "next/link";
 import { CreditCard, ExternalLink, MessageCircle } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
@@ -16,8 +18,13 @@ import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
 import { getOutstandingSessionBills } from "@/lib/payments";
 import { releaseExpiredHolds } from "@/lib/holds";
 import { paymentStatusVariant } from "@/lib/utils";
+import type { Prisma } from "@prisma/client";
 
-export default async function PaymentsPage() {
+export default async function PaymentsPage({
+  searchParams,
+}: Readonly<{
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
 
@@ -26,53 +33,80 @@ export default async function PaymentsPage() {
   const userId = session.user.id;
   const { month: currentMonth, year: currentYear } = currentPeriod(new Date());
 
-  // Sweep lapsed holds before deriving bills so an expired reservation no longer
-  // shows as owed.
   await releaseExpiredHolds();
 
-  const [payments, memberships, monthPayments, outstandingBills, liveHolds] = await Promise.all([
-    prisma.payment.findMany({
-      where: { userId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        activity: {
-          select: { id: true, name: true, color: true, icon: true, adminWhatsapp: true },
-        },
-      },
-    }),
-    prisma.membership.findMany({
-      where: { userId, isActive: true, activity: { isActive: true } },
-      select: {
-        paymentMode: true,
-        effectiveFrom: true,
-        pendingMode: true,
-        pendingEffectiveFrom: true,
-        activity: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-            monthlyFee: true,
-            allowsMonthly: true,
-            allowsPerSession: true,
+  // History filters from URL — validate against enum to prevent Prisma errors
+  const sp = await searchParams;
+  const raw = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
+  const VALID_PAYMENT_STATUSES = ["PENDING", "CONFIRMED", "REJECTED"] as const;
+  type ValidStatus = (typeof VALID_PAYMENT_STATUSES)[number];
+  const rawStatus = raw("historyStatus");
+  const historyStatus: ValidStatus | undefined = (VALID_PAYMENT_STATUSES as readonly string[]).includes(rawStatus ?? "")
+    ? (rawStatus as ValidStatus)
+    : undefined;
+  const historyActivity = raw("historyActivity") || undefined;
+
+  const { page: historyPage, pageSize: historyPageSize, skip: historySkip, take: historyTake } =
+    parsePagination(sp, "historyPage", "historyPageSize");
+
+  const historyWhere: Prisma.PaymentWhereInput = {
+    userId,
+    ...(historyStatus ? { status: historyStatus } : {}),
+    ...(historyActivity ? { activityId: historyActivity } : {}),
+  };
+
+  const [historyPayments, historyTotal, memberships, monthPayments, outstandingBills, liveHolds, userActivities] =
+    await Promise.all([
+      prisma.payment.findMany({
+        where: historyWhere,
+        orderBy: { createdAt: "desc" },
+        skip: historySkip,
+        take: historyTake,
+        include: {
+          activity: {
+            select: { id: true, name: true, color: true, icon: true, adminWhatsapp: true },
           },
         },
-      },
-    }),
-    prisma.payment.findMany({
-      where: { userId, month: currentMonth, year: currentYear, type: "MONTHLY" },
-      select: { activityId: true, status: true },
-    }),
-    getOutstandingSessionBills({ userId }),
-    prisma.attendance.findMany({
-      where: {
-        userId,
-        holdExpiresAt: { not: null },
-        session: { status: { in: ["SCHEDULED", "ONGOING"] } },
-      },
-      select: { holdExpiresAt: true, session: { select: { activityId: true } } },
-    }),
-  ]);
+      }),
+      prisma.payment.count({ where: historyWhere }),
+      prisma.membership.findMany({
+        where: { userId, isActive: true, activity: { isActive: true } },
+        select: {
+          paymentMode: true,
+          effectiveFrom: true,
+          pendingMode: true,
+          pendingEffectiveFrom: true,
+          activity: {
+            select: {
+              id: true,
+              name: true,
+              color: true,
+              monthlyFee: true,
+              allowsMonthly: true,
+              allowsPerSession: true,
+            },
+          },
+        },
+      }),
+      prisma.payment.findMany({
+        where: { userId, month: currentMonth, year: currentYear, type: "MONTHLY" },
+        select: { activityId: true, status: true },
+      }),
+      getOutstandingSessionBills({ userId }),
+      prisma.attendance.findMany({
+        where: {
+          userId,
+          holdExpiresAt: { not: null },
+          session: { status: { in: ["SCHEDULED", "ONGOING"] } },
+        },
+        select: { holdExpiresAt: true, session: { select: { activityId: true } } },
+      }),
+      prisma.activity.findMany({
+        where: { isActive: true, memberships: { some: { userId, isActive: true } } },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
 
   // Earliest live hold per activity — a MONTHLY member's reserved seat lapses
   // at this instant unless the dues are paid, so the dues card shows it.
@@ -216,11 +250,44 @@ export default async function PaymentsPage() {
         <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
           {t.payments.historyLabel}
         </p>
-        {payments.length === 0 ? (
+
+        {/* History filters */}
+        <form method="GET" className="flex flex-wrap gap-2">
+          <select
+            name="historyStatus"
+            defaultValue={historyStatus ?? ""}
+            data-testid="history-status-filter"
+            className="h-8 border border-input rounded-lg px-2.5 text-xs font-medium text-secondary-foreground bg-card">
+            <option value="">{t.table.filter.allStatuses}</option>
+            <option value="PENDING">{t.payments.historyStatus.PENDING}</option>
+            <option value="CONFIRMED">{t.payments.historyStatus.CONFIRMED}</option>
+            <option value="REJECTED">{t.payments.historyStatus.REJECTED}</option>
+          </select>
+          {userActivities.length > 1 && (
+            <select
+              name="historyActivity"
+              defaultValue={historyActivity ?? ""}
+              data-testid="history-activity-filter"
+              className="h-8 border border-input rounded-lg px-2.5 text-xs font-medium text-secondary-foreground bg-card">
+              <option value="">{t.table.filter.allActivities}</option>
+              {userActivities.map((a) => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          )}
+          {historyPageSize !== 10 && <input type="hidden" name="historyPageSize" value={String(historyPageSize)} />}
+          <button
+            type="submit"
+            className="h-8 border border-input rounded-lg px-3 text-xs font-semibold text-secondary-foreground bg-card hover:bg-muted transition-colors">
+            {t.table.search.btn}
+          </button>
+        </form>
+
+        {historyPayments.length === 0 ? (
           <EmptyState icon={CreditCard} title={t.payments.noPayments} />
         ) : (
           <div className="space-y-3">
-            {payments.map((payment) => (
+            {historyPayments.map((payment) => (
               <div
                 key={payment.id}
                 className="relative overflow-hidden bg-card rounded-xl border border-border p-4"
@@ -286,6 +353,15 @@ export default async function PaymentsPage() {
             ))}
           </div>
         )}
+        <DataTablePagination
+          total={historyTotal}
+          page={historyPage}
+          pageSize={historyPageSize}
+          searchParams={sp}
+          pageKey="historyPage"
+          pageSizeKey="historyPageSize"
+          labels={t.table.pagination}
+        />
       </section>
     </div>
   );

@@ -442,6 +442,9 @@ const en = {
         sessionDeleteFailed: 'Failed to delete session',
         sessionCreated: 'Session created!',
         sessionCreateFailed: 'Failed to create session',
+        activityLocked: 'Activity cannot be changed after the session is created.',
+        feeLocked: 'Fee cannot be changed once members have registered.',
+        sessionCreateHint: 'Activity and fee have restrictions after creation — see below.',
         memberUpdated: 'Successfully updated',
         memberUpdateFailed: 'Failed to update',
         paymentConfirmed: 'Payment confirmed',
@@ -621,6 +624,31 @@ const en = {
         ADMIN: 'Admin',
         MEMBER: 'Member',
         OWNER: 'Owner',
+    },
+    table: {
+        pagination: {
+            previous: 'Previous',
+            next: 'Next',
+            pageOf: 'Page {page} of {total}',
+            perPage: 'Per page',
+            showAll: 'Show all',
+            total: '{n} results',
+        },
+        sort: {
+            asc: 'Sort ascending',
+            desc: 'Sort descending',
+        },
+        search: {
+            placeholder: 'Search...',
+            btn: 'Search',
+            memberPlaceholder: 'Search name or email...',
+            titlePlaceholder: 'Search by title...',
+            activityPlaceholder: 'Search by name or slug...',
+        },
+        filter: {
+            allStatuses: 'All Statuses',
+            allActivities: 'All Activities',
+        },
     },
     validation: {
         nameMin: 'Name must be at least 2 characters',
@@ -1108,6 +1136,9 @@ const id: typeof en = {
         sessionDeleteFailed: 'Gagal menghapus sesi',
         sessionCreated: 'Sesi berhasil dibuat!',
         sessionCreateFailed: 'Gagal membuat sesi',
+        activityLocked: 'Aktivitas tidak bisa diubah setelah sesi dibuat.',
+        feeLocked: 'Iuran tidak bisa diubah setelah ada peserta yang mendaftar.',
+        sessionCreateHint: 'Aktivitas dan iuran memiliki batasan setelah sesi dibuat — lihat di bawah.',
         memberUpdated: 'Berhasil diperbarui',
         memberUpdateFailed: 'Gagal memperbarui',
         paymentConfirmed: 'Pembayaran dikonfirmasi',
@@ -1287,6 +1318,31 @@ const id: typeof en = {
         ADMIN: 'Admin',
         MEMBER: 'Anggota',
         OWNER: 'Owner',
+    },
+    table: {
+        pagination: {
+            previous: 'Sebelumnya',
+            next: 'Berikutnya',
+            pageOf: 'Halaman {page} dari {total}',
+            perPage: 'Per halaman',
+            showAll: 'Tampilkan semua',
+            total: '{n} hasil',
+        },
+        sort: {
+            asc: 'Urutan naik',
+            desc: 'Urutan turun',
+        },
+        search: {
+            placeholder: 'Cari...',
+            btn: 'Cari',
+            memberPlaceholder: 'Cari nama atau email...',
+            titlePlaceholder: 'Cari berdasarkan judul...',
+            activityPlaceholder: 'Cari berdasarkan nama atau slug...',
+        },
+        filter: {
+            allStatuses: 'Semua Status',
+            allActivities: 'Semua Aktivitas',
+        },
     },
     validation: {
         nameMin: 'Nama minimal 2 karakter',
