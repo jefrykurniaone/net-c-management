@@ -13,7 +13,7 @@ import {
 } from "@/components/activity/sessions-filter";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
-import { parsePagination } from "@/lib/table-params";
+import { parsePagination, parseSearch } from "@/lib/table-params";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { getLocale } from "@/lib/i18n/locale";
@@ -69,7 +69,7 @@ export default async function SessionsPage({
   const raw = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
 
   const view: SessionView = raw("view") === "all" ? "all" : "mine";
-  const search = raw("search") ?? "";
+  const search = parseSearch(sp);
   const myActivities = allActivities.filter((a) => myActivityIds.includes(a.id));
   const baseActivities = view === "all" ? allActivities : myActivities;
   const baseIds = baseActivities.map((e) => e.id);

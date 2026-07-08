@@ -7,6 +7,9 @@ export type RawSearchParams = Record<string, string | string[] | undefined>;
 
 type SortDir = 'asc' | 'desc';
 
+/** Max search string length accepted — prevents oversized DB LIKE queries. */
+const MAX_SEARCH_LENGTH = 200;
+
 /** Get the first string value of a raw search param (handles arrays). */
 function get(sp: RawSearchParams, key: string): string | undefined {
     const v = sp[key];
@@ -23,6 +26,16 @@ export function parseSort(
     const raw = get(sp, 'sortDir') ?? defaultSortDir;
     const sortDir: SortDir = raw === 'desc' ? 'desc' : 'asc';
     return { sortBy, sortDir };
+}
+
+/**
+ * Sanitize a user-supplied search string:
+ * - Trim whitespace
+ * - Cap at MAX_SEARCH_LENGTH characters to prevent oversized DB queries
+ */
+export function parseSearch(sp: RawSearchParams, key = 'search'): string {
+    const raw = get(sp, key) ?? '';
+    return raw.trim().slice(0, MAX_SEARCH_LENGTH);
 }
 
 /** Parse pagination params with support for custom key names. */
@@ -47,3 +60,4 @@ export function parsePagination(
     const take = isAll ? undefined : (pageSize as number);
     return { page, pageSize, skip, take };
 }
+

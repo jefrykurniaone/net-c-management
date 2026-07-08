@@ -9,7 +9,7 @@ import { isAdminRole } from '@/lib/utils';
 import { NewActivityButton, ActivityActions } from './activity-actions';
 import { ActivityCards } from './activity-cards';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
-import { parsePagination, parseSort } from '@/lib/table-params';
+import { parsePagination, parseSort, parseSearch } from '@/lib/table-params';
 import { SortableTh } from '@/components/ui/sortable-th';
 import type { Prisma } from '@prisma/client';
 
@@ -33,7 +33,7 @@ export default async function AdminActivityPage({
     const t = getDictionary(locale);
 
     const sp = await searchParams;
-    const search = (Array.isArray(sp.search) ? sp.search[0] : sp.search) ?? '';
+    const search = parseSearch(sp);
     const { sortBy, sortDir } = parseSort(sp, 'name', 'asc');
     const { page, pageSize, skip, take } = parsePagination(sp);
 

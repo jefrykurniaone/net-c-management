@@ -16,7 +16,7 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getActivities } from '@/lib/activity';
 import { sessionStatusVariant, isAdminRole } from '@/lib/utils';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
-import { parsePagination, parseSort } from '@/lib/table-params';
+import { parsePagination, parseSort, parseSearch } from '@/lib/table-params';
 import { SortableTh } from '@/components/ui/sortable-th';
 import type { Prisma } from '@prisma/client';
 
@@ -48,7 +48,7 @@ export default async function AdminSessionsPage({
     const raw = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
 
     const selected = raw('activityId') || undefined;
-    const search = raw('search') ?? '';
+    const search = parseSearch(sp);
     const { sortBy, sortDir } = parseSort(sp, 'date', 'desc');
     const { page, pageSize, skip, take } = parsePagination(sp);
 

@@ -11,7 +11,7 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getActivities } from "@/lib/activity";
 import { isAdminRole, roleBadgeVariant } from "@/lib/utils";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
-import { parsePagination, parseSort } from "@/lib/table-params";
+import { parsePagination, parseSort, parseSearch } from "@/lib/table-params";
 import { SortableTh } from "@/components/ui/sortable-th";
 import type { Prisma } from "@prisma/client";
 
@@ -36,7 +36,7 @@ export default async function AdminMembersPage({
   const t = getDictionary(locale);
 
   const sp = await searchParams;
-  const search = (Array.isArray(sp.search) ? sp.search[0] : sp.search) ?? "";
+  const search = parseSearch(sp);
   const activityId = (Array.isArray(sp.activityId) ? sp.activityId[0] : sp.activityId) ?? "";
   const { sortBy, sortDir } = parseSort(sp, "createdAt", "desc");
   const { page, pageSize, skip, take } = parsePagination(sp);
