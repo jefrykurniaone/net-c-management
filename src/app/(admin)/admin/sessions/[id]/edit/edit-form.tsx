@@ -3,7 +3,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { buildUpdateSessionSchema, type UpdateSessionFormData } from "@/lib/validations/session";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -15,30 +15,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import type { ActivitySession, Attendance, User } from "@prisma/client";
+import type { ActivitySession, Attendance, User, Activity } from "@prisma/client";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
-import type { ActivityOption } from "@/types/activity";
 import { parseIntInput } from "@/lib/form-utils";
 import { FormSection } from "@/components/ui/form-section";
 import { RemindMembersButton } from "@/components/admin/remind-members-button";
 import { ShareSessionCard } from "@/components/sessions/share-session-card";
 
 type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
-type SessionWithAttendances = ActivitySession & { attendances: AttendanceWithUser[] };
+type SessionWithAttendances = ActivitySession & {
+  attendances: AttendanceWithUser[];
+  activity: Pick<Activity, "id" | "name">;
+};
 
 export function EditSessionForm({ session }: Readonly<{ session: SessionWithAttendances }>) {
   const router = useRouter();
@@ -59,14 +54,14 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
   ];
   const [loading, setLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"delete" | "markAll" | null>(null);
-  const [activities, setActivities] = useState<ActivityOption[]>([]);
   const [attendances, setAttendances] = useState<AttendanceWithUser[]>(session.attendances);
   const [attendanceLoading, setAttendanceLoading] = useState<string | null>(null);
+
+  const isFeeLocked = session.attendances.length > 0;
 
   const form = useForm<UpdateSessionFormData>({
     resolver: zodResolver(buildUpdateSessionSchema(t)),
     defaultValues: {
-      activityId: session.activityId,
       title: session.title,
       date: format(new Date(session.date), "yyyy-MM-dd"),
       startTime: session.startTime,
@@ -78,13 +73,6 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
       status: session.status,
     },
   });
-
-  useEffect(() => {
-    fetch("/api/activities")
-      .then((r) => r.json())
-      .then((data: { activities?: ActivityOption[] }) => setActivities(data.activities ?? []))
-      .catch(() => setActivities([]));
-  }, []);
 
   async function onSubmit(data: UpdateSessionFormData) {
     setLoading(true);
@@ -182,30 +170,13 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormSection title={t.admin.sectionBasicInfo}>
-            <FormField
-              control={form.control}
-              name="activityId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t.activity.label}</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder={t.activity.selectPlaceholder} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {activities.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>
-                          {e.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormItem>
+              <FormLabel>{t.activity.label}</FormLabel>
+              <div className="flex items-center gap-2 rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{session.activity.name}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{t.admin.activityLocked}</p>
+            </FormItem>
 
             <FormField
               control={form.control}
@@ -335,11 +306,15 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                       <Input
                         type="number"
                         min={0}
+                        disabled={isFeeLocked}
                         {...field}
                         value={field.value ?? ''}
                         onChange={(e) => field.onChange(parseIntInput(e))}
                       />
                     </FormControl>
+                    {isFeeLocked && (
+                      <p className="text-xs text-muted-foreground">{t.admin.feeLocked}</p>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
