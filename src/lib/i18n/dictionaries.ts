@@ -625,6 +625,31 @@ const en = {
         MEMBER: 'Member',
         OWNER: 'Owner',
     },
+    table: {
+        pagination: {
+            previous: 'Previous',
+            next: 'Next',
+            pageOf: 'Page {page} of {total}',
+            perPage: 'Per page',
+            showAll: 'Show all',
+            total: '{n} results',
+        },
+        sort: {
+            asc: 'Sort ascending',
+            desc: 'Sort descending',
+        },
+        search: {
+            placeholder: 'Search...',
+            btn: 'Search',
+            memberPlaceholder: 'Search name or email...',
+            titlePlaceholder: 'Search by title...',
+            activityPlaceholder: 'Search by name or slug...',
+        },
+        filter: {
+            allStatuses: 'All Statuses',
+            allActivities: 'All Activities',
+        },
+    },
     validation: {
         nameMin: 'Name must be at least 2 characters',
         nameMax: 'Name cannot exceed 100 characters',
@@ -1293,6 +1318,31 @@ const id: typeof en = {
         ADMIN: 'Admin',
         MEMBER: 'Anggota',
         OWNER: 'Owner',
+    },
+    table: {
+        pagination: {
+            previous: 'Sebelumnya',
+            next: 'Berikutnya',
+            pageOf: 'Halaman {page} dari {total}',
+            perPage: 'Per halaman',
+            showAll: 'Tampilkan semua',
+            total: '{n} hasil',
+        },
+        sort: {
+            asc: 'Urutan naik',
+            desc: 'Urutan turun',
+        },
+        search: {
+            placeholder: 'Cari...',
+            btn: 'Cari',
+            memberPlaceholder: 'Cari nama atau email...',
+            titlePlaceholder: 'Cari berdasarkan judul...',
+            activityPlaceholder: 'Cari berdasarkan nama atau slug...',
+        },
+        filter: {
+            allStatuses: 'Semua Status',
+            allActivities: 'Semua Aktivitas',
+        },
     },
     validation: {
         nameMin: 'Nama minimal 2 karakter',

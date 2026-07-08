@@ -12,6 +12,8 @@ import {
   type SessionView,
 } from "@/components/activity/sessions-filter";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { parsePagination } from "@/lib/table-params";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { getLocale } from "@/lib/i18n/locale";
@@ -23,8 +25,6 @@ import {
 } from "@/lib/recurring-sessions";
 
 const SESSION_INCLUDE = {
-  // Seat-holding rows only — ABSENT (a cancelled monthly member) neither
-  // occupies a seat nor counts as "registered".
   _count: {
     select: {
       attendances: {
@@ -42,7 +42,7 @@ type SessionRow = Prisma.ActivitySessionGetPayload<{
 export default async function SessionsPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ activityId?: string; tab?: string; view?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id) redirect("/auth/signin");
@@ -54,7 +54,6 @@ export default async function SessionsPage({
   today.setHours(0, 0, 0, 0);
   const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
 
-  // Release any lapsed reservation holds so freed seats are reflected below.
   await releaseExpiredHolds();
 
   const [allActivities, myActivityIds] = await Promise.all([
@@ -65,41 +64,61 @@ export default async function SessionsPage({
     }),
     getUserActivityIds(session.user.id),
   ]);
+
   const sp = await searchParams;
-  // Default to the member's own activities; "all" reveals every active Activity
-  // so members can discover and register into others (join-on-register).
-  const view: SessionView = sp.view === "all" ? "all" : "mine";
+  const raw = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
+
+  const view: SessionView = raw("view") === "all" ? "all" : "mine";
+  const search = raw("search") ?? "";
   const myActivities = allActivities.filter((a) => myActivityIds.includes(a.id));
   const baseActivities = view === "all" ? allActivities : myActivities;
   const baseIds = baseActivities.map((e) => e.id);
-  const selected = baseActivities.some((e) => e.id === sp.activityId)
-    ? sp.activityId
+  const selected = baseActivities.some((e) => e.id === raw("activityId"))
+    ? raw("activityId")
     : undefined;
-  const tab: SessionTab = sp.tab === "past" ? "past" : "upcoming";
+  const tab: SessionTab = raw("tab") === "past" ? "past" : "upcoming";
   const isPast = tab === "past";
+  const { page, pageSize, skip, take } = parsePagination(sp);
 
-  const sessions = await prisma.activitySession.findMany({
-    where: {
-      activityId: selected ?? { in: baseIds },
-      ...(isPast
-        ? { date: { lt: today } }
-        : { date: { gte: today }, status: { in: ["SCHEDULED", "ONGOING"] } }),
-    },
-    orderBy: { date: isPast ? "desc" : "asc" },
-    include: {
-      ...SESSION_INCLUDE,
-      attendances: {
-        where: {
-          userId: session.user.id,
-          status: { in: ["REGISTERED", "PRESENT"] },
+  const searchFilter: Prisma.ActivitySessionWhereInput = search
+    ? {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { location: { contains: search, mode: "insensitive" } },
+        ],
+      }
+    : {};
+
+  const baseWhere: Prisma.ActivitySessionWhereInput = {
+    activityId: selected ?? { in: baseIds },
+    ...searchFilter,
+    ...(isPast
+      ? { date: { lt: today } }
+      : { date: { gte: today }, status: { in: ["SCHEDULED", "ONGOING"] } }),
+  };
+
+  const [sessions, total] = await Promise.all([
+    prisma.activitySession.findMany({
+      where: baseWhere,
+      orderBy: { date: isPast ? "desc" : "asc" },
+      skip,
+      take,
+      include: {
+        ...SESSION_INCLUDE,
+        attendances: {
+          where: {
+            userId: session.user.id,
+            status: { in: ["REGISTERED", "PRESENT"] },
+          },
+          select: { status: true },
         },
-        select: { status: true },
       },
-    },
-  });
+    }),
+    prisma.activitySession.count({ where: baseWhere }),
+  ]);
+
   const quotas = await getSessionQuotas(sessions);
 
-  // Upcoming is split into "This week" vs "Later"; past stays a flat list.
   const thisWeek = isPast
     ? []
     : sessions.filter((s) => new Date(s.date) <= weekEnd);
@@ -143,10 +162,7 @@ export default async function SessionsPage({
                 className="mt-1">
                 {quota.isMet
                   ? t.sessions.quotaMet
-                  : t.sessions.quotaNeedMore.replace(
-                      "{n}",
-                      String(quota.needed - quota.committed),
-                    )}
+                  : t.sessions.quotaNeedMore.replace("{n}", String(quota.needed - quota.committed))}
                 {" "}
                 <span className="tabular-nums">
                   ({quota.committed}/{quota.needed})
@@ -193,11 +209,33 @@ export default async function SessionsPage({
             </p>
           )}
         </div>
+
+        {/* Search input */}
+        <form method="GET" className="flex gap-2">
+          <input
+            name="search"
+            defaultValue={search}
+            placeholder={t.table.search.titlePlaceholder}
+            data-testid="search-input"
+            className="flex-1 h-9 border border-input rounded-lg px-3 text-sm bg-card placeholder:text-subtle-foreground"
+          />
+          {view === "all" && <input type="hidden" name="view" value="all" />}
+          {tab === "past" && <input type="hidden" name="tab" value="past" />}
+          {selected && <input type="hidden" name="activityId" value={selected} />}
+          {pageSize !== 10 && <input type="hidden" name="pageSize" value={String(pageSize)} />}
+          <button
+            type="submit"
+            className="h-9 border border-input rounded-lg px-4 text-sm font-semibold text-secondary-foreground bg-card hover:bg-muted transition-colors">
+            {t.table.search.btn}
+          </button>
+        </form>
+
         <SessionsFilter
           activities={baseActivities.length > 1 ? baseActivities : []}
           selected={selected}
           tab={tab}
           view={view}
+          search={search}
           labels={{
             all: t.sessions.chipAll,
             upcoming: t.sessions.tabUpcoming,
@@ -227,6 +265,14 @@ export default async function SessionsPage({
           {renderGroup(t.sessions.groupLater, later)}
         </div>
       )}
+
+      <DataTablePagination
+        total={total}
+        page={page}
+        pageSize={pageSize}
+        searchParams={sp}
+        labels={t.table.pagination}
+      />
     </div>
   );
 }

@@ -10,12 +10,25 @@ import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getActivities } from "@/lib/activity";
 import { isAdminRole, roleBadgeVariant } from "@/lib/utils";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { parsePagination, parseSort } from "@/lib/table-params";
+import { SortableTh } from "@/components/ui/sortable-th";
 import type { Prisma } from "@prisma/client";
+
+const VALID_SORT_COLS = ["name", "role", "createdAt", "isActive"] as const;
+type SortCol = (typeof VALID_SORT_COLS)[number];
+
+function buildOrderBy(sortBy: string, dir: "asc" | "desc"): Prisma.UserOrderByWithRelationInput {
+  const col: SortCol = (VALID_SORT_COLS as readonly string[]).includes(sortBy)
+    ? (sortBy as SortCol)
+    : "createdAt";
+  return { [col]: dir };
+}
 
 export default async function AdminMembersPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ search?: string; activityId?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
@@ -23,8 +36,10 @@ export default async function AdminMembersPage({
   const t = getDictionary(locale);
 
   const sp = await searchParams;
-  const search = sp.search ?? "";
-  const activityId = sp.activityId ?? "";
+  const search = (Array.isArray(sp.search) ? sp.search[0] : sp.search) ?? "";
+  const activityId = (Array.isArray(sp.activityId) ? sp.activityId[0] : sp.activityId) ?? "";
+  const { sortBy, sortDir } = parseSort(sp, "createdAt", "desc");
+  const { page, pageSize, skip, take } = parsePagination(sp);
 
   const where: Prisma.UserWhereInput = {
     ...(search
@@ -40,27 +55,32 @@ export default async function AdminMembersPage({
       : {}),
   };
 
-  const [users, activities] = await Promise.all([
+  const userSelect = {
+    id: true,
+    name: true,
+    email: true,
+    image: true,
+    role: true,
+    isActive: true,
+    isProfileComplete: true,
+    phone: true,
+    createdAt: true,
+    memberships: {
+      where: { isActive: true, activity: { isActive: true } },
+      select: { activity: { select: { id: true, name: true, color: true } } },
+    },
+    _count: { select: { attendances: true, payments: true } },
+  } as const;
+
+  const [users, total, activities] = await Promise.all([
     prisma.user.findMany({
       where,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        image: true,
-        role: true,
-        isActive: true,
-        isProfileComplete: true,
-        phone: true,
-        createdAt: true,
-        memberships: {
-          where: { isActive: true, activity: { isActive: true } },
-          select: { activity: { select: { id: true, name: true, color: true } } },
-        },
-        _count: { select: { attendances: true, payments: true } },
-      },
+      orderBy: buildOrderBy(sortBy, sortDir),
+      skip,
+      take,
+      select: userSelect,
     }),
+    prisma.user.count({ where }),
     getActivities(),
   ]);
 
@@ -72,7 +92,7 @@ export default async function AdminMembersPage({
             {t.admin.membersTitle}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {users.length} {t.admin.membersRegistered}
+            {total} {t.admin.membersRegistered}
           </p>
         </div>
       </div>
@@ -82,7 +102,8 @@ export default async function AdminMembersPage({
         <input
           name="search"
           defaultValue={search}
-          placeholder={t.admin.searchPlaceholder}
+          placeholder={t.table.search.memberPlaceholder}
+          data-testid="search-input"
           className="h-9 border border-input rounded-lg px-3 text-sm bg-card w-full max-w-sm placeholder:text-subtle-foreground"
         />
         <select
@@ -97,6 +118,10 @@ export default async function AdminMembersPage({
             </option>
           ))}
         </select>
+        {/* Preserve sort and page size across search */}
+        {sortBy !== "createdAt" && <input type="hidden" name="sortBy" value={sortBy} />}
+        {sortDir !== "desc" && <input type="hidden" name="sortDir" value={sortDir} />}
+        {pageSize !== 10 && <input type="hidden" name="pageSize" value={String(pageSize)} />}
         <button
           type="submit"
           className="h-9 border border-input rounded-lg px-4 text-sm font-semibold text-secondary-foreground bg-card hover:bg-muted w-full sm:w-auto transition-colors"
@@ -105,22 +130,29 @@ export default async function AdminMembersPage({
         </button>
       </form>
 
-      {/* Mobile: stacked cards (< md) */}
+      {/* Mobile: stacked cards */}
       <div className="md:hidden">
         <MemberCards users={users} t={t} currentUserId={session.user.id} />
+        <DataTablePagination
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          searchParams={sp}
+          labels={t.table.pagination}
+        />
       </div>
 
-      {/* Desktop: full table (>= md) */}
+      {/* Desktop: full table */}
       <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colName}</th>
+                <SortableTh column="name" label={t.admin.colName} searchParams={sp} />
                 <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.activity.label}</th>
                 <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colAttendance}</th>
                 <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colPayments}</th>
-                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colMemberStatus}</th>
+                <SortableTh column="role" label={t.admin.colMemberStatus} searchParams={sp} align="center" />
                 <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colActions}</th>
               </tr>
             </thead>
@@ -202,6 +234,15 @@ export default async function AdminMembersPage({
               )}
             </tbody>
           </table>
+        </div>
+        <div className="px-4 border-t border-border">
+          <DataTablePagination
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            searchParams={sp}
+            labels={t.table.pagination}
+          />
         </div>
       </div>
     </div>

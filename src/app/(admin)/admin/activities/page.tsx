@@ -8,20 +8,56 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { isAdminRole } from '@/lib/utils';
 import { NewActivityButton, ActivityActions } from './activity-actions';
 import { ActivityCards } from './activity-cards';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { parsePagination, parseSort } from '@/lib/table-params';
+import { SortableTh } from '@/components/ui/sortable-th';
+import type { Prisma } from '@prisma/client';
 
-export default async function AdminActivityPage() {
+function buildActivityOrderBy(
+    sortBy: string,
+    dir: 'asc' | 'desc',
+): Prisma.ActivityOrderByWithRelationInput[] {
+    if (sortBy === 'monthlyFee') return [{ monthlyFee: dir }, { name: 'asc' }];
+    if (sortBy === 'status') return [{ isActive: dir === 'asc' ? 'desc' : 'asc' }, { name: 'asc' }];
+    if (sortBy === 'members') return [{ memberships: { _count: dir } }, { name: 'asc' }];
+    return [{ isActive: 'desc' }, { name: dir }];
+}
+
+export default async function AdminActivityPage({
+    searchParams,
+}: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
     if (!session?.user?.id || !isAdminRole(session.user.role))
         redirect('/dashboard');
 
     const t = getDictionary(locale);
 
-    const activities = await prisma.activity.findMany({
-        orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
-        include: {
-            _count: { select: { memberships: true, sessions: true } },
-        },
-    });
+    const sp = await searchParams;
+    const search = (Array.isArray(sp.search) ? sp.search[0] : sp.search) ?? '';
+    const { sortBy, sortDir } = parseSort(sp, 'name', 'asc');
+    const { page, pageSize, skip, take } = parsePagination(sp);
+
+    const where: Prisma.ActivityWhereInput = search
+        ? {
+              OR: [
+                  { name: { contains: search, mode: 'insensitive' } },
+                  { slug: { contains: search, mode: 'insensitive' } },
+              ],
+          }
+        : {};
+
+    const [activities, total] = await Promise.all([
+        prisma.activity.findMany({
+            where,
+            orderBy: buildActivityOrderBy(sortBy, sortDir),
+            skip,
+            take,
+            include: {
+                _count: { select: { memberships: true, sessions: true } },
+            },
+        }),
+        prisma.activity.count({ where }),
+    ]);
 
     return (
         <div className='space-y-6'>
@@ -31,39 +67,51 @@ export default async function AdminActivityPage() {
                         {t.admin.activityTitle}
                     </h1>
                     <p className='text-sm text-muted-foreground mt-1'>
-                        {activities.length} {t.admin.activityRegistered} ·{' '}
+                        {total} {t.admin.activityRegistered} ·{' '}
                         {t.admin.activitySubtitle}
                     </p>
                 </div>
                 <NewActivityButton />
             </div>
 
-            {/* Mobile: stacked cards (< md) */}
+            {/* Search */}
+            <form className='flex flex-wrap gap-2' method='GET'>
+                <input
+                    name='search'
+                    defaultValue={search}
+                    placeholder={t.table.search.activityPlaceholder}
+                    data-testid='search-input'
+                    className='h-9 border border-input rounded-lg px-3 text-sm bg-card w-full sm:w-72 placeholder:text-subtle-foreground'
+                />
+                {sortBy !== 'name' && <input type='hidden' name='sortBy' value={sortBy} />}
+                {sortDir !== 'asc' && <input type='hidden' name='sortDir' value={sortDir} />}
+                {pageSize !== 10 && <input type='hidden' name='pageSize' value={String(pageSize)} />}
+                <button
+                    type='submit'
+                    className='h-9 border border-input rounded-lg px-4 text-sm font-semibold text-secondary-foreground bg-card hover:bg-muted transition-colors'>
+                    {t.table.search.btn}
+                </button>
+            </form>
+
+            {/* Mobile: stacked cards */}
             <div className='md:hidden'>
                 <ActivityCards activities={activities} t={t} />
+                <DataTablePagination total={total} page={page} pageSize={pageSize} searchParams={sp} labels={t.table.pagination} />
             </div>
 
-            {/* Desktop: full table (>= md) */}
+            {/* Desktop: full table */}
             <div className='hidden md:block bg-card rounded-xl border border-border overflow-hidden'>
                 <div className='overflow-x-auto'>
                     <table className='w-full text-sm'>
                         <thead>
                             <tr className='bg-muted/50 border-b border-border'>
-                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
-                                    {t.admin.colActivity}
-                                </th>
+                                <SortableTh column='name' label={t.admin.colActivity} searchParams={sp} />
                                 <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.activitySlug}
                                 </th>
-                                <th className='text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
-                                    {t.admin.colMembers}
-                                </th>
-                                <th className='text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
-                                    {t.admin.activityFee}
-                                </th>
-                                <th className='text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
-                                    {t.admin.colStatus}
-                                </th>
+                                <SortableTh column='members' label={t.admin.colMembers} searchParams={sp} align='center' />
+                                <SortableTh column='monthlyFee' label={t.admin.activityFee} searchParams={sp} align='right' />
+                                <SortableTh column='status' label={t.admin.colStatus} searchParams={sp} align='center' />
                                 <th className='text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
                                     {t.admin.colActions}
                                 </th>
@@ -76,10 +124,7 @@ export default async function AdminActivityPage() {
                                     className='border-b border-border last:border-b-0 hover:bg-muted/40'>
                                     <td className='px-5 py-3'>
                                         <div className='flex items-center gap-2.5'>
-                                            <ActivityInitial
-                                                name={e.name}
-                                                color={e.color}
-                                            />
+                                            <ActivityInitial name={e.name} color={e.color} />
                                             <div className='min-w-0'>
                                                 <p className='font-semibold text-foreground'>
                                                     {e.name}
@@ -102,15 +147,8 @@ export default async function AdminActivityPage() {
                                         Rp {e.monthlyFee.toLocaleString('id-ID')}
                                     </td>
                                     <td className='px-5 py-3 text-center'>
-                                        <Badge
-                                            variant={
-                                                e.isActive
-                                                    ? 'success'
-                                                    : 'secondary'
-                                            }>
-                                            {e.isActive
-                                                ? t.admin.active
-                                                : t.admin.inactive2}
+                                        <Badge variant={e.isActive ? 'success' : 'secondary'}>
+                                            {e.isActive ? t.admin.active : t.admin.inactive2}
                                         </Badge>
                                     </td>
                                     <td className='px-5 py-3'>
@@ -124,23 +162,17 @@ export default async function AdminActivityPage() {
                                                 monthlyFee: e.monthlyFee,
                                                 sessionFee: e.sessionFee,
                                                 allowsMonthly: e.allowsMonthly,
-                                                allowsPerSession:
-                                                    e.allowsPerSession,
+                                                allowsPerSession: e.allowsPerSession,
                                                 minMembers: e.minMembers,
                                                 recurringDay: e.recurringDay,
-                                                recurringStartTime:
-                                                    e.recurringStartTime,
-                                                recurringEndTime:
-                                                    e.recurringEndTime,
-                                                defaultLocation:
-                                                    e.defaultLocation,
+                                                recurringStartTime: e.recurringStartTime,
+                                                recurringEndTime: e.recurringEndTime,
+                                                defaultLocation: e.defaultLocation,
                                                 maxPlayers: e.maxPlayers,
                                                 adminWhatsapp: e.adminWhatsapp,
                                                 bankName: e.bankName,
-                                                bankAccountNumber:
-                                                    e.bankAccountNumber,
-                                                bankAccountHolder:
-                                                    e.bankAccountHolder,
+                                                bankAccountNumber: e.bankAccountNumber,
+                                                bankAccountHolder: e.bankAccountHolder,
                                                 isActive: e.isActive,
                                             }}
                                         />
@@ -158,6 +190,9 @@ export default async function AdminActivityPage() {
                             )}
                         </tbody>
                     </table>
+                </div>
+                <div className='px-4 border-t border-border'>
+                    <DataTablePagination total={total} page={page} pageSize={pageSize} searchParams={sp} labels={t.table.pagination} />
                 </div>
             </div>
         </div>

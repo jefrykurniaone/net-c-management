@@ -14,16 +14,37 @@ import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getActivities } from "@/lib/activity";
 import { paymentStatusVariant, isAdminRole } from "@/lib/utils";
+import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import { parsePagination, parseSort } from "@/lib/table-params";
+import { SortableTh } from "@/components/ui/sortable-th";
+import type { Prisma } from "@prisma/client";
 
 type PaymentRow = Payment & {
   user: { name: string | null; email: string | null };
   activity: { id: string; name: string; color: string; icon: string | null };
 };
 
+const VALID_SORT: Record<string, Prisma.PaymentOrderByWithRelationInput> = {
+  createdAt: { createdAt: "desc" },
+  amount: { amount: "desc" },
+  month: { year: "desc" },
+  member: { user: { name: "asc" } },
+};
+
+function buildPaymentOrderBy(
+  sortBy: string,
+  dir: "asc" | "desc",
+): Prisma.PaymentOrderByWithRelationInput[] {
+  if (sortBy === "month") return [{ year: dir }, { month: dir }, { createdAt: "desc" }];
+  if (sortBy === "member") return [{ user: { name: dir } }, { createdAt: "desc" }];
+  if (sortBy === "amount") return [{ amount: dir }, { createdAt: "desc" }];
+  return [{ createdAt: dir }];
+}
+
 export default async function AdminPaymentsPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ month?: string; year?: string; status?: string; activityId?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }>) {
   const [session, locale] = await Promise.all([auth(), getLocale()]);
   if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
@@ -32,30 +53,49 @@ export default async function AdminPaymentsPage({
   const dateLocale = locale === 'id' ? localeId : enUS;
 
   const sp = await searchParams;
-  const filterMonth = sp.month ? Number.parseInt(sp.month) : undefined;
-  const filterYear = sp.year ? Number.parseInt(sp.year) : undefined;
-  const filterStatus = sp.status as "PENDING" | "CONFIRMED" | "REJECTED" | undefined;
-  const filterActivity = sp.activityId || undefined;
+  const raw = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
+
+  const filterMonth = raw("month") ? Number.parseInt(raw("month")!) : undefined;
+  const filterYear = raw("year") ? Number.parseInt(raw("year")!) : undefined;
+  const filterStatus = raw("status") as "PENDING" | "CONFIRMED" | "REJECTED" | undefined;
+  const filterActivity = raw("activityId") || undefined;
+  const search = raw("search") ?? "";
+  const { sortBy, sortDir } = parseSort(sp, "createdAt", "desc");
+  const { page, pageSize, skip, take } = parsePagination(sp);
 
   const now = new Date();
   const currentMonth = filterMonth ?? now.getMonth() + 1;
   const currentYear = filterYear ?? now.getFullYear();
 
-  const [payments, activities] = await Promise.all([
+  const where: Prisma.PaymentWhereInput = {
+    ...(filterMonth ? { month: filterMonth } : {}),
+    ...(filterYear ? { year: filterYear } : {}),
+    ...(filterStatus ? { status: filterStatus } : {}),
+    ...(filterActivity ? { activityId: filterActivity } : {}),
+    ...(search
+      ? {
+          user: {
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { email: { contains: search, mode: "insensitive" } },
+            ],
+          },
+        }
+      : {}),
+  };
+
+  const [payments, total, activities] = await Promise.all([
     prisma.payment.findMany({
-      where: {
-        ...(filterMonth ? { month: filterMonth } : {}),
-        ...(filterYear ? { year: filterYear } : {}),
-        ...(filterStatus ? { status: filterStatus } : {}),
-        ...(filterActivity ? { activityId: filterActivity } : {}),
-      },
-      orderBy: [{ year: "desc" }, { month: "desc" }, { createdAt: "desc" }],
-      take: 100,
+      where,
+      orderBy: buildPaymentOrderBy(sortBy, sortDir),
+      skip,
+      take,
       include: {
         user: { select: { name: true, email: true } },
         activity: { select: { id: true, name: true, color: true, icon: true } },
       },
     }),
+    prisma.payment.count({ where }),
     getActivities(),
   ]);
 
@@ -80,6 +120,13 @@ export default async function AdminPaymentsPage({
 
       {/* Filters */}
       <form className="flex flex-wrap gap-3" method="GET">
+        <input
+          name="search"
+          defaultValue={search}
+          placeholder={t.table.search.memberPlaceholder}
+          data-testid="search-input"
+          className="h-9 border border-input rounded-lg px-3 text-sm bg-card w-full sm:w-64 placeholder:text-subtle-foreground"
+        />
         <select
           name="month"
           defaultValue={String(filterMonth ?? "")}
@@ -126,69 +173,70 @@ export default async function AdminPaymentsPage({
             </option>
           ))}
         </select>
-          <Button type="submit" variant="outline">
-            {t.admin.filterBtn}
+        {/* Preserve sort and page size */}
+        {sortBy !== "createdAt" && <input type="hidden" name="sortBy" value={sortBy} />}
+        {sortDir !== "desc" && <input type="hidden" name="sortDir" value={sortDir} />}
+        {pageSize !== 10 && <input type="hidden" name="pageSize" value={String(pageSize)} />}
+        <Button type="submit" variant="outline">
+          {t.admin.filterBtn}
         </Button>
       </form>
 
-      {/* Mobile: stacked cards (< md) */}
+      {/* Mobile: stacked cards */}
       <div className="md:hidden">
         <PaymentCards payments={payments} t={t} locale={locale} />
+        <DataTablePagination total={total} page={page} pageSize={pageSize} searchParams={sp} labels={t.table.pagination} />
       </div>
 
-      {/* Desktop: full table (>= md) */}
+      {/* Desktop: full table */}
       <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colMember}</th>
+                <SortableTh column="member" label={t.admin.colMember} searchParams={sp} />
                 <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.activity.label}</th>
-                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colMonth}</th>
-                <th className="text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colAmount}</th>
+                <SortableTh column="month" label={t.admin.colMonth} searchParams={sp} />
+                <SortableTh column="amount" label={t.admin.colAmount} searchParams={sp} align="right" />
                 <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colStatus}</th>
-                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colDate}</th>
+                <SortableTh column="createdAt" label={t.admin.colDate} searchParams={sp} />
                 <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colActions}</th>
               </tr>
             </thead>
             <tbody>
-              {payments.map((p: PaymentRow) => {
-                return (
-                  <tr
-                    key={p.id}
-                    className="border-b border-border last:border-b-0 hover:bg-muted/40"
-                  >
-                    <td className="px-5 py-3">
-                      <p className="font-semibold text-foreground">
-                        {p.user.name ?? p.user.email}
-                      </p>
-                      <p className="text-xs text-subtle-foreground">{p.user.email}</p>
-                    </td>
-                    <td className="px-5 py-3 whitespace-nowrap">
-                      <ActivityBadge name={p.activity.name} color={p.activity.color} icon={p.activity.icon} />
-                    </td>
-                    <td className="px-5 py-3 text-secondary-foreground whitespace-nowrap">
-                      {t.months[p.month]} {p.year}
-                    </td>
-                    <td className="px-5 py-3 text-right text-foreground font-semibold whitespace-nowrap tabular-nums">
-                      Rp {p.amount.toLocaleString("id-ID")}
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <Badge
-                        variant={paymentStatusVariant(p.status)}
-                      >
-                        {t.paymentStatus[p.status]}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
-                      {format(new Date(p.createdAt), "d MMM yyyy", { locale: dateLocale })}
-                    </td>
-                    <td className="px-5 py-3 text-center">
-                      <PaymentActions payment={p} />
-                    </td>
-                  </tr>
-                );
-              })}
+              {payments.map((p: PaymentRow) => (
+                <tr
+                  key={p.id}
+                  className="border-b border-border last:border-b-0 hover:bg-muted/40"
+                >
+                  <td className="px-5 py-3">
+                    <p className="font-semibold text-foreground">
+                      {p.user.name ?? p.user.email}
+                    </p>
+                    <p className="text-xs text-subtle-foreground">{p.user.email}</p>
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <ActivityBadge name={p.activity.name} color={p.activity.color} icon={p.activity.icon} />
+                  </td>
+                  <td className="px-5 py-3 text-secondary-foreground whitespace-nowrap">
+                    {t.months[p.month]} {p.year}
+                  </td>
+                  <td className="px-5 py-3 text-right text-foreground font-semibold whitespace-nowrap tabular-nums">
+                    Rp {p.amount.toLocaleString("id-ID")}
+                  </td>
+                  <td className="px-5 py-3 text-center">
+                    <Badge variant={paymentStatusVariant(p.status)}>
+                      {t.paymentStatus[p.status]}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
+                    {format(new Date(p.createdAt), "d MMM yyyy", { locale: dateLocale })}
+                  </td>
+                  <td className="px-5 py-3 text-center">
+                    <PaymentActions payment={p} />
+                  </td>
+                </tr>
+              ))}
               {payments.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
@@ -198,6 +246,9 @@ export default async function AdminPaymentsPage({
               )}
             </tbody>
           </table>
+        </div>
+        <div className="px-4 border-t border-border">
+          <DataTablePagination total={total} page={page} pageSize={pageSize} searchParams={sp} labels={t.table.pagination} />
         </div>
       </div>
     </div>

@@ -22,12 +22,14 @@ export function SessionsFilter({
     selected,
     tab,
     view,
+    search,
     labels,
 }: Readonly<{
     activities: Activity[];
     selected?: string;
     tab: SessionTab;
     view: SessionView;
+    search?: string;
     labels: {
         all: string;
         upcoming: string;
@@ -46,6 +48,7 @@ export function SessionsFilter({
         if (activityId) params.set('activityId', activityId);
         if (nextTab === 'past') params.set('tab', 'past');
         if (nextView === 'all') params.set('view', 'all');
+        if (search) params.set('search', search);
         const qs = params.toString();
         return qs ? `${pathname}?${qs}` : pathname;
     }
@@ -98,10 +101,7 @@ export function SessionsFilter({
                                         ? 'bg-primary text-primary-foreground'
                                         : 'bg-muted/60 border border-input text-secondary-foreground hover:bg-muted',
                                 )}>
-                                <ActivityDot
-                                    color={a.color}
-                                    className='size-[7px]'
-                                />
+                                <ActivityDot color={a.color} className='size-[7px]' />
                                 {a.name}
                             </Link>
                         );
@@ -124,9 +124,7 @@ export function SessionsFilter({
                                     ? 'border-primary text-primary'
                                     : 'border-transparent text-muted-foreground hover:text-foreground',
                             )}>
-                            {value === 'upcoming'
-                                ? labels.upcoming
-                                : labels.past}
+                            {value === 'upcoming' ? labels.upcoming : labels.past}
                         </Link>
                     );
                 })}
