@@ -35,10 +35,15 @@ export default async function PaymentsPage({
 
   await releaseExpiredHolds();
 
-  // History filters from URL
+  // History filters from URL — validate against enum to prevent Prisma errors
   const sp = await searchParams;
   const raw = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
-  const historyStatus = raw("historyStatus") as "PENDING" | "CONFIRMED" | "REJECTED" | undefined;
+  const VALID_PAYMENT_STATUSES = ["PENDING", "CONFIRMED", "REJECTED"] as const;
+  type ValidStatus = (typeof VALID_PAYMENT_STATUSES)[number];
+  const rawStatus = raw("historyStatus");
+  const historyStatus: ValidStatus | undefined = (VALID_PAYMENT_STATUSES as readonly string[]).includes(rawStatus ?? "")
+    ? (rawStatus as ValidStatus)
+    : undefined;
   const historyActivity = raw("historyActivity") || undefined;
 
   const { page: historyPage, pageSize: historyPageSize, skip: historySkip, take: historyTake } =

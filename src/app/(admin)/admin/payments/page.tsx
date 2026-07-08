@@ -57,7 +57,12 @@ export default async function AdminPaymentsPage({
 
   const filterMonth = raw("month") ? Number.parseInt(raw("month")!) : undefined;
   const filterYear = raw("year") ? Number.parseInt(raw("year")!) : undefined;
-  const filterStatus = raw("status") as "PENDING" | "CONFIRMED" | "REJECTED" | undefined;
+  const VALID_STATUSES = ["PENDING", "CONFIRMED", "REJECTED"] as const;
+  type ValidStatus = (typeof VALID_STATUSES)[number];
+  const rawStatus = raw("status");
+  const filterStatus: ValidStatus | undefined = (VALID_STATUSES as readonly string[]).includes(rawStatus ?? "")
+    ? (rawStatus as ValidStatus)
+    : undefined;
   const filterActivity = raw("activityId") || undefined;
   const search = raw("search") ?? "";
   const { sortBy, sortDir } = parseSort(sp, "createdAt", "desc");
