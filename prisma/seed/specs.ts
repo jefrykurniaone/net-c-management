@@ -5,6 +5,7 @@ import {
     addDays,
     nextWeekday,
     startOfDay,
+    wibDayStart,
     uniquePeriods,
     Period,
 } from './dates';
@@ -54,8 +55,10 @@ export const SCENARIO_SPECS: Record<string, SessionSpec> = {
     cancelled: { key: 'cancelled', slug: 'badminton', title: 'Rained Out (Cancelled)', date: addDays(startOfDay(now), 3), startTime: '19:00', endTime: '21:00', location: 'GOR Cempaka Court 3', maxPlayers: 24, fee: 25_000, status: SessionStatus.CANCELLED },
     // Happening right now (anchor day) → tests the ONGOING state.
     ongoing: { key: 'ongoing', slug: 'basket', title: 'Live Pickup (Ongoing)', date: startOfDay(now), startTime: '19:30', endTime: '21:30', location: 'GBK Basketball Hall', maxPlayers: 10, fee: 20_000, status: SessionStatus.ONGOING },
-    // Scheduled today, dayReminderSentAt = null → target for the day-reminder cron.
-    todayReminder: { key: 'todayReminder', slug: 'tennis', title: 'Today Ladder (Reminder Test)', date: startOfDay(now), startTime: '17:00', endTime: '19:00', location: 'Senayan Tennis Court 2', maxPlayers: 8, fee: 20_000 },
+    // Scheduled today (WIB), dayReminderSentAt = null → target for the day-reminder
+    // cron. Uses wibDayStart so the stored date lands in the cron's WIB-day window
+    // (local startOfDay would fall just outside it on a non-WIB machine).
+    todayReminder: { key: 'todayReminder', slug: 'tennis', title: 'Today Ladder (Reminder Test)', date: wibDayStart(now), startTime: '17:00', endTime: '19:00', location: 'Senayan Tennis Court 2', maxPlayers: 8, fee: 20_000 },
 };
 
 const ALL_SPECS = [...UPCOMING_SPECS, ...Object.values(SCENARIO_SPECS)];

@@ -87,6 +87,10 @@ export default function AdminSettingsPage() {
 
     async function handleSubmit(e: React.SyntheticEvent) {
         e.preventDefault();
+        if (!settings.communityName?.trim()) {
+            toast.error(t.validation.communityNameRequired);
+            return;
+        }
         setSaving(true);
         try {
             const res = await fetch('/api/settings', {
@@ -125,7 +129,7 @@ export default function AdminSettingsPage() {
                 </h1>
                 <p className='text-sm text-muted-foreground mt-1'>
                     {t.admin.settingsSubtitle}{' '}
-                    {settings.communityName ?? t.brand.defaultCommunityName}
+                    {settings.communityName?.trim() || t.brand.defaultCommunityName}
                 </p>
             </div>
 

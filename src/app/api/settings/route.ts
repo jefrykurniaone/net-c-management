@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdminRole } from "@/lib/utils";
+import { getLocale } from "@/lib/i18n/locale";
+import { getDictionary } from "@/lib/i18n/dictionaries";
 import { NextResponse } from "next/server";
 
 // GET /api/settings — get all settings as a key-value map
@@ -26,6 +28,16 @@ export async function PATCH(req: Request) {
   }
 
   const body = await req.json() as Record<string, string>;
+
+  // Community name is the app's branding fallback everywhere — never let it be
+  // blanked out. Reject an empty/whitespace value when the key is submitted.
+  if ("communityName" in body && String(body.communityName ?? "").trim() === "") {
+    const t = getDictionary(await getLocale());
+    return NextResponse.json(
+      { error: t.validation.communityNameRequired },
+      { status: 400 },
+    );
+  }
 
   await Promise.all(
     Object.entries(body).map(([key, value]) =>

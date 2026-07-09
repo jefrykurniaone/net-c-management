@@ -1,6 +1,8 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isAdminRole } from '@/lib/utils';
+import { getLocale } from '@/lib/i18n/locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 import { NextResponse } from 'next/server';
 import { format } from 'date-fns';
 
@@ -22,6 +24,7 @@ export async function GET(req: Request) {
         ? Number.parseInt(searchParams.get('year')!)
         : undefined;
     const activityId = searchParams.get('activityId') ?? undefined;
+    const h = getDictionary(await getLocale()).admin.csvHeaders;
 
     const payments = await prisma.payment.findMany({
         where: {
@@ -38,17 +41,17 @@ export async function GET(req: Request) {
 
     const rows = [
         [
-            'No',
-            'Nama',
-            'Email',
-            'WhatsApp',
-            'Activity',
-            'Bulan',
-            'Tahun',
-            'Jumlah (Rp)',
-            'Status',
-            'Tanggal Upload',
-            'Tanggal Konfirmasi',
+            h.no,
+            h.name,
+            h.email,
+            h.whatsapp,
+            h.activity,
+            h.month,
+            h.year,
+            h.amount,
+            h.status,
+            h.uploadedAt,
+            h.confirmedAt,
         ],
         ...payments.map((p, i) => [
             String(i + 1),

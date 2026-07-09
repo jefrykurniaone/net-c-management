@@ -124,10 +124,10 @@ export default async function PaymentsPage({
 
   // Bill only for the mode the member actually chose: a MONTHLY membership owes
   // this month's dues; a PER_SESSION membership owes per reserved session (the
-  // outstandingBills below); an unselected (null) mode owes nothing yet.
-  // Only surface the dues entry once the member has triggered a bill — either
-  // by reserving a session (live hold) or by having a payment record this period.
-  // Merely switching the payment-mode preference without registering owes nothing.
+  // outstandingBills below); an unselected (null) mode owes nothing yet. Every
+  // MONTHLY membership with a fee is surfaced for the period — the dashboard's
+  // unpaid banner uses the same rule, so the two views stay consistent (they
+  // used to diverge when a registered seat carried no live hold — BUG-04).
   const monthlyActivities = memberships
     .filter(
       (m) =>
@@ -137,13 +137,17 @@ export default async function PaymentsPage({
           currentMonth,
           currentYear,
         ) === "MONTHLY" &&
-        m.activity.monthlyFee > 0 &&
-        (statusByActivity.has(m.activity.id) || holdByActivity.has(m.activity.id)),
+        m.activity.monthlyFee > 0,
     )
     .map((m) => m.activity)
     .sort((a, b) => a.name.localeCompare(b.name));
   const isPaid = (activityId: string) => statusByActivity.get(activityId) === "CONFIRMED";
-  const unpaidActivities = monthlyActivities.filter((a) => !isPaid(a.id));
+  // A submitted-but-unconfirmed proof is "in review": the member has acted, so
+  // it neither nags in the banner nor shows as plain "Unpaid" on the card.
+  const isInReview = (activityId: string) => statusByActivity.get(activityId) === "PENDING";
+  const unpaidActivities = monthlyActivities.filter(
+    (a) => !isPaid(a.id) && !isInReview(a.id),
+  );
   const firstUnpaid = unpaidActivities[0];
 
   const monthLabel = `${t.months[currentMonth]} ${currentYear}`;
@@ -210,7 +214,8 @@ export default async function PaymentsPage({
           <div className="bg-card rounded-xl border border-border divide-y divide-border overflow-hidden">
             {monthlyActivities.map((activity) => {
               const paid = isPaid(activity.id);
-              const hold = paid ? undefined : holdByActivity.get(activity.id);
+              const inReview = isInReview(activity.id);
+              const hold = paid || inReview ? undefined : holdByActivity.get(activity.id);
               return (
                 <div key={activity.id} className="flex items-center gap-3 p-4">
                   <ActivityInitial name={activity.name} color={activity.color} />
@@ -222,6 +227,8 @@ export default async function PaymentsPage({
                   </div>
                   {paid ? (
                     <Badge variant="success">{t.payments.paid}</Badge>
+                  ) : inReview ? (
+                    <Badge variant="secondary">{t.payments.inReview}</Badge>
                   ) : (
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <Link href="/payments/upload">

@@ -1,6 +1,8 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { isAdminRole } from '@/lib/utils';
+import { getLocale } from '@/lib/i18n/locale';
+import { getDictionary } from '@/lib/i18n/dictionaries';
 import { NextResponse } from 'next/server';
 import { format } from 'date-fns';
 
@@ -18,6 +20,7 @@ export async function GET(
     }
 
     const { id: sessionId } = await params;
+    const h = getDictionary(await getLocale()).admin.csvHeaders;
 
     const activitySession = await prisma.activitySession.findUnique({
         where: { id: sessionId },
@@ -46,12 +49,12 @@ export async function GET(
 
     const rows = [
         [
-            'No',
-            'Nama',
-            'Email',
-            'WhatsApp',
-            'Status',
-            'Waktu Daftar',
+            h.no,
+            h.name,
+            h.email,
+            h.whatsapp,
+            h.status,
+            h.registeredAt,
         ],
         ...activitySession.attendances.map((a, i) => [
             String(i + 1),

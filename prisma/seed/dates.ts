@@ -58,6 +58,21 @@ export function startOfDay(date: Date): Date {
     return d;
 }
 
+const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+
+/**
+ * UTC-midnight of the WIB (UTC+7) calendar day containing `date`. The
+ * generate-sessions and day-reminder crons key off the WIB day and match on
+ * dates stored as UTC midnight, so a "today" scenario session must use this
+ * (not the local-timezone startOfDay) to land inside the cron's window.
+ */
+export function wibDayStart(date: Date = now): Date {
+    const wib = new Date(date.getTime() + WIB_OFFSET_MS);
+    return new Date(
+        Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate()),
+    );
+}
+
 function startOfMonth(date: Date): Date {
     return new Date(date.getFullYear(), date.getMonth(), 1);
 }

@@ -24,6 +24,7 @@ import {
     BankAccountInfo,
     type BankAccount,
 } from '@/components/payments/bank-account-info';
+import { validateProofFile } from '@/lib/proof-file';
 
 const currentYear = new Date().getFullYear();
 const currentMonth = new Date().getMonth() + 1;
@@ -83,6 +84,12 @@ export default function UploadPaymentPage() {
     function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
         const f = e.target.files?.[0];
         if (!f) return;
+        const error = validateProofFile(f, t);
+        if (error) {
+            toast.error(error);
+            e.target.value = '';
+            return;
+        }
         setFile(f);
         setPreview(URL.createObjectURL(f));
     }

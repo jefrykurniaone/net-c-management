@@ -87,6 +87,11 @@ export default async function AdminSessionsPage({
         getActivities(),
     ]);
 
+    // An empty table under an active search/filter is "no matches", not the
+    // cold-start "no sessions yet" — say which so it doesn't read as empty DB.
+    const isFiltered = Boolean(search || selected);
+    const emptyLabel = isFiltered ? t.admin.noSessionsMatch : t.admin.noSessions;
+
     return (
         <div className='space-y-6'>
             <div className='flex items-center justify-between flex-wrap gap-3'>
@@ -138,7 +143,7 @@ export default async function AdminSessionsPage({
 
             {/* Mobile: stacked cards */}
             <div className='md:hidden'>
-                <SessionCards sessions={sessions} t={t} locale={locale} />
+                <SessionCards sessions={sessions} t={t} locale={locale} emptyLabel={emptyLabel} />
                 <DataTablePagination total={total} page={page} pageSize={pageSize} searchParams={sp} labels={t.table.pagination} />
             </div>
 
@@ -239,7 +244,7 @@ export default async function AdminSessionsPage({
                                     <td
                                         colSpan={6}
                                         className='px-4 py-8 text-center text-muted-foreground'>
-                                        {t.admin.noSessions}
+                                        {emptyLabel}
                                     </td>
                                 </tr>
                             )}

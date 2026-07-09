@@ -35,6 +35,12 @@ export default auth((req) => {
     }
   }
 
+  // A completed profile never needs onboarding again — the form is empty, and
+  // resubmitting it would overwrite the member's saved name/phone.
+  if (isLoggedIn && isProfileComplete && isOnboarding) {
+    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+  }
+
   // Redirect non-admin users away from admin routes
   if (isLoggedIn && isAdminRoute && !isAdmin) {
     return NextResponse.redirect(new URL("/dashboard", nextUrl));

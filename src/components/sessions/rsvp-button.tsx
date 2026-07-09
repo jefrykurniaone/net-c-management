@@ -263,6 +263,11 @@ export function RSVPButton({
                 </div>
             );
         }
+        // A full session has no seat to claim — the register CTA would only 409
+        // server-side, so surface the "full" state up front instead.
+        if (isFull) {
+            return <DisabledCta label={t.sessions.sessionFull} />;
+        }
         return (
             <div className='space-y-2'>
                 <Button

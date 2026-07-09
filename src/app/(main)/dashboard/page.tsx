@@ -150,11 +150,14 @@ export default async function DashboardPage() {
         billsByActivity.set(bill.activity.id, (billsByActivity.get(bill.activity.id) ?? 0) + 1);
     }
     const upcomingCount = upcomingSessions.length;
-    const unpaidMonthly = myActivities.filter(
-        (a) =>
-            monthlyActivityIds.has(a.id) &&
-            paymentByActivity.get(a.id)?.status !== 'CONFIRMED',
-    );
+    // A CONFIRMED payment is settled; a PENDING one is in review (member already
+    // acted) — neither counts as an unpaid due that still needs the member's
+    // attention, so both drop out of the banner/count (matches /payments).
+    const unpaidMonthly = myActivities.filter((a) => {
+        if (!monthlyActivityIds.has(a.id)) return false;
+        const status = paymentByActivity.get(a.id)?.status;
+        return status !== 'CONFIRMED' && status !== 'PENDING';
+    });
     const firstUnpaid = unpaidMonthly[0];
     const duesCount = unpaidMonthly.length + outstandingBills.length;
 
@@ -285,6 +288,10 @@ export default async function DashboardPage() {
                                         payment?.status === 'CONFIRMED' ? (
                                             <Badge variant='success'>
                                                 {t.dashboard.paid}
+                                            </Badge>
+                                        ) : payment?.status === 'PENDING' ? (
+                                            <Badge variant='secondary'>
+                                                {t.payments.inReview}
                                             </Badge>
                                         ) : (
                                             <Link href='/payments/upload'>

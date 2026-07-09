@@ -21,6 +21,7 @@ import {
     BankAccountInfo,
     type BankAccount,
 } from '@/components/payments/bank-account-info';
+import { validateProofFile } from '@/lib/proof-file';
 
 /** The session prefill the register-&-pay uploader needs (display only). */
 interface SessionInfo {
@@ -54,6 +55,12 @@ export default function SessionPayPage() {
     function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
         const f = e.target.files?.[0];
         if (!f) return;
+        const error = validateProofFile(f, t);
+        if (error) {
+            toast.error(error);
+            e.target.value = '';
+            return;
+        }
         setFile(f);
         setPreview(URL.createObjectURL(f));
     }
@@ -133,7 +140,7 @@ export default function SessionPayPage() {
                         />
                         {session && (
                             <p className='text-xs text-muted-foreground'>
-                                {t.payments.amountLocked}
+                                {t.payments.sessionAmountLocked}
                             </p>
                         )}
                         {owedLabel && (

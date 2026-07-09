@@ -73,9 +73,11 @@ export function SessionCards({
   sessions,
   t,
   locale,
-}: Readonly<{ sessions: SessionRow[]; t: Dictionary; locale: Locale }>) {
+  emptyLabel,
+}: Readonly<{ sessions: SessionRow[]; t: Dictionary; locale: Locale; emptyLabel?: string }>) {
   const dateLocale = getDateFnsLocale(locale);
-  if (sessions.length === 0) return <CardListEmpty>{t.admin.noSessions}</CardListEmpty>;
+  if (sessions.length === 0)
+    return <CardListEmpty>{emptyLabel ?? t.admin.noSessions}</CardListEmpty>;
   return (
     <div className="space-y-3">
       {sessions.map((s) => (

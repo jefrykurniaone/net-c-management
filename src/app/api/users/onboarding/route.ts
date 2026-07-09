@@ -26,6 +26,19 @@ export async function PATCH(req: Request) {
     const { name, phone, activityIds } = parsed.data;
     const userId = session.user.id;
 
+    // Onboarding runs once. If the profile is already complete, refuse: a second
+    // submit (the form loads blank) would clobber the saved name/phone.
+    const existing = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { isProfileComplete: true },
+    });
+    if (existing?.isProfileComplete) {
+        return NextResponse.json(
+            { error: t.common.error },
+            { status: 409 },
+        );
+    }
+
     // Only allow joining activity that are active.
     const validActivities = await prisma.activity.findMany({
         where: { id: { in: activityIds }, isActive: true },
