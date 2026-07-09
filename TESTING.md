@@ -279,3 +279,58 @@ that is the whole fake roster. Do **not** run it on a seeded activity. Instead:
 
 **After any email round, reseed (`npm run db:seed`) to remove the test data and
 restore the fake addresses.**
+
+---
+
+## 15. Resetting **production** to a clean state
+
+> ⚠️ **Destructive and irreversible.** These act on the real production database
+> (`.env.prod`). Take a Supabase backup first. `npm run db:seed` /
+> `npm run db:seed:prod` are **not** interchangeable — the plain `db:seed` loads
+> the demo dataset and must **never** run against prod.
+
+Prisma CLI targets prod only when `DATABASE_TARGET=prod` (see `prisma.config.ts`,
+which then loads `.env.prod`). `npm run db:seed:prod` is **idempotent and
+non-destructive** — it only upserts Settings, the two Activities, and promotes the
+owner (only if that user already signed in with Google). It does **not** wipe
+data.
+
+### Option A — targeted cleanup (recommended)
+
+Removes the transactional test data (sessions, payments, RSVPs) but keeps real
+users, Google logins, memberships, activities and settings.
+
+1. Open the prod DB — Supabase SQL editor, or `npm run db:studio:prod`.
+2. Delete the transactional tables (order avoids FK issues):
+   ```sql
+   DELETE FROM "Attendance";
+   DELETE FROM "Payment";
+   DELETE FROM "ActivitySession";
+   -- optional: also clear test memberships (members must rejoin afterwards)
+   -- DELETE FROM "Membership";
+   ```
+3. Re-assert the catalog + owner:
+   ```bash
+   npm run db:seed:prod
+   ```
+
+### Option B — full wipe (true blank slate)
+
+Drops **every** row (including real users and their Google account links) and
+re-applies migrations.
+
+```bash
+# --skip-seed is REQUIRED: migrate reset would otherwise run the local DEMO
+# seed (prisma.config.ts) and inject demo data into prod.
+cross-env DATABASE_TARGET=prod npx prisma migrate reset --skip-seed --force
+
+npm run db:seed:prod   # settings + activities (owner is promoted only after
+                       # they sign in with Google again — see seed-prod.ts)
+```
+
+Notes:
+- `migrate reset` needs a **direct** database connection, not the Supabase
+  transaction pooler (port 6543). Point `.env.prod`'s `DATABASE_URL` (or
+  `DIRECT_URL`) at the direct/session connection for the reset.
+- After a full wipe the owner must sign in with Google once, then re-run
+  `npm run db:seed:prod` (or `npm run db:promote:prod`) to regain the OWNER role.

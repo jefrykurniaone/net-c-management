@@ -24,6 +24,7 @@ import {
     resolvePaymentMode,
     singleOfferedMode,
     currentPeriod,
+    toPeriodKey,
 } from '@/lib/payment-mode';
 import { getSessionQuotas } from '@/lib/recurring-sessions';
 import { getSettings } from '@/lib/settings';
@@ -162,6 +163,26 @@ export default async function SessionDetailPage({
     const effectiveMode = membership?.isActive
         ? resolvePaymentMode(membership, offered, period.month, period.year)
         : singleOfferedMode(offered);
+
+    // A queued mode switch that hasn't reached this session's period yet: surface
+    // it so a switch on an already-paid period doesn't read as a silent no-op
+    // (the CTA price stays the same until the switch's period arrives).
+    const pendingSwitchNote =
+        membership?.pendingMode &&
+        membership.pendingEffectiveFrom &&
+        toPeriodKey(period.month, period.year) < membership.pendingEffectiveFrom
+            ? t.sessions.modeSwitchPending
+                  .replace(
+                      '{mode}',
+                      membership.pendingMode === 'MONTHLY'
+                          ? t.paymentMode.monthly
+                          : t.paymentMode.perSession,
+                  )
+                  .replace(
+                      '{period}',
+                      `${t.months[membership.pendingEffectiveFrom % 100]} ${Math.floor(membership.pendingEffectiveFrom / 100)}`,
+                  )
+            : null;
 
     const [quotas, settings] = await Promise.all([
         getSessionQuotas([activitySession]),
@@ -374,6 +395,11 @@ export default async function SessionDetailPage({
                         }
                         adminWhatsapp={whatsapp}
                     />
+                    {pendingSwitchNote && (
+                        <p className='text-center text-xs text-muted-foreground'>
+                            {pendingSwitchNote}
+                        </p>
+                    )}
                     {whatsapp && (
                         <WhatsappButton
                             phone={whatsapp}

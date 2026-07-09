@@ -167,11 +167,27 @@ export function RSVPButton({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mode }),
             });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.error ?? t.common.error);
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data.error ?? t.common.error);
+            // A switch on an already-paid period is queued for the next period
+            // (current-period immutability) — say so, or it reads as a no-op since
+            // the CTA price stays the same for this period.
+            const isQueued =
+                data.pendingMode === mode &&
+                data.pendingEffectiveFrom &&
+                data.paymentMode !== mode;
+            if (isQueued) {
+                const key: number = data.pendingEffectiveFrom;
+                const label = mode === 'MONTHLY' ? t.paymentMode.monthly : t.paymentMode.perSession;
+                const period = `${t.months[key % 100]} ${Math.floor(key / 100)}`;
+                toast.success(
+                    t.sessions.toastModeQueued
+                        .replace('{mode}', label)
+                        .replace('{period}', period),
+                );
+            } else {
+                toast.success(t.sessions.toastModeSwitched);
             }
-            toast.success(t.sessions.toastModeSwitched);
             router.refresh();
         } catch (err) {
             toast.error(err instanceof Error ? err.message : t.common.error);
