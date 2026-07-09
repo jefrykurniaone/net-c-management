@@ -54,6 +54,9 @@ public/uploads/
 # local planning notes (not part of the project)
 plans/
 
+# QA docs & generated test-case reports (local artifacts, not app source)
+docs/
+
 # Playwright MCP browser artifacts
 .playwright-mcp/
 

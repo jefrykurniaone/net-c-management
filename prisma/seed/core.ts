@@ -86,6 +86,29 @@ async function upsertMember(email: string, name: string, phone: string): Promise
     return user.id;
 }
 
+/** Email of the one deliberately-incomplete member (onboarding-flow target). */
+export const INCOMPLETE_MEMBER_EMAIL = 'newbie@xclub.local';
+
+/**
+ * One member whose profile is NOT complete: signs in but is bounced to
+ * /onboarding, and shows the "Profile Incomplete" badge in the admin list. Has
+ * no memberships. Reseeding resets it even if a tester completed onboarding.
+ */
+async function upsertIncompleteMember(): Promise<void> {
+    await prisma.user.upsert({
+        where: { email: INCOMPLETE_MEMBER_EMAIL },
+        update: { isProfileComplete: false, isActive: true, phone: null },
+        create: {
+            email: INCOMPLETE_MEMBER_EMAIL,
+            name: 'Newbie (No Onboarding)',
+            role: Role.MEMBER,
+            isActive: true,
+            isProfileComplete: false,
+        },
+    });
+    console.log(`[ok] Incomplete-profile member: ${INCOMPLETE_MEMBER_EMAIL} (onboarding-flow test)`);
+}
+
 /** Upsert Adi + every named member; returns an email → userId map. */
 export async function seedMembers(): Promise<Map<string, string>> {
     const idByEmail = new Map<string, string>();
@@ -97,5 +120,8 @@ export async function seedMembers(): Promise<Map<string, string>> {
         idByEmail.set(email, await upsertMember(email, name, phone));
     }
     console.log(`[ok] Members: ${idByEmail.size} (incl. Adi Pratama)`);
+    // Not added to the id map on purpose: it has no memberships/attendances and
+    // must not be picked up by any roster loop.
+    await upsertIncompleteMember();
     return idByEmail;
 }

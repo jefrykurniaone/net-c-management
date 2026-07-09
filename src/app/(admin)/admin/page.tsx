@@ -69,10 +69,14 @@ export default async function AdminDashboardPage() {
             where: { isActive: true },
             _count: true,
         }),
+        // Only MONTHLY dues count toward "dues collected" — a per-session
+        // (SESSION) payment is not a monthly due and would otherwise push the
+        // count above the member total (OBS-01: "22/21").
         prisma.payment.groupBy({
             by: ['activityId'],
             where: {
                 status: 'CONFIRMED',
+                type: 'MONTHLY',
                 month: currentMonth,
                 year: currentYear,
             },
@@ -356,7 +360,13 @@ export default async function AdminDashboardPage() {
                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
                     {activities.map((a) => {
                         const members = memberCounts.get(a.id) ?? 0;
-                        const confirmed = confirmedCounts.get(a.id) ?? 0;
+                        // Cap at the member total: a lingering confirmed payment
+                        // from a member who has since left must not read as
+                        // "more collected than owed".
+                        const confirmed = Math.min(
+                            confirmedCounts.get(a.id) ?? 0,
+                            members,
+                        );
                         const att = attendance.get(a.id);
                         const rate =
                             att && att.total > 0
