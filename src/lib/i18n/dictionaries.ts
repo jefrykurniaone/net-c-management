@@ -33,38 +33,18 @@ const en = {
         darkMode: 'Themes',
     },
     landing: {
-        signIn: 'Sign In',
-        badge: 'XClub Community Platform',
-        heroTitle: 'Manage Your Community',
-        heroHighlight: 'More Easily',
-        heroParagraph:
-            'Schedule training sessions, manage member dues, and track attendance — all in one platform for',
-        featuresTitle: 'Key Features',
-        features: [
-            {
-                title: 'Session Schedule',
-                desc: 'View and sign up for upcoming training sessions with ease.',
-            },
-            {
-                title: 'Monthly Dues',
-                desc: 'Upload payment proof and track your dues payment status.',
-            },
-            {
-                title: 'Member Management',
-                desc: 'Admins can manage member data and community status.',
-            },
-            {
-                title: 'Admin Panel',
-                desc: 'Dedicated admin dashboard for payment confirmation & reports.',
-            },
-        ],
+        purpose:
+            'The board for this community: sessions posted, seats claimed, dues settled.',
+        accountNote:
+            'Continuing with Google signs you in, and creates your account the first time you do it.',
         footer: 'All rights reserved.',
     },
     auth: {
         signInTitle: 'Sign In',
         signInSubtitle: 'Sessions, RSVPs and dues for your whole community — in one place.',
         signInButton: 'Continue with Google',
-        signInNote: 'New members need an invite from a club admin. By signing in you agree to the club rules.',
+        signInNote:
+            'Continuing with Google creates your account the first time you do it. By signing in you agree to the club rules.',
         errorTitle: 'Sign In Failed',
         errorMessage:
             'An error occurred during the login process. Please try again.',
@@ -746,38 +726,18 @@ const id: typeof en = {
         darkMode: 'Tema',
     },
     landing: {
-        signIn: 'Masuk',
-        badge: 'Platform XClub Community',
-        heroTitle: 'Kelola Komunitas Anda',
-        heroHighlight: 'Lebih Mudah',
-        heroParagraph:
-            'Atur jadwal sesi latihan, kelola iuran anggota, dan pantau kehadiran — semua dalam satu platform untuk',
-        featuresTitle: 'Fitur Utama',
-        features: [
-            {
-                title: 'Jadwal Sesi',
-                desc: 'Lihat dan daftar sesi latihan yang akan datang dengan mudah.',
-            },
-            {
-                title: 'Iuran Bulanan',
-                desc: 'Upload bukti bayar dan pantau status pembayaran iuran kamu.',
-            },
-            {
-                title: 'Manajemen Anggota',
-                desc: 'Admin dapat mengelola data dan status anggota komunitas.',
-            },
-            {
-                title: 'Panel Admin',
-                desc: 'Dashboard khusus admin untuk konfirmasi pembayaran & laporan.',
-            },
-        ],
+        purpose:
+            'Papan untuk komunitas ini: sesi dipasang, kursi diambil, iuran dilunasi.',
+        accountNote:
+            'Lanjut dengan Google membuatmu masuk, dan membuatkan akunmu saat pertama kali kamu memakainya.',
         footer: 'Semua hak dilindungi.',
     },
     auth: {
         signInTitle: 'Masuk',
         signInSubtitle: 'Sesi, RSVP, dan iuran untuk seluruh komunitasmu — dalam satu tempat.',
         signInButton: 'Lanjutkan dengan Google',
-        signInNote: 'Anggota baru perlu undangan dari admin klub. Dengan masuk, kamu menyetujui aturan klub.',
+        signInNote:
+            'Lanjut dengan Google akan membuatkan akunmu saat pertama kali kamu memakainya. Dengan masuk, kamu menyetujui aturan klub.',
         errorTitle: 'Gagal Masuk',
         errorMessage: 'Terjadi kesalahan saat proses login. Silakan coba lagi.',
         backToSignIn: 'Kembali ke halaman login',

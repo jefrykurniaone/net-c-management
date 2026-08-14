@@ -1,14 +1,88 @@
-import Link from 'next/link';
-import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { continueWithGoogle } from '@/lib/auth-actions';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, CreditCard, Users, ShieldCheck, Sparkles } from 'lucide-react';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
+import { GoogleMark } from '@/components/auth/GoogleMark';
+
+// The landing threshold. Nobody arrives here to be sold to: every
+// authenticated visitor is redirected away before this renders, so the only
+// people who see it are members of this community who are not signed in, and
+// for them signing in *is* signing up. The page is therefore the board's own
+// header plate and one way onto it — identity, one sentence of what the board
+// is for, one action, and the truth about what that action does.
+
+// DESIGN.md: containers max at 72rem for board surfaces and 40rem for
+// single-task columns.
+const BOARD_WIDTH_CLASS = 'max-w-[72rem]';
+
+/** Full-bleed header rail: identity plate at left, board controls at right. */
+function IdentityRail({
+    communityName,
+    logoUrl,
+}: Readonly<{ communityName: string; logoUrl: string }>) {
+    return (
+        <header className='border-b border-rule'>
+            <div
+                className={`mx-auto flex ${BOARD_WIDTH_CLASS} flex-wrap items-center gap-block px-block py-cell`}>
+                <div className='flex min-w-0 items-center gap-cell'>
+                    <CommunityIdentityMark
+                        communityName={communityName}
+                        logoUrl={logoUrl}
+                        size='md'
+                    />
+                    {/* The name wraps at its spaces and never truncates or
+                        breaks mid-word: a community that cannot read its own
+                        name off the plate is the one thing this page cannot
+                        get wrong. A name too wide for the row sends the
+                        controls to a second line instead. */}
+                    <span className='type-mark text-foreground'>
+                        {communityName}
+                    </span>
+                </div>
+                <div className='ml-auto flex shrink-0 items-center gap-hair'>
+                    <ThemeToggle compact />
+                    <LanguageSwitcher compact />
+                </div>
+            </div>
+        </header>
+    );
+}
+
+/**
+ * One tile resting on the board, divided by a shared rule: what this board is,
+ * then the single way onto it and what taking it actually does.
+ */
+function ThresholdTile({ t }: Readonly<{ t: Dictionary }>) {
+    // Flat at rest: DESIGN.md reserves the tile-rest shadow for things that are
+    // genuinely movable tiles, which a container is not. Only the action inside
+    // it carries one.
+    return (
+        <div className='w-full max-w-[40rem] border border-rule bg-card'>
+            <h1 className='type-display text-balance p-block text-card-foreground'>
+                {t.landing.purpose}
+            </h1>
+            <div className='flex flex-col gap-cell border-t border-rule p-block'>
+                <form action={continueWithGoogle}>
+                    <Button
+                        type='submit'
+                        className='type-label h-auto w-full gap-cell px-5 py-3 shadow-tile hover:bg-foreground hover:text-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:shadow-tile-pressed active:not-aria-[haspopup]:translate-y-0 sm:w-auto'>
+                        <GoogleMark className='size-5' />
+                        {t.auth.signInButton}
+                    </Button>
+                </form>
+                <p className='type-caption max-w-[65ch] text-muted-foreground'>
+                    {t.landing.accountNote}
+                </p>
+            </div>
+        </div>
+    );
+}
 
 export default async function LandingPage() {
     const [session, settings, locale] = await Promise.all([
@@ -26,81 +100,21 @@ export default async function LandingPage() {
         redirect('/dashboard');
     }
 
-    const featureIcons = [CalendarDays, CreditCard, Users, ShieldCheck];
-
     return (
-        <div className='min-h-screen bg-background'>
-            {/* Header */}
-            <header className='flex items-center justify-between px-6 py-4 max-w-6xl mx-auto'>
-                <div className='flex items-center gap-3'>
-                    <CommunityIdentityMark
-                        communityName={communityName}
-                        logoUrl={logoUrl}
-                        size='md'
-                    />
-                    <span className='text-xl font-bold text-foreground'>
-                        {communityName}
-                    </span>
-                </div>
-                <div className='flex items-center gap-1'>
-                    <ThemeToggle compact />
-                    <LanguageSwitcher compact />
-                </div>
-            </header>
-
-            {/* Hero */}
-            <section className='text-center py-20 px-6 max-w-4xl mx-auto'>
-                <div className='inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-6'>
-                    <Sparkles className='w-4 h-4' />
-                    <span>{t.landing.badge}</span>
-                </div>
-                <h1 className='text-4xl md:text-5xl font-extrabold text-foreground mb-4 leading-tight'>
-                    {t.landing.heroTitle}{' '}
-                    <span className='text-primary'>
-                        {t.landing.heroHighlight}
-                    </span>
-                </h1>
-                <p className='text-lg text-muted-foreground max-w-2xl mx-auto mb-8'>
-                    {t.landing.heroParagraph} {communityName}.
+        <div className='flex min-h-dvh flex-col bg-background'>
+            <IdentityRail communityName={communityName} logoUrl={logoUrl} />
+            <main className='flex flex-1 items-center justify-center px-block py-bay'>
+                <ThresholdTile t={t} />
+            </main>
+            <footer className='border-t border-rule px-block py-cell'>
+                <p
+                    className={`mx-auto ${BOARD_WIDTH_CLASS} type-caption text-muted-foreground`}>
+                    ©{' '}
+                    <span className='tabular-nums'>
+                        {new Date().getFullYear()}
+                    </span>{' '}
+                    {communityName}. {t.landing.footer}
                 </p>
-                <Link href='/auth/signin'>
-                    <Button size='lg'>
-                        {t.landing.signIn}
-                    </Button>
-                </Link>
-            </section>
-
-            {/* Features */}
-            <section className='py-16 px-6 max-w-6xl mx-auto'>
-                <h2 className='text-2xl font-bold text-center text-foreground mb-10'>
-                    {t.landing.featuresTitle}
-                </h2>
-                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-                    {t.landing.features.map(({ title, desc }, i) => {
-                        const Icon = featureIcons[i];
-                        return (
-                            <div
-                                key={title}
-                                className='bg-card rounded-xl p-6 shadow-sm border border-border'>
-                                <div className='w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-4'>
-                                    <Icon className='w-5 h-5' />
-                                </div>
-                                <h3 className='font-semibold text-foreground mb-2'>
-                                    {title}
-                                </h3>
-                                <p className='text-sm text-muted-foreground'>
-                                    {desc}
-                                </p>
-                            </div>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* Footer */}
-            <footer className='text-center py-8 text-sm text-muted-foreground border-t border-border'>
-                © {new Date().getFullYear()} {communityName}.{' '}
-                {t.landing.footer}
             </footer>
         </div>
     );
