@@ -97,7 +97,11 @@
 :root {
   --board: #E8EBEA;
   --tile: #F7F9F8;
-  --rule: #7F8B87;
+  /* The Visible Rule Rule: ≥3:1 against the cell it borders. DESIGN.md's
+     #7F8B87 measures 3.34:1 on tile but only 2.94:1 on the ground, and
+     outline controls sit on the ground. Darkened until it clears both
+     (3.72:1 tile, 3.28:1 ground). */
+  --rule: #77837F;
   --wash-ink: #E4F0EA;
   --wash-tape: #FBF3E2;
   --wash-strike: #FAECEA;
@@ -149,8 +153,8 @@
   --accent: #E4F0EA;
   --accent-foreground: #17614A;
 
-  --border: #7F8B87;
-  --input: #7F8B87;
+  --border: #77837F;
+  --input: #77837F;
   --ring: #17614A;
 
   --chart-1: #17614A;
@@ -168,7 +172,7 @@
   --sidebar-primary-foreground: #F7F9F8;
   --sidebar-accent: #E4F0EA;
   --sidebar-accent-foreground: #17614A;
-  --sidebar-border: #7F8B87;
+  --sidebar-border: #77837F;
   --sidebar-ring: #17614A;
 }
 
@@ -224,7 +228,10 @@
   --secondary-foreground: #9AA6A0;
   --muted: #1B2621;
   --muted-foreground: #9AA6A0;
-  --subtle-foreground: #8A968F;
+  /* DESIGN.md's Chalk Quiet #8A968F measures 4.47:1 on board tile, just
+     short of 4.5. Lightened until it clears on both board surfaces
+     (4.70:1 tile, 5.35:1 ground) while staying below Chalk Secondary. */
+  --subtle-foreground: #8E9A93;
   --accent: #1E3A2E;
   --accent-foreground: #4FBF8E;
 
@@ -320,6 +327,14 @@
   }
   html {
     @apply font-sans;
+  }
+  /* The One Hand Rule. Tailwind's preflight hands code/pre a monospace
+     stack; a real board is lettered by one hand, so they inherit. */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: inherit;
   }
   /* Times, counts, capacities and Rupiah amounts are most of this
      product. Elements that carry them by definition get tabular
