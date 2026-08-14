@@ -33,31 +33,11 @@ const en = {
         darkMode: 'Themes',
     },
     landing: {
-        signIn: 'Sign In',
-        badge: 'XClub Community Platform',
-        heroTitle: 'Manage Your Community',
-        heroHighlight: 'More Easily',
-        heroParagraph:
-            'Schedule training sessions, manage member dues, and track attendance — all in one platform for',
-        featuresTitle: 'Key Features',
-        features: [
-            {
-                title: 'Session Schedule',
-                desc: 'View and sign up for upcoming training sessions with ease.',
-            },
-            {
-                title: 'Monthly Dues',
-                desc: 'Upload payment proof and track your dues payment status.',
-            },
-            {
-                title: 'Member Management',
-                desc: 'Admins can manage member data and community status.',
-            },
-            {
-                title: 'Admin Panel',
-                desc: 'Dedicated admin dashboard for payment confirmation & reports.',
-            },
-        ],
+        purpose:
+            'The board for this community: sessions posted, seats claimed, dues settled.',
+        continueWithGoogle: 'Continue with Google',
+        accountNote:
+            'Continuing with Google signs you in, and creates your account the first time you do it.',
         footer: 'All rights reserved.',
     },
     auth: {
@@ -746,31 +726,11 @@ const id: typeof en = {
         darkMode: 'Tema',
     },
     landing: {
-        signIn: 'Masuk',
-        badge: 'Platform XClub Community',
-        heroTitle: 'Kelola Komunitas Anda',
-        heroHighlight: 'Lebih Mudah',
-        heroParagraph:
-            'Atur jadwal sesi latihan, kelola iuran anggota, dan pantau kehadiran — semua dalam satu platform untuk',
-        featuresTitle: 'Fitur Utama',
-        features: [
-            {
-                title: 'Jadwal Sesi',
-                desc: 'Lihat dan daftar sesi latihan yang akan datang dengan mudah.',
-            },
-            {
-                title: 'Iuran Bulanan',
-                desc: 'Upload bukti bayar dan pantau status pembayaran iuran kamu.',
-            },
-            {
-                title: 'Manajemen Anggota',
-                desc: 'Admin dapat mengelola data dan status anggota komunitas.',
-            },
-            {
-                title: 'Panel Admin',
-                desc: 'Dashboard khusus admin untuk konfirmasi pembayaran & laporan.',
-            },
-        ],
+        purpose:
+            'Papan untuk komunitas ini: sesi dipasang, kursi diambil, iuran dilunasi.',
+        continueWithGoogle: 'Lanjut dengan Google',
+        accountNote:
+            'Lanjut dengan Google membuatmu masuk, dan membuatkan akunmu saat pertama kali kamu memakainya.',
         footer: 'Semua hak dilindungi.',
     },
     auth: {

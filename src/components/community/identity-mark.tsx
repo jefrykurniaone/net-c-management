@@ -22,11 +22,15 @@ export function CommunityIdentityMark({
     className?: string;
 }>) {
     const { box, text, px } = MARK[size];
+    // A blank logo setting is a missing logo, not a source: trimmed so a
+    // whitespace-only value degrades to the abbreviation token rather than
+    // rendering a broken image.
+    const src = logoUrl?.trim();
 
-    if (logoUrl) {
+    if (src) {
         return (
             <Image
-                src={logoUrl}
+                src={src}
                 alt={communityName}
                 width={px}
                 height={px}
