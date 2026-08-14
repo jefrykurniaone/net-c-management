@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Sora } from 'next/font/google';
+import { Archivo } from 'next/font/google';
 import './globals.css';
 import { auth } from '@/lib/auth';
 import { AuthProvider } from '@/components/providers/auth-provider';
@@ -11,20 +11,13 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LocaleProvider } from '@/components/providers/locale-provider';
 import { Analytics } from '@vercel/analytics/next';
 
-const geistSans = Geist({
-    variable: '--font-geist-sans',
+// One lettering system, as a real board has: a grotesque with signage
+// bones that holds at 900 for the community mark and stays quiet at 400
+// in a dense admin table.
+const archivo = Archivo({
+    variable: '--font-archivo',
     subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-    variable: '--font-geist-mono',
-    subsets: ['latin'],
-});
-
-const sora = Sora({
-    variable: '--font-sora',
-    subsets: ['latin'],
-    weight: ['400', '600', '700', '800'],
+    weight: ['400', '600', '700', '800', '900'],
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -49,7 +42,7 @@ export default async function RootLayout({
     return (
         <html
             lang={locale}
-            className={`${geistSans.variable} ${geistMono.variable} ${sora.variable} h-full antialiased`}
+            className={`${archivo.variable} h-full antialiased`}
             suppressHydrationWarning>
             <body className='min-h-full flex flex-col'>
                 <ThemeProvider attribute='class' defaultTheme='system' enableSystem>

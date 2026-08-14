@@ -1,0 +1,172 @@
+/* ─────────────────────────────────────────────────────────────
+   Papan Jadwal — enamel board under hall lighting.
+   Near-neutral enamel, graphite ink, one blue-leaning court green
+   as the identity. Mark colours are bound to marks and nothing else.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --board: #E8EBEA;
+  --tile: #F7F9F8;
+  /* The Visible Rule Rule: ≥3:1 against the cell it borders. DESIGN.md's
+     #7F8B87 measures 3.34:1 on tile but only 2.94:1 on the ground, and
+     outline controls sit on the ground. Darkened until it clears every
+     enamel surface (3.72:1 tile, 3.28:1 ground, 3.56:1 on the lightest
+     wash). */
+  --rule: #77837F;
+  --wash-ink: #E4F0EA;
+  --wash-tape: #FBF3E2;
+  --wash-strike: #FAECEA;
+
+  --background: #E8EBEA;
+  --foreground: #151E1B;
+  --card: #F7F9F8;
+  --card-foreground: #151E1B;
+  --popover: #F7F9F8;
+  --popover-foreground: #151E1B;
+
+  --primary: #17614A;
+  --primary-foreground: #F7F9F8;
+  --primary-solid: #17614A;
+  --primary-solid-foreground: #F7F9F8;
+  --primary-soft: #E4F0EA;
+  --primary-soft-border: #17614A;
+
+  /* The Ink mark. Settled and true — the same court green as the
+     identity, because The One Green Rule permits exactly one. */
+  --success: #17614A;
+  --success-foreground: #F7F9F8;
+  --success-soft: #E4F0EA;
+  --success-soft-border: #17614A;
+  --success-soft-foreground: #17614A;
+
+  /* The Tape mark. Provisional and held. */
+  --warning: #8A5A0B;
+  --warning-foreground: #F7F9F8;
+  --warning-solid: #8A5A0B;
+  --warning-solid-foreground: #F7F9F8;
+  --warning-soft: #FBF3E2;
+  --warning-soft-border: #8A5A0B;
+  --warning-soft-foreground: #8A5A0B;
+
+  /* The Strike mark. Void or failed. */
+  --destructive: #A62F26;
+  --destructive-foreground: #F7F9F8;
+  --destructive-solid: #A62F26;
+  --destructive-solid-foreground: #F7F9F8;
+  --destructive-soft: #FAECEA;
+  --destructive-soft-border: #A62F26;
+
+  --secondary: #E8EBEA;
+  --secondary-foreground: #54615B;
+  --muted: #E8EBEA;
+  --muted-foreground: #54615B;
+  --subtle-foreground: #66726D;
+  --accent: #E4F0EA;
+  --accent-foreground: #17614A;
+
+  --border: #77837F;
+  --input: #77837F;
+  --ring: #17614A;
+
+  --chart-1: #17614A;
+  --chart-2: #8A5A0B;
+  --chart-3: #A62F26;
+  --chart-4: #151E1B;
+  --chart-5: #77837F;
+
+  --radius: 2px;
+
+  --sidebar: #F7F9F8;
+  --sidebar-foreground: #151E1B;
+  --sidebar-primary: #17614A;
+  --sidebar-primary-foreground: #F7F9F8;
+  --sidebar-accent: #E4F0EA;
+  --sidebar-accent-foreground: #17614A;
+  --sidebar-border: #77837F;
+  --sidebar-ring: #17614A;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Papan Jadwal — the painted dark-green board.
+   A second real material, not an inversion. Ground and identity are
+   separated on lightness *and* chroma, because both are green-family.
+   ───────────────────────────────────────────────────────────── */
+.dark {
+  --board: #1B2621;
+  --tile: #243029;
+  /* DESIGN.md's Board Rule #6E7D76 clears tile (3.41:1) and ground
+     (3.87:1) but only reaches 2.86:1 on the Ink wash, which is the
+     lightest cell a rule ever borders on this material — and since
+     `* { border-border }` every bordered wash cell inherits it. Lifted
+     until it clears the worst case (3.37:1 on Ink wash, 3.74:1 tile,
+     4.25:1 ground), still well below Chalk Secondary so it reads as a
+     drawn rule and not as lettering. */
+  --rule: #7A8981;
+  --wash-ink: #1E3A2E;
+  --wash-tape: #3A2E14;
+  --wash-strike: #3A211E;
+
+  --background: #1B2621;
+  --foreground: #E7ECE9;
+  --card: #243029;
+  --card-foreground: #E7ECE9;
+  --popover: #243029;
+  --popover-foreground: #E7ECE9;
+
+  --primary: #4FBF8E;
+  --primary-foreground: #1B2621;
+  --primary-solid: #4FBF8E;
+  --primary-solid-foreground: #1B2621;
+  --primary-soft: #1E3A2E;
+  --primary-soft-border: #4FBF8E;
+
+  --success: #4FBF8E;
+  --success-foreground: #1B2621;
+  --success-soft: #1E3A2E;
+  --success-soft-border: #4FBF8E;
+  --success-soft-foreground: #4FBF8E;
+
+  --warning: #DFA83E;
+  --warning-foreground: #2A2109;
+  --warning-solid: #DFA83E;
+  --warning-solid-foreground: #2A2109;
+  --warning-soft: #3A2E14;
+  --warning-soft-border: #DFA83E;
+  --warning-soft-foreground: #DFA83E;
+
+  --destructive: #EE7B72;
+  --destructive-foreground: #2A1513;
+  --destructive-solid: #EE7B72;
+  --destructive-solid-foreground: #2A1513;
+  --destructive-soft: #3A211E;
+  --destructive-soft-border: #EE7B72;
+
+  --secondary: #1B2621;
+  --secondary-foreground: #9AA6A0;
+  --muted: #1B2621;
+  --muted-foreground: #9AA6A0;
+  /* DESIGN.md's Chalk Quiet #8A968F measures 4.47:1 on board tile, just
+     short of 4.5. Lightened until it clears on both board surfaces
+     (4.70:1 tile, 5.35:1 ground) while staying below Chalk Secondary. */
+  --subtle-foreground: #8E9A93;
+  --accent: #1E3A2E;
+  --accent-foreground: #4FBF8E;
+
+  --border: #7A8981;
+  --input: #7A8981;
+  --ring: #4FBF8E;
+
+  --chart-1: #4FBF8E;
+  --chart-2: #DFA83E;
+  --chart-3: #EE7B72;
+  --chart-4: #E7ECE9;
+  --chart-5: #9AA6A0;
+
+  --sidebar: #243029;
+  --sidebar-foreground: #E7ECE9;
+  --sidebar-primary: #4FBF8E;
+  --sidebar-primary-foreground: #1B2621;
+  --sidebar-accent: #1E3A2E;
+  --sidebar-accent-foreground: #4FBF8E;
+  --sidebar-border: #7A8981;
+  --sidebar-ring: #4FBF8E;
+}

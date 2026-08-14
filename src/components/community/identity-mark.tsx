@@ -1,13 +1,13 @@
 import Image from 'next/image';
 import { cn, communityAbbr } from '@/lib/utils';
 
-// Community identity mark (UX-DR9): the configured logo if set, else a rounded
-// square abbreviation token — white on solid teal (Club Premium) — never a
-// placeholder graphic. Renders the mark only; callers add the name label.
+// Community identity mark (UX-DR9): the configured logo if set, else a stamped
+// square abbreviation token — enamel tile on court green — never a placeholder
+// graphic. Renders the mark only; callers add the name label.
 const MARK = {
-    sm: { box: 'w-8 h-8 rounded-[9px]', text: 'text-xs', px: 32 },
-    md: { box: 'w-9 h-9 rounded-[10px]', text: 'text-sm', px: 36 },
-    lg: { box: 'w-16 h-16 rounded-2xl', text: 'text-2xl', px: 64 },
+    sm: { box: 'w-8 h-8 rounded-sm', text: 'text-xs', px: 32 },
+    md: { box: 'w-9 h-9 rounded-sm', text: 'text-sm', px: 36 },
+    lg: { box: 'w-16 h-16 rounded-sm', text: 'text-2xl', px: 64 },
 } as const;
 
 export function CommunityIdentityMark({
@@ -44,7 +44,7 @@ export function CommunityIdentityMark({
             )}>
             <span
                 className={cn(
-                    'font-heading font-bold text-primary-solid-foreground',
+                    'font-bold text-primary-solid-foreground',
                     text,
                 )}>
                 {communityAbbr(communityName)}

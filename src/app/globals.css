@@ -2,14 +2,18 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* The two board materials and the eight typographic roles. Split out so
+   this file stays the token map and the base layer, both under the
+   300-line cap in CLAUDE.md. */
+@import "./styles/board-materials.css";
+@import "./styles/type-roles.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sora);
+  --font-sans: var(--font-archivo);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -61,128 +65,34 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+
+  /* Papan Jadwal board roles — the material itself, named. */
+  --color-board: var(--board);
+  --color-tile: var(--tile);
+  --color-rule: var(--rule);
+  --color-wash-ink: var(--wash-ink);
+  --color-wash-tape: var(--wash-tape);
+  --color-wash-strike: var(--wash-strike);
+
+  /* Square. A stamped tile edge, never a rounded card. */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: var(--radius);
+  --radius-rail: 3px;
 
-/* Club Premium palette — warm stone neutrals + teal. Solid action colors stay
-   identical in both modes; text/accent colors brighten in dark. */
-:root {
-  --background: #FAFAF9;
-  --foreground: #18181B;
-  --card: #FFFFFF;
-  --card-foreground: #18181B;
-  --popover: #FFFFFF;
-  --popover-foreground: #18181B;
-  --primary: #0F766E;
-  --primary-foreground: #FFFFFF;
-  --primary-solid: #0F766E;
-  --primary-solid-foreground: #FFFFFF;
-  --primary-soft: #F0FDFA;
-  --primary-soft-border: #99F6E4;
-  --success: #16A34A;
-  --success-foreground: #FFFFFF;
-  --success-soft: #F0FDF4;
-  --success-soft-border: #BBF7D0;
-  --success-soft-foreground: #166534;
-  --warning: #B45309;
-  --warning-foreground: #FFFFFF;
-  --warning-solid: #B45309;
-  --warning-solid-foreground: #FFFFFF;
-  --warning-soft: #FFFBEB;
-  --warning-soft-border: #FDE68A;
-  --warning-soft-foreground: #92400E;
-  --secondary: #F5F5F4;
-  --secondary-foreground: #44403C;
-  --muted: #F5F5F4;
-  --muted-foreground: #78716C;
-  --subtle-foreground: #A8A29E;
-  --accent: #F0FDFA;
-  --accent-foreground: #0F766E;
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
-  --destructive-solid: #EF4444;
-  --destructive-solid-foreground: #FFFFFF;
-  --destructive-soft: #FEF2F2;
-  --destructive-soft-border: #FECACA;
-  --border: #EEECE8;
-  --input: #E7E5E4;
-  --ring: #0F766E;
-  --chart-1: #0F766E;
-  --chart-2: #0EA5E9;
-  --chart-3: #F97316;
-  --chart-4: #8B5CF6;
-  --chart-5: #B45309;
-  --radius: 0.625rem;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #18181B;
-  --sidebar-primary: #0F766E;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F0FDFA;
-  --sidebar-accent-foreground: #0F766E;
-  --sidebar-border: #EEECE8;
-  --sidebar-ring: #0F766E;
-}
+  /* Spacing rhythm: hairline / cell / block / bay. */
+  --spacing-hair: 2px;
+  --spacing-cell: 10px;
+  --spacing-block: 16px;
+  --spacing-bay: 28px;
 
-.dark {
-  --background: #1B1917;
-  --foreground: #F2F0ED;
-  --card: #26231F;
-  --card-foreground: #F2F0ED;
-  --popover: #26231F;
-  --popover-foreground: #F2F0ED;
-  --primary: #2DD4BF;
-  --primary-foreground: #134E4A;
-  --primary-solid: #0F766E;
-  --primary-solid-foreground: #FFFFFF;
-  --primary-soft: #11302B;
-  --primary-soft-border: #235B53;
-  --success: #4ADE80;
-  --success-foreground: #13291A;
-  --success-soft: #13291A;
-  --success-soft-border: #22532F;
-  --success-soft-foreground: #86EFAC;
-  --warning: #F0B23E;
-  --warning-foreground: #2E2410;
-  --warning-solid: #B45309;
-  --warning-solid-foreground: #FFFFFF;
-  --warning-soft: #2E2410;
-  --warning-soft-border: #5F4B15;
-  --warning-soft-foreground: #E8B84B;
-  --secondary: #322F2A;
-  --secondary-foreground: #D8D4CE;
-  --muted: #322F2A;
-  --muted-foreground: #A29C93;
-  --subtle-foreground: #837D75;
-  --accent: #11302B;
-  --accent-foreground: #2DD4BF;
-  --destructive: #F87171;
-  --destructive-foreground: #351516;
-  --destructive-solid: #EF4444;
-  --destructive-solid-foreground: #FFFFFF;
-  --destructive-soft: #351516;
-  --destructive-soft-border: #5E2222;
-  --border: #37332E;
-  --input: #423D37;
-  --ring: #2DD4BF;
-  --chart-1: #2DD4BF;
-  --chart-2: #0EA5E9;
-  --chart-3: #F97316;
-  --chart-4: #8B5CF6;
-  --chart-5: #F0B23E;
-  --sidebar: #26231F;
-  --sidebar-foreground: #F2F0ED;
-  --sidebar-primary: #2DD4BF;
-  --sidebar-primary-foreground: #134E4A;
-  --sidebar-accent: #11302B;
-  --sidebar-accent-foreground: #2DD4BF;
-  --sidebar-border: #37332E;
-  --sidebar-ring: #2DD4BF;
+  /* Depth is a tile on a board: its own edge plus a contact shadow. */
+  --shadow-tile: 0 1px 0 var(--rule), 0 2px 3px -1px rgb(21 30 27 / 0.14);
+  --shadow-tile-pressed: inset 0 1px 2px rgb(21 30 27 / 0.18);
 }
 
 @layer base {
@@ -190,12 +100,34 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground type-body;
   }
   html {
     @apply font-sans;
   }
-  h1, h2, h3 {
-    @apply font-heading tracking-tight;
+  /* The One Hand Rule. Tailwind's preflight hands code/pre a monospace
+     stack; a real board is lettered by one hand, so they inherit. */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: inherit;
+  }
+  /* The Tracked-Caps-Are-Structural Rule: column heads are the board's own
+     furniture, so a table head takes the Label role from the token layer
+     rather than each table restating a size. */
+  th {
+    @apply type-label text-muted-foreground text-left;
+  }
+  /* Times, counts, capacities and Rupiah amounts are most of this
+     product. Elements that carry them by definition get tabular
+     figures from the token layer, with no page edit. */
+  time,
+  th,
+  td,
+  input[type='number'],
+  input[inputmode='numeric'],
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }

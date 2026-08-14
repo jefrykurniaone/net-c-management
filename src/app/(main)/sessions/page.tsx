@@ -134,11 +134,11 @@ export default async function SessionsPage({
     return (
       <Link key={s.id} href={`/sessions/${s.id}`} className="block">
         <div className="flex items-center gap-3 bg-card rounded-xl border border-border p-3.5 pr-4 hover:border-primary/40 hover:shadow-sm transition-all">
-          <span className="flex w-11 shrink-0 flex-col items-center rounded-[10px] bg-accent py-1.5">
+          <span className="flex w-11 shrink-0 flex-col items-center rounded-sm bg-accent py-1.5">
             <span className="text-[10px] font-semibold uppercase text-primary">
               {format(new Date(s.date), "EEE", { locale: dateLocale })}
             </span>
-            <span className="font-heading text-lg font-bold text-foreground leading-tight">
+            <span className="text-lg font-bold text-foreground leading-tight">
               {format(new Date(s.date), "dd")}
             </span>
           </span>

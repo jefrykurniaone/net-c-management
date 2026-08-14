@@ -53,7 +53,7 @@ function IdentityMark({
                 logoUrl={logoUrl}
                 size='sm'
             />
-            <span className='font-heading font-semibold text-foreground text-sm truncate'>
+            <span className='font-semibold text-foreground text-sm truncate'>
                 {communityName}
             </span>
         </div>
@@ -170,7 +170,7 @@ export function MemberBottomNav({ isAdmin }: Readonly<{ isAdmin: boolean }>) {
                         href={href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 py-1.5 min-h-14 rounded-[10px] text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                            'flex flex-1 flex-col items-center justify-center gap-1 py-1.5 min-h-14 rounded-sm text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
                             active
                                 ? 'bg-accent text-accent-foreground font-semibold'
                                 : 'text-subtle-foreground hover:text-foreground',

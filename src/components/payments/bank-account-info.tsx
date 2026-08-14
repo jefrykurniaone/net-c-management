@@ -49,7 +49,7 @@ export function BankAccountInfo({
             </p>
             <div className='mt-1.5 flex items-center justify-between gap-2'>
                 <div className='min-w-0'>
-                    <p className='font-heading text-[15px] font-bold text-foreground tabular-nums truncate'>
+                    <p className='text-[15px] font-bold text-foreground tabular-nums truncate'>
                         {account.bankName && `${account.bankName} · `}
                         {account.bankAccountNumber}
                     </p>

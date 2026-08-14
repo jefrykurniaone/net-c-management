@@ -108,7 +108,7 @@ export default async function PublicSessionPage({
         <div className='min-h-screen bg-background flex flex-col'>
             {/* Top bar */}
             <header className='border-b border-border px-5 py-3.5 flex items-center justify-between'>
-                <span className='font-heading text-[15px] font-bold text-foreground'>
+                <span className='text-[15px] font-bold text-foreground'>
                     {settings.communityName}
                 </span>
                 {settings.logoUrl && (
@@ -130,7 +130,7 @@ export default async function PublicSessionPage({
                             name={activitySession.activity.name}
                             color={activitySession.activity.color}
                         />
-                        <h1 className='font-heading text-2xl font-bold text-foreground leading-tight'>
+                        <h1 className='text-2xl font-bold text-foreground leading-tight'>
                             {activitySession.title}
                         </h1>
 

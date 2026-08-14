@@ -281,7 +281,7 @@ export default async function DashboardPage() {
                                         name={activity.name}
                                         color={activity.color}
                                     />
-                                    <span className='flex-1 font-heading text-[15px] font-semibold text-foreground truncate'>
+                                    <span className='flex-1 text-[15px] font-semibold text-foreground truncate'>
                                         {activity.name}
                                     </span>
                                     {isMonthlyDue ? (
@@ -324,7 +324,7 @@ export default async function DashboardPage() {
                                                 <Link
                                                     key={s.id}
                                                     href={`/sessions/${s.id}`}
-                                                    className='flex items-center gap-3 rounded-[10px] bg-muted/60 p-2.5 pr-3 hover:bg-accent transition-colors'>
+                                                    className='flex items-center gap-3 rounded-sm bg-muted/60 p-2.5 pr-3 hover:bg-accent transition-colors'>
                                                     <span className='flex w-10 shrink-0 flex-col items-center'>
                                                         <span className='text-[10px] font-semibold uppercase text-primary'>
                                                             {format(
@@ -333,7 +333,7 @@ export default async function DashboardPage() {
                                                                 { locale: dateLocale },
                                                             )}
                                                         </span>
-                                                        <span className='font-heading text-[17px] font-bold text-foreground leading-tight'>
+                                                        <span className='text-[17px] font-bold text-foreground leading-tight'>
                                                             {format(
                                                                 new Date(s.date),
                                                                 'dd',

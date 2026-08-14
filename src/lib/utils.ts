@@ -58,7 +58,7 @@ export function paymentStatusVariant(
 
 /**
  * Badge variant for a user role. OWNER carries the platform accent (default =
- * Deep Teal), ADMIN a neutral secondary, MEMBER a plain outline. Replaces the
+ * Court Green), ADMIN a neutral secondary, MEMBER a plain outline. Replaces the
  * legacy hardcoded purple OWNER badge (single-accent rule, UX-DR1).
  */
 export function roleBadgeVariant(
