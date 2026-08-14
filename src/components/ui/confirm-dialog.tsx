@@ -104,7 +104,7 @@ export function ConfirmDialog({
                         />
                     </span>
                     <div className='space-y-1.5'>
-                        <DialogTitle className='font-heading font-bold'>
+                        <DialogTitle className='font-bold'>
                             {title}
                         </DialogTitle>
                         <DialogDescription className='leading-relaxed'>

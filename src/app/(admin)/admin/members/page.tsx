@@ -172,7 +172,7 @@ export default async function AdminMembersPage({
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-primary font-heading font-semibold text-xs">
+                        <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-primary font-semibold text-xs">
                           {(u.name ?? u.email ?? "?")[0].toUpperCase()}
                         </div>
                       )}

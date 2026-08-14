@@ -137,7 +137,7 @@ export default async function AdminActivityPage({
                                             </div>
                                         </div>
                                     </td>
-                                    <td className='px-5 py-3 text-muted-foreground font-mono text-xs'>
+                                    <td className='px-5 py-3 text-muted-foreground text-xs'>
                                         {e.slug}
                                     </td>
                                     <td className='px-5 py-3 text-center text-secondary-foreground tabular-nums'>

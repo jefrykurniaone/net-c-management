@@ -58,7 +58,7 @@ export function ActivityInitial({
         <span
             aria-hidden
             className={cn(
-                'flex size-7 shrink-0 items-center justify-center rounded-lg font-heading text-xs font-bold',
+                'flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold',
                 className,
             )}
             style={activityTintStyle(color)}>

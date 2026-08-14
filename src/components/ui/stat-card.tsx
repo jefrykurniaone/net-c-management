@@ -31,7 +31,7 @@ export function StatCard({
                 {Icon && <Icon className='w-4 h-4 text-subtle-foreground' />}
             </CardHeader>
             <CardContent>
-                <p className='font-heading text-2xl font-bold tabular-nums text-foreground'>
+                <p className='text-2xl font-bold tabular-nums text-foreground'>
                     {value}
                 </p>
                 {sub && (
@@ -76,7 +76,7 @@ export function StatStrip({
                     <p className='flex items-baseline gap-1.5'>
                         <span
                             className={
-                                'font-heading text-2xl font-bold tabular-nums ' +
+                                'text-2xl font-bold tabular-nums ' +
                                 (item.valueClassName ?? 'text-foreground')
                             }>
                             {item.value}

@@ -36,7 +36,7 @@ export default async function DevLoginPage() {
                 {users.length === 0 ? (
                     <p className='text-sm text-muted-foreground text-center'>
                         No users found. Run{' '}
-                        <code className='font-mono'>npm run db:seed</code> first.
+                        <code>npm run db:seed</code> first.
                     </p>
                 ) : (
                     <div className='flex flex-col gap-3 w-full'>

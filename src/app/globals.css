@@ -7,9 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sora);
+  --font-sans: var(--font-archivo);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -61,128 +59,256 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+
+  /* Papan Jadwal board roles — the material itself, named. */
+  --color-board: var(--board);
+  --color-tile: var(--tile);
+  --color-rule: var(--rule);
+  --color-wash-ink: var(--wash-ink);
+  --color-wash-tape: var(--wash-tape);
+  --color-wash-strike: var(--wash-strike);
+
+  /* Square. A stamped tile edge, never a rounded card. */
+  --radius-sm: var(--radius);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: var(--radius);
+  --radius-2xl: var(--radius);
+  --radius-3xl: var(--radius);
+  --radius-4xl: var(--radius);
+  --radius-rail: var(--radius-rail-value);
+
+  /* Spacing rhythm: hairline / cell / block / bay. */
+  --spacing-hair: 2px;
+  --spacing-cell: 10px;
+  --spacing-block: 16px;
+  --spacing-bay: 28px;
+
+  /* Depth is a tile on a board: its own edge plus a contact shadow. */
+  --shadow-tile: 0 1px 0 var(--rule), 0 2px 3px -1px rgb(21 30 27 / 0.14);
+  --shadow-tile-pressed: inset 0 1px 2px rgb(21 30 27 / 0.18);
 }
 
-/* Club Premium palette — warm stone neutrals + teal. Solid action colors stay
-   identical in both modes; text/accent colors brighten in dark. */
+/* ─────────────────────────────────────────────────────────────
+   Papan Jadwal — enamel board under hall lighting.
+   Near-neutral enamel, graphite ink, one blue-leaning court green
+   as the identity. Mark colours are bound to marks and nothing else.
+   ───────────────────────────────────────────────────────────── */
 :root {
-  --background: #FAFAF9;
-  --foreground: #18181B;
-  --card: #FFFFFF;
-  --card-foreground: #18181B;
-  --popover: #FFFFFF;
-  --popover-foreground: #18181B;
-  --primary: #0F766E;
-  --primary-foreground: #FFFFFF;
-  --primary-solid: #0F766E;
-  --primary-solid-foreground: #FFFFFF;
-  --primary-soft: #F0FDFA;
-  --primary-soft-border: #99F6E4;
-  --success: #16A34A;
-  --success-foreground: #FFFFFF;
-  --success-soft: #F0FDF4;
-  --success-soft-border: #BBF7D0;
-  --success-soft-foreground: #166534;
-  --warning: #B45309;
-  --warning-foreground: #FFFFFF;
-  --warning-solid: #B45309;
-  --warning-solid-foreground: #FFFFFF;
-  --warning-soft: #FFFBEB;
-  --warning-soft-border: #FDE68A;
-  --warning-soft-foreground: #92400E;
-  --secondary: #F5F5F4;
-  --secondary-foreground: #44403C;
-  --muted: #F5F5F4;
-  --muted-foreground: #78716C;
-  --subtle-foreground: #A8A29E;
-  --accent: #F0FDFA;
-  --accent-foreground: #0F766E;
-  --destructive: #EF4444;
-  --destructive-foreground: #FFFFFF;
-  --destructive-solid: #EF4444;
-  --destructive-solid-foreground: #FFFFFF;
-  --destructive-soft: #FEF2F2;
-  --destructive-soft-border: #FECACA;
-  --border: #EEECE8;
-  --input: #E7E5E4;
-  --ring: #0F766E;
-  --chart-1: #0F766E;
-  --chart-2: #0EA5E9;
-  --chart-3: #F97316;
-  --chart-4: #8B5CF6;
-  --chart-5: #B45309;
-  --radius: 0.625rem;
-  --sidebar: #FFFFFF;
-  --sidebar-foreground: #18181B;
-  --sidebar-primary: #0F766E;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F0FDFA;
-  --sidebar-accent-foreground: #0F766E;
-  --sidebar-border: #EEECE8;
-  --sidebar-ring: #0F766E;
+  --board: #E8EBEA;
+  --tile: #F7F9F8;
+  --rule: #7F8B87;
+  --wash-ink: #E4F0EA;
+  --wash-tape: #FBF3E2;
+  --wash-strike: #FAECEA;
+
+  --background: #E8EBEA;
+  --foreground: #151E1B;
+  --card: #F7F9F8;
+  --card-foreground: #151E1B;
+  --popover: #F7F9F8;
+  --popover-foreground: #151E1B;
+
+  --primary: #17614A;
+  --primary-foreground: #F7F9F8;
+  --primary-solid: #17614A;
+  --primary-solid-foreground: #F7F9F8;
+  --primary-soft: #E4F0EA;
+  --primary-soft-border: #17614A;
+
+  /* The Ink mark. Settled and true — the same court green as the
+     identity, because The One Green Rule permits exactly one. */
+  --success: #17614A;
+  --success-foreground: #F7F9F8;
+  --success-soft: #E4F0EA;
+  --success-soft-border: #17614A;
+  --success-soft-foreground: #17614A;
+
+  /* The Tape mark. Provisional and held. */
+  --warning: #8A5A0B;
+  --warning-foreground: #F7F9F8;
+  --warning-solid: #8A5A0B;
+  --warning-solid-foreground: #F7F9F8;
+  --warning-soft: #FBF3E2;
+  --warning-soft-border: #8A5A0B;
+  --warning-soft-foreground: #8A5A0B;
+
+  /* The Strike mark. Void or failed. */
+  --destructive: #A62F26;
+  --destructive-foreground: #F7F9F8;
+  --destructive-solid: #A62F26;
+  --destructive-solid-foreground: #F7F9F8;
+  --destructive-soft: #FAECEA;
+  --destructive-soft-border: #A62F26;
+
+  --secondary: #E8EBEA;
+  --secondary-foreground: #54615B;
+  --muted: #E8EBEA;
+  --muted-foreground: #54615B;
+  --subtle-foreground: #66726D;
+  --accent: #E4F0EA;
+  --accent-foreground: #17614A;
+
+  --border: #7F8B87;
+  --input: #7F8B87;
+  --ring: #17614A;
+
+  --chart-1: #17614A;
+  --chart-2: #8A5A0B;
+  --chart-3: #A62F26;
+  --chart-4: #151E1B;
+  --chart-5: #7F8B87;
+
+  --radius: 2px;
+  --radius-rail-value: 3px;
+
+  --sidebar: #F7F9F8;
+  --sidebar-foreground: #151E1B;
+  --sidebar-primary: #17614A;
+  --sidebar-primary-foreground: #F7F9F8;
+  --sidebar-accent: #E4F0EA;
+  --sidebar-accent-foreground: #17614A;
+  --sidebar-border: #7F8B87;
+  --sidebar-ring: #17614A;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Papan Jadwal — the painted dark-green board.
+   A second real material, not an inversion. Ground and identity are
+   separated on lightness *and* chroma, because both are green-family.
+   ───────────────────────────────────────────────────────────── */
 .dark {
-  --background: #1B1917;
-  --foreground: #F2F0ED;
-  --card: #26231F;
-  --card-foreground: #F2F0ED;
-  --popover: #26231F;
-  --popover-foreground: #F2F0ED;
-  --primary: #2DD4BF;
-  --primary-foreground: #134E4A;
-  --primary-solid: #0F766E;
-  --primary-solid-foreground: #FFFFFF;
-  --primary-soft: #11302B;
-  --primary-soft-border: #235B53;
-  --success: #4ADE80;
-  --success-foreground: #13291A;
-  --success-soft: #13291A;
-  --success-soft-border: #22532F;
-  --success-soft-foreground: #86EFAC;
-  --warning: #F0B23E;
-  --warning-foreground: #2E2410;
-  --warning-solid: #B45309;
-  --warning-solid-foreground: #FFFFFF;
-  --warning-soft: #2E2410;
-  --warning-soft-border: #5F4B15;
-  --warning-soft-foreground: #E8B84B;
-  --secondary: #322F2A;
-  --secondary-foreground: #D8D4CE;
-  --muted: #322F2A;
-  --muted-foreground: #A29C93;
-  --subtle-foreground: #837D75;
-  --accent: #11302B;
-  --accent-foreground: #2DD4BF;
-  --destructive: #F87171;
-  --destructive-foreground: #351516;
-  --destructive-solid: #EF4444;
-  --destructive-solid-foreground: #FFFFFF;
-  --destructive-soft: #351516;
-  --destructive-soft-border: #5E2222;
-  --border: #37332E;
-  --input: #423D37;
-  --ring: #2DD4BF;
-  --chart-1: #2DD4BF;
-  --chart-2: #0EA5E9;
-  --chart-3: #F97316;
-  --chart-4: #8B5CF6;
-  --chart-5: #F0B23E;
-  --sidebar: #26231F;
-  --sidebar-foreground: #F2F0ED;
-  --sidebar-primary: #2DD4BF;
-  --sidebar-primary-foreground: #134E4A;
-  --sidebar-accent: #11302B;
-  --sidebar-accent-foreground: #2DD4BF;
-  --sidebar-border: #37332E;
-  --sidebar-ring: #2DD4BF;
+  --board: #1B2621;
+  --tile: #243029;
+  --rule: #6E7D76;
+  --wash-ink: #1E3A2E;
+  --wash-tape: #3A2E14;
+  --wash-strike: #3A211E;
+
+  --background: #1B2621;
+  --foreground: #E7ECE9;
+  --card: #243029;
+  --card-foreground: #E7ECE9;
+  --popover: #243029;
+  --popover-foreground: #E7ECE9;
+
+  --primary: #4FBF8E;
+  --primary-foreground: #1B2621;
+  --primary-solid: #4FBF8E;
+  --primary-solid-foreground: #1B2621;
+  --primary-soft: #1E3A2E;
+  --primary-soft-border: #4FBF8E;
+
+  --success: #4FBF8E;
+  --success-foreground: #1B2621;
+  --success-soft: #1E3A2E;
+  --success-soft-border: #4FBF8E;
+  --success-soft-foreground: #4FBF8E;
+
+  --warning: #DFA83E;
+  --warning-foreground: #2A2109;
+  --warning-solid: #DFA83E;
+  --warning-solid-foreground: #2A2109;
+  --warning-soft: #3A2E14;
+  --warning-soft-border: #DFA83E;
+  --warning-soft-foreground: #DFA83E;
+
+  --destructive: #EE7B72;
+  --destructive-foreground: #2A1513;
+  --destructive-solid: #EE7B72;
+  --destructive-solid-foreground: #2A1513;
+  --destructive-soft: #3A211E;
+  --destructive-soft-border: #EE7B72;
+
+  --secondary: #1B2621;
+  --secondary-foreground: #9AA6A0;
+  --muted: #1B2621;
+  --muted-foreground: #9AA6A0;
+  --subtle-foreground: #8A968F;
+  --accent: #1E3A2E;
+  --accent-foreground: #4FBF8E;
+
+  --border: #6E7D76;
+  --input: #6E7D76;
+  --ring: #4FBF8E;
+
+  --chart-1: #4FBF8E;
+  --chart-2: #DFA83E;
+  --chart-3: #EE7B72;
+  --chart-4: #E7ECE9;
+  --chart-5: #9AA6A0;
+
+  --sidebar: #243029;
+  --sidebar-foreground: #E7ECE9;
+  --sidebar-primary: #4FBF8E;
+  --sidebar-primary-foreground: #1B2621;
+  --sidebar-accent: #1E3A2E;
+  --sidebar-accent-foreground: #4FBF8E;
+  --sidebar-border: #6E7D76;
+  --sidebar-ring: #4FBF8E;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   The eight typographic roles. One family, signage weights.
+   The One Hand Rule: figures take tabular-nums from this family
+   rather than a second, monospaced one.
+   ───────────────────────────────────────────────────────────── */
+@utility type-mark {
+  font-size: clamp(1.125rem, 2.4vw, 1.5rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+@utility type-display {
+  font-size: clamp(1.75rem, 5vw, 3rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+@utility type-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+@utility type-body {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: normal;
+}
+
+@utility type-caption {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: normal;
+}
+
+@utility type-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@utility type-figure {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+@utility type-figure-lead {
+  font-size: 1.375rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 @layer base {
@@ -195,7 +321,15 @@
   html {
     @apply font-sans;
   }
-  h1, h2, h3 {
-    @apply font-heading tracking-tight;
+  /* Times, counts, capacities and Rupiah amounts are most of this
+     product. Elements that carry them by definition get tabular
+     figures from the token layer, with no page edit. */
+  time,
+  th,
+  td,
+  input[type='number'],
+  input[inputmode='numeric'],
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }

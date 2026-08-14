@@ -223,7 +223,7 @@ export default async function AdminDashboardPage() {
                 {/* Needs attention */}
                 <div className='bg-card rounded-xl border border-border overflow-hidden'>
                     <div className='flex items-center justify-between px-5 py-4 border-b border-border'>
-                        <h2 className='font-heading text-[15px] font-semibold text-foreground'>
+                        <h2 className='text-[15px] font-semibold text-foreground'>
                             {t.admin.needsAttentionTitle}
                         </h2>
                         {attentionCount > 0 && (
@@ -240,7 +240,7 @@ export default async function AdminDashboardPage() {
                         <div className='divide-y divide-border'>
                             {pendingPayments > 0 && (
                                 <div className='flex items-center gap-3.5 px-5 py-3.5'>
-                                    <span className='flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-warning-soft'>
+                                    <span className='flex size-9 shrink-0 items-center justify-center rounded-sm bg-warning-soft'>
                                         <CreditCard className='w-4 h-4 text-warning' />
                                     </span>
                                     <div className='flex-1 min-w-0'>
@@ -265,7 +265,7 @@ export default async function AdminDashboardPage() {
                             )}
                             {underBooked && (
                                 <div className='flex items-center gap-3.5 px-5 py-3.5'>
-                                    <span className='flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft'>
+                                    <span className='flex size-9 shrink-0 items-center justify-center rounded-sm bg-primary-soft'>
                                         <Users className='w-4 h-4 text-primary' />
                                     </span>
                                     <div className='flex-1 min-w-0'>
@@ -305,7 +305,7 @@ export default async function AdminDashboardPage() {
                 {/* This week */}
                 <div className='bg-card rounded-xl border border-border overflow-hidden'>
                     <div className='flex items-center justify-between px-5 py-4 border-b border-border'>
-                        <h2 className='font-heading text-[15px] font-semibold text-foreground'>
+                        <h2 className='text-[15px] font-semibold text-foreground'>
                             {t.admin.thisWeekTitle}
                         </h2>
                         <Link
@@ -324,13 +324,13 @@ export default async function AdminDashboardPage() {
                                 <div
                                     key={s.id}
                                     className='flex items-center gap-3 px-5 py-3'>
-                                    <span className='flex w-9 shrink-0 flex-col items-center rounded-[9px] bg-accent py-1'>
+                                    <span className='flex w-9 shrink-0 flex-col items-center rounded-sm bg-accent py-1'>
                                         <span className='text-[9.5px] font-semibold uppercase text-primary'>
                                             {format(new Date(s.date), 'EEE', {
                                                 locale: dateLocale,
                                             })}
                                         </span>
-                                        <span className='font-heading text-[15px] font-bold text-foreground leading-none'>
+                                        <span className='text-[15px] font-bold text-foreground leading-none'>
                                             {format(new Date(s.date), 'dd')}
                                         </span>
                                     </span>
@@ -392,7 +392,7 @@ export default async function AdminDashboardPage() {
                                             name={a.name}
                                             color={a.color}
                                         />
-                                        <span className='flex-1 font-heading text-[15px] font-semibold text-foreground truncate'>
+                                        <span className='flex-1 text-[15px] font-semibold text-foreground truncate'>
                                             {a.name}
                                         </span>
                                         <span className='text-xs text-subtle-foreground'>
@@ -401,7 +401,7 @@ export default async function AdminDashboardPage() {
                                     </div>
                                     <div className='flex gap-6'>
                                         <div className='flex flex-col'>
-                                            <span className='font-heading text-[17px] font-bold text-foreground tabular-nums'>
+                                            <span className='text-[17px] font-bold text-foreground tabular-nums'>
                                                 {rate === null ? '—' : `${rate}%`}
                                             </span>
                                             <span className='text-[11px] text-subtle-foreground'>
@@ -409,7 +409,7 @@ export default async function AdminDashboardPage() {
                                             </span>
                                         </div>
                                         <div className='flex flex-col'>
-                                            <span className='font-heading text-[17px] font-bold text-foreground tabular-nums'>
+                                            <span className='text-[17px] font-bold text-foreground tabular-nums'>
                                                 {perWeek}
                                             </span>
                                             <span className='text-[11px] text-subtle-foreground'>

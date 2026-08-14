@@ -61,7 +61,7 @@ export function Sidebar({
                     size='md'
                 />
                 <div className='min-w-0'>
-                    <p className='font-heading font-semibold text-foreground text-[13px] leading-tight truncate'>
+                    <p className='font-semibold text-foreground text-[13px] leading-tight truncate'>
                         {communityName}
                     </p>
                     <p className='text-[10px] font-medium text-subtle-foreground uppercase tracking-wider'>
@@ -82,7 +82,7 @@ export function Sidebar({
                             href={href}
                             aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-2.5 px-3 min-h-10 rounded-[9px] text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                'flex items-center gap-2.5 px-3 min-h-10 rounded-sm text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 active
                                     ? 'bg-accent text-accent-foreground font-semibold'
                                     : 'text-secondary-foreground font-medium hover:bg-muted hover:text-foreground',

@@ -49,7 +49,7 @@ export default async function SignInPage() {
                             type='submit'
                             variant='outline'
                             size='lg'
-                            className='w-full flex items-center gap-3 rounded-[11px]'>
+                            className='w-full flex items-center gap-3 rounded-sm'>
                             {/* Google Icon */}
                             <svg
                                 viewBox='0 0 24 24'

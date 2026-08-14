@@ -53,7 +53,7 @@ export default async function AdminLayout({
                             logoUrl={settings.logoUrl}
                             size='sm'
                         />
-                        <span className='font-heading font-semibold text-foreground text-sm'>
+                        <span className='font-semibold text-foreground text-sm'>
                             {settings.communityName}
                         </span>
                     </div>

@@ -17,7 +17,7 @@ function ActivityCard({ e, t }: Readonly<{ e: ActivityCardRow; t: Dictionary }>)
         {e.description && <p className="truncate text-xs text-muted-foreground">{e.description}</p>}
       </div>
       <CardField label={t.admin.activitySlug}>
-        <span className="font-mono text-xs">{e.slug}</span>
+        <span className="text-xs">{e.slug}</span>
       </CardField>
       <CardField label={t.admin.colMembers}>
         <span className="tabular-nums">{e._count.memberships}</span>
