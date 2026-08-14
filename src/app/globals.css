@@ -2,6 +2,12 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* The two board materials and the eight typographic roles. Split out so
+   this file stays the token map and the base layer, both under the
+   300-line cap in CLAUDE.md. */
+@import "./styles/board-materials.css";
+@import "./styles/type-roles.css";
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -76,7 +82,7 @@
   --radius-2xl: var(--radius);
   --radius-3xl: var(--radius);
   --radius-4xl: var(--radius);
-  --radius-rail: var(--radius-rail-value);
+  --radius-rail: 3px;
 
   /* Spacing rhythm: hairline / cell / block / bay. */
   --spacing-hair: 2px;
@@ -89,235 +95,6 @@
   --shadow-tile-pressed: inset 0 1px 2px rgb(21 30 27 / 0.18);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Papan Jadwal — enamel board under hall lighting.
-   Near-neutral enamel, graphite ink, one blue-leaning court green
-   as the identity. Mark colours are bound to marks and nothing else.
-   ───────────────────────────────────────────────────────────── */
-:root {
-  --board: #E8EBEA;
-  --tile: #F7F9F8;
-  /* The Visible Rule Rule: ≥3:1 against the cell it borders. DESIGN.md's
-     #7F8B87 measures 3.34:1 on tile but only 2.94:1 on the ground, and
-     outline controls sit on the ground. Darkened until it clears both
-     (3.72:1 tile, 3.28:1 ground). */
-  --rule: #77837F;
-  --wash-ink: #E4F0EA;
-  --wash-tape: #FBF3E2;
-  --wash-strike: #FAECEA;
-
-  --background: #E8EBEA;
-  --foreground: #151E1B;
-  --card: #F7F9F8;
-  --card-foreground: #151E1B;
-  --popover: #F7F9F8;
-  --popover-foreground: #151E1B;
-
-  --primary: #17614A;
-  --primary-foreground: #F7F9F8;
-  --primary-solid: #17614A;
-  --primary-solid-foreground: #F7F9F8;
-  --primary-soft: #E4F0EA;
-  --primary-soft-border: #17614A;
-
-  /* The Ink mark. Settled and true — the same court green as the
-     identity, because The One Green Rule permits exactly one. */
-  --success: #17614A;
-  --success-foreground: #F7F9F8;
-  --success-soft: #E4F0EA;
-  --success-soft-border: #17614A;
-  --success-soft-foreground: #17614A;
-
-  /* The Tape mark. Provisional and held. */
-  --warning: #8A5A0B;
-  --warning-foreground: #F7F9F8;
-  --warning-solid: #8A5A0B;
-  --warning-solid-foreground: #F7F9F8;
-  --warning-soft: #FBF3E2;
-  --warning-soft-border: #8A5A0B;
-  --warning-soft-foreground: #8A5A0B;
-
-  /* The Strike mark. Void or failed. */
-  --destructive: #A62F26;
-  --destructive-foreground: #F7F9F8;
-  --destructive-solid: #A62F26;
-  --destructive-solid-foreground: #F7F9F8;
-  --destructive-soft: #FAECEA;
-  --destructive-soft-border: #A62F26;
-
-  --secondary: #E8EBEA;
-  --secondary-foreground: #54615B;
-  --muted: #E8EBEA;
-  --muted-foreground: #54615B;
-  --subtle-foreground: #66726D;
-  --accent: #E4F0EA;
-  --accent-foreground: #17614A;
-
-  --border: #77837F;
-  --input: #77837F;
-  --ring: #17614A;
-
-  --chart-1: #17614A;
-  --chart-2: #8A5A0B;
-  --chart-3: #A62F26;
-  --chart-4: #151E1B;
-  --chart-5: #7F8B87;
-
-  --radius: 2px;
-  --radius-rail-value: 3px;
-
-  --sidebar: #F7F9F8;
-  --sidebar-foreground: #151E1B;
-  --sidebar-primary: #17614A;
-  --sidebar-primary-foreground: #F7F9F8;
-  --sidebar-accent: #E4F0EA;
-  --sidebar-accent-foreground: #17614A;
-  --sidebar-border: #77837F;
-  --sidebar-ring: #17614A;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Papan Jadwal — the painted dark-green board.
-   A second real material, not an inversion. Ground and identity are
-   separated on lightness *and* chroma, because both are green-family.
-   ───────────────────────────────────────────────────────────── */
-.dark {
-  --board: #1B2621;
-  --tile: #243029;
-  --rule: #6E7D76;
-  --wash-ink: #1E3A2E;
-  --wash-tape: #3A2E14;
-  --wash-strike: #3A211E;
-
-  --background: #1B2621;
-  --foreground: #E7ECE9;
-  --card: #243029;
-  --card-foreground: #E7ECE9;
-  --popover: #243029;
-  --popover-foreground: #E7ECE9;
-
-  --primary: #4FBF8E;
-  --primary-foreground: #1B2621;
-  --primary-solid: #4FBF8E;
-  --primary-solid-foreground: #1B2621;
-  --primary-soft: #1E3A2E;
-  --primary-soft-border: #4FBF8E;
-
-  --success: #4FBF8E;
-  --success-foreground: #1B2621;
-  --success-soft: #1E3A2E;
-  --success-soft-border: #4FBF8E;
-  --success-soft-foreground: #4FBF8E;
-
-  --warning: #DFA83E;
-  --warning-foreground: #2A2109;
-  --warning-solid: #DFA83E;
-  --warning-solid-foreground: #2A2109;
-  --warning-soft: #3A2E14;
-  --warning-soft-border: #DFA83E;
-  --warning-soft-foreground: #DFA83E;
-
-  --destructive: #EE7B72;
-  --destructive-foreground: #2A1513;
-  --destructive-solid: #EE7B72;
-  --destructive-solid-foreground: #2A1513;
-  --destructive-soft: #3A211E;
-  --destructive-soft-border: #EE7B72;
-
-  --secondary: #1B2621;
-  --secondary-foreground: #9AA6A0;
-  --muted: #1B2621;
-  --muted-foreground: #9AA6A0;
-  /* DESIGN.md's Chalk Quiet #8A968F measures 4.47:1 on board tile, just
-     short of 4.5. Lightened until it clears on both board surfaces
-     (4.70:1 tile, 5.35:1 ground) while staying below Chalk Secondary. */
-  --subtle-foreground: #8E9A93;
-  --accent: #1E3A2E;
-  --accent-foreground: #4FBF8E;
-
-  --border: #6E7D76;
-  --input: #6E7D76;
-  --ring: #4FBF8E;
-
-  --chart-1: #4FBF8E;
-  --chart-2: #DFA83E;
-  --chart-3: #EE7B72;
-  --chart-4: #E7ECE9;
-  --chart-5: #9AA6A0;
-
-  --sidebar: #243029;
-  --sidebar-foreground: #E7ECE9;
-  --sidebar-primary: #4FBF8E;
-  --sidebar-primary-foreground: #1B2621;
-  --sidebar-accent: #1E3A2E;
-  --sidebar-accent-foreground: #4FBF8E;
-  --sidebar-border: #6E7D76;
-  --sidebar-ring: #4FBF8E;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   The eight typographic roles. One family, signage weights.
-   The One Hand Rule: figures take tabular-nums from this family
-   rather than a second, monospaced one.
-   ───────────────────────────────────────────────────────────── */
-@utility type-mark {
-  font-size: clamp(1.125rem, 2.4vw, 1.5rem);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-@utility type-display {
-  font-size: clamp(1.75rem, 5vw, 3rem);
-  font-weight: 800;
-  line-height: 1.02;
-  letter-spacing: -0.02em;
-}
-
-@utility type-title {
-  font-size: 1.0625rem;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-}
-
-@utility type-body {
-  font-size: 0.9375rem;
-  font-weight: 400;
-  line-height: 1.55;
-  letter-spacing: normal;
-}
-
-@utility type-caption {
-  font-size: 0.8125rem;
-  font-weight: 400;
-  line-height: 1.45;
-  letter-spacing: normal;
-}
-
-@utility type-label {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-@utility type-figure {
-  font-size: 1.0625rem;
-  font-weight: 600;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-@utility type-figure-lead {
-  font-size: 1.375rem;
-  font-weight: 800;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -328,12 +105,6 @@
   html {
     @apply font-sans;
   }
-  /* The Tracked-Caps-Are-Structural Rule: column heads are the board's own
-     furniture, so a table head takes the Label role from the token layer
-     rather than each table restating a size. */
-  th {
-    @apply type-label text-muted-foreground text-left;
-  }
   /* The One Hand Rule. Tailwind's preflight hands code/pre a monospace
      stack; a real board is lettered by one hand, so they inherit. */
   code,
@@ -341,6 +112,12 @@
   samp,
   pre {
     font-family: inherit;
+  }
+  /* The Tracked-Caps-Are-Structural Rule: column heads are the board's own
+     furniture, so a table head takes the Label role from the token layer
+     rather than each table restating a size. */
+  th {
+    @apply type-label text-muted-foreground text-left;
   }
   /* Times, counts, capacities and Rupiah amounts are most of this
      product. Elements that carry them by definition get tabular
