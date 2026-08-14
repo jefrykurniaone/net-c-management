@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { format, endOfWeek } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Mark } from "@/components/ui/mark";
 import { ActivityDot } from "@/components/activity/activity-badge";
 import {
   SessionsFilter,
@@ -129,6 +129,7 @@ export default async function SessionsPage({
   function renderCard(s: SessionRow) {
     const isRegistered = s.attendances.length > 0;
     const isFull = s._count.attendances >= s.maxPlayers;
+    const unclaimedLabel = isFull ? t.sessions.full : t.sessions.rsvp;
     const quota = quotas.get(s.id);
     const hasQuota = quota !== undefined && quota.needed > 0;
     return (
@@ -157,9 +158,7 @@ export default async function SessionsPage({
               {s.fee > 0 && <> · Rp {s.fee.toLocaleString("id-ID")}{t.sessions.feePerPerson}</>}
             </p>
             {hasQuota && (
-              <Badge
-                variant={quota.isMet ? "success" : "warning"}
-                className="mt-1">
+              <Mark kind={quota.isMet ? "ink" : "tape"} className="mt-1">
                 {quota.isMet
                   ? t.sessions.quotaMet
                   : t.sessions.quotaNeedMore.replace("{n}", String(quota.needed - quota.committed))}
@@ -167,16 +166,16 @@ export default async function SessionsPage({
                 <span className="tabular-nums">
                   ({quota.committed}/{quota.needed})
                 </span>
-              </Badge>
+              </Mark>
             )}
           </div>
           <div className="shrink-0 flex flex-col items-end gap-1">
+            {/* A Seat held is written in ink; a Seat nobody has placed — whether
+                it is still free or the Session is full — is left blank. */}
             {isRegistered ? (
-              <Badge>{t.sessions.going}</Badge>
-            ) : isFull ? (
-              <Badge variant="secondary">{t.sessions.full}</Badge>
+              <Mark kind="ink">{t.sessions.going}</Mark>
             ) : (
-              <Badge variant="outline">{t.sessions.rsvp}</Badge>
+              <Mark kind="blank">{unclaimedLabel}</Mark>
             )}
           </div>
         </div>

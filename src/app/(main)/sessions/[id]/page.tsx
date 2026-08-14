@@ -3,8 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
-import { sessionStatusVariant } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
+import { Mark, StateMark, MarkedValue } from '@/components/ui/mark';
 import { ActivityBadge } from '@/components/activity/activity-badge';
 import { RSVPButton } from '@/components/sessions/rsvp-button';
 import { PlayerList, type PlayerItem } from '@/components/sessions/player-list';
@@ -236,14 +235,7 @@ export default async function SessionDetailPage({
                 .join('')
                 .toUpperCase() ?? '?',
         image: a.user.image ?? '',
-        statusLabel:
-            a.status === 'PRESENT'
-                ? t.attendanceStatus.PRESENT
-                : a.status === 'MAYBE'
-                  ? t.sessions.maybe
-                  : t.sessions.going,
-        isPresent: a.status === 'PRESENT',
-        isMaybe: a.status === 'MAYBE',
+        status: a.status,
         isYou: a.userId === authSession.user.id,
     }));
 
@@ -270,13 +262,22 @@ export default async function SessionDetailPage({
                             name={activitySession.activity.name}
                             color={activitySession.activity.color}
                         />
-                        <Badge
-                            variant={sessionStatusVariant(activitySession.status)}>
-                            {t.sessionStatus[activitySession.status]}
-                        </Badge>
+                        <StateMark
+                            state={{
+                                domain: 'session',
+                                status: activitySession.status,
+                            }}
+                            labels={t.marks}
+                        />
                     </div>
                     <h1 className='text-2xl font-bold text-foreground leading-tight'>
-                        {activitySession.title}
+                        <MarkedValue
+                            state={{
+                                domain: 'session',
+                                status: activitySession.status,
+                            }}>
+                            {activitySession.title}
+                        </MarkedValue>
                     </h1>
                 </div>
 
@@ -340,15 +341,14 @@ export default async function SessionDetailPage({
                             <span className='flex-1'>
                                 {t.sessions.quotaLabel}
                             </span>
-                            <Badge
-                                variant={quota.isMet ? 'success' : 'warning'}>
+                            <Mark kind={quota.isMet ? 'ink' : 'tape'}>
                                 {quota.isMet
                                     ? t.sessions.quotaMet
                                     : t.sessions.quotaNeedMore.replace(
                                           '{n}',
                                           String(quota.needed - quota.committed),
                                       )}
-                            </Badge>
+                            </Mark>
                         </div>
                     )}
                     {activitySession.notes && (
@@ -436,6 +436,7 @@ export default async function SessionDetailPage({
                             players={players}
                             youLabel={locale === 'id' ? 'Kamu' : 'you'}
                             showAllTemplate={t.sessions.showAllPlayers}
+                            markLabels={t.marks}
                         />
                     )}
                 </div>

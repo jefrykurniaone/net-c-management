@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
+import { Mark, StateMark, MarkedValue } from "@/components/ui/mark";
 import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
 import { HoldCountdown } from "@/components/payments/hold-countdown";
@@ -17,7 +17,6 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
 import { getOutstandingSessionBills } from "@/lib/payments";
 import { releaseExpiredHolds } from "@/lib/holds";
-import { paymentStatusVariant } from "@/lib/utils";
 import type { Prisma } from "@prisma/client";
 
 export default async function PaymentsPage({
@@ -190,7 +189,8 @@ export default async function PaymentsPage({
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <Badge variant="warning">{t.payments.payNow}</Badge>
+                  {/* A Seat held on money not yet sent is provisional — tape. */}
+                  <Mark kind="tape">{t.payments.payNow}</Mark>
                   <p className="text-[11px] text-warning tabular-nums">
                     <HoldCountdown
                       iso={new Date(bill.holdExpiresAt).toISOString()}
@@ -226,13 +226,14 @@ export default async function PaymentsPage({
                     </p>
                   </div>
                   {paid ? (
-                    <Badge variant="success">{t.payments.paid}</Badge>
+                    <Mark kind="ink">{t.payments.paid}</Mark>
                   ) : inReview ? (
-                    <Badge variant="secondary">{t.payments.inReview}</Badge>
+                    <Mark kind="tape">{t.payments.inReview}</Mark>
                   ) : (
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <Link href="/payments/upload">
-                        <Badge variant="warning">{t.payments.unpaid}</Badge>
+                        {/* Dues nobody has paid yet: expected, not yet placed. */}
+                        <Mark kind="blank">{t.payments.unpaid}</Mark>
                       </Link>
                       {hold && (
                         <p className="text-[11px] text-warning tabular-nums">
@@ -311,8 +312,10 @@ export default async function PaymentsPage({
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
                       {t.payments.submitted}{" "}
-                      {format(new Date(payment.createdAt), "MMM d", { locale: dateLocale })} · Rp{" "}
-                      {payment.amount.toLocaleString("id-ID")}
+                      {format(new Date(payment.createdAt), "MMM d", { locale: dateLocale })} ·{" "}
+                      <MarkedValue state={{ domain: "payment", status: payment.status }}>
+                        Rp {payment.amount.toLocaleString("id-ID")}
+                      </MarkedValue>
                     </p>
                     {payment.status === "REJECTED" && payment.notes && (
                       <p className="text-xs text-destructive mt-1">
@@ -340,9 +343,10 @@ export default async function PaymentsPage({
                     )}
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <Badge variant={paymentStatusVariant(payment.status)}>
-                      {t.payments.historyStatus[payment.status]}
-                    </Badge>
+                    <StateMark
+                      state={{ domain: "payment", status: payment.status }}
+                      labels={t.marks}
+                    />
                     {payment.proofUrl && (
                       <a
                         href={payment.proofUrl}

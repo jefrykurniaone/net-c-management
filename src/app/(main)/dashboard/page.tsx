@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
 import { Shapes, AlertTriangle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Mark, StateMark } from '@/components/ui/mark';
 import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ActivityInitial } from '@/components/activity/activity-badge';
@@ -16,8 +16,54 @@ import { getUserActivityIds } from '@/lib/activity';
 import { resolvePaymentMode } from '@/lib/payment-mode';
 import { getOutstandingSessionBills } from '@/lib/payments';
 import { releaseExpiredHolds } from '@/lib/holds';
+import type { Dictionary } from '@/lib/i18n/dictionaries';
+import type { PaymentStatus } from '@prisma/client';
 
 const UPCOMING_PER_ACTIVITY = 3;
+
+/**
+ * What an Activity's money looks like on the board right now. A Payment the
+ * admin has ruled on takes its own mark through the resolver; anything else is
+ * money nobody has placed (blank) or a Fee still owed on held Seats (tape).
+ */
+function MoneyMark({
+    isMonthlyDue,
+    paymentStatus,
+    outstanding,
+    t,
+}: Readonly<{
+    isMonthlyDue: boolean;
+    paymentStatus: PaymentStatus | undefined;
+    outstanding: number;
+    t: Dictionary;
+}>) {
+    if (isMonthlyDue) {
+        if (paymentStatus === 'CONFIRMED' || paymentStatus === 'PENDING') {
+            return (
+                <StateMark
+                    state={{ domain: 'payment', status: paymentStatus }}
+                    labels={t.marks}
+                />
+            );
+        }
+        // No Payment, or one that was rejected — nothing valid stands.
+        return (
+            <Link href='/payments/upload'>
+                <Mark kind='blank'>{t.dashboard.duesUnpaidBanner}</Mark>
+            </Link>
+        );
+    }
+    if (outstanding > 0) {
+        return (
+            <Link href='/payments'>
+                <Mark kind='tape'>
+                    {t.dashboard.toPay.replace('{n}', String(outstanding))}
+                </Mark>
+            </Link>
+        );
+    }
+    return null;
+}
 
 export default async function DashboardPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -284,32 +330,12 @@ export default async function DashboardPage() {
                                     <span className='flex-1 text-[15px] font-semibold text-foreground truncate'>
                                         {activity.name}
                                     </span>
-                                    {isMonthlyDue ? (
-                                        payment?.status === 'CONFIRMED' ? (
-                                            <Badge variant='success'>
-                                                {t.dashboard.paid}
-                                            </Badge>
-                                        ) : payment?.status === 'PENDING' ? (
-                                            <Badge variant='secondary'>
-                                                {t.payments.inReview}
-                                            </Badge>
-                                        ) : (
-                                            <Link href='/payments/upload'>
-                                                <Badge variant='warning'>
-                                                    {t.dashboard.duesUnpaidBanner}
-                                                </Badge>
-                                            </Link>
-                                        )
-                                    ) : outstanding > 0 ? (
-                                        <Link href='/payments'>
-                                            <Badge variant='warning'>
-                                                {t.dashboard.toPay.replace(
-                                                    '{n}',
-                                                    String(outstanding),
-                                                )}
-                                            </Badge>
-                                        </Link>
-                                    ) : null}
+                                    <MoneyMark
+                                        isMonthlyDue={isMonthlyDue}
+                                        paymentStatus={payment?.status}
+                                        outstanding={outstanding}
+                                        t={t}
+                                    />
                                 </div>
                                 <div className='px-4 pb-4 space-y-2'>
                                     {sessions.length === 0 ? (
@@ -352,15 +378,17 @@ export default async function DashboardPage() {
                                                         </span>
                                                     </span>
                                                     {isRegistered ? (
-                                                        <Badge className='shrink-0'>
+                                                        <Mark
+                                                            kind='ink'
+                                                            className='shrink-0'>
                                                             {t.dashboard.going}
-                                                        </Badge>
+                                                        </Mark>
                                                     ) : (
-                                                        <Badge
-                                                            variant='outline'
+                                                        <Mark
+                                                            kind='blank'
                                                             className='shrink-0'>
                                                             {t.dashboard.rsvp}
-                                                        </Badge>
+                                                        </Mark>
                                                     )}
                                                 </Link>
                                             );

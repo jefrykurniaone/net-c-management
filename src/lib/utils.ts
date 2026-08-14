@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { PaymentStatus, Role } from '@prisma/client';
+import type { Role } from '@prisma/client';
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -39,27 +39,12 @@ export function communityAbbr(name: string): string {
         .join('');
 }
 
-export function sessionStatusVariant(
-    status: string,
-): 'default' | 'secondary' | 'outline' | 'destructive' {
-    if (status === 'ONGOING') return 'default';
-    if (status === 'CANCELLED') return 'destructive';
-    if (status === 'COMPLETED') return 'outline';
-    return 'secondary';
-}
-
-export function paymentStatusVariant(
-    status: PaymentStatus,
-): 'success' | 'warning' | 'destructive' {
-    if (status === 'CONFIRMED') return 'success';
-    if (status === 'REJECTED') return 'destructive';
-    return 'warning';
-}
-
 /**
- * Badge variant for a user role. OWNER carries the platform accent (default =
- * Court Green), ADMIN a neutral secondary, MEMBER a plain outline. Replaces the
- * legacy hardcoded purple OWNER badge (single-accent rule, UX-DR1).
+ * Badge variant for a user role. A Role is a standing property of a person,
+ * not a state of a thing, so it deliberately takes a tracked-caps label rather
+ * than one of the six marks — see resolveStatusMark in `status-mark.ts`, which
+ * owns every actual state. OWNER carries the identity Court Green, ADMIN a
+ * neutral secondary, MEMBER a plain outline.
  */
 export function roleBadgeVariant(
     role: Role,
