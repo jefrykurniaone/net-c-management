@@ -4,11 +4,12 @@ import { redirect, notFound } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { StateMark, MarkedValue } from "@/components/ui/mark";
+import { Mark, StateMark, MarkedValue } from "@/components/ui/mark";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { isAdminRole, roleBadgeVariant } from "@/lib/utils";
+import { attendanceState, paymentState } from "@/lib/status-mark";
 import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -93,9 +94,7 @@ export default async function MemberDetailPage({
                 {t.roles[member.role]}
               </Badge>
               {!member.isActive && (
-                <Badge variant="destructive">
-                  {t.admin.inactive2}
-                </Badge>
+                <Mark kind="erased">{t.admin.inactive2}</Mark>
               )}
             </div>
             {member.memberships.length > 0 && (
@@ -161,7 +160,7 @@ export default async function MemberDetailPage({
                   </p>
                 </div>
                 <StateMark
-                  state={{ domain: "attendance", status: a.status }}
+                  state={attendanceState(a.status)}
                   labels={t.marks}
                 />
               </div>
@@ -189,14 +188,14 @@ export default async function MemberDetailPage({
                     {t.months[p.month]} {p.year}
                   </p>
                   <MarkedValue
-                    state={{ domain: "payment", status: p.status }}
+                    state={paymentState(p.status)}
                     className="block text-xs text-muted-foreground tabular-nums"
                   >
                     Rp {p.amount.toLocaleString("id-ID")}
                   </MarkedValue>
                 </div>
                 <StateMark
-                  state={{ domain: "payment", status: p.status }}
+                  state={paymentState(p.status)}
                   labels={t.marks}
                 />
               </div>

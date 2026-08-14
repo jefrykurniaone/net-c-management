@@ -14,6 +14,7 @@ import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getActivities } from "@/lib/activity";
 import { isAdminRole } from "@/lib/utils";
+import { paymentState } from "@/lib/status-mark";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { parsePagination, parseSort, parseSearch } from "@/lib/table-params";
 import { SortableTh } from "@/components/ui/sortable-th";
@@ -227,13 +228,13 @@ export default async function AdminPaymentsPage({
                     {t.months[p.month]} {p.year}
                   </td>
                   <td className="px-5 py-3 text-right text-foreground font-semibold whitespace-nowrap tabular-nums">
-                    <MarkedValue state={{ domain: "payment", status: p.status }}>
+                    <MarkedValue state={paymentState(p.status)}>
                       Rp {p.amount.toLocaleString("id-ID")}
                     </MarkedValue>
                   </td>
                   <td className="px-5 py-3 text-center">
                     <StateMark
-                      state={{ domain: "payment", status: p.status }}
+                      state={paymentState(p.status)}
                       labels={t.marks}
                     />
                   </td>

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
 import { Shapes, AlertTriangle } from 'lucide-react';
-import { Mark, StateMark } from '@/components/ui/mark';
+import { Mark } from '@/components/ui/mark';
 import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ActivityInitial } from '@/components/activity/activity-badge';
@@ -16,54 +16,9 @@ import { getUserActivityIds } from '@/lib/activity';
 import { resolvePaymentMode } from '@/lib/payment-mode';
 import { getOutstandingSessionBills } from '@/lib/payments';
 import { releaseExpiredHolds } from '@/lib/holds';
-import type { Dictionary } from '@/lib/i18n/dictionaries';
-import type { PaymentStatus } from '@prisma/client';
+import { MoneyMark } from '@/components/dashboard/money-mark';
 
 const UPCOMING_PER_ACTIVITY = 3;
-
-/**
- * What an Activity's money looks like on the board right now. A Payment the
- * admin has ruled on takes its own mark through the resolver; anything else is
- * money nobody has placed (blank) or a Fee still owed on held Seats (tape).
- */
-function MoneyMark({
-    isMonthlyDue,
-    paymentStatus,
-    outstanding,
-    t,
-}: Readonly<{
-    isMonthlyDue: boolean;
-    paymentStatus: PaymentStatus | undefined;
-    outstanding: number;
-    t: Dictionary;
-}>) {
-    if (isMonthlyDue) {
-        if (paymentStatus === 'CONFIRMED' || paymentStatus === 'PENDING') {
-            return (
-                <StateMark
-                    state={{ domain: 'payment', status: paymentStatus }}
-                    labels={t.marks}
-                />
-            );
-        }
-        // No Payment, or one that was rejected — nothing valid stands.
-        return (
-            <Link href='/payments/upload'>
-                <Mark kind='blank'>{t.dashboard.duesUnpaidBanner}</Mark>
-            </Link>
-        );
-    }
-    if (outstanding > 0) {
-        return (
-            <Link href='/payments'>
-                <Mark kind='tape'>
-                    {t.dashboard.toPay.replace('{n}', String(outstanding))}
-                </Mark>
-            </Link>
-        );
-    }
-    return null;
-}
 
 export default async function DashboardPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);

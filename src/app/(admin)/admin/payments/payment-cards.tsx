@@ -4,6 +4,7 @@ import { StateMark, MarkedValue } from "@/components/ui/mark";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
 import { PaymentActions } from "./payment-actions";
+import { paymentState } from "@/lib/status-mark";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 import { getDateFnsLocale } from "@/lib/i18n/locale";
 import type { Payment } from "@prisma/client";
@@ -32,14 +33,14 @@ function PaymentCard({
       </CardField>
       <CardField label={t.admin.colAmount}>
         <MarkedValue
-          state={{ domain: "payment", status: p.status }}
+          state={paymentState(p.status)}
           className="font-medium tabular-nums"
         >
           Rp {p.amount.toLocaleString("id-ID")}
         </MarkedValue>
       </CardField>
       <CardField label={t.admin.colStatus}>
-        <StateMark state={{ domain: "payment", status: p.status }} labels={t.marks} />
+        <StateMark state={paymentState(p.status)} labels={t.marks} />
       </CardField>
       <CardField label={t.admin.colDate}>
         {format(new Date(p.createdAt), "d MMM yyyy", { locale: dateLocale })}

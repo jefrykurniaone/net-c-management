@@ -42,6 +42,10 @@ export type MarkLabelKey =
     | 'maybe'
     | 'present'
     | 'optedOut'
+    /* The labels for the two marks that ship with no producer. Nothing
+       records a No-Show and nothing posts an empty Slot Cell yet; the admin
+       spec wires both up, and the labels are here so it does not have to
+       reopen the dictionary in two languages to do it. */
     | 'noShow'
     | 'unposted';
 
@@ -51,14 +55,33 @@ export interface StatusMark {
 }
 
 /**
- * A state of a thing with a lifecycle — a Session, a Payment, a Seat. Standing
- * properties of a person (Role, whether an account is active) are deliberately
- * not in here: they are not states, and they take a tracked-caps label instead.
+ * A state of a thing with a lifecycle — a Session, a Payment, a Seat. A Role is
+ * deliberately not in here: it is a standing property of a person rather than a
+ * state of a thing, so it takes a tracked-caps label. Whether an account is
+ * active follows the Role, being the same shape of fact about the same person.
  */
 export type DomainState =
     | { domain: 'session'; status: SessionStatus }
     | { domain: 'payment'; status: PaymentStatus }
     | { domain: 'attendance'; status: AttendanceStatus };
+
+/* Constructors, so a call site names the domain once instead of spelling the
+   object literal out — often twice in one row, for the mark and the value it
+   marks. */
+export const sessionState = (status: SessionStatus): DomainState => ({
+    domain: 'session',
+    status,
+});
+
+export const paymentState = (status: PaymentStatus): DomainState => ({
+    domain: 'payment',
+    status,
+});
+
+export const attendanceState = (status: AttendanceStatus): DomainState => ({
+    domain: 'attendance',
+    status,
+});
 
 /**
  * A posted Session is a real thing on the board, whatever point of its life it

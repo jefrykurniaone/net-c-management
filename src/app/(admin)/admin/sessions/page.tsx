@@ -15,6 +15,7 @@ import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getActivities } from '@/lib/activity';
 import { isAdminRole } from '@/lib/utils';
+import { sessionState } from '@/lib/status-mark';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { parsePagination, parseSort, parseSearch } from '@/lib/table-params';
 import { SortableTh } from '@/components/ui/sortable-th';
@@ -178,7 +179,7 @@ export default async function AdminSessionsPage({
                                         className='border-b border-border last:border-b-0 hover:bg-muted/40'>
                                         <td className='px-5 py-3.5 max-w-50'>
                                             <MarkedValue
-                                                state={{ domain: 'session', status: s.status }}
+                                                state={sessionState(s.status)}
                                                 className='truncate block font-semibold text-foreground'>
                                                 {s.title}
                                             </MarkedValue>
@@ -214,7 +215,7 @@ export default async function AdminSessionsPage({
                                         </td>
                                         <td className='px-5 py-3.5'>
                                             <StateMark
-                                                state={{ domain: 'session', status: s.status }}
+                                                state={sessionState(s.status)}
                                                 labels={t.marks}
                                             />
                                         </td>

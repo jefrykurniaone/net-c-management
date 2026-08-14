@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { AttendanceStatus } from '@prisma/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StateMark } from '@/components/ui/mark';
-import type { MarkLabelKey } from '@/lib/status-mark';
+import { attendanceState, type MarkLabelKey } from '@/lib/status-mark';
 
 const PREVIEW_COUNT = 4;
 
@@ -53,7 +53,7 @@ export function PlayerList({
                         )}
                     </p>
                     <StateMark
-                        state={{ domain: 'attendance', status: player.status }}
+                        state={attendanceState(player.status)}
                         labels={markLabels}
                     />
                 </div>

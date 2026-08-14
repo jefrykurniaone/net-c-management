@@ -5,6 +5,7 @@ import { ExternalLink } from "lucide-react";
 import { StateMark, MarkedValue } from "@/components/ui/mark";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
+import { sessionState } from "@/lib/status-mark";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 import { getDateFnsLocale } from "@/lib/i18n/locale";
 import type { ActivitySession } from "@prisma/client";
@@ -23,7 +24,7 @@ function SessionCard({
     <MobileCard accentColor={s.activity.color}>
       <div className="min-w-0 space-y-1">
         <MarkedValue
-          state={{ domain: "session", status: s.status }}
+          state={sessionState(s.status)}
           className="block truncate font-medium text-foreground"
         >
           {s.title}
@@ -45,7 +46,7 @@ function SessionCard({
         <span className="tabular-nums">{s._count.attendances}/{s.maxPlayers}</span>
       </CardField>
       <CardField label={t.admin.colStatus}>
-        <StateMark state={{ domain: "session", status: s.status }} labels={t.marks} />
+        <StateMark state={sessionState(s.status)} labels={t.marks} />
       </CardField>
       <div className="flex items-center gap-4 pt-1">
         <Link

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { Mark } from "@/components/ui/mark";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import Link from "next/link";
 import { MemberActions } from "./member-actions";
@@ -214,9 +215,7 @@ export default async function AdminMembersPage({
                         {t.roles[u.role]}
                       </Badge>
                       {!u.isActive && (
-                        <Badge variant="destructive" className="text-xs">
-                          {t.admin.inactive2}
-                        </Badge>
+                        <Mark kind="erased">{t.admin.inactive2}</Mark>
                       )}
                     </div>
                   </td>

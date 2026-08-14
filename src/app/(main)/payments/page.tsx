@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
 import { Mark, StateMark, MarkedValue } from "@/components/ui/mark";
+import { paymentState } from "@/lib/status-mark";
 import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
 import { HoldCountdown } from "@/components/payments/hold-countdown";
@@ -313,7 +314,7 @@ export default async function PaymentsPage({
                     <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
                       {t.payments.submitted}{" "}
                       {format(new Date(payment.createdAt), "MMM d", { locale: dateLocale })} ·{" "}
-                      <MarkedValue state={{ domain: "payment", status: payment.status }}>
+                      <MarkedValue state={paymentState(payment.status)}>
                         Rp {payment.amount.toLocaleString("id-ID")}
                       </MarkedValue>
                     </p>
@@ -344,7 +345,7 @@ export default async function PaymentsPage({
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <StateMark
-                      state={{ domain: "payment", status: payment.status }}
+                      state={paymentState(payment.status)}
                       labels={t.marks}
                     />
                     {payment.proofUrl && (

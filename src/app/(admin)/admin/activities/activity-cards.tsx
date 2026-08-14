@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Mark } from "@/components/ui/mark";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
 import { ActivityActions } from "./activity-actions";
@@ -26,9 +26,12 @@ function ActivityCard({ e, t }: Readonly<{ e: ActivityCardRow; t: Dictionary }>)
         <span className="tabular-nums">Rp {e.monthlyFee.toLocaleString("id-ID")}</span>
       </CardField>
       <CardField label={t.admin.colStatus}>
-        <Badge variant={e.isActive ? "default" : "secondary"}>
+        {/* An Activity still running is written in ink; one taken off the
+            board is erased. Not a stored status, so there is nothing for the
+            resolver to own — but it is a state of a thing, so it is a mark. */}
+        <Mark kind={e.isActive ? "ink" : "erased"}>
           {e.isActive ? t.admin.active : t.admin.inactive2}
-        </Badge>
+        </Mark>
       </CardField>
       <ActivityActions
         activity={{

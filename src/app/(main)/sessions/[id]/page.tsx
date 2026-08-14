@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
 import { Mark, StateMark, MarkedValue } from '@/components/ui/mark';
+import { sessionState } from '@/lib/status-mark';
 import { ActivityBadge } from '@/components/activity/activity-badge';
 import { RSVPButton } from '@/components/sessions/rsvp-button';
 import { PlayerList, type PlayerItem } from '@/components/sessions/player-list';
@@ -263,19 +264,13 @@ export default async function SessionDetailPage({
                             color={activitySession.activity.color}
                         />
                         <StateMark
-                            state={{
-                                domain: 'session',
-                                status: activitySession.status,
-                            }}
+                            state={sessionState(activitySession.status)}
                             labels={t.marks}
                         />
                     </div>
                     <h1 className='text-2xl font-bold text-foreground leading-tight'>
                         <MarkedValue
-                            state={{
-                                domain: 'session',
-                                status: activitySession.status,
-                            }}>
+                            state={sessionState(activitySession.status)}>
                             {activitySession.title}
                         </MarkedValue>
                     </h1>
