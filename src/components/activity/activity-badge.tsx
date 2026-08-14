@@ -1,18 +1,51 @@
-import type { CSSProperties } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { activityInitial } from '@/lib/activity-initial';
 import { cn } from '@/lib/utils';
 
 /**
- * Theme-reactive tint styles for a runtime activity hex (Club Premium chips):
- * soft tinted background over the card surface and a text color pulled toward
- * the theme foreground, so one inline style works in both light and dark mode.
- * Tailwind can't JIT a runtime DB color, so the chip tints via inline style.
+ * Activity livery, Papan Jadwal: a magnet tile bearing the Activity's initial
+ * in ink, with no colour fill. Court Green is the only green the system
+ * permits, so a member-configured Activity colour would either compete with
+ * the identity or dissolve into it — and an arbitrary hex can carry neither
+ * legible lettering nor reliable contrast on both board materials.
+ *
+ * The `color` prop is still accepted and deliberately ignored: this is the
+ * expand half of an expand–contract, so every existing call site keeps
+ * compiling while the read sites migrate in the tickets that follow.
  */
-export function activityTintStyle(color: string): CSSProperties {
-    return {
-        backgroundColor: `color-mix(in srgb, ${color} 14%, var(--card))`,
-        color: `color-mix(in oklab, ${color} 55%, var(--foreground))`,
-    };
+
+type ActivityLiveryProps = Readonly<{
+    name: string;
+    /** Accepted for call-site compatibility. Ignored — livery carries no colour. */
+    color?: string;
+    /** Likewise accepted and ignored; call sites still pass it. */
+    icon?: string | null;
+    className?: string;
+}>;
+
+/** The tile itself. Ink on tile, bounded by a visible rule, resting flat. */
+function InitialTile({
+    name,
+    className,
+    labelled,
+}: Readonly<{ name: string; className?: string; labelled: boolean }>) {
+    const label = name.trim();
+    const isNamed = label.length > 0;
+
+    return (
+        <span
+            {...(labelled && isNamed
+                ? { role: 'img', 'aria-label': label, title: label }
+                : { 'aria-hidden': true })}
+            className={cn(
+                'flex shrink-0 items-center justify-center rounded-sm',
+                'border border-rule bg-tile text-foreground shadow-tile',
+                'select-none',
+                className,
+            )}>
+            {activityInitial(name)}
+        </span>
+    );
 }
 
 export function ActivityDot({
@@ -28,41 +61,41 @@ export function ActivityDot({
     );
 }
 
-export function ActivityBadge({
-    name,
-    color,
-    className,
-}: Readonly<{
-    name: string;
-    color: string;
-    icon?: string | null;
-    className?: string;
-}>) {
+/**
+ * Tile plus the Activity name. The name is what tells two Activities sharing
+ * an initial apart, so the tile is never the only identifier here.
+ */
+export function ActivityBadge({ name, className }: ActivityLiveryProps) {
     return (
         <Badge
-            className={cn('border-transparent gap-1.5', className)}
-            style={activityTintStyle(color)}>
-            <ActivityDot color={color} className='size-[7px]' />
+            variant='outline'
+            className={cn('h-auto gap-1.5 py-0.5 pl-0.5', className)}>
+            {/* Inline, the tile is a small mark on the board's furniture, so
+                it takes the Label role. The badge is already a bordered chip
+                and clips its overflow, so the tile drops its contact shadow. */}
+            <InitialTile
+                name={name}
+                labelled={false}
+                className='size-5 type-label shadow-none'
+            />
             {name}
         </Badge>
     );
 }
 
-/** Square initial mark in the activity tint — list rows and activity cards. */
-export function ActivityInitial({
-    name,
-    color,
-    className,
-}: Readonly<{ name: string; color: string; className?: string }>) {
+/**
+ * The tile on its own — list rows and Activity cards, where the Activity name
+ * already sits beside it. It carries the name as its accessible label so a
+ * dense register never leaves the initial to identify the Activity alone.
+ */
+export function ActivityInitial({ name, className }: ActivityLiveryProps) {
+    // Standing alone the tile is a stamped letter, not a small mark, so it
+    // takes the Title role at the size the board reads it.
     return (
-        <span
-            aria-hidden
-            className={cn(
-                'flex size-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold',
-                className,
-            )}
-            style={activityTintStyle(color)}>
-            {name.charAt(0).toUpperCase()}
-        </span>
+        <InitialTile
+            name={name}
+            labelled
+            className={cn('size-7 type-title', className)}
+        />
     );
 }
