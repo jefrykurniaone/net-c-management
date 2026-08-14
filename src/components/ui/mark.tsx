@@ -15,8 +15,8 @@ import {
  *
  * - **ink** — filled rectangle, hard border. Settled and true.
  * - **tape** — filled rectangle with a torn right edge. Provisional and held.
- * - **strike** — filled rectangle whose label is struck through, and which
- *   strikes the value it marks (see {@link MarkedValue}). Void.
+ * - **strike** — filled rectangle whose label is struck through; the value it
+ *   marks dims rather than being struck (see {@link MarkedValue}). Void.
  * - **erased** — flat, ground-coloured, no wash and no border. Withdrawn.
  * - **blank** — 1px dashed outline, no fill. Nobody has placed it yet.
  * - **hollow** — 2px dashed outline in the void colour, no fill. It should
@@ -91,9 +91,18 @@ function StateMark({
 }
 
 /**
- * The value a mark applies to — a Session's title, a Payment's amount. A void
- * state draws a real line through it, because striking only the mark's own
- * label leaves the struck-out thing reading as though it still stands.
+ * How a void state renders the value it marks: the value recedes to Quiet Ink
+ * rather than being struck. The strike itself stays on the mark's own label,
+ * where one line through two words reads as a stamp; a second line through the
+ * value it sits beside reads as damage to the row.
+ *
+ * Applied *after* the caller's own classes so it wins over a base text colour.
+ */
+const VOID_VALUE_CLASS = 'text-muted-foreground';
+
+/**
+ * The value a mark applies to — a Session's title, a Payment's amount. Under a
+ * void state the value is dimmed, not struck: the mark carries the strike.
  */
 function MarkedValue({
     state,
@@ -103,11 +112,7 @@ function MarkedValue({
     const { kind } = resolveStatusMark(state);
     return (
         <span
-            className={cn(
-                kind === 'strike' &&
-                    'line-through decoration-destructive decoration-[1.5px]',
-                className,
-            )}
+            className={cn(className, kind === 'strike' && VOID_VALUE_CLASS)}
             {...props}
         />
     );
