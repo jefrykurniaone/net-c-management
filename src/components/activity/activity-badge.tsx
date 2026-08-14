@@ -18,6 +18,7 @@ type ActivityLiveryProps = Readonly<{
     name: string;
     /** Accepted for call-site compatibility. Ignored — livery carries no colour. */
     color?: string;
+    /** Likewise accepted and ignored; call sites still pass it. */
     icon?: string | null;
     className?: string;
 }>;
@@ -39,7 +40,7 @@ function InitialTile({
             className={cn(
                 'flex shrink-0 items-center justify-center rounded-sm',
                 'border border-rule bg-tile text-foreground shadow-tile',
-                'type-title select-none',
+                'select-none',
                 className,
             )}>
             {activityInitial(name)}
@@ -69,12 +70,13 @@ export function ActivityBadge({ name, className }: ActivityLiveryProps) {
         <Badge
             variant='outline'
             className={cn('h-auto gap-1.5 py-0.5 pl-0.5', className)}>
-            {/* The badge is already a bordered chip and clips its overflow,
-                so the tile drops its contact shadow inside one. */}
+            {/* Inline, the tile is a small mark on the board's furniture, so
+                it takes the Label role. The badge is already a bordered chip
+                and clips its overflow, so the tile drops its contact shadow. */}
             <InitialTile
                 name={name}
                 labelled={false}
-                className='size-5 text-xs shadow-none'
+                className='size-5 type-label shadow-none'
             />
             {name}
         </Badge>
@@ -87,5 +89,13 @@ export function ActivityBadge({ name, className }: ActivityLiveryProps) {
  * dense register never leaves the initial to identify the Activity alone.
  */
 export function ActivityInitial({ name, className }: ActivityLiveryProps) {
-    return <InitialTile name={name} labelled className={cn('size-7', className)} />;
+    // Standing alone the tile is a stamped letter, not a small mark, so it
+    // takes the Title role at the size the board reads it.
+    return (
+        <InitialTile
+            name={name}
+            labelled
+            className={cn('size-7 type-title', className)}
+        />
+    );
 }

@@ -184,8 +184,10 @@ export default async function PaymentsPage({
                 <ActivityInitial name={bill.activity.name} color={bill.activity.color} />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-foreground truncate">{bill.title}</p>
+                  {/* The Activity name rides the caption line: the tile alone
+                      cannot tell apart two Activities sharing an initial. */}
                   <p className="text-xs text-muted-foreground tabular-nums">
-                    Rp {bill.fee.toLocaleString("id-ID")} ·{" "}
+                    {bill.activity.name} · Rp {bill.fee.toLocaleString("id-ID")} ·{" "}
                     {format(new Date(bill.date), "d MMM", { locale: dateLocale })}
                   </p>
                 </div>
