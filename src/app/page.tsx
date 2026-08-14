@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
-import { auth, signIn } from '@/lib/auth';
+import { auth } from '@/lib/auth';
+import { continueWithGoogle } from '@/lib/auth-actions';
 import { Button } from '@/components/ui/button';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
@@ -16,8 +17,9 @@ import { GoogleMark } from '@/components/auth/GoogleMark';
 // header plate and one way onto it — identity, one sentence of what the board
 // is for, one action, and the truth about what that action does.
 
-const BOARD_WIDTH = 'max-w-[72rem]';
-const COLUMN_WIDTH = 'max-w-[40rem]';
+// DESIGN.md: containers max at 72rem for board surfaces and 40rem for
+// single-task columns.
+const BOARD_WIDTH_CLASS = 'max-w-[72rem]';
 
 /** Full-bleed header rail: identity plate at left, board controls at right. */
 function IdentityRail({
@@ -27,7 +29,7 @@ function IdentityRail({
     return (
         <header className='border-b border-rule'>
             <div
-                className={`mx-auto flex ${BOARD_WIDTH} flex-wrap items-center gap-block px-block py-cell`}>
+                className={`mx-auto flex ${BOARD_WIDTH_CLASS} flex-wrap items-center gap-block px-block py-cell`}>
                 <div className='flex min-w-0 items-center gap-cell'>
                     <CommunityIdentityMark
                         communityName={communityName}
@@ -57,23 +59,21 @@ function IdentityRail({
  * then the single way onto it and what taking it actually does.
  */
 function ThresholdTile({ t }: Readonly<{ t: Dictionary }>) {
+    // Flat at rest: DESIGN.md reserves the tile-rest shadow for things that are
+    // genuinely movable tiles, which a container is not. Only the action inside
+    // it carries one.
     return (
-        <div
-            className={`w-full ${COLUMN_WIDTH} border border-rule bg-card shadow-tile`}>
+        <div className='w-full max-w-[40rem] border border-rule bg-card'>
             <h1 className='type-display text-balance p-block text-card-foreground'>
                 {t.landing.purpose}
             </h1>
             <div className='flex flex-col gap-cell border-t border-rule p-block'>
-                <form
-                    action={async () => {
-                        'use server';
-                        await signIn('google', { redirectTo: '/dashboard' });
-                    }}>
+                <form action={continueWithGoogle}>
                     <Button
                         type='submit'
-                        className='type-label h-auto w-full gap-cell px-5 py-3 shadow-tile hover:bg-foreground hover:text-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:shadow-tile-pressed active:not-aria-[haspopup]:translate-y-0 sm:w-auto'>
+                        className='type-label h-auto w-full gap-cell px-5 py-3 shadow-tile hover:bg-foreground hover:text-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:shadow-tile-pressed active:not-aria-[haspopup]:translate-y-0 sm:w-auto'>
                         <GoogleMark className='size-5' />
-                        {t.landing.continueWithGoogle}
+                        {t.auth.signInButton}
                     </Button>
                 </form>
                 <p className='type-caption max-w-[65ch] text-muted-foreground'>
@@ -108,7 +108,7 @@ export default async function LandingPage() {
             </main>
             <footer className='border-t border-rule px-block py-cell'>
                 <p
-                    className={`mx-auto ${BOARD_WIDTH} type-caption text-muted-foreground`}>
+                    className={`mx-auto ${BOARD_WIDTH_CLASS} type-caption text-muted-foreground`}>
                     ©{' '}
                     <span className='tabular-nums'>
                         {new Date().getFullYear()}

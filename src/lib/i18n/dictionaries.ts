@@ -35,7 +35,6 @@ const en = {
     landing: {
         purpose:
             'The board for this community: sessions posted, seats claimed, dues settled.',
-        continueWithGoogle: 'Continue with Google',
         accountNote:
             'Continuing with Google signs you in, and creates your account the first time you do it.',
         footer: 'All rights reserved.',
@@ -44,7 +43,8 @@ const en = {
         signInTitle: 'Sign In',
         signInSubtitle: 'Sessions, RSVPs and dues for your whole community — in one place.',
         signInButton: 'Continue with Google',
-        signInNote: 'New members need an invite from a club admin. By signing in you agree to the club rules.',
+        signInNote:
+            'Continuing with Google creates your account the first time you do it. By signing in you agree to the club rules.',
         errorTitle: 'Sign In Failed',
         errorMessage:
             'An error occurred during the login process. Please try again.',
@@ -728,7 +728,6 @@ const id: typeof en = {
     landing: {
         purpose:
             'Papan untuk komunitas ini: sesi dipasang, kursi diambil, iuran dilunasi.',
-        continueWithGoogle: 'Lanjut dengan Google',
         accountNote:
             'Lanjut dengan Google membuatmu masuk, dan membuatkan akunmu saat pertama kali kamu memakainya.',
         footer: 'Semua hak dilindungi.',
@@ -737,7 +736,8 @@ const id: typeof en = {
         signInTitle: 'Masuk',
         signInSubtitle: 'Sesi, RSVP, dan iuran untuk seluruh komunitasmu — dalam satu tempat.',
         signInButton: 'Lanjutkan dengan Google',
-        signInNote: 'Anggota baru perlu undangan dari admin klub. Dengan masuk, kamu menyetujui aturan klub.',
+        signInNote:
+            'Lanjut dengan Google akan membuatkan akunmu saat pertama kali kamu memakainya. Dengan masuk, kamu menyetujui aturan klub.',
         errorTitle: 'Gagal Masuk',
         errorMessage: 'Terjadi kesalahan saat proses login. Silakan coba lagi.',
         backToSignIn: 'Kembali ke halaman login',

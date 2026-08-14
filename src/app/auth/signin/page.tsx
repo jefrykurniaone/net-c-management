@@ -1,4 +1,4 @@
-import { signIn } from '@/lib/auth';
+import { continueWithGoogle } from '@/lib/auth-actions';
 import { Button } from '@/components/ui/button';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
@@ -38,14 +38,7 @@ export default async function SignInPage() {
                 </div>
 
                 <div className='bg-card rounded-2xl border border-primary-soft-border shadow-[0_4px_16px_rgba(15,118,110,0.08)] p-6 w-full flex flex-col items-center gap-4'>
-                    <form
-                        action={async () => {
-                            'use server';
-                            await signIn('google', {
-                                redirectTo: '/dashboard',
-                            });
-                        }}
-                        className='w-full'>
+                    <form action={continueWithGoogle} className='w-full'>
                         <Button
                             type='submit'
                             variant='outline'
