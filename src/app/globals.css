@@ -323,10 +323,16 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground type-body;
   }
   html {
     @apply font-sans;
+  }
+  /* The Tracked-Caps-Are-Structural Rule: column heads are the board's own
+     furniture, so a table head takes the Label role from the token layer
+     rather than each table restating a size. */
+  th {
+    @apply type-label text-muted-foreground text-left;
   }
   /* The One Hand Rule. Tailwind's preflight hands code/pre a monospace
      stack; a real board is lettered by one hand, so they inherit. */
