@@ -2,10 +2,10 @@ import Link from "next/link";
 import { format } from "date-fns";
 import type { Locale as DateFnsLocale } from "date-fns";
 import { ExternalLink } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { StateMark, MarkedValue } from "@/components/ui/mark";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
-import { sessionStatusVariant } from "@/lib/utils";
+import { sessionState } from "@/lib/status-mark";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 import { getDateFnsLocale } from "@/lib/i18n/locale";
 import type { ActivitySession } from "@prisma/client";
@@ -23,7 +23,12 @@ function SessionCard({
   return (
     <MobileCard accentColor={s.activity.color}>
       <div className="min-w-0 space-y-1">
-        <p className="truncate font-medium text-foreground">{s.title}</p>
+        <MarkedValue
+          state={sessionState(s.status)}
+          className="block truncate font-medium text-foreground"
+        >
+          {s.title}
+        </MarkedValue>
         <ActivityBadge name={s.activity.name} color={s.activity.color} icon={s.activity.icon} />
       </div>
       <CardField label={t.admin.colDate}>
@@ -41,7 +46,7 @@ function SessionCard({
         <span className="tabular-nums">{s._count.attendances}/{s.maxPlayers}</span>
       </CardField>
       <CardField label={t.admin.colStatus}>
-        <Badge variant={sessionStatusVariant(s.status)}>{t.sessionStatus[s.status]}</Badge>
+        <StateMark state={sessionState(s.status)} labels={t.marks} />
       </CardField>
       <div className="flex items-center gap-4 pt-1">
         <Link

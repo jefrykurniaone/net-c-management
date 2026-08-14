@@ -1,10 +1,10 @@
 import { format } from "date-fns";
 import type { Locale as DateFnsLocale } from "date-fns";
-import { Badge } from "@/components/ui/badge";
+import { StateMark, MarkedValue } from "@/components/ui/mark";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import { MobileCard, CardField, CardListEmpty } from "@/components/admin/mobile-card";
 import { PaymentActions } from "./payment-actions";
-import { paymentStatusVariant } from "@/lib/utils";
+import { paymentState } from "@/lib/status-mark";
 import type { Dictionary, Locale } from "@/lib/i18n/dictionaries";
 import { getDateFnsLocale } from "@/lib/i18n/locale";
 import type { Payment } from "@prisma/client";
@@ -32,10 +32,15 @@ function PaymentCard({
         {t.months[p.month]} {p.year}
       </CardField>
       <CardField label={t.admin.colAmount}>
-        <span className="font-medium tabular-nums">Rp {p.amount.toLocaleString("id-ID")}</span>
+        <MarkedValue
+          state={paymentState(p.status)}
+          className="font-medium tabular-nums"
+        >
+          Rp {p.amount.toLocaleString("id-ID")}
+        </MarkedValue>
       </CardField>
       <CardField label={t.admin.colStatus}>
-        <Badge variant={paymentStatusVariant(p.status)}>{t.paymentStatus[p.status]}</Badge>
+        <StateMark state={paymentState(p.status)} labels={t.marks} />
       </CardField>
       <CardField label={t.admin.colDate}>
         {format(new Date(p.createdAt), "d MMM yyyy", { locale: dateLocale })}

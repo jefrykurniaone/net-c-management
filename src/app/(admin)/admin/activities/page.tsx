@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
+import { Mark } from '@/components/ui/mark';
 import { ActivityInitial } from '@/components/activity/activity-badge';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -147,9 +147,9 @@ export default async function AdminActivityPage({
                                         Rp {e.monthlyFee.toLocaleString('id-ID')}
                                     </td>
                                     <td className='px-5 py-3 text-center'>
-                                        <Badge variant={e.isActive ? 'success' : 'secondary'}>
+                                        <Mark kind={e.isActive ? 'ink' : 'erased'}>
                                             {e.isActive ? t.admin.active : t.admin.inactive2}
-                                        </Badge>
+                                        </Mark>
                                     </td>
                                     <td className='px-5 py-3'>
                                         <ActivityActions

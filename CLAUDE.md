@@ -14,7 +14,7 @@ npm run db:deploy:prod                      # Apply pending migrations to produc
 npx prisma studio                          # Open GUI for the database
 ```
 
-There are no automated tests in this project. 
+Tests run on Vitest (`npm test`, Node environment, no DOM). Coverage is deliberately narrow: pure logic under `src/lib/__tests__/` — the recurring-session generator and the status-mark resolver. Pages, components and anything touching Prisma or Supabase are not covered.
 
 ## Architecture
 

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import type { AttendanceStatus } from '@prisma/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { StateMark } from '@/components/ui/mark';
+import { attendanceState, type MarkLabelKey } from '@/lib/status-mark';
 
 const PREVIEW_COUNT = 4;
 
@@ -11,27 +13,22 @@ export interface PlayerItem {
     name: string;
     initials: string;
     image: string;
-    statusLabel: string;
-    isPresent: boolean;
-    isMaybe: boolean;
+    /** The stored Attendance state. The mark resolver, not this list, decides
+     *  how it is drawn — no surface computes its own status colour. */
+    status: AttendanceStatus;
     isYou: boolean;
-}
-
-/** Soft pill variant per RSVP standing: present→success, maybe→neutral, going→primary. */
-function statusVariant(player: PlayerItem): 'success' | 'secondary' | 'default' {
-    if (player.isPresent) return 'success';
-    if (player.isMaybe) return 'secondary';
-    return 'default';
 }
 
 export function PlayerList({
     players,
     youLabel,
     showAllTemplate,
+    markLabels,
 }: Readonly<{
     players: PlayerItem[];
     youLabel: string;
     showAllTemplate: string;
+    markLabels: Readonly<Record<MarkLabelKey, string>>;
 }>) {
     const [expanded, setExpanded] = useState(false);
     const canCollapse = players.length > PREVIEW_COUNT;
@@ -55,9 +52,10 @@ export function PlayerList({
                             </span>
                         )}
                     </p>
-                    <Badge variant={statusVariant(player)}>
-                        {player.statusLabel}
-                    </Badge>
+                    <StateMark
+                        state={attendanceState(player.status)}
+                        labels={markLabels}
+                    />
                 </div>
             ))}
 

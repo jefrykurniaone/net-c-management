@@ -1,3 +1,5 @@
+import type { MarkLabelKey } from '@/lib/status-mark';
+
 export type Locale = 'en' | 'id';
 
 export const LOCALES: Locale[] = ['en', 'id'];
@@ -617,8 +619,27 @@ const en = {
         REGISTERED: 'Registered',
         MAYBE: 'Maybe',
         PRESENT: 'Present',
-        ABSENT: 'Absent',
+        // The stored enum member means the member released their own Seat —
+        // Opted Out in the glossary. Never surfaced as "Absent".
+        ABSENT: 'Opted Out',
     },
+    // Labels for the six marks. Keyed by MarkLabelKey so a state can only name
+    // a label that ships in both languages.
+    marks: {
+        scheduled: 'Scheduled',
+        ongoing: 'Ongoing',
+        completed: 'Completed',
+        cancelled: 'Cancelled',
+        confirmed: 'Confirmed',
+        pending: 'Pending',
+        rejected: 'Rejected',
+        registered: 'Registered',
+        maybe: 'Maybe',
+        present: 'Present',
+        optedOut: 'Opted Out',
+        noShow: 'No-Show',
+        unposted: 'Unposted',
+    } satisfies Record<MarkLabelKey, string>,
     roles: {
         ADMIN: 'Admin',
         MEMBER: 'Member',
@@ -1312,7 +1333,22 @@ const id: typeof en = {
         REGISTERED: 'Terdaftar',
         MAYBE: 'Mungkin',
         PRESENT: 'Hadir',
-        ABSENT: 'Absen',
+        ABSENT: 'Batal Ikut',
+    },
+    marks: {
+        scheduled: 'Terjadwal',
+        ongoing: 'Berlangsung',
+        completed: 'Selesai',
+        cancelled: 'Dibatalkan',
+        confirmed: 'Lunas',
+        pending: 'Menunggu Konfirmasi',
+        rejected: 'Ditolak',
+        registered: 'Terdaftar',
+        maybe: 'Mungkin',
+        present: 'Hadir',
+        optedOut: 'Batal Ikut',
+        noShow: 'Tidak Hadir',
+        unposted: 'Belum Dipasang',
     },
     roles: {
         ADMIN: 'Admin',

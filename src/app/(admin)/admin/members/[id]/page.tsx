@@ -4,20 +4,16 @@ import { redirect, notFound } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
+import { Mark, StateMark, MarkedValue } from "@/components/ui/mark";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { isAdminRole, roleBadgeVariant, paymentStatusVariant } from "@/lib/utils";
+import { isAdminRole, roleBadgeVariant } from "@/lib/utils";
+import { attendanceState, paymentState } from "@/lib/status-mark";
 import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { PaymentMode } from "@prisma/client";
-
-const ATTENDANCE_BADGE_VARIANTS: Record<string, "default" | "destructive" | "secondary" | "outline"> = {
-  PRESENT: "default",
-  ABSENT: "destructive",
-  REGISTERED: "secondary",
-};
 
 export default async function MemberDetailPage({
   params,
@@ -98,9 +94,7 @@ export default async function MemberDetailPage({
                 {t.roles[member.role]}
               </Badge>
               {!member.isActive && (
-                <Badge variant="destructive">
-                  {t.admin.inactive2}
-                </Badge>
+                <Mark kind="erased">{t.admin.inactive2}</Mark>
               )}
             </div>
             {member.memberships.length > 0 && (
@@ -165,9 +159,10 @@ export default async function MemberDetailPage({
                     {format(new Date(a.session.date), "d MMM yyyy", { locale: dateLocale })}
                   </p>
                 </div>
-                <Badge variant={ATTENDANCE_BADGE_VARIANTS[a.status] ?? "secondary"}>
-                  {t.attendanceStatus[a.status]}
-                </Badge>
+                <StateMark
+                  state={attendanceState(a.status)}
+                  labels={t.marks}
+                />
               </div>
             ))}
           </div>
@@ -192,13 +187,17 @@ export default async function MemberDetailPage({
                   <p className="text-sm font-medium text-foreground">
                     {t.months[p.month]} {p.year}
                   </p>
-                  <p className="text-xs text-muted-foreground tabular-nums">
+                  <MarkedValue
+                    state={paymentState(p.status)}
+                    className="block text-xs text-muted-foreground tabular-nums"
+                  >
                     Rp {p.amount.toLocaleString("id-ID")}
-                  </p>
+                  </MarkedValue>
                 </div>
-                <Badge variant={paymentStatusVariant(p.status)}>
-                  {t.paymentStatus[p.status]}
-                </Badge>
+                <StateMark
+                  state={paymentState(p.status)}
+                  labels={t.marks}
+                />
               </div>
             ))}
           </div>

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
-import { Badge } from "@/components/ui/badge";
+import { StateMark, MarkedValue } from "@/components/ui/mark";
 import { Button } from "@/components/ui/button";
 import { ActivityBadge } from "@/components/activity/activity-badge";
 import { Download } from "lucide-react";
@@ -13,7 +13,8 @@ import type { Payment } from "@prisma/client";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getActivities } from "@/lib/activity";
-import { paymentStatusVariant, isAdminRole } from "@/lib/utils";
+import { isAdminRole } from "@/lib/utils";
+import { paymentState } from "@/lib/status-mark";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { parsePagination, parseSort, parseSearch } from "@/lib/table-params";
 import { SortableTh } from "@/components/ui/sortable-th";
@@ -227,12 +228,15 @@ export default async function AdminPaymentsPage({
                     {t.months[p.month]} {p.year}
                   </td>
                   <td className="px-5 py-3 text-right text-foreground font-semibold whitespace-nowrap tabular-nums">
-                    Rp {p.amount.toLocaleString("id-ID")}
+                    <MarkedValue state={paymentState(p.status)}>
+                      Rp {p.amount.toLocaleString("id-ID")}
+                    </MarkedValue>
                   </td>
                   <td className="px-5 py-3 text-center">
-                    <Badge variant={paymentStatusVariant(p.status)}>
-                      {t.paymentStatus[p.status]}
-                    </Badge>
+                    <StateMark
+                      state={paymentState(p.status)}
+                      labels={t.marks}
+                    />
                   </td>
                   <td className="px-5 py-3 text-muted-foreground text-xs whitespace-nowrap">
                     {format(new Date(p.createdAt), "d MMM yyyy", { locale: dateLocale })}

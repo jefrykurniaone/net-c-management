@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
-import { Badge } from '@/components/ui/badge';
+import { StateMark, MarkedValue } from '@/components/ui/mark';
 import { Button } from '@/components/ui/button';
 import { ActivityBadge } from '@/components/activity/activity-badge';
 import { ActivityFilter } from '@/components/activity/activity-filter';
@@ -14,7 +14,8 @@ import type { ActivitySession } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getActivities } from '@/lib/activity';
-import { sessionStatusVariant, isAdminRole } from '@/lib/utils';
+import { isAdminRole } from '@/lib/utils';
+import { sessionState } from '@/lib/status-mark';
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { parsePagination, parseSort, parseSearch } from '@/lib/table-params';
 import { SortableTh } from '@/components/ui/sortable-th';
@@ -177,9 +178,11 @@ export default async function AdminSessionsPage({
                                         key={s.id}
                                         className='border-b border-border last:border-b-0 hover:bg-muted/40'>
                                         <td className='px-5 py-3.5 max-w-50'>
-                                            <span className='truncate block font-semibold text-foreground'>
+                                            <MarkedValue
+                                                state={sessionState(s.status)}
+                                                className='truncate block font-semibold text-foreground'>
                                                 {s.title}
-                                            </span>
+                                            </MarkedValue>
                                             <ActivityBadge
                                                 name={s.activity.name}
                                                 color={s.activity.color}
@@ -211,9 +214,10 @@ export default async function AdminSessionsPage({
                                             </span>
                                         </td>
                                         <td className='px-5 py-3.5'>
-                                            <Badge variant={sessionStatusVariant(s.status)}>
-                                                {t.sessionStatus[s.status]}
-                                            </Badge>
+                                            <StateMark
+                                                state={sessionState(s.status)}
+                                                labels={t.marks}
+                                            />
                                         </td>
                                         <td className='px-5 py-3.5 text-right'>
                                             <div className='flex items-center justify-end gap-2.5'>
