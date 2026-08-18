@@ -21,6 +21,28 @@ Candidate amendments, each to be ruled in or out with a reason:
   is back in.
 - **PRODUCT.md — the joining policy** authored by 05. Whether joining is
   self-serve, gated, or off-app is a durable constraint, not a page detail.
+  *Resolved by 05 as **approval-gated**.* What 05 hands over is five amendments,
+  two of which are corrections of text that is wrong today:
+  - **CONTEXT.md — two new terms.** **Applicant**: a User who has signed in and
+    completed their profile but has not been let into the community. **Admit** /
+    **Decline**: the Admin's act on an Applicant. Both need _Avoid_ lists, and
+    Admit/Decline must record why they are *not* Confirm/Reject — `CONTEXT.md:83`
+    owns those for Payments and bans "approve".
+  - **CONTEXT.md:10 — now enforceable rather than decorative.** "Whether they may
+    sign in at all is a property of the User" describes a mechanism that ships
+    half-built today (`isActive` has an admin control and no reader). Once 05's
+    gate lands the sentence becomes true, and the two states behind it —
+    never-admitted (`admittedAt IS NULL`) and revoked (`isActive = false`) — are
+    distinct and both belong in the language.
+  - **PRODUCT.md:46 — "Google is the only way in" is now half the sentence.**
+    Google OAuth remains the only authentication, but authentication no longer
+    equals admission. Needs the Admin's act stated alongside it.
+  - **PRODUCT.md:53 / Capabilities — the gate is a capability**, and self-serve
+    joining stops being one. Today the list implies signing in is joining.
+  - **PRODUCT.md:71 — factually wrong and must be corrected regardless.** It
+    states no email, SMS, or push channel exists; `src/lib/email/` ships Gmail
+    SMTP, bilingual templates, and five live triggers. 05's admission email
+    depends on that channel, so the correction cannot wait for a tidier moment.
 - **PRODUCT.md — what the public route may publish**, from 04. A no-list that
   lives only in a component will be broken by the next component.
 - **DESIGN.md:197 / 308 — the display cap**, per 02: amended, scoped, or joined

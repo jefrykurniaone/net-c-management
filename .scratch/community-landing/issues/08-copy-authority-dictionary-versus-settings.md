@@ -34,6 +34,23 @@ Sub-questions:
   lattice) from user copy, and 05 wrote that Don't into DESIGN.md. Confirm it
   still binds marketing copy.
 
+## New strings handed down by 05
+
+The approval gate adds a body of copy this ticket's authority question now has to
+cover. All of it is *product* copy, not per-community pitch — worth noting,
+because it may split cleanly from the persuasion copy and settle the question
+differently for each half:
+
+- The CTA and its **gate disclosure** (the page must say joining is reviewed by
+  an organizer before the click).
+- `/pending` — the Applicant's waiting room, and its separate **declined** state.
+- The **admission email**, bilingual, in the shape `src/lib/email/` already uses.
+- The Admin's queue: labels for **Admit** and **Decline**.
+
+Vocabulary is fixed by 05 and `CONTEXT.md`: *Applicant*, *Admit*, *Decline*.
+Not *approve* — `CONTEXT.md:83` reserves Confirm/Reject for Payments and bans
+"approve" outright.
+
 ## Answer
 
 <!-- resolved by the session that takes this ticket -->

@@ -34,6 +34,22 @@ Sub-questions:
 - `continueWithGoogle()` was deliberately extracted so "both doors in are the
   same code" (`44523b9`). Whatever is decided must not fork it again.
 
+## Constraints handed down by 05 (resolved — not reopenable here)
+
+- **Joining is approval-gated.** Signing in makes the stranger an *Applicant*;
+  an Admin admits them. The CTA cannot promise access.
+- **The gate is disclosed before the click, not after.** The primary action and
+  its surrounding copy must make clear that joining is a request an organizer
+  reviews. This was decided as a matter of honesty, not conversion, and is
+  binding.
+- **"Continue with Google" is dead as the primary label** — it is a sign-in
+  label promising something this page cannot grant. Whether the button still
+  *fires* `continueWithGoogle()` is open and yours to decide; what it *says* is
+  constrained.
+- A newly-admitted Applicant is emailed and lands at `/pending`, not
+  `/dashboard`. If a secondary quiet action for returning members exists, note
+  that a returning **Applicant** is neither a member nor a stranger.
+
 ## Answer
 
 <!-- resolved by the session that takes this ticket -->

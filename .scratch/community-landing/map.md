@@ -83,11 +83,33 @@ to many clubs; this page sells **one club to people who might join it**
   `Attendance` field, `maxPlayers`. Fees publish **including zero**, rendered as
   "Free"/"Gratis" via the dictionary; both modes show, monthly primary.
 
+- [Does signing in from the public page make you a member?](issues/05-does-signing-in-grant-membership.md)
+  — **No: joining becomes approval-gated.** Signing in makes you an
+  **Applicant**; an Admin **admits** you. Order is profile-then-admission, so the
+  Admin judges a real name and phone. New nullable `User.admittedAt` carries
+  "never admitted" (`isActive` keeps meaning *revoked*); declining is
+  `isActive = false`, so the queue `admittedAt IS NULL AND isActive` clears.
+  Applicants wait at a dedicated `/pending`, are **emailed on admission**, and
+  the Admin gets a queue badge rather than mail per signup. The gate is
+  **disclosed before the click** — binding on 06, which kills "Continue with
+  Google" as the primary label. Enforced in three layers (middleware, layout
+  guard, shared `requireAdmitted()` at the API boundary) because middleware
+  alone leaves `/api/*` open. Two premises died on the way: `CONTEXT.md:10` is
+  **half-built, not aspirational** (`isActive` ships with an admin control and
+  nothing reads it), and the money-backed Seat is **not** gate enough — free
+  `Membership` already exposes the Activity's bank details.
+
 ## Not yet specified
 
 - **SEO, metadata, and OG image.** A public page is now indexable; today the
   route has no metadata story and no OG asset. Can't be ticketed until the
   brand layer (01) and section inventory (07) settle what there is to describe.
+- **Applicants inflate every count that reads `Membership`.** 05 put profile and
+  Activity-picking *before* admission, so un-admitted Applicants hold live
+  `Membership` rows. Which admin surfaces count memberships — activity cards,
+  roster totals, and possibly the `minMembers` viability quota — and which of
+  them must now exclude `admittedAt IS NULL` is a survey nobody has run. Can't
+  be ticketed until the surfaces are enumerated.
 - **The second door, `src/app/auth/signin/page.tsx`.** Previously ruled out of
   scope as a styling matter. If 06 moves sign-in off `/`, it stops being a
   styling question and becomes this map's problem. Revisit after 06.
