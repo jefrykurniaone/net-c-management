@@ -2,6 +2,7 @@
 
 Type: grilling
 Status: open
+Assignee: jefrykurniaone
 Parent: ../map.md
 Blocked by: 01
 Blocks: 07, 09
