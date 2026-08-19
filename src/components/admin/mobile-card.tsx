@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  */
 export function MobileCard({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card p-4 space-y-3">
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
       {children}
     </div>
   );
