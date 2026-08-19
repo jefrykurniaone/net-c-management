@@ -139,7 +139,7 @@ export default async function SessionsPage({
             <span className="text-[10px] font-semibold uppercase text-primary">
               {format(new Date(s.date), "EEE", { locale: dateLocale })}
             </span>
-            <span className="text-lg font-bold text-foreground leading-tight">
+            <span className="text-lg font-bold text-foreground leading-tight tabular-nums">
               {format(new Date(s.date), "dd")}
             </span>
           </span>

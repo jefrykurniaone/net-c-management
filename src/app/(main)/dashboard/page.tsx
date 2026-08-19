@@ -309,7 +309,7 @@ export default async function DashboardPage() {
                                                                 { locale: dateLocale },
                                                             )}
                                                         </span>
-                                                        <span className='text-[17px] font-bold text-foreground leading-tight'>
+                                                        <span className='text-[17px] font-bold text-foreground leading-tight tabular-nums'>
                                                             {format(
                                                                 new Date(s.date),
                                                                 'dd',

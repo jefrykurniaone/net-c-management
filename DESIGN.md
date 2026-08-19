@@ -165,7 +165,7 @@ Near-neutral enamel and graphite ink, with a single blue-leaning court green as 
 
 ### Primary
 
-- **Court Green** (`#17614A`): the blue-leaning green of a badminton mat. The identity, and the colour of every act of commitment — claim a Seat, submit Proof, Confirm a Payment. On the painted board it lifts to **Court Green Lit** (`#4FBF8E`) so it stays the brightest intent against a dark green-family ground (5.9:1 on board tile; white on `#17614A` is 7.4:1).
+- **Court Green** (`#17614A`): the blue-leaning green of a badminton mat. The identity, and the colour of every act of commitment — claim a Seat, submit Proof, Confirm a Payment. On the painted board it lifts to **Court Green Lit** (`#4FBF8E`) so it stays the brightest intent against a dark green-family ground (6.00:1 on board tile; white on `#17614A` is 7.42:1, and the tile ink the action actually pairs with is 6.98:1). Re-measured against the shipped tokens in TESTING.md `TC-DS-002`, which corrects the prototype's 5.9:1.
 
   *Known risk, accepted deliberately:* this green sits closer to the `#0F766E` teal it replaces than the alternatives did. Checked in the `prototype/board-palette` prototype, which renders the same board under both greens: the swap alone is a **small** perceived change — visible in a filled nav tile and in the Ink wash, not enough to read as a new product on its own. What carries the redesign is the structure (lattice, visible rules, square corners, marks, one lettering system), which reads as a different product under *either* green. The identity colour is therefore not load-bearing, which is a reason to keep it rather than escalate it.
 
@@ -181,7 +181,7 @@ Mark colours. Each is bound to one mark and to nothing else — never navigation
 - **Enamel Ground** (`#E8EBEA`) / **Enamel Tile** (`#F7F9F8`): the painted board and the tile face on it. Deliberately near-neutral rather than green-tinted, so Court Green is the only green on the surface. Never cream.
 - **Graphite Ink** (`#151E1B`): all primary lettering.
 - **Ruled Line** (`#7F8B87`): the lattice, at 3.4:1 on tile — dark enough to read as drawn ink.
-- **Secondary Ink** (`#54615B`) / **Quiet Ink** (`#66726D`): supporting and de-emphasised lettering; both clear 4.5:1 on tile. Quiet Ink clears tile but **not** ground — it measures 4.20:1 on Enamel Ground, so anything sitting on the ground (the Erased mark) takes Secondary Ink at 5.41:1 instead. Measured in the board prototype.
+- **Secondary Ink** (`#54615B`) / **Quiet Ink** (`#66726D`): supporting and de-emphasised lettering; both clear 4.5:1 on tile. Quiet Ink clears tile but **not** ground — it measures **4.17:1** on Enamel Ground, so anything sitting on the ground (the Erased mark) takes Secondary Ink at 5.41:1 instead. Re-measured against the shipped tokens in TESTING.md `TC-DS-001`, which corrects the prototype's 4.20:1; the number moved, the routing rule it justifies did not.
 - **Mark washes on the painted board** (`#1E3A2E` / `#3A2E14` / `#3A211E`): the three mark fills in board material, each carrying its lit mark colour at 5.4:1, 6.2:1, and 5.4:1. Derived in the prototype, not from the enamel washes — an inverted light wash goes muddy against a green ground.
 - **Board Ground** (`#1B2621`) / **Board Tile** (`#243029`) / **Board Rule** (`#6E7D76`) / **Chalk Ink** (`#E7ECE9`): the same four roles in painted board.
 
@@ -288,7 +288,7 @@ The system's most important component family. Each mark is distinguished by **fo
 
 - **Shape:** square tile (`2px`), `12px 20px`, Label typography — tracked caps
 - **Primary:** Court Green ground, Enamel Tile text, tile-rest shadow
-- **Primary on painted board:** the polarity inverts — Court Green Lit ground carrying **Board Ground ink, never Chalk Ink.** Ground-on-green and its ink both measure 6.82:1; chalk on lit green measures **2.29:1 and is banned.** This is the one way the public route's action can be got wrong, and the token layer already encodes the correct pairing, so it needs no new token — only not being overridden. The action keeps the square tile at every size: a loud action is a **large** tile, never a rounded pill, whatever it gets called in conversation.
+- **Primary on painted board:** the polarity inverts — Court Green Lit ground carrying **Board Ground ink, never Chalk Ink.** Ground-on-green and its ink both measure 6.82:1; chalk on lit green measures **1.92:1 and is banned** — worse than the prototype's recorded 2.29:1, re-measured in TESTING.md `TC-DS-005`. This is the one way the public route's action can be got wrong, and the token layer already encodes the correct pairing, so it needs no new token — only not being overridden. The action keeps the square tile at every size: a loud action is a **large** tile, never a rounded pill, whatever it gets called in conversation.
 - **Hover / Focus:** ground darkens to Graphite Ink; `:focus-visible` draws a 2px Court Green ring offset 2px from the tile edge
 - **Active:** tile-pressed inset shadow, no transform
 - **Blank action:** Enamel Tile ground, 1px Ruled Line border, Quiet Ink text — an empty slot waiting to be filled
