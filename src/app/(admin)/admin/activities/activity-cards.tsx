@@ -13,7 +13,7 @@ function ActivityCard({ e, t }: Readonly<{ e: ActivityCardRow; t: Dictionary }>)
   return (
     <MobileCard>
       <div className="space-y-1">
-        <ActivityBadge name={e.name} color={e.color} />
+        <ActivityBadge name={e.name} />
         {e.description && <p className="truncate text-xs text-muted-foreground">{e.description}</p>}
       </div>
       <CardField label={t.admin.activitySlug}>
@@ -38,7 +38,6 @@ function ActivityCard({ e, t }: Readonly<{ e: ActivityCardRow; t: Dictionary }>)
           id: e.id,
           name: e.name,
           slug: e.slug,
-          color: e.color,
           description: e.description,
           monthlyFee: e.monthlyFee,
           sessionFee: e.sessionFee,

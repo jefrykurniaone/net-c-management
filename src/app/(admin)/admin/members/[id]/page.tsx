@@ -36,7 +36,6 @@ export default async function MemberDetailPage({
             select: {
               id: true,
               name: true,
-              color: true,
               allowsMonthly: true,
               allowsPerSession: true,
             },
@@ -111,7 +110,7 @@ export default async function MemberDetailPage({
                   );
                   return (
                     <span key={m.activity.id} className="inline-flex items-center gap-1">
-                      <ActivityBadge name={m.activity.name} color={m.activity.color} />
+                      <ActivityBadge name={m.activity.name} />
                       <span className="text-xs text-muted-foreground">
                         ·{" "}
                         {mode === PaymentMode.MONTHLY

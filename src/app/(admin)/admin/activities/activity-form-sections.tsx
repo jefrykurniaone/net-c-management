@@ -169,12 +169,16 @@ export function BasicInfoSection({
                                     type='color'
                                     className='h-9 w-14 p-1'
                                     {...field}
+                                    // Nothing seeds this field any more, so the
+                                    // value is absent until an Admin picks one.
+                                    // Coerced here so the input never flips
+                                    // between controlled and uncontrolled.
+                                    value={field.value ?? ''}
                                 />
                             </FormControl>
                             <Input
-                                value={field.value}
+                                value={field.value ?? ''}
                                 onChange={field.onChange}
-                                placeholder='#16a34a'
                                 className='flex-1'
                             />
                         </div>

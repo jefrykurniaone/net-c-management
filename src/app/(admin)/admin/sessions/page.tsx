@@ -23,7 +23,7 @@ import type { Prisma } from '@prisma/client';
 
 type SessionRow = ActivitySession & {
     _count: { attendances: number };
-    activity: { id: string; name: string; color: string; icon: string | null };
+    activity: { id: string; name: string; icon: string | null };
 };
 
 function buildSessionOrderBy(
@@ -80,7 +80,7 @@ export default async function AdminSessionsPage({
                     },
                 },
                 activity: {
-                    select: { id: true, name: true, color: true, icon: true },
+                    select: { id: true, name: true, icon: true },
                 },
             },
         }),
@@ -185,7 +185,6 @@ export default async function AdminSessionsPage({
                                             </MarkedValue>
                                             <ActivityBadge
                                                 name={s.activity.name}
-                                                color={s.activity.color}
                                                 icon={s.activity.icon}
                                                 className='mt-1'
                                             />

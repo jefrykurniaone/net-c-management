@@ -71,7 +71,7 @@ type QueueRow = Readonly<{
     phone: string | null;
     createdAt: Date;
     memberships: readonly Readonly<{
-        activity: Readonly<{ id: string; name: string; color: string }>;
+        activity: Readonly<{ id: string; name: string }>;
     }>[];
 }>;
 
@@ -105,7 +105,6 @@ function ApplicantRow({
                         <ActivityBadge
                             key={m.activity.id}
                             name={m.activity.name}
-                            color={m.activity.color}
                         />
                     ))
                 )}
@@ -158,7 +157,7 @@ export default async function AdminApplicantsPage() {
                 memberships: {
                     where: { isActive: true, activity: { isActive: true } },
                     select: {
-                        activity: { select: { id: true, name: true, color: true } },
+                        activity: { select: { id: true, name: true } },
                     },
                 },
             },
