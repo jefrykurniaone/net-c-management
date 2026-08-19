@@ -21,7 +21,6 @@ function activity(overrides: Partial<PublicActivity> = {}): PublicActivity {
         id: 'a1',
         name: 'Badminton',
         icon: null,
-        color: '#16a34a',
         recurringDay: TUESDAY,
         recurringStartTime: '19:00',
         recurringEndTime: '21:00',

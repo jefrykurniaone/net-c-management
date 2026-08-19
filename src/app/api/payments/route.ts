@@ -59,7 +59,7 @@ export async function GET(req: Request) {
                 user: {
                     select: { id: true, name: true, email: true, image: true },
                 },
-                activity: { select: { id: true, name: true, color: true } },
+                activity: { select: { id: true, name: true } },
             },
         }),
         prisma.payment.count({ where }),

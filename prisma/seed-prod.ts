@@ -45,7 +45,6 @@ const ACTIVITIES = [
     {
         slug: 'badminton',
         name: 'Badminton',
-        color: '#0EA5E9',
         monthlyFee: 50_000,
         sessionFee: 25_000,
         allowsMonthly: true,
@@ -60,7 +59,6 @@ const ACTIVITIES = [
     {
         slug: 'futsal',
         name: 'Futsal',
-        color: '#F97316',
         monthlyFee: 40_000,
         sessionFee: 15_000,
         allowsMonthly: true,

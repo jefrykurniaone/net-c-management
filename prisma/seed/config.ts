@@ -17,7 +17,6 @@ export const SATURDAY = 6;
 const BADMINTON = {
     slug: 'badminton',
     name: 'Badminton',
-    color: '#0EA5E9',
     monthlyFee: 75_000,
     sessionFee: 25_000,
     allowsMonthly: true,
@@ -37,7 +36,6 @@ const BADMINTON = {
 const FUTSAL = {
     slug: 'futsal',
     name: 'Futsal',
-    color: '#F97316',
     monthlyFee: 40_000,
     sessionFee: 15_000,
     allowsMonthly: true,
@@ -57,7 +55,6 @@ const FUTSAL = {
 const BASKET = {
     slug: 'basket',
     name: 'Basket',
-    color: '#7C3AED',
     monthlyFee: 60_000,
     sessionFee: 20_000,
     allowsMonthly: true,
@@ -77,7 +74,6 @@ const BASKET = {
 const TENNIS = {
     slug: 'tennis',
     name: 'Tennis',
-    color: '#16A34A',
     monthlyFee: 55_000,
     sessionFee: 20_000,
     allowsMonthly: true,

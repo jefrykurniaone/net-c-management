@@ -5,9 +5,10 @@ import { buildCreateActivitySchema } from '../validations/activity';
 const t = getDictionary('en');
 
 /**
- * The Activity livery is the initial on a magnet tile, so no admin surface
- * supplies a colour any more — the create form has no colour default left to
- * send. The schema has to accept that, or creating an Activity 400s.
+ * The Activity livery is the initial on a magnet tile, so the colour is gone
+ * from the product entirely — column, type, form control and validation rule.
+ * What is worth pinning here is that the schema no longer carries the member at
+ * all, and that a stale client still sending one is dropped rather than 400d.
  */
 const VALID_ACTIVITY = {
     name: 'Badminton',
@@ -26,18 +27,21 @@ describe('buildCreateActivitySchema', () => {
         expect(parsed.success).toBe(true);
     });
 
-    it('leaves colour absent rather than substituting a default hex', () => {
+    it('carries no colour member for a default to land in', () => {
         const parsed = buildCreateActivitySchema(t).safeParse(VALID_ACTIVITY);
         // A default here would be the hardcoded hex coming back in by another
-        // door; the column's own default is the database's business.
+        // door, and there is no column left for it to reach.
         expect(parsed.success && 'color' in parsed.data).toBe(false);
     });
 
-    it('still rejects a colour that is not a hex value', () => {
+    it('drops a colour a stale client still sends rather than rejecting it', () => {
         const parsed = buildCreateActivitySchema(t).safeParse({
             ...VALID_ACTIVITY,
-            color: 'court green',
+            color: '#16a34a',
         });
-        expect(parsed.success).toBe(false);
+        // A cached admin bundle posting the old shape must still create an
+        // Activity — the colour is simply not part of the contract any more.
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && 'color' in parsed.data).toBe(false);
     });
 });

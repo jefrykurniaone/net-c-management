@@ -70,9 +70,6 @@ function ActivityFormDialog({
         defaultValues: {
             name: activity?.name ?? '',
             slug: activity?.slug ?? '',
-            // No colour default: the livery is the Activity's initial on a
-            // tile, so nothing here seeds a hex. The control itself goes when
-            // the column is dropped.
             description: activity?.description ?? '',
             // Empty (undefined) on create so the admin must enter a fee
             // explicitly — a blank submit is rejected, never a silent 0.

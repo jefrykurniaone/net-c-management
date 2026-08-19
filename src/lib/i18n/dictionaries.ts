@@ -681,7 +681,6 @@ const en = {
         activitySlug: 'Slug',
         activitySlugHint: 'URL-friendly id, e.g. "yoga-club"',
         activitySlugPlaceholder: 'yoga-club',
-        activityColor: 'Badge Color',
         activityDescription: 'Description (Optional)',
         activityFee: 'Monthly Fee (Rp)',
         activitySessionFee: 'Session Fee (Rp)',
@@ -905,7 +904,6 @@ const en = {
         activitySlugRequired: 'Slug is required',
         activitySlugFormat:
             'Slug can only contain lowercase letters, numbers, and dashes',
-        activityColorFormat: 'Color must be a hex value (e.g. #16a34a)',
         activitySlugTaken: 'That slug is already in use',
         bankAccountNumberFormat: 'Account number can only contain digits',
         activityRequired: 'Select an activity',
@@ -1458,7 +1456,6 @@ const id: typeof en = {
         activitySlug: 'Slug',
         activitySlugHint: 'Id ramah-URL, contoh "klub-yoga"',
         activitySlugPlaceholder: 'klub-yoga',
-        activityColor: 'Warna Badge',
         activityDescription: 'Deskripsi (Opsional)',
         activityFee: 'Iuran Bulanan (Rp)',
         activitySessionFee: 'Biaya Per Sesi (Rp)',
@@ -1679,7 +1676,6 @@ const id: typeof en = {
         activitySlugRequired: 'Slug wajib diisi',
         activitySlugFormat:
             'Slug hanya boleh huruf kecil, angka, dan tanda hubung',
-        activityColorFormat: 'Warna harus berupa hex (contoh #16a34a)',
         activitySlugTaken: 'Slug tersebut sudah digunakan',
         bankAccountNumberFormat: 'Nomor rekening hanya boleh berisi angka',
         activityRequired: 'Pilih aktivitas',

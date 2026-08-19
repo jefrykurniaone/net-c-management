@@ -18,7 +18,7 @@ import { wibDayKey, wibDayStartFromKey } from './wib';
  *  1. **One module owns every public read.** Hand-written `select` only — never
  *     `include`, anywhere on this path. `Activity` carries `bankName`,
  *     `bankAccountNumber`, `bankAccountHolder` and `adminWhatsapp` on the same
- *     row as `name`, `color` and the fees, so a single
+ *     row as `name` and the fees, so a single
  *     `include: { activity: true }` publishes all four. A per-call-site `select`
  *     discipline is how those fields eventually ship; one reviewable file is not.
  *  2. **No aggregate people-count, ever.** Not members, not attendance, not
@@ -84,18 +84,16 @@ const REVALIDATE_SECONDS = 60 * 60;
  * Published `Activity` fields. `id` is a cuid carrying no information; it is
  * here as the row key and the join key for the next-date fuse below.
  *
- * `color` and `icon` are published and then **deliberately never rendered**:
- * `DESIGN.md:284` makes livery a magnet tile bearing the initial with no colour,
- * because an admin-chosen hex can be trusted neither to carry legible lettering
- * nor to clear contrast on both materials. Ticket 07 confirmed the mismatch is
- * intended — do not "fix" the omission at the render site, and do not drop the
- * fields here on the assumption they are dead.
+ * No `color`: `DESIGN.md:316` makes livery a magnet tile bearing the initial
+ * with no colour, because an admin-chosen hex can be trusted neither to carry
+ * legible lettering nor to clear contrast on both materials, and the column has
+ * been dropped. `icon` is still published and deliberately never rendered —
+ * that field stands, so do not "fix" the omission at the render site.
  */
 export const PUBLIC_ACTIVITY_SELECT = {
     id: true,
     name: true,
     icon: true,
-    color: true,
     recurringDay: true,
     recurringStartTime: true,
     recurringEndTime: true,
@@ -255,9 +253,9 @@ export async function getPublicLandingData(
  *  - `ActivitySession.location`, which can be a one-off private address. The
  *    standing `Activity.defaultLocation` publishes in its place.
  *
- * `color` is published and never rendered, for the same reason as on the board
- * (`DESIGN.md:284`): an admin-chosen hex clears neither contrast nor legibility
- * on both materials.
+ * No `color`, for the same reason as on the board (`DESIGN.md:316`): an
+ * admin-chosen hex clears neither contrast nor legibility on both materials, so
+ * the column is gone.
  */
 export const PUBLIC_SESSION_CARD_SELECT = {
     id: true,
@@ -265,7 +263,7 @@ export const PUBLIC_SESSION_CARD_SELECT = {
     startTime: true,
     endTime: true,
     activity: {
-        select: { name: true, color: true, defaultLocation: true },
+        select: { name: true, defaultLocation: true },
     },
 } as const satisfies Prisma.ActivitySessionSelect;
 

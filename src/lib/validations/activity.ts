@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
-const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{6})$/;
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const LAST_WEEKDAY = 6;
@@ -23,14 +22,9 @@ function activityObjectSchema(t: Dictionary) {
             .min(1, t.validation.activitySlugRequired)
             .max(50)
             .regex(SLUG_REGEX, t.validation.activitySlugFormat),
-        // Optional: the livery is the Activity's initial on a tile, so no
-        // surface supplies a colour any more and a create simply omits it —
-        // the column's own default covers the rows still carrying one. The
-        // field and this rule go when the column is dropped.
-        color: z
-            .string()
-            .regex(HEX_COLOR_REGEX, t.validation.activityColorFormat)
-            .optional(),
+        // No `color`: the livery is the Activity's initial on a tile, and the
+        // column is gone. A stale client still posting one has it stripped
+        // here rather than rejected, so a cached bundle keeps working.
         description: z.string().max(1000).optional(),
         // Explicit-required money fields — a blank submit is a validation error,
         // never a silent 0 (UX-DR14, FR-8). `min(0)` still allows a deliberate 0.
