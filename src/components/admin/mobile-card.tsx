@@ -7,25 +7,15 @@ import { cn } from "@/lib/utils";
 // visually consistent: one card shell + one label/value field row + one empty
 // state — apply, don't reinvent per table (AD-11).
 
-const ACCENT_BAR_WIDTH = "w-[3px]";
-
 /**
- * Card shell mirroring the desktop table container's chrome. `accentColor`
- * replicates the 3px activity accent bar the payments/sessions table rows carry.
+ * Card shell mirroring the desktop table container's chrome. It carries no
+ * Activity livery of its own: the accent bar this used to draw was the banned
+ * accent-line device, and the Activity is identified inside the card by the
+ * initial-on-a-tile badge instead.
  */
-export function MobileCard({
-  accentColor,
-  children,
-}: Readonly<{ accentColor?: string; children: ReactNode }>) {
+export function MobileCard({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4 space-y-3">
-      {accentColor && (
-        <span
-          aria-hidden
-          className={cn("absolute left-0 top-0 h-full", ACCENT_BAR_WIDTH)}
-          style={{ backgroundColor: accentColor }}
-        />
-      )}
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
       {children}
     </div>
   );

@@ -90,7 +90,7 @@ export default async function AdminDashboardPage() {
             orderBy: { date: 'asc' },
             take: 6,
             include: {
-                activity: { select: { name: true, color: true } },
+                activity: { select: { name: true } },
                 _count: {
                     select: {
                         attendances: {
@@ -381,17 +381,12 @@ export default async function AdminDashboardPage() {
                             <div
                                 key={a.id}
                                 className='bg-card rounded-xl border border-border overflow-hidden'>
-                                <div
-                                    aria-hidden
-                                    className='h-[3px]'
-                                    style={{ backgroundColor: a.color }}
-                                />
+                                {/* No coloured top border: the accent-line
+                                    device is banned, and the Activity is named
+                                    by its initial tile plus its name below. */}
                                 <div className='p-5 space-y-3.5'>
                                     <div className='flex items-center gap-2.5'>
-                                        <ActivityInitial
-                                            name={a.name}
-                                            color={a.color}
-                                        />
+                                        <ActivityInitial name={a.name} />
                                         <span className='flex-1 text-[15px] font-semibold text-foreground truncate'>
                                             {a.name}
                                         </span>

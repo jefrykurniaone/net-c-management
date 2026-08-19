@@ -68,7 +68,7 @@ export default async function AdminMembersPage({
     createdAt: true,
     memberships: {
       where: { isActive: true, activity: { isActive: true } },
-      select: { activity: { select: { id: true, name: true, color: true } } },
+      select: { activity: { select: { id: true, name: true } } },
     },
     _count: { select: { attendances: true, payments: true } },
   } as const;
@@ -197,7 +197,6 @@ export default async function AdminMembersPage({
                           <ActivityBadge
                             key={m.activity.id}
                             name={m.activity.name}
-                            color={m.activity.color}
                           />
                         ))
                       )}

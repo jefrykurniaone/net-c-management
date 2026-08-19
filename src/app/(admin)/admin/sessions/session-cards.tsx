@@ -12,7 +12,7 @@ import type { ActivitySession } from "@prisma/client";
 
 type SessionRow = ActivitySession & {
   _count: { attendances: number };
-  activity: { id: string; name: string; color: string; icon: string | null };
+  activity: { id: string; name: string; icon: string | null };
 };
 
 function SessionCard({
@@ -21,7 +21,7 @@ function SessionCard({
   dateLocale,
 }: Readonly<{ s: SessionRow; t: Dictionary; dateLocale: DateFnsLocale }>) {
   return (
-    <MobileCard accentColor={s.activity.color}>
+    <MobileCard>
       <div className="min-w-0 space-y-1">
         <MarkedValue
           state={sessionState(s.status)}
@@ -29,7 +29,7 @@ function SessionCard({
         >
           {s.title}
         </MarkedValue>
-        <ActivityBadge name={s.activity.name} color={s.activity.color} icon={s.activity.icon} />
+        <ActivityBadge name={s.activity.name} icon={s.activity.icon} />
       </div>
       <CardField label={t.admin.colDate}>
         <div>

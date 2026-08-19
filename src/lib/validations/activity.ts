@@ -23,7 +23,14 @@ function activityObjectSchema(t: Dictionary) {
             .min(1, t.validation.activitySlugRequired)
             .max(50)
             .regex(SLUG_REGEX, t.validation.activitySlugFormat),
-        color: z.string().regex(HEX_COLOR_REGEX, t.validation.activityColorFormat),
+        // Optional: the livery is the Activity's initial on a tile, so no
+        // surface supplies a colour any more and a create simply omits it —
+        // the column's own default covers the rows still carrying one. The
+        // field and this rule go when the column is dropped.
+        color: z
+            .string()
+            .regex(HEX_COLOR_REGEX, t.validation.activityColorFormat)
+            .optional(),
         description: z.string().max(1000).optional(),
         // Explicit-required money fields — a blank submit is a validation error,
         // never a silent 0 (UX-DR14, FR-8). `min(0)` still allows a deliberate 0.

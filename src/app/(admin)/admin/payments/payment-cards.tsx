@@ -11,7 +11,7 @@ import type { Payment } from "@prisma/client";
 
 type PaymentRow = Payment & {
   user: { name: string | null; email: string | null };
-  activity: { id: string; name: string; color: string; icon: string | null };
+  activity: { id: string; name: string; icon: string | null };
 };
 
 function PaymentCard({
@@ -20,13 +20,13 @@ function PaymentCard({
   dateLocale,
 }: Readonly<{ p: PaymentRow; t: Dictionary; dateLocale: DateFnsLocale }>) {
   return (
-    <MobileCard accentColor={p.activity.color}>
+    <MobileCard>
       <div className="min-w-0">
         <p className="truncate font-medium text-foreground">{p.user.name ?? p.user.email}</p>
         <p className="truncate text-xs text-muted-foreground">{p.user.email}</p>
       </div>
       <CardField label={t.activity.label}>
-        <ActivityBadge name={p.activity.name} color={p.activity.color} icon={p.activity.icon} />
+        <ActivityBadge name={p.activity.name} icon={p.activity.icon} />
       </CardField>
       <CardField label={t.admin.colMonth}>
         {t.months[p.month]} {p.year}

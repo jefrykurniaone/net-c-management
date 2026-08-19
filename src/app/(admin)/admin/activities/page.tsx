@@ -124,7 +124,7 @@ export default async function AdminActivityPage({
                                     className='border-b border-border last:border-b-0 hover:bg-muted/40'>
                                     <td className='px-5 py-3'>
                                         <div className='flex items-center gap-2.5'>
-                                            <ActivityInitial name={e.name} color={e.color} />
+                                            <ActivityInitial name={e.name} />
                                             <div className='min-w-0'>
                                                 <p className='font-semibold text-foreground'>
                                                     {e.name}
@@ -157,7 +157,6 @@ export default async function AdminActivityPage({
                                                 id: e.id,
                                                 name: e.name,
                                                 slug: e.slug,
-                                                color: e.color,
                                                 description: e.description,
                                                 monthlyFee: e.monthlyFee,
                                                 sessionFee: e.sessionFee,

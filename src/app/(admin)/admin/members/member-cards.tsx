@@ -17,7 +17,7 @@ type MemberRow = Prisma.UserGetPayload<{
     role: true;
     isActive: true;
     memberships: {
-      select: { activity: { select: { id: true; name: true; color: true } } };
+      select: { activity: { select: { id: true; name: true } } };
     };
     _count: { select: { attendances: true; payments: true } };
   };
@@ -56,7 +56,7 @@ function MemberCard({
             <span className="text-muted-foreground">—</span>
           ) : (
             u.memberships.map((m) => (
-              <ActivityBadge key={m.activity.id} name={m.activity.name} color={m.activity.color} />
+              <ActivityBadge key={m.activity.id} name={m.activity.name} />
             ))
           )}
         </div>

@@ -157,6 +157,13 @@ export function BasicInfoSection({
                 placeholder={t.admin.activitySlugPlaceholder}
                 hint={t.admin.activitySlugHint}
             />
+            {/* Inert, pending the contract ticket that deletes it with the
+                column. Nothing seeds this control and no surface renders what
+                it holds, because the livery is the Activity's initial on a
+                tile. Left writable it would be a trap: unseeded, the first
+                click on the swatch reports #000000 and the PATCH would paint a
+                real Activity black. The value is coerced so the input never
+                flips between controlled and uncontrolled. */}
             <FormField
                 control={form.control}
                 name='color'
@@ -169,12 +176,15 @@ export function BasicInfoSection({
                                     type='color'
                                     className='h-9 w-14 p-1'
                                     {...field}
+                                    disabled
+                                    value={field.value ?? ''}
                                 />
                             </FormControl>
                             <Input
-                                value={field.value}
-                                onChange={field.onChange}
-                                placeholder='#16a34a'
+                                aria-label={t.admin.activityColor}
+                                value={field.value ?? ''}
+                                disabled
+                                readOnly
                                 className='flex-1'
                             />
                         </div>
