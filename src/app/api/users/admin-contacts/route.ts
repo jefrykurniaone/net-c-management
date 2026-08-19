@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { isAdminRole } from '@/lib/utils';
 import { Role } from '@prisma/client';
@@ -10,8 +11,8 @@ import { NextResponse } from 'next/server';
 // number; the OWNER sees both admins and themselves.
 export async function GET() {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

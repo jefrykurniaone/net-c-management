@@ -85,11 +85,18 @@
   --radius-4xl: var(--radius);
   --radius-rail: 3px;
 
-  /* Spacing rhythm: hairline / cell / block / bay. */
+  /* Spacing rhythm: hairline / cell / block / bay, then two steps that exist
+     only for air *between* full-bleed bands on the public route and never
+     appear inside a cell. They continue the scale's own doubling rather than
+     inventing numbers, and below 768px they collapse one place — 112 → 56,
+     56 → 28 — landing back exactly on `bay`, so mobile inherits board density
+     and no new number enters the scale. */
   --spacing-hair: 2px;
   --spacing-cell: 10px;
   --spacing-block: 16px;
   --spacing-bay: 28px;
+  --spacing-band: 56px;
+  --spacing-band-lead: 112px;
 
   /* Depth is a tile on a board: its own edge plus a contact shadow. */
   --shadow-tile: 0 1px 0 var(--rule), 0 2px 3px -1px rgb(21 30 27 / 0.14);

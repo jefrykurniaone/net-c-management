@@ -68,3 +68,8 @@ app-*.png
 
 # RTK (Rust Token Killer) local state
 .rtk/
+
+# Agent-tool local state: settings, scheduled-task locks and git worktrees under
+# .claude/, and the /impeccable skill's scratch dir. Machine-local, not source.
+.claude/
+.impeccable/

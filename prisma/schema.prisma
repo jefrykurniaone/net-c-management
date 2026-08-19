@@ -103,6 +103,14 @@ model User {
   role              Role        @default(MEMBER)
   isActive          Boolean     @default(true)
   isProfileComplete Boolean     @default(false)
+  // Joining is approval-gated: signing in makes you an Applicant, not a Member.
+  // Null means never admitted — an Admin has not let this person into the
+  // community yet. Set to the moment they were admitted, which also records
+  // *when*. `isActive` keeps its own meaning (an Admin revoked this person), so
+  // the roster can tell three people waiting at the door from two who were
+  // thrown out: the admission queue is `admittedAt IS NULL AND isActive`, and a
+  // declined Applicant is `isActive = false` with `admittedAt` still null.
+  admittedAt        DateTime?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
@@ -111,6 +119,10 @@ model User {
   attendances Attendance[]
   payments    Payment[]
   memberships Membership[]
+
+  // The admission queue reads on both columns and is the admin nav badge's
+  // count, so it runs on every admin page render.
+  @@index([admittedAt, isActive])
 }
 
 // A community activity — e.g. Badminton, Yoga, Futsal. Each piece of

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { admissionDenied, isAdmittedSession } from "@/lib/admission";
 import { prisma } from "@/lib/prisma";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -8,8 +9,8 @@ import { NextResponse } from "next/server";
 // GET /api/users/profile — get current user's full profile
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmittedSession(session)) {
+    return admissionDenied(session);
   }
 
   const user = await prisma.user.findUnique({
@@ -32,8 +33,8 @@ export async function GET() {
 // PATCH /api/users/profile — update current user's profile
 export async function PATCH(req: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmittedSession(session)) {
+    return admissionDenied(session);
   }
 
   const locale = await getLocale();

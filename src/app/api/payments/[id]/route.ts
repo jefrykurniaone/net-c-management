@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { buildConfirmPaymentSchema } from '@/lib/validations/payment';
 import { isAdminRole } from '@/lib/utils';
@@ -21,8 +22,8 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> },
 ) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
 
     const { id } = await params;
@@ -54,8 +55,8 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> },
 ) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

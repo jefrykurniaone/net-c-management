@@ -112,6 +112,9 @@ async function promoteOwner() {
         );
         return;
     }
+    // `admittedAt` must be set here: joining is approval-gated, and a null
+    // `admittedAt` makes even the OWNER an Applicant waiting at /pending — with
+    // nobody on the other side of the door to let them in.
     await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -119,9 +122,10 @@ async function promoteOwner() {
             phone: ADMIN_WHATSAPP,
             isActive: true,
             isProfileComplete: true,
+            admittedAt: new Date(),
         },
     });
-    console.log(`[ok] OWNER: ${OWNER_EMAIL} (phone ${ADMIN_WHATSAPP})`);
+    console.log(`[ok] OWNER: ${OWNER_EMAIL} (phone ${ADMIN_WHATSAPP}, admitted)`);
 }
 
 async function main() {

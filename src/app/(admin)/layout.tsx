@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { Sidebar } from '@/components/layout/sidebar';
@@ -5,7 +6,14 @@ import { MobileNav } from '@/components/layout/mobile-nav';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { getSettings } from '@/lib/settings';
 import { prisma } from '@/lib/prisma';
+import { isAdmittedSession, WAITING_APPLICANT_WHERE } from '@/lib/admission';
 import { isAdminRole } from '@/lib/utils';
+
+// See `(main)/layout.tsx`: the admin surfaces are `noindex` for the same reason,
+// stated on the group as well as at the root (ticket 12 decision 7).
+export const metadata: Metadata = {
+    robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({
     children,
@@ -22,14 +30,26 @@ export default async function AdminLayout({
         redirect('/onboarding');
     }
 
+    // Layer two of the admission gate — see `(main)/layout.tsx`. An admin who
+    // has not been admitted (or was revoked) waits at the same door a stranger
+    // does; the production OWNER is admitted by the seed scripts, so this cannot
+    // lock the first admin out.
+    if (!isAdmittedSession(session)) {
+        redirect('/pending');
+    }
+
     if (!isAdminRole(session.user.role)) {
         redirect('/dashboard');
     }
 
-    // Pending-payment count powers the Payments nav badge (Club Premium).
-    const pendingPayments = await prisma.payment.count({
-        where: { status: 'PENDING' },
-    });
+    // Two nav badges, counted here and threaded through `getAdminNav`:
+    // pending payment proofs, and Applicants waiting for a decision. The queue
+    // count is the *only* signal a new person has asked — 05 decided the Admin
+    // gets a badge rather than an email per signup.
+    const [pendingPayments, waitingApplicants] = await Promise.all([
+        prisma.payment.count({ where: { status: 'PENDING' } }),
+        prisma.user.count({ where: WAITING_APPLICANT_WHERE }),
+    ]);
 
     return (
         <div className='flex h-screen overflow-hidden bg-background'>
@@ -38,6 +58,7 @@ export default async function AdminLayout({
                     communityName={settings.communityName}
                     logoUrl={settings.logoUrl}
                     pendingPayments={pendingPayments}
+                    waitingApplicants={waitingApplicants}
                 />
             </div>
             <div className='flex flex-col flex-1 overflow-hidden'>
@@ -46,6 +67,7 @@ export default async function AdminLayout({
                         communityName={settings.communityName}
                         logoUrl={settings.logoUrl}
                         pendingPayments={pendingPayments}
+                        waitingApplicants={waitingApplicants}
                     />
                     <div className='flex items-center gap-2'>
                         <CommunityIdentityMark

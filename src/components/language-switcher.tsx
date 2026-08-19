@@ -28,7 +28,15 @@ export function LanguageSwitcher({ compact }: Readonly<{ compact?: boolean }>) {
       <span className='text-xs font-bold tracking-wide'>
         {locale === 'en' ? 'EN' : 'ID'}
       </span>
-      <span>{locale === 'en' ? 'English' : 'Bahasa Indonesia'}</span>
+      {/* `compact` is the header-rail variant, and the rail does not wrap: the
+          mark group shrinks to fit the controls, so a wide control is paid for
+          by the community name. Measured at 390px, 'Bahasa Indonesia' takes
+          198px of the rail and forces the wordmark to break mid-word across
+          three lines. The code alone identifies the control, `aria-label`
+          carries the meaning, and the name returns from `sm:` up. */}
+      <span className={compact ? 'hidden sm:inline' : undefined}>
+        {locale === 'en' ? 'English' : 'Bahasa Indonesia'}
+      </span>
     </button>
   );
 }

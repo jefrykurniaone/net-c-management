@@ -1,6 +1,8 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { uploadLogo } from '@/lib/supabase';
+import { invalidatePublicLanding } from '@/lib/public-landing';
 import { isAdminRole } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
@@ -15,8 +17,8 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 // POST /api/settings/logo — upload a new community logo (admin only)
 export async function POST(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -53,5 +55,7 @@ export async function POST(req: Request) {
         update: { value: logoUrl },
     });
 
+    // The logo is published in the public rail.
+    invalidatePublicLanding();
     return NextResponse.json({ logoUrl });
 }

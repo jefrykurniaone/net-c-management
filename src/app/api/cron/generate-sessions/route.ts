@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ensureRecurringSessions } from '@/lib/recurring-sessions';
-
-const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+import { invalidatePublicLanding } from '@/lib/public-landing';
+import { toWibTime } from '@/lib/wib';
 
 /**
  * GET /api/cron/generate-sessions
@@ -20,8 +20,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const wibNow = new Date(Date.now() + WIB_OFFSET_MS);
+  const wibNow = toWibTime(new Date());
   await ensureRecurringSessions(wibNow);
+  // Next month's sessions can enter the public board's next-date column.
+  invalidatePublicLanding();
 
   return NextResponse.json({ ok: true });
 }

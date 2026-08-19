@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────
-   The eight typographic roles. One family, signage weights.
+   The nine typographic roles. One family, signage weights.
    The One Hand Rule: figures take tabular-nums from this family
    rather than a second, monospaced one.
    ───────────────────────────────────────────────────────────── */
@@ -9,6 +9,28 @@
   line-height: 1;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+}
+
+/* The public route's pitch, and nothing else. Utilities are global, so this
+   file cannot scope it — the ESLint restriction in `eslint.config.mjs` keeps it
+   off `(main)` and `(admin)`, and that lint is the guard. It renders larger
+   than Display at every viewport (minimum 1.29x, where both roles sit on their
+   floors below 450px), but that separation is a property, not the guard.
+   `0.95` is legal to crowd only because the role is caps: no descenders, so
+   lines that would collide in sentence case sit clean. Not licence to tighten
+   sentence-case display type.
+   `text-wrap: balance` belongs to the role, not to the instance — it sets the
+   slabs as a tapering silhouette, and DESIGN.md's Pitch Budget was measured
+   with it on. The `2.25rem` floor is the value at which the phone stops being
+   a stricter constraint than the desktop: both then carry a 12-character word,
+   which is what the Pitch Budget Rule caps authors at. */
+@utility type-hero {
+  font-size: clamp(2.25rem, 8vw, 5rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  text-wrap: balance;
 }
 
 @utility type-display {

@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { uploadAvatar } from '@/lib/supabase';
 import { getLocale } from '@/lib/i18n/locale';
@@ -17,8 +18,8 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 // POST /api/users/profile/avatar — upload avatar image, update user.image
 export async function POST(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
 
     const locale = await getLocale();

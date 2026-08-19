@@ -9,6 +9,25 @@ export const LOCALE_COOKIE = 'NEXT_LOCALE';
 const en = {
     brand: {
         defaultCommunityName: 'XClub Community',
+        // The public surfaces cannot fall back to the placeholder above: 08
+        // bans every string containing "XClub" from `/`, and ticket 12 makes the
+        // community name the public `<title>` and the OG card's whole
+        // composition — so an unconfigured deployment would publish the
+        // placeholder brand to a search result. This is the fallback the
+        // unauthenticated routes use instead. No brand, nothing sport-specific,
+        // and true of any community that has not filled its name in yet.
+        unnamedCommunity: 'Our community',
+        // The neutral root `<title>`, inherited by every route that sets none
+        // of its own (ticket 12 decision 4). It replaced
+        // `${communityName} - ${tagline}`, because root metadata runs on every
+        // request to every route and may not read the database; behind auth a
+        // tab label has a member for a reader, not a stranger. `/` overrides it
+        // with the community name.
+        defaultTitle: 'Community',
+        // No reader as of ticket 12 decision 4, which dropped it from the root
+        // layout's metadata — the one place it rendered. Whether the key itself
+        // goes is 08's call, since 08 owns copy authority and scoped its ban to
+        // `/`, so it stays standing here rather than being deleted in passing.
         tagline: 'XClub Community Management',
     },
     nav: {
@@ -22,6 +41,9 @@ const en = {
         adminDashboard: 'Dashboard',
         adminSessions: 'Sessions',
         adminPayments: 'Payments',
+        // The admission queue's own nav item, directly above Members. Short
+        // enough for the rail: the surface itself carries the long form.
+        adminApplicants: 'Applicants',
         adminMembers: 'Members',
         adminActivity: 'Activities',
         adminSettings: 'Settings',
@@ -34,19 +56,129 @@ const en = {
         lightMode: 'Light Mode',
         darkMode: 'Themes',
     },
+    /**
+     * The public route, and the only namespace on it. The dictionary authors
+     * every string here: there is no `Settings` key for the pitch and none may
+     * be added without reopening that decision — the blank-config version has
+     * to be good enough to ship alone, an unbounded admin textarea against
+     * `type-hero` breaks the hero, and admin-authored free text is barred from
+     * this route anyway. What makes the page feel like *this* community is
+     * data, not prose: the community name, the logo, and the board below.
+     *
+     * One sub-block per band, mirroring the route's composition — hero, board,
+     * footer — so a band added or cut is a block added or cut here. Only
+     * `board` carries an empty string, because it is the only band that can be
+     * empty. Voice: plain, second person, no superlatives, and no claims about
+     * size, popularity or history. DESIGN.md's metaphor ban binds this route
+     * too: no board, tile, rail or lattice in the copy.
+     */
     landing: {
-        purpose:
-            'The board for this community: sessions posted, seats claimed, dues settled.',
-        accountNote:
-            'Continuing with Google signs you in, and creates your account the first time you do it.',
-        footer: 'All rights reserved.',
+        hero: {
+            // DESIGN.md, The Pitch Budget Rule — two independent limits, because
+            // two different things break: <= 48 characters measured on the `id`
+            // string (length drives line count, and therefore the fold), and no
+            // word longer than 12 characters in either locale (longest word
+            // drives horizontal overflow at both ends of the clamp). Both are
+            // enforced by `src/lib/__tests__/pitch-budget.test.ts`. English is
+            // authored second and lands shorter; that is slack, not a target.
+            //
+            // What a community *is* — turning up, a standing slot, the same
+            // people — never what it plays: naming a sport is barred, so the
+            // sport can only ever arrive through the board's real data.
+            pitch: 'A game every week, and a place to play it.',
+            lead: 'This community runs the same sessions every week. Pick the ones you want, turn up, and pay your share.',
+            // A request, not an entry. Joining is approval-gated, so a label
+            // promising membership would promise what this page cannot grant.
+            cta: 'Ask to join this community',
+            // DESIGN.md, Actions: a disclosure the label defers to is not fine
+            // print. It renders at Body in secondary ink — never Caption, never
+            // the subtle or muted step — and is tied to the button with
+            // `aria-describedby`.
+            //
+            // The gate is disclosed *before* the click, never after. A stranger
+            // who signs in with Google expecting access and lands in a waiting
+            // room has been tricked into handing over an email address — and
+            // "an organizer will let you in" is what an amateur community
+            // actually is, so the honest version is also the friendlier one.
+            disclosure:
+                'Signing in with Google creates your account the first time you do it, and asks an organizer to let you in. They decide, and you get an email when they do.',
+            alreadyMember: 'Already a member? Sign in',
+        },
+        board: {
+            head: 'What you can play here',
+            // Authored to survive the empty state: it describes what a row
+            // holds rather than asserting that any exist, because this line
+            // renders above the Blank strip on a community that has just been
+            // set up.
+            body: 'One activity, its weekly slot, where it happens, and when it next happens.',
+            // The band never disappears — a community with nothing configured
+            // renders one Blank-marked strip carrying this line, never a
+            // dropped band, because dropping it leaves a generic poster. The
+            // mark's own label is `marks.unposted`, which already means
+            // *expected but not yet placed* in both locales; a second wording
+            // for it here would be two strings for one idea.
+            empty: 'Nothing has been posted here yet.',
+            // Prefix plus the shared weekday name from `days` below, so the
+            // seven day names have one home in this file rather than two.
+            weeklyPrefix: 'Every',
+            nextLabel: 'Next',
+            // Fees publish including zero, rendered as Free rather than Rp 0.
+            free: 'Free',
+            perMonth: '/ month',
+            perSession: '/ session',
+            // The quiet second action: Body weight, underlined, firing the
+            // *same* action as the hero's pill. On a phone the page foot is
+            // several screens from the pill, and a reader who has just been
+            // convinced should not have to scroll back to act. Same action, so
+            // the same promise — a request, not an entry.
+            cta: 'Ask to join this community',
+        },
+        footer: 'Run by its members.',
+        // A fourth sub-block, and not a band — 07's one-block-per-band rule
+        // still holds for the three above it. This is what a stranger reads
+        // *before* arriving: the search snippet and the link-preview image's
+        // alt text. It lives here because metadata is resolved server-side per
+        // request and reads this dictionary like any other copy (ticket 12, F4),
+        // rather than becoming a third home for strings.
+        //
+        // A crawler sends no `NEXT_LOCALE` cookie, so a search snippet and a
+        // WhatsApp preview are always the `en` strings (ticket 12, F2). The `id`
+        // pair below is what a returning human with the cookie sees in their
+        // browser tab. Consequence: 13's 48-character `id` budget is a
+        // `type-hero` constraint and does **not** apply here — a snippet wants
+        // ~155 characters and is read with no wordmark above it.
+        meta: {
+            // Its own string, not the hero's lead reused (ticket 12 decision 3):
+            // the pitch is capped at 48 characters on `id`, 06 broke the
+            // shared-copy coupling between `/` and `/auth/signin` deliberately,
+            // and this is read in a search result by someone who has not seen
+            // the page.
+            //
+            // Standing constraint: it may not name a schedule, sessions, or any
+            // other inventory. The community may have nothing posted yet — 07
+            // renders the board band Blank in that case — and a snippet
+            // promising what is not there is `PRODUCT.md:94`'s evidence ban one
+            // layer out. It describes the community and the act of joining, and
+            // nothing else.
+            description:
+                'This is the page for one community and the way to ask to join it. Sign in with Google, and an organizer decides who comes in.',
+            // The link-preview image's alt text. It describes the composition
+            // rather than naming the community, because the OG image file's
+            // `alt` export is static while the name is runtime configuration.
+            // DESIGN.md:309's metaphor ban binds it: no board, tile, rail or
+            // lattice, so the material is named by its colour.
+            ogAlt: 'The community name, set large in white lettering on dark green.',
+        },
     },
     auth: {
         signInTitle: 'Sign In',
         signInSubtitle: 'Sessions, RSVPs and dues for your whole community — in one place.',
         signInButton: 'Continue with Google',
+        // The other door, and it discloses the same gate `/` does — a member
+        // signing back in is unaffected, and a stranger who found this page
+        // first must not be told less than one who found the public route.
         signInNote:
-            'Continuing with Google creates your account the first time you do it. By signing in you agree to the club rules.',
+            'Continuing with Google creates your account the first time you do it, and asks an organizer to let you in. By signing in you agree to the club rules.',
         errorTitle: 'Sign In Failed',
         errorMessage:
             'An error occurred during the login process. Please try again.',
@@ -65,6 +197,40 @@ const en = {
         activityHint: 'Select at least one activity to join.',
         submit: 'Save Profile',
         submitting: 'Saving...',
+    },
+    /**
+     * The Applicant's waiting room — its own top-level namespace, and the
+     * dictionary authors all of it: `/pending` reads no `Settings` key beyond
+     * the community name and the organizer's WhatsApp number, and no community
+     * data at all.
+     *
+     * Three states on one route, told apart by their mark before their words:
+     * **Tape** (provisional and held) for an Applicant waiting, **Strike**
+     * (void) for one an organizer declined, and Strike again for a member who
+     * was removed. Each carries one statement and one lead line; the page's only
+     * affordances are messaging an organizer and signing out.
+     */
+    pending: {
+        waitingMark: 'Waiting',
+        waitingTitle: 'An organizer is reviewing your request',
+        waitingLead:
+            'You asked to join. Someone who runs this community has to let you in — usually within a day or two. We will email you the moment they do.',
+        declinedMark: 'Declined',
+        declinedTitle: 'You have not been let in',
+        // WhatsApp is the recourse, and saying so is honest: the organizer
+        // decided and the organizer can change their mind. There is no appeal
+        // button and no re-apply flow.
+        declinedLead:
+            'An organizer reviewed your request and did not admit you. If you think that is a mistake, message them — they decide, and they can change their mind.',
+        // The fourth admission state: admitted once, then revoked. It lands on
+        // this route like an Applicant does, but "we did not admit you" would be
+        // false for someone who was already in.
+        revokedMark: 'Removed',
+        revokedTitle: 'Your place in this community was removed',
+        revokedLead:
+            'An organizer took you off the register, so the community is no longer yours to see. Message them if you want to come back — they decide, and they can change their mind.',
+        whatsapp: 'Message an organizer',
+        signOut: 'Sign out',
     },
     dashboard: {
         welcomeGreeting: 'Welcome back,',
@@ -172,9 +338,13 @@ const en = {
         reservedPayWithin: 'Reserved · pay within {time}',
         holdExpired: 'Reservation expired',
         payNow: 'Pay now',
+        // The one string the public session page still renders. Its two former
+        // neighbours — `publicPageSpots` and `publicPageFull` — went with the
+        // capacity figures themselves: ticket 12 decision 1 bars every
+        // capacity-derived number from an unauthenticated route, because the
+        // figure cannot be made true there (the holds sweep that would correct
+        // it deletes rows and queues mail, which no public GET may do).
         publicPageRsvpCta: 'Sign in to RSVP',
-        publicPageSpots: '{n} of {max} spots filled',
-        publicPageFull: 'Session full',
         shareSession: 'Share session',
         shareSessionDesc: 'Invite friends to join this session',
         shareViaWhatsapp: 'Share via WhatsApp',
@@ -348,6 +518,32 @@ const en = {
         edit: 'Edit',
         noSessions: 'No sessions yet.',
         noSessionsMatch: 'No sessions match your search.',
+        // The admission queue. Its own surface rather than a band on the roster:
+        // this is where new people are let into the community, and it should not
+        // be something you find by scrolling past a register. Empty on most
+        // days, so the empty state is part of the design.
+        applicantsTitle: 'Asking to join',
+        applicantsSubtitle: '{n} waiting for a decision',
+        applicantsHint: 'They cannot see anything until you let them in',
+        applicantsEmpty: 'Nobody is waiting.',
+        applicantsEmptyMark: 'Empty',
+        applicantsCapped: 'Showing the {n} who have waited longest.',
+        applicantsToRoster: 'Back to the register',
+        applicantPhone: 'WhatsApp',
+        applicantWants: 'Asked to join',
+        applicantWaited: 'Waited',
+        waitedToday: 'today',
+        waitedDays: '{n}d',
+        admit: 'Admit',
+        decline: 'Decline',
+        admitConfirmTitle: 'Admit {name}?',
+        admitConfirmDesc:
+            'They get into the community straight away, and an email telling them so.',
+        declineConfirmTitle: 'Decline {name}?',
+        declineConfirmDesc:
+            'They stay signed in but see only a page saying an organizer did not admit them, and they drop out of this queue. No email is sent.',
+        admittedToast: '{name} is in.',
+        declinedToast: '{name} was declined.',
         membersTitle: 'Manage Members',
         membersRegistered: 'registered members',
         searchPlaceholder: 'Search name or email...',
@@ -721,6 +917,8 @@ const en = {
 const id: typeof en = {
     brand: {
         defaultCommunityName: 'XClub Community',
+        unnamedCommunity: 'Komunitas kami',
+        defaultTitle: 'Komunitas',
         tagline: 'Manajemen XClub Community',
     },
     nav: {
@@ -734,6 +932,7 @@ const id: typeof en = {
         adminDashboard: 'Dashboard',
         adminSessions: 'Sesi',
         adminPayments: 'Pembayaran',
+        adminApplicants: 'Pendaftar',
         adminMembers: 'Anggota',
         adminActivity: 'Aktivitas',
         adminSettings: 'Pengaturan',
@@ -747,18 +946,41 @@ const id: typeof en = {
         darkMode: 'Tema',
     },
     landing: {
-        purpose:
-            'Papan untuk komunitas ini: sesi dipasang, kursi diambil, iuran dilunasi.',
-        accountNote:
-            'Lanjut dengan Google membuatmu masuk, dan membuatkan akunmu saat pertama kali kamu memakainya.',
-        footer: 'Semua hak dilindungi.',
+        hero: {
+            // 41 characters, longest word 9. The budget is measured here, not
+            // on the English: Indonesian runs 15–30% longer and is what the
+            // hero has to hold.
+            pitch: 'Ada permainan tiap minggu, dan tempatnya.',
+            lead: 'Komunitas ini menjalankan sesi yang sama setiap minggu. Pilih yang kamu mau, datang, lalu bayar bagianmu.',
+            cta: 'Minta gabung ke komunitas ini',
+            disclosure:
+                'Masuk dengan Google membuatkan akunmu saat pertama kali, dan mengajukan permintaanmu ke pengelola. Mereka yang memutuskan, dan kamu akan dapat email begitu itu terjadi.',
+            alreadyMember: 'Sudah jadi anggota? Masuk',
+        },
+        board: {
+            head: 'Yang bisa kamu mainkan di sini',
+            body: 'Satu aktivitas, jadwal mingguannya, tempatnya, dan kapan berikutnya.',
+            empty: 'Belum ada yang diposting di sini.',
+            weeklyPrefix: 'Setiap',
+            nextLabel: 'Berikutnya',
+            free: 'Gratis',
+            perMonth: '/ bulan',
+            perSession: '/ sesi',
+            cta: 'Minta gabung ke komunitas ini',
+        },
+        footer: 'Dijalankan oleh anggotanya.',
+        meta: {
+            description:
+                'Ini halaman satu komunitas dan cara untuk minta gabung. Masuk dengan Google, dan pengelola yang memutuskan siapa yang masuk.',
+            ogAlt: 'Nama komunitas, tercetak besar dengan huruf putih di atas hijau tua.',
+        },
     },
     auth: {
         signInTitle: 'Masuk',
         signInSubtitle: 'Sesi, RSVP, dan iuran untuk seluruh komunitasmu — dalam satu tempat.',
         signInButton: 'Lanjutkan dengan Google',
         signInNote:
-            'Lanjut dengan Google akan membuatkan akunmu saat pertama kali kamu memakainya. Dengan masuk, kamu menyetujui aturan klub.',
+            'Lanjut dengan Google akan membuatkan akunmu saat pertama kali kamu memakainya, dan mengajukan permintaanmu ke pengelola. Dengan masuk, kamu menyetujui aturan klub.',
         errorTitle: 'Gagal Masuk',
         errorMessage: 'Terjadi kesalahan saat proses login. Silakan coba lagi.',
         backToSignIn: 'Kembali ke halaman login',
@@ -776,6 +998,22 @@ const id: typeof en = {
         activityHint: 'Pilih minimal satu aktivitas untuk diikuti.',
         submit: 'Simpan Profil',
         submitting: 'Menyimpan...',
+    },
+    pending: {
+        waitingMark: 'Menunggu',
+        waitingTitle: 'Pengelola sedang meninjau permintaanmu',
+        waitingLead:
+            'Kamu sudah mengajukan diri untuk bergabung. Salah satu pengelola komunitas ini harus menerimamu dulu — biasanya dalam satu sampai dua hari. Kami akan mengirim email begitu itu terjadi.',
+        declinedMark: 'Ditolak',
+        declinedTitle: 'Kamu belum diterima masuk',
+        declinedLead:
+            'Pengelola sudah meninjau permintaanmu dan belum menerimamu. Kalau menurutmu ini keliru, hubungi mereka — keputusan ada di tangan mereka, dan mereka bisa berubah pikiran.',
+        revokedMark: 'Dikeluarkan',
+        revokedTitle: 'Tempatmu di komunitas ini sudah dicabut',
+        revokedLead:
+            'Pengelola mengeluarkanmu dari daftar anggota, jadi komunitas ini tidak lagi bisa kamu lihat. Hubungi mereka kalau kamu ingin kembali — keputusan ada di tangan mereka, dan mereka bisa berubah pikiran.',
+        whatsapp: 'Hubungi pengelola',
+        signOut: 'Keluar',
     },
     dashboard: {
         welcomeGreeting: 'Selamat datang kembali,',
@@ -884,8 +1122,6 @@ const id: typeof en = {
         holdExpired: 'Reservasi kedaluwarsa',
         payNow: 'Bayar sekarang',
         publicPageRsvpCta: 'Masuk untuk daftar',
-        publicPageSpots: '{n} dari {max} tempat terisi',
-        publicPageFull: 'Sesi penuh',
         shareSession: 'Bagikan sesi',
         shareSessionDesc: 'Ajak teman untuk bergabung di sesi ini',
         shareViaWhatsapp: 'Bagikan via WhatsApp',
@@ -1062,6 +1298,29 @@ const id: typeof en = {
         edit: 'Edit',
         noSessions: 'Belum ada sesi.',
         noSessionsMatch: 'Tidak ada sesi yang cocok dengan pencarian.',
+        applicantsTitle: 'Mengajukan diri untuk bergabung',
+        applicantsSubtitle: '{n} menunggu keputusan',
+        applicantsHint:
+            'Mereka belum bisa melihat apa pun sampai kamu menerima mereka',
+        applicantsEmpty: 'Tidak ada yang menunggu.',
+        applicantsEmptyMark: 'Kosong',
+        applicantsCapped: 'Menampilkan {n} yang paling lama menunggu.',
+        applicantsToRoster: 'Kembali ke daftar anggota',
+        applicantPhone: 'WhatsApp',
+        applicantWants: 'Ingin ikut',
+        applicantWaited: 'Menunggu',
+        waitedToday: 'hari ini',
+        waitedDays: '{n} hari',
+        admit: 'Terima',
+        decline: 'Tolak',
+        admitConfirmTitle: 'Terima {name}?',
+        admitConfirmDesc:
+            'Dia langsung bisa masuk ke komunitas, dan menerima email pemberitahuan.',
+        declineConfirmTitle: 'Tolak {name}?',
+        declineConfirmDesc:
+            'Dia tetap masuk dengan akunnya tetapi hanya melihat halaman yang menyatakan pengelola belum menerimanya, dan keluar dari daftar tunggu ini. Tidak ada email yang dikirim.',
+        admittedToast: '{name} sudah diterima.',
+        declinedToast: '{name} ditolak.',
         membersTitle: 'Kelola Anggota',
         membersRegistered: 'anggota terdaftar',
         searchPlaceholder: 'Cari nama atau email...',
