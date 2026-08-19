@@ -5,6 +5,13 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildOnboardingSchema } from '@/lib/validations/user';
 import { NextResponse } from 'next/server';
 
+// PATCH /api/users/onboarding — name, phone and Activity picks, once.
+//
+// The one write outside the admission gate, and necessarily so: profile first,
+// admission second. Signing in makes you an Applicant, and an Admin judges a
+// person with a phone number — an email address alone is not a decision. The
+// Membership rows this creates are inert while the door is shut; they exist
+// before admission so the Admin can see what the Applicant asked to join.
 export async function PATCH(req: Request) {
     const session = await auth();
     if (!session?.user?.id) {

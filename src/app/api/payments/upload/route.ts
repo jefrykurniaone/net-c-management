@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { uploadPaymentProof } from '@/lib/supabase';
 import {
@@ -46,8 +47,8 @@ interface UploadCtx {
 // effective payment mode (AD-7).
 export async function POST(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
 
     // Free lapsed holds first: a re-register after a member's own hold expired

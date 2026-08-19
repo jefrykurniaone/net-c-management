@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -12,8 +13,8 @@ const DEFAULT_PAYMENT_LIMIT = 20;
 // GET /api/payments — list payments for current user (or all for admin)
 export async function GET(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
 
     const { searchParams } = new URL(req.url);
@@ -70,8 +71,8 @@ export async function GET(req: Request) {
 // POST /api/payments — create payment record (admin only)
 export async function POST(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { admissionDenied, isAdmittedSession } from "@/lib/admission";
 import { prisma } from "@/lib/prisma";
 import { ensureMembership } from "@/lib/activity";
 import { isFreeRegisterAllowed, releaseSessionSeat } from "@/lib/payments";
@@ -30,8 +31,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmittedSession(session)) {
+    return admissionDenied(session);
   }
 
   const { id: sessionId } = await params;
@@ -150,8 +151,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isAdmittedSession(session)) {
+    return admissionDenied(session);
   }
 
   const { id: sessionId } = await params;

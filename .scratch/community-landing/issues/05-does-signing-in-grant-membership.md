@@ -177,6 +177,53 @@ that is already half-installed, or delete it.** It gets finished.
   in the queue. The two surfaces this gate creates, and the only part of it that
   still has design decisions in it.
 
+## Built
+
+The mechanism above is implemented. Where each decision landed:
+
+- **State (dec 3)** — `User.admittedAt DateTime?` plus an `(admittedAt, isActive)`
+  index, migration `20260819093657_add_user_admitted_at`, which backfills
+  `admittedAt = createdAt` so no existing member is stopped at the door.
+- **The seam** — `src/lib/admission.ts`: `resolveAdmissionState` (the four
+  states), `WAITING_APPLICANT_WHERE` (the queue query, shared by the surface and
+  the badge), `isAdmittedSession` and `admissionDenied`. Unit-tested in
+  `src/lib/__tests__/admission.test.ts`.
+- **Enforcement (dec 9)** — `src/proxy.ts` routes by a single `homeFor()`
+  (profile → admission → app); both group layouts guard with
+  `isAdmittedSession`; 30 API handlers across 20 route files now refuse with
+  `403 Not admitted`. `session.user.isAdmitted` carries the fact
+  (`src/lib/auth.ts`), read fresh per request, so admitting takes effect on the
+  next navigation without a re-login.
+- **The isActive hole** — closed by the same check: a revoked member is stopped
+  everywhere the gate runs, and lands on `/pending` under its own third
+  statement (`pending.revoked*`), since "we did not admit you" is false for
+  someone who was already in.
+- **The bank-details exposure** — closed twice. `GET /api/activities` stays
+  outside the gate (onboarding needs the picker) but hands a non-admitted caller
+  a narrow projection: id, name, slug, colour, icon, isActive. No fees, no
+  `bankName`, no `bankAccountNumber`, no `bankAccountHolder`. Verified live: 200
+  with six fields.
+- **Route (dec 6)** — `src/app/pending/`. **Email (dec 7)** —
+  `src/lib/email/admission.ts`, queued with `after()`, best-effort.
+  **Decline (dec 5)** and **admit** — `POST /api/users/admissions`, which refuses
+  anything that is not currently a waiting Applicant, so a stale queue cannot
+  revoke a member another Admin just admitted.
+- **Disclosure (dec 8)** — `landing.hero.cta` is now *"Ask to join this
+  community"* / *"Minta gabung ke komunitas ini"*, the disclosure says an
+  organizer decides and that admission is emailed, and `auth.signInNote` says the
+  same on the other door. `landing.meta.description` no longer promises
+  membership on sign-in.
+- **Bootstrap** — `prisma/seed/core.ts`, `prisma/seed-prod.ts` and
+  `prisma/promote-owner.ts` all set `admittedAt`. `npm run db:seed` also seeds
+  `applicant@xclub.local` (waiting) and `declined@xclub.local` (declined).
+
+Verified in a browser at both widths and in both locales: an Applicant signing in
+lands on `/pending`; Admit writes through, empties the queue, clears the badge,
+and the admitted account reaches `/dashboard` with no re-login; gated APIs return
+`403 Not admitted` from the waiting page. `npx tsc --noEmit` clean, `npm run
+lint` no errors, 99 Vitest tests pass. Screenshots:
+`.scratch/community-landing/assets/05-11-*`.
+
 ### Why there is no separate "wire the gate" ticket
 
 The human ruled the unenforced `isActive` **in scope** for this map rather than

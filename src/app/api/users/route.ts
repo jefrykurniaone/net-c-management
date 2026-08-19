@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { isAdminRole } from '@/lib/utils';
 import { NextResponse } from 'next/server';
@@ -9,8 +10,8 @@ const DEFAULT_USER_LIMIT = 50;
 // GET /api/users — list all members (admin only)
 export async function GET(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -62,8 +63,8 @@ export async function GET(req: Request) {
 // PATCH /api/users — update role or isActive for a user (admin only)
 export async function PATCH(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

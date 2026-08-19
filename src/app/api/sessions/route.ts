@@ -1,8 +1,10 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildCreateSessionSchema } from '@/lib/validations/session';
+import { invalidatePublicLanding } from '@/lib/public-landing';
 import { isAdminRole } from '@/lib/utils';
 import { Prisma, SessionStatus } from '@prisma/client';
 import { NextResponse } from 'next/server';
@@ -13,8 +15,8 @@ const DEFAULT_SESSION_LIMIT = 20;
 // GET /api/sessions — list sessions (all authenticated users)
 export async function GET(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
 
     const { searchParams } = new URL(req.url);
@@ -68,8 +70,8 @@ export async function GET(req: Request) {
 // POST /api/sessions — create session (admin only)
 export async function POST(req: Request) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -95,5 +97,7 @@ export async function POST(req: Request) {
         },
     });
 
+    // A new session may be an Activity's next date on `/`.
+    invalidatePublicLanding();
     return NextResponse.json(newSession, { status: 201 });
 }

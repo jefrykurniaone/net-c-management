@@ -31,6 +31,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         isProfileComplete: true,
                         phone: true,
                         isActive: true,
+                        admittedAt: true,
                     },
                 });
                 if (dbUser) {
@@ -38,6 +39,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     session.user.isProfileComplete = dbUser.isProfileComplete;
                     session.user.phone = dbUser.phone ?? undefined;
                     session.user.isActive = dbUser.isActive;
+                    // The gate is enforced against the session, so the fact
+                    // travels as a boolean: *when* someone was admitted is the
+                    // admin roster's business, not the request's. Read fresh on
+                    // every request (database sessions), so admitting or
+                    // declining someone takes effect on their next navigation
+                    // without them signing out.
+                    session.user.isAdmitted = dbUser.admittedAt !== null;
                 }
             }
             return session;

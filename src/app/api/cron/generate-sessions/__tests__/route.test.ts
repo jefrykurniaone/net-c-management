@@ -5,7 +5,14 @@ vi.mock('@/lib/recurring-sessions', () => ({
   ensureRecurringSessions: vi.fn().mockResolvedValue(undefined),
 }));
 
+// The real one calls `revalidateTag`, which needs Next's request store and
+// throws when a handler is invoked directly like this.
+vi.mock('@/lib/public-landing', () => ({
+  invalidatePublicLanding: vi.fn(),
+}));
+
 import { ensureRecurringSessions } from '@/lib/recurring-sessions';
+import { invalidatePublicLanding } from '@/lib/public-landing';
 
 const CRON_SECRET = 'test-cron-secret-xyz';
 
@@ -68,5 +75,16 @@ describe('GET /api/cron/generate-sessions', () => {
   it('does not call ensureRecurringSessions when unauthorized', async () => {
     await GET(makeRequest('Bearer bad-secret'));
     expect(ensureRecurringSessions).not.toHaveBeenCalled();
+  });
+
+  // Ticket 10, Rule 4: generated sessions publish, so the landing cache dies.
+  it('invalidates the public landing cache after generating', async () => {
+    await GET(makeRequest(`Bearer ${CRON_SECRET}`));
+    expect(invalidatePublicLanding).toHaveBeenCalledOnce();
+  });
+
+  it('does not invalidate the public landing cache when unauthorized', async () => {
+    await GET(makeRequest('Bearer bad-secret'));
+    expect(invalidatePublicLanding).not.toHaveBeenCalled();
   });
 });

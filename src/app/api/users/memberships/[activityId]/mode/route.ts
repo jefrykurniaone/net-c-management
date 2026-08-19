@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { assertMembership } from '@/lib/activity';
 import { getLocale } from '@/lib/i18n/locale';
@@ -114,8 +115,8 @@ export async function PATCH(
     { params }: { params: Promise<{ activityId: string }> },
 ) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
 
     const t = getDictionary(await getLocale());

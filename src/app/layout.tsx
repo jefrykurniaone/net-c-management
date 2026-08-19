@@ -5,7 +5,7 @@ import { auth } from '@/lib/auth';
 import { AuthProvider } from '@/components/providers/auth-provider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
-import { getSettings } from '@/lib/settings';
+import { getAppUrl } from '@/lib/app-url';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LocaleProvider } from '@/components/providers/locale-provider';
@@ -20,15 +20,45 @@ const archivo = Archivo({
     weight: ['400', '600', '700', '800', '900'],
 });
 
+// This runs on every request to *every* route, which is why it reads the
+// dictionary and the locale and **never the database** (ticket 12 decision 4).
+// It used to render `${communityName} - ${t.brand.tagline}` off `getSettings()`
+// — an uncached `findMany` that made `/` cost two Settings queries per render,
+// quietly defeating ticket 10's zero-connections-on-a-cache-hit — and the
+// tagline itself put a placeholder brand in software-marketing voice into the
+// public `<title>`, which is what ticket 08 banned from `/`.
+//
+// What remains is a neutral default title, inherited by every route that sets
+// none of its own. `/` overrides it with the community name; the authenticated
+// route groups keep it, because a per-page tab label across the whole app is a
+// different job with a different reader.
+//
+// `metadataBase` is set here and only here (decision 9). It has to exist at all
+// because a relative metadata URL without it is a build error, and the OG image
+// below the root segment is exactly such a URL. Reusing the app URL the email
+// CTAs already use keeps one answer to "where does this deployment live".
 export async function generateMetadata(): Promise<Metadata> {
-    const [{ communityName }, locale] = await Promise.all([
-        getSettings(),
-        getLocale(),
-    ]);
+    const locale = await getLocale();
     const t = getDictionary(locale);
     return {
-        title: `${communityName} - ${t.brand.tagline}`,
-        description: `${t.brand.tagline} - ${communityName}`,
+        metadataBase: new URL(getAppUrl()),
+        title: t.brand.defaultTitle,
+        // Default-deny indexing, and `/` is the single route that opts back in
+        // (decision 7). Stated here rather than only on the authenticated
+        // layouts because the middleware makes the real exposure
+        // counter-intuitive: an unauthenticated crawler hitting `/dashboard` is
+        // 307'd to `/auth/signin`, which is itself a 200 indexable page. So the
+        // pages at risk of landing in a search index are the auth pages, not the
+        // protected ones — and a route added later inherits the safe answer
+        // instead of needing to remember this. The two authenticated layouts
+        // restate it, and `src/app/robots.ts` is the second enforcement, because
+        // robots.txt is advisory where this tag is not.
+        robots: { index: false, follow: false },
+        // One card shape for every route (decision 10). The OG image at this
+        // segment is 1200x630 and `summary` would crop it to a small square.
+        // A route that declares its own `twitter` block replaces this object
+        // wholesale, so `/` and `/s/[id]` restate the card there.
+        twitter: { card: 'summary_large_image' },
     };
 }
 

@@ -1,8 +1,10 @@
 import { auth } from '@/lib/auth';
+import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildUpdateActivitySchema } from '@/lib/validations/activity';
+import { invalidatePublicLanding } from '@/lib/public-landing';
 import { isAdminRole } from '@/lib/utils';
 import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
@@ -13,8 +15,8 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> },
 ) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
 
     const { id } = await params;
@@ -35,8 +37,8 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> },
 ) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -60,6 +62,8 @@ export async function PATCH(
             where: { id },
             data: parsed.data,
         });
+        // Name, icon, colour, weekly slot, fees and `isActive` all publish.
+        invalidatePublicLanding();
         return NextResponse.json(activity);
     } catch (err) {
         if (err instanceof Prisma.PrismaClientKnownRequestError) {
@@ -88,8 +92,8 @@ export async function DELETE(
     { params }: { params: Promise<{ id: string }> },
 ) {
     const session = await auth();
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdmittedSession(session)) {
+        return admissionDenied(session);
     }
     if (!isAdminRole(session.user.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -123,5 +127,7 @@ export async function DELETE(
         throw err;
     }
 
+    // A deleted Activity leaves the board.
+    invalidatePublicLanding();
     return NextResponse.json({ success: true });
 }

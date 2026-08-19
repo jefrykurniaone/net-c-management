@@ -27,11 +27,19 @@ async function main() {
         throw new Error('Usage: npm run db:promote -- <email>');
     }
 
+    // `admittedAt` is not optional here. Joining is approval-gated, and an
+    // OWNER with a null `admittedAt` is an Applicant: they would be redirected
+    // to /pending and could not reach the queue to admit themselves.
     const user = await prisma.user.update({
         where: { email },
-        data: { role: 'OWNER', isActive: true, isProfileComplete: true },
+        data: {
+            role: 'OWNER',
+            isActive: true,
+            isProfileComplete: true,
+            admittedAt: new Date(),
+        },
     });
-    console.log(`✔ ${user.email} is now OWNER (active, profile complete).`);
+    console.log(`✔ ${user.email} is now OWNER (active, admitted, profile complete).`);
 }
 
 main()

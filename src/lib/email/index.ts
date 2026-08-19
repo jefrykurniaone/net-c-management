@@ -6,3 +6,4 @@ export { sendHoldConfirmation, type HoldConfirmationParams } from './hold-confir
 export { sendHoldExpired, type HoldExpiredParams } from './hold-expired';
 export { sendDayReminder, type DayReminderParams } from './day-reminder';
 export { sendPaymentStatus, type PaymentStatusParams } from './payment-status';
+export { sendAdmission, type AdmissionParams } from './admission';

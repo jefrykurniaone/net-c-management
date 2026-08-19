@@ -1,108 +1,83 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
-import { continueWithGoogle } from '@/lib/auth-actions';
-import { Button } from '@/components/ui/button';
-import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
-import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
-import { LanguageSwitcher } from '@/components/language-switcher';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { CommunityIdentityMark } from '@/components/community/identity-mark';
-import { GoogleMark } from '@/components/auth/GoogleMark';
+import { getDictionary } from '@/lib/i18n/dictionaries';
+import {
+    getPublicCommunityName,
+    getPublicIdentity,
+    getPublicLandingData,
+} from '@/lib/public-landing';
+import { buildBoardRows } from '@/lib/landing-board';
+import { IdentityRail } from '@/components/landing/identity-rail';
+import { HeroBand } from '@/components/landing/hero-band';
+import { BoardBand } from '@/components/landing/board-band';
+import { LandingFooter } from '@/components/landing/landing-footer';
 
-// The landing threshold. Nobody arrives here to be sold to: every
-// authenticated visitor is redirected away before this renders, so the only
-// people who see it are members of this community who are not signed in, and
-// for them signing in *is* signing up. The page is therefore the board's own
-// header plate and one way onto it — identity, a statement of what this is with
-// the sentence that explains it, one action, and the truth about what that
-// action does.
-
-// DESIGN.md: containers max at 72rem for board surfaces and 40rem for
-// single-task columns.
-const BOARD_WIDTH_CLASS = 'max-w-[72rem]';
-
-/** Full-bleed header rail: identity plate at left, board controls at right. */
-function IdentityRail({
-    communityName,
-    logoUrl,
-}: Readonly<{ communityName: string; logoUrl: string }>) {
-    return (
-        <header className='border-b border-rule'>
-            <div
-                className={`mx-auto flex ${BOARD_WIDTH_CLASS} flex-wrap items-center gap-block px-block py-cell`}>
-                <div className='flex min-w-0 items-center gap-cell'>
-                    <CommunityIdentityMark
-                        communityName={communityName}
-                        logoUrl={logoUrl}
-                        size='md'
-                    />
-                    {/* The name wraps at its spaces and never truncates or
-                        breaks mid-word: a community that cannot read its own
-                        name off the plate is the one thing this page cannot
-                        get wrong. A name too wide for the row sends the
-                        controls to a second line instead. */}
-                    <span className='type-mark text-foreground'>
-                        {communityName}
-                    </span>
-                </div>
-                <div className='ml-auto flex shrink-0 items-center gap-hair'>
-                    <ThemeToggle compact />
-                    <LanguageSwitcher compact />
-                </div>
-            </div>
-        </header>
-    );
-}
+// The public page. Strangers arrive here — from a search result, from a
+// WhatsApp link — with no account and no idea what this community is, so the
+// route's job is to sell one club to people who might join it. Not software to
+// clubs: there is one community per deployment.
+//
+// Two bands and a footer. The painted hero carries the pitch and the one loud
+// action; the enamel band below carries the community's real Activities, which
+// is the page's only per-community substance, because the copy is generic by
+// decision and identity arrives as data. The page is short on purpose — a page
+// that scrolls with nothing to say is worse than one that stops.
+//
+// Everything it reads comes through `src/lib/public-landing.ts`, the sole
+// module this route may query. A lint rule, not a convention, keeps Prisma and
+// the holds sweep out of this file: bank details and `adminWhatsapp` sit on the
+// same `Activity` row as the name and the fees, and the sweep both mutates and
+// sends mail, which no unauthenticated GET may do.
 
 /**
- * One tile resting on the board, divided by a shared rule: what this board is,
- * then the single way onto it and what taking it actually does.
+ * What a stranger reads before they arrive (ticket 12).
+ *
+ * The `<title>` is the **community name alone** — no suffix. The name is
+ * unbounded runtime configuration, so any suffix is the part a search result
+ * truncates first, and every suffix still legal here (no brand, nothing
+ * sport-specific, no tagline) is generic filler that costs pixels and says
+ * nothing. That puts the whole "what is this" load on the description, which is
+ * its own dictionary string rather than the hero's lead reused: the pitch is
+ * capped at 48 characters on `id`, and a snippet wants ~155 and is read with no
+ * wordmark above it.
+ *
+ * `/` is the one indexable route in this deployment (decision 7). Everything
+ * else is `noindex`, enforced both here-adjacent — in `src/app/robots.ts` — and
+ * on the routes themselves, because robots.txt is advisory.
+ *
+ * The image is not declared: `src/app/opengraph-image.tsx` sits at the root
+ * segment, so every route inherits it and this one needs no `images` entry.
  */
-function ThresholdTile({ t }: Readonly<{ t: Dictionary }>) {
-    // Flat at rest: DESIGN.md reserves the tile-rest shadow for things that are
-    // genuinely movable tiles, which a container is not. Only the action inside
-    // it carries one.
-    return (
-        <div className='w-full max-w-[40rem] border border-rule bg-card'>
-            {/* Statement and the sentence explaining it are one block above the
-                rule: the rule divides what this is from the way in. The body
-                sentence reads auth.signInSubtitle rather than owning a key, so
-                both doors are worded identically and cannot drift apart. */}
-            <div className='flex flex-col gap-block p-bay'>
-                <h1 className='type-display text-balance text-card-foreground'>
-                    {t.landing.purpose}
-                </h1>
-                <p className='type-body max-w-[65ch] text-secondary-foreground'>
-                    {t.auth.signInSubtitle}
-                </p>
-            </div>
-            <div className='flex flex-col gap-cell border-t border-rule p-bay'>
-                <form action={continueWithGoogle}>
-                    <Button
-                        type='submit'
-                        className='type-label h-auto w-full gap-cell px-5 py-3 shadow-tile hover:bg-foreground hover:text-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:shadow-tile-pressed active:not-aria-[haspopup]:translate-y-0 sm:w-auto'>
-                        <GoogleMark className='size-5' />
-                        {t.auth.signInButton}
-                    </Button>
-                </form>
-                <p className='type-caption max-w-[65ch] text-muted-foreground'>
-                    {t.landing.accountNote}
-                </p>
-            </div>
-        </div>
-    );
+export async function generateMetadata(): Promise<Metadata> {
+    const locale = await getLocale();
+    const communityName = await getPublicCommunityName(locale);
+    const { description } = getDictionary(locale).landing.meta;
+
+    return {
+        title: communityName,
+        description,
+        openGraph: { title: communityName, description, type: 'website' },
+        twitter: { card: 'summary_large_image', title: communityName, description },
+        robots: { index: true, follow: true },
+    };
 }
 
 export default async function LandingPage() {
-    const [session, settings, locale] = await Promise.all([
+    // The locale cookie is read first because the community-name fallback is
+    // locale-resolved and that resolution may not happen inside a cache scope.
+    // On a cache hit this render touches Prisma zero times.
+    const locale = await getLocale();
+    const [session, identity, landing] = await Promise.all([
         auth(),
-        getSettings(),
-        getLocale(),
+        getPublicIdentity(locale),
+        getPublicLandingData(),
     ]);
-    const { communityName, logoUrl } = settings;
     const t = getDictionary(locale);
 
+    // Nobody signed in is being sold to. This redirect lives in the page body
+    // rather than in middleware, which never touches `/`.
     if (session?.user) {
         if (!session.user.isProfileComplete) {
             redirect('/onboarding');
@@ -110,30 +85,23 @@ export default async function LandingPage() {
         redirect('/dashboard');
     }
 
+    const rows = buildBoardRows(landing, t);
+
     return (
         <div className='flex min-h-dvh flex-col bg-background'>
-            <IdentityRail communityName={communityName} logoUrl={logoUrl} />
-            {/* Top-anchored inside the board's own 72rem gutter, so the tile's
-                left edge is structurally the identity plate's and the footer's.
-                Centring here put a 40rem tile in the full viewport width, 240px
-                right of the logo at 1440px. DESIGN.md, Layout. */}
-            <main
-                className={`mx-auto flex w-full ${BOARD_WIDTH_CLASS} flex-1 items-start justify-start px-block py-bay`}>
-                <ThresholdTile t={t} />
+            <IdentityRail
+                communityName={identity.communityName}
+                logoUrl={identity.logoUrl}
+            />
+            <HeroBand t={t} communityName={identity.communityName} />
+            <main className='flex-1'>
+                <BoardBand t={t} rows={rows} />
             </main>
-            {/* px-block sits inside the 72rem wrapper, matching the rail: with
-                the padding outside it the footer line landed 16px left of the
-                identity plate and the tile, breaking the shared gutter. */}
-            <footer className='border-t border-rule'>
-                <p
-                    className={`mx-auto ${BOARD_WIDTH_CLASS} type-caption px-block py-cell text-muted-foreground`}>
-                    ©{' '}
-                    <span className='tabular-nums'>
-                        {new Date().getFullYear()}
-                    </span>{' '}
-                    {communityName}. {t.landing.footer}
-                </p>
-            </footer>
+            <LandingFooter
+                communityName={identity.communityName}
+                t={t}
+                year={new Date().getFullYear()}
+            />
         </div>
     );
 }

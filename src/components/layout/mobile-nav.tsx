@@ -26,11 +26,13 @@ function NavLinks({
     communityName,
     logoUrl,
     pendingPayments,
+    waitingApplicants,
 }: Readonly<{
     onClose?: () => void;
     communityName: string;
     logoUrl?: string;
     pendingPayments?: number;
+    waitingApplicants?: number;
 }>) {
     const pathname = usePathname();
     const { data: session } = useSession();
@@ -44,7 +46,7 @@ function NavLinks({
             .join('')
             .toUpperCase() ?? '?';
 
-    const ADMIN_NAV = getAdminNav(t, { pendingPayments });
+    const ADMIN_NAV = getAdminNav(t, { pendingPayments, waitingApplicants });
     const memberViewLink = getMemberViewLink(t);
 
     return (
@@ -143,10 +145,12 @@ export function MobileNav({
     communityName,
     logoUrl,
     pendingPayments,
+    waitingApplicants,
 }: Readonly<{
     communityName: string;
     logoUrl?: string;
     pendingPayments?: number;
+    waitingApplicants?: number;
 }>) {
     const [open, setOpen] = useState(false);
     const { locale } = useLocale();
@@ -167,6 +171,7 @@ export function MobileNav({
                     communityName={communityName}
                     logoUrl={logoUrl}
                     pendingPayments={pendingPayments}
+                    waitingApplicants={waitingApplicants}
                 />
             </SheetContent>
         </Sheet>

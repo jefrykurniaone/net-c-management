@@ -4,6 +4,7 @@ import {
     CalendarDays,
     CreditCard,
     Users,
+    UserPlus,
     Shapes,
     Settings,
     Home,
@@ -26,6 +27,8 @@ export type NavItem = {
 /** Live counts surfaced as nav badges. */
 export type AdminNavBadges = {
     pendingPayments?: number;
+    /** Applicants waiting for a decision — the admission queue's own count. */
+    waitingApplicants?: number;
 };
 
 /** Member primary nav — the single source of truth for both member shell surfaces. */
@@ -61,6 +64,15 @@ export function getAdminNav(t: Dict, badges?: AdminNavBadges): NavItem[] {
             href: '/admin/payments',
             icon: CreditCard,
             badge: badges?.pendingPayments,
+        },
+        // Directly above Members: the queue feeds that register, and it is not a
+        // settings-tier concern. Empty on most days — the surface's empty state
+        // is part of its design, not an afterthought.
+        {
+            label: t.nav.adminApplicants,
+            href: '/admin/applicants',
+            icon: UserPlus,
+            badge: badges?.waitingApplicants,
         },
         { label: t.nav.adminMembers, href: '/admin/members', icon: Users },
         { label: t.nav.adminActivity, href: '/admin/activities', icon: Shapes },

@@ -30,10 +30,12 @@ export function Sidebar({
     communityName,
     logoUrl,
     pendingPayments,
+    waitingApplicants,
 }: Readonly<{
     communityName: string;
     logoUrl?: string;
     pendingPayments?: number;
+    waitingApplicants?: number;
 }>) {
     const pathname = usePathname();
     const { data: session } = useSession();
@@ -48,7 +50,7 @@ export function Sidebar({
             .join('')
             .toUpperCase() ?? '?';
 
-    const ADMIN_NAV = getAdminNav(t, { pendingPayments });
+    const ADMIN_NAV = getAdminNav(t, { pendingPayments, waitingApplicants });
     const memberViewLink = getMemberViewLink(t);
 
     return (

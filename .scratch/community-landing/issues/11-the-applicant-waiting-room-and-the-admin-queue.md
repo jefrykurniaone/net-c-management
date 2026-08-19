@@ -261,16 +261,38 @@ the human from the prototype above.
   takes no exemption. Worth one line in `PRODUCT.md` alongside 05's joining
   policy: the Applicant waits on a page that shows no community data.
 
-### Still owed, before anyone builds this
+## Built — B folded in, prototypes dropped
 
-**No variant has been rendered in a browser** — see the prototype note above; the
-session that built it could not bind a dev server. B is the weakest of the three
-in terms of what could go wrong visually (one statement, two actions), but the
-Indonesian pass at `?lang=id` and the declined state's Strike mark should both be
-looked at once `npm run dev` runs.
+Both surfaces exist. The six prototype files are deleted: the winner is folded in
+per `/prototype`, and `src/components/prototype/prototype-switcher.tsx` stays
+because the landing prototype still uses it.
 
-**The prototype stays on disk as the primary source.** `/prototype` says fold the
-winner in and drop the losers, but folding is a diff and this map's destination is
-decisions — `/pending` and the queue route do not exist yet. All six files are
-marked `PROTOTYPE — throwaway` and the switcher is dev-gated, so they ship
-nothing; they leave with the map's handoff.
+- **`/pending` (dec 1–5)** — `src/app/pending/{page.tsx,sign-out-action.tsx}`.
+  Interstitial in the `40rem` column under an identity-only rail; one mark, one
+  statement, one lead, two affordances (`wa.me` from `Settings.adminWhatsapp`,
+  and sign out). It reads `Settings` and the signed-in person's own admission
+  state and **nothing else** — the standing rule is written into the file's
+  header so a future addition has to argue with it. Three statements, not two:
+  waiting takes **Tape**, declined takes **Strike**, and a *revoked* member —
+  who lands here too — gets their own Strike-marked pair, because "we did not
+  admit you" is false for someone who was already in.
+- **The queue (dec 6–8)** — `src/app/(admin)/admin/applicants/`, its own nav item
+  directly above Members (`nav-items.ts`, `UserPlus`), with the row: name, email
+  beneath, phone as a `wa.me` link, Activities picked, how long they waited, then
+  Admit / Decline. `/admin/members` untouched. Empty state is a **Blank** mark
+  plus one line. One deliberate addition the prototype did not have: the list is
+  capped at 100 rows with the cap stated on screen (`applicantsCapped`), because
+  a public page can point more people at this queue than one screen holds and
+  silent truncation would read as "nobody else is waiting".
+- **The badge (dec 7)** — `AdminNavBadges.waitingApplicants`, counted in
+  `(admin)/layout.tsx` with 05's `WAITING_APPLICANT_WHERE` and threaded through
+  sidebar and mobile nav. Verified showing `1`, and clearing on Admit.
+- **Copy (08's rules)** — a top-level `pending` namespace and flat
+  `admin.applicant*` keys, both locales, from the prototype's `id` strings.
+
+**Rendered in a browser, which this ticket left owed.** en and id, 420px and
+1280px: the Indonesian Display title holds at two lines with no overflow, the
+declined Strike mark reads as void with colour removed, the queue row wraps
+instead of scrolling on a phone, and the empty state was seen for real by
+admitting the only Applicant. Screenshots:
+`.scratch/community-landing/assets/05-11-*`.

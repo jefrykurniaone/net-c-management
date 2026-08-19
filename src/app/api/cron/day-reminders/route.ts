@@ -4,8 +4,8 @@ import { getSettings } from '@/lib/settings';
 import { isEmailConfigured, sendDayReminder } from '@/lib/email';
 import { DEFAULT_LOCALE } from '@/lib/i18n/dictionaries';
 import { AttendanceStatus, SessionStatus } from '@prisma/client';
+import { wibDayStart } from '@/lib/wib';
 
-const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 interface TodaySession {
@@ -20,12 +20,10 @@ interface TodaySession {
 
 /** Today's SCHEDULED sessions (WIB calendar day) not yet reminded. */
 async function findTodaySessions(now: Date): Promise<TodaySession[]> {
-    // Session dates are stored as UTC midnight of the calendar day; shift by
-    // +7h so "today" means the WIB day, matching the generate-sessions cron.
-    const wibNow = new Date(now.getTime() + WIB_OFFSET_MS);
-    const dayStart = new Date(
-        Date.UTC(wibNow.getUTCFullYear(), wibNow.getUTCMonth(), wibNow.getUTCDate()),
-    );
+    // Session dates are stored as UTC midnight of the calendar day, so "today"
+    // is the WIB day — the shared clock the generate-sessions cron and the
+    // public landing read both use (`src/lib/wib.ts`).
+    const dayStart = wibDayStart(now);
     const dayEnd = new Date(dayStart.getTime() + MS_PER_DAY);
 
     return prisma.activitySession.findMany({

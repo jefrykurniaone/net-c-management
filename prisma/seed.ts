@@ -16,6 +16,9 @@
  * reseed at a different anchor date without a full `db:reset`.
  *
  * What it seeds (login as member@xclub.local → "Adi Pratama (you)"):
+ *   Gate    - applicant@xclub.local waiting in the admission queue and
+ *             declined@xclub.local turned away, so /admin/applicants and both
+ *             states of /pending have data (dev login lists both).
  *   Base    - 4 activities, owner + 2 admins, 19 members, dashboard sim:
  *             5 upcoming sessions, Adi's Badminton dues UNPAID (banner),
  *             past sessions in the --from/--to range → ~92% attendance tile,
@@ -41,7 +44,13 @@
 import { prisma } from './seed/client';
 import { now, PAST_FROM, PAST_TO } from './seed/dates';
 import { LOGIN_EMAIL } from './seed/config';
-import { seedSettings, seedActivities, seedStaff, seedMembers } from './seed/core';
+import {
+    seedSettings,
+    seedActivities,
+    seedStaff,
+    seedMembers,
+    seedApplicants,
+} from './seed/core';
 import {
     seedMemberships,
     seedUnselectedModeMember,
@@ -77,6 +86,9 @@ async function main() {
     const idBySlug = await seedActivities();
     const ownerId = await seedStaff();
     const idByEmail = await seedMembers();
+    // Kept out of `idByEmail` on purpose — nothing downstream may give an
+    // Applicant attendance, payments, or a seat.
+    await seedApplicants(idBySlug);
 
     await seedMemberships(idByEmail, idBySlug, ownerId);
     await seedUnselectedModeMember(idByEmail, idBySlug);
