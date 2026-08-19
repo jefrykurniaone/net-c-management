@@ -12,7 +12,6 @@ import { NextResponse } from 'next/server';
 type ActivityRow = {
     id: string;
     name: string;
-    color: string;
     slug: string;
     monthlyFee: number;
     sessionFee: number;
@@ -67,7 +66,6 @@ export async function GET() {
             select: {
                 id: true,
                 name: true,
-                color: true,
                 slug: true,
                 monthlyFee: true,
                 sessionFee: true,

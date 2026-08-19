@@ -3,16 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ActivityDot } from './activity-badge';
+import { ActivityTile } from './activity-badge';
 
 export type SessionTab = 'upcoming' | 'past';
 export type SessionView = 'mine' | 'all';
 
-type Activity = { id: string; name: string; color: string };
+type Activity = { id: string; name: string };
 
 /**
- * Club Premium sessions filter: a My/All view toggle, a scrollable row of
- * activity chips (colour dot + name), and an Upcoming/Past tab row. URL-driven —
+ * Sessions filter: a My/All view toggle, a scrollable row of activity chips
+ * (initial tile + name), and an Upcoming/Past tab row. URL-driven —
  * `?view=`, `?activityId=`, `?tab=` — so the server component re-renders with
  * the right query. "My" scopes to joined activities; "All" reveals every active
  * Activity for discovery + join-on-register.
@@ -101,7 +101,7 @@ export function SessionsFilter({
                                         ? 'bg-primary text-primary-foreground'
                                         : 'bg-muted/60 border border-input text-secondary-foreground hover:bg-muted',
                                 )}>
-                                <ActivityDot color={a.color} className='size-[7px]' />
+                                <ActivityTile name={a.name} />
                                 {a.name}
                             </Link>
                         );

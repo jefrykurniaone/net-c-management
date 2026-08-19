@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { communityAbbr } from '@/lib/utils';
+import { ActivityTile } from '@/components/activity/activity-badge';
 import type { ActivityOption } from '@/types/activity';
 
 export default function OnboardingPage() {
@@ -180,19 +181,20 @@ export default function OnboardingPage() {
                                                                   ],
                                                         )
                                                     }
-                                                    className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors ${
+                                                    aria-pressed={selected}
+                                                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border py-1.5 pl-2 pr-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                                                         selected
-                                                            ? 'border-transparent text-white'
+                                                            ? 'border-transparent bg-primary text-primary-foreground'
                                                             : 'border-border text-muted-foreground hover:bg-muted'
-                                                    }`}
-                                                    style={
-                                                        selected
-                                                            ? {
-                                                                  backgroundColor:
-                                                                      e.color,
-                                                              }
-                                                            : undefined
-                                                    }>
+                                                    }`}>
+                                                    {/* Same livery as every
+                                                        other member surface:
+                                                        the initial on a magnet
+                                                        tile, beside the name
+                                                        that identifies it. */}
+                                                    <ActivityTile
+                                                        name={e.name}
+                                                    />
                                                     {e.name}
                                                 </button>
                                             );

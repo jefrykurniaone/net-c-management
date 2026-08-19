@@ -23,7 +23,6 @@ interface ProfileUser {
 interface MembershipView {
     activityId: string;
     name: string;
-    color: string;
     joinedDate: string;
 }
 
@@ -96,7 +95,6 @@ export function ProfilePanel({
                                 className='flex items-center gap-3 p-3.5'>
                                 <ActivityInitial
                                     name={m.name}
-                                    color={m.color}
                                     className='size-9 rounded-sm text-sm'
                                 />
                                 <div className='min-w-0 flex-1'>

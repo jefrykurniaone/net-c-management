@@ -24,7 +24,6 @@ const APPLICANT_ACTIVITY_SELECT = {
     id: true,
     name: true,
     slug: true,
-    color: true,
     icon: true,
     isActive: true,
 } as const;
