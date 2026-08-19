@@ -10,8 +10,8 @@ import { cn } from '@/lib/utils';
  * legible lettering nor reliable contrast on both board materials.
  *
  * The `color` prop is still accepted and deliberately ignored: this is the
- * expand half of an expand–contract, so every existing call site keeps
- * compiling while the read sites migrate in the tickets that follow.
+ * expand half of an expand–contract. Member surfaces have stopped passing it;
+ * admin call sites still do, and the prop goes when they migrate.
  */
 
 type ActivityLiveryProps = Readonly<{
@@ -48,15 +48,22 @@ function InitialTile({
     );
 }
 
-export function ActivityDot({
-    color,
-    className,
-}: Readonly<{ color: string; className?: string }>) {
+/**
+ * The bare tile, for a control that already carries the Activity name in its
+ * own text — a filter chip, an onboarding pill. The name is the identifier
+ * there and the tile is the glyph beside it, so the tile stays out of the
+ * accessible name rather than doubling it.
+ *
+ * Inline, the tile is a small mark on the board's furniture, so it takes the
+ * Label role; its host is already a bordered chip that clips its overflow, so
+ * the tile drops its contact shadow.
+ */
+export function ActivityTile({ name, className }: ActivityLiveryProps) {
     return (
-        <span
-            aria-hidden
-            className={cn('inline-block size-2 rounded-full shrink-0', className)}
-            style={{ backgroundColor: color }}
+        <InitialTile
+            name={name}
+            labelled={false}
+            className={cn('size-5 type-label shadow-none', className)}
         />
     );
 }
@@ -70,14 +77,7 @@ export function ActivityBadge({ name, className }: ActivityLiveryProps) {
         <Badge
             variant='outline'
             className={cn('h-auto gap-1.5 py-0.5 pl-0.5', className)}>
-            {/* Inline, the tile is a small mark on the board's furniture, so
-                it takes the Label role. The badge is already a bordered chip
-                and clips its overflow, so the tile drops its contact shadow. */}
-            <InitialTile
-                name={name}
-                labelled={false}
-                className='size-5 type-label shadow-none'
-            />
+            <ActivityTile name={name} />
             {name}
         </Badge>
     );

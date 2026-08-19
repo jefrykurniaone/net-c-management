@@ -710,7 +710,7 @@ export interface OutstandingSessionBill {
   date: Date;
   /** The instant the payment hold lapses and the seat is released. */
   holdExpiresAt: Date;
-  activity: { id: string; name: string; color: string };
+  activity: { id: string; name: string };
 }
 
 /**
@@ -741,7 +741,7 @@ export async function getOutstandingSessionBills(input: {
           fee: true,
           activityId: true,
           activity: {
-            select: { id: true, name: true, color: true, allowsMonthly: true, allowsPerSession: true },
+            select: { id: true, name: true, allowsMonthly: true, allowsPerSession: true },
           },
         },
       },
@@ -776,7 +776,7 @@ export async function getOutstandingSessionBills(input: {
       fee: hold.session.fee,
       date: hold.session.date,
       holdExpiresAt: hold.holdExpiresAt!,
-      activity: { id: activity.id, name: activity.name, color: activity.color },
+      activity: { id: activity.id, name: activity.name },
     });
   }
   return bills.sort((a, b) => a.date.getTime() - b.date.getTime());

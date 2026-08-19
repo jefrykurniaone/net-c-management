@@ -64,7 +64,7 @@ export default async function PaymentsPage({
         take: historyTake,
         include: {
           activity: {
-            select: { id: true, name: true, color: true, icon: true, adminWhatsapp: true },
+            select: { id: true, name: true, icon: true, adminWhatsapp: true },
           },
         },
       }),
@@ -80,7 +80,6 @@ export default async function PaymentsPage({
             select: {
               id: true,
               name: true,
-              color: true,
               monthlyFee: true,
               allowsMonthly: true,
               allowsPerSession: true,
@@ -181,7 +180,7 @@ export default async function PaymentsPage({
                 href={`/sessions/${bill.sessionId}/pay`}
                 className="flex items-center gap-3 p-4 hover:bg-accent transition-colors"
               >
-                <ActivityInitial name={bill.activity.name} color={bill.activity.color} />
+                <ActivityInitial name={bill.activity.name} />
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-foreground truncate">{bill.title}</p>
                   {/* The Activity name rides the caption line: the tile alone
@@ -221,7 +220,7 @@ export default async function PaymentsPage({
               const hold = paid || inReview ? undefined : holdByActivity.get(activity.id);
               return (
                 <div key={activity.id} className="flex items-center gap-3 p-4">
-                  <ActivityInitial name={activity.name} color={activity.color} />
+                  <ActivityInitial name={activity.name} />
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-foreground truncate">{activity.name}</p>
                     <p className="text-xs text-muted-foreground tabular-nums">
@@ -301,49 +300,50 @@ export default async function PaymentsPage({
             {historyPayments.map((payment) => (
               <div
                 key={payment.id}
-                className="relative overflow-hidden bg-card rounded-xl border border-border p-4"
+                className="bg-card rounded-xl border border-border p-4"
               >
-                <span
-                  aria-hidden
-                  className="absolute left-0 top-0 h-full w-[3px]"
-                  style={{ backgroundColor: payment.activity.color }}
-                />
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-foreground truncate">
-                      {payment.activity.name} · {t.months[payment.month]}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
-                      {t.payments.submitted}{" "}
-                      {format(new Date(payment.createdAt), "MMM d", { locale: dateLocale })} ·{" "}
-                      <MarkedValue state={paymentState(payment.status)}>
-                        Rp {payment.amount.toLocaleString("id-ID")}
-                      </MarkedValue>
-                    </p>
-                    {payment.status === "REJECTED" && payment.notes && (
-                      <p className="text-xs text-destructive mt-1">
-                        {t.payments.rejectReason}: {payment.notes}
+                  {/* The Activity is identified the way it is everywhere else
+                      on the board: its initial on a magnet tile, with the name
+                      beside it. */}
+                  <div className="flex min-w-0 gap-3">
+                    <ActivityInitial name={payment.activity.name} />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground truncate">
+                        {payment.activity.name} · {t.months[payment.month]}
                       </p>
-                    )}
-                    {payment.status === "REJECTED" && (
-                      <p className="text-xs text-warning mt-1">
-                        {t.payments.rejectedRefundWarning}
-                        {payment.activity.adminWhatsapp && (
-                          <>
-                            {" "}
-                            <a
-                              href={`https://wa.me/${payment.activity.adminWhatsapp.replace(/\D/g, "")}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 font-medium text-success hover:underline"
-                            >
-                              <MessageCircle className="w-3 h-3" />
-                              {t.sessions.contactAdmin}
-                            </a>
-                          </>
-                        )}
+                      <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
+                        {t.payments.submitted}{" "}
+                        {format(new Date(payment.createdAt), "MMM d", { locale: dateLocale })} ·{" "}
+                        <MarkedValue state={paymentState(payment.status)}>
+                          Rp {payment.amount.toLocaleString("id-ID")}
+                        </MarkedValue>
                       </p>
-                    )}
+                      {payment.status === "REJECTED" && payment.notes && (
+                        <p className="text-xs text-destructive mt-1">
+                          {t.payments.rejectReason}: {payment.notes}
+                        </p>
+                      )}
+                      {payment.status === "REJECTED" && (
+                        <p className="text-xs text-warning mt-1">
+                          {t.payments.rejectedRefundWarning}
+                          {payment.activity.adminWhatsapp && (
+                            <>
+                              {" "}
+                              <a
+                                href={`https://wa.me/${payment.activity.adminWhatsapp.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 font-medium text-success hover:underline"
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                                {t.sessions.contactAdmin}
+                              </a>
+                            </>
+                          )}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <StateMark

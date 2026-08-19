@@ -52,7 +52,6 @@ export default async function DashboardPage() {
                         select: {
                             id: true,
                             name: true,
-                            color: true,
                             monthlyFee: true,
                             allowsMonthly: true,
                             allowsPerSession: true,
@@ -68,7 +67,7 @@ export default async function DashboardPage() {
                 },
                 orderBy: { date: 'asc' },
                 include: {
-                    activity: { select: { id: true, name: true, color: true } },
+                    activity: { select: { id: true, name: true } },
                     attendances: {
                         where: {
                             userId,
@@ -275,13 +274,9 @@ export default async function DashboardPage() {
                         return (
                             <div
                                 key={activity.id}
-                                className='bg-card rounded-xl border border-border overflow-hidden'
-                                style={{ borderTop: `3px solid ${activity.color}` }}>
+                                className='bg-card rounded-xl border border-border overflow-hidden'>
                                 <div className='flex items-center gap-2.5 p-4 pb-3'>
-                                    <ActivityInitial
-                                        name={activity.name}
-                                        color={activity.color}
-                                    />
+                                    <ActivityInitial name={activity.name} />
                                     <span className='flex-1 text-[15px] font-semibold text-foreground truncate'>
                                         {activity.name}
                                     </span>

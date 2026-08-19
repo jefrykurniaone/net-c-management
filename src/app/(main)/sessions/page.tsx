@@ -5,7 +5,7 @@ import { format, endOfWeek } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
 import { CalendarDays } from "lucide-react";
 import { Mark } from "@/components/ui/mark";
-import { ActivityDot } from "@/components/activity/activity-badge";
+import { ActivityBadge } from "@/components/activity/activity-badge";
 import {
   SessionsFilter,
   type SessionTab,
@@ -32,7 +32,7 @@ const SESSION_INCLUDE = {
       },
     },
   },
-  activity: { select: { id: true, name: true, color: true, icon: true } },
+  activity: { select: { id: true, name: true, icon: true } },
 } satisfies Prisma.ActivitySessionInclude;
 
 type SessionRow = Prisma.ActivitySessionGetPayload<{
@@ -60,7 +60,7 @@ export default async function SessionsPage({
     prisma.activity.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
-      select: { id: true, name: true, color: true },
+      select: { id: true, name: true },
     }),
     getUserActivityIds(session.user.id),
   ]);
@@ -144,11 +144,13 @@ export default async function SessionsPage({
             </span>
           </span>
           <div className="flex-1 min-w-0 space-y-0.5">
+            {/* The register mixes Activities, so the name travels with the
+                tile: an initial alone cannot separate two that share one. */}
             <div className="flex items-center gap-2 min-w-0">
               <h3 className="text-sm font-semibold text-foreground truncate">
                 {s.title}
               </h3>
-              <ActivityDot color={s.activity.color} className="size-[7px]" />
+              <ActivityBadge name={s.activity.name} />
             </div>
             <p className="text-xs text-muted-foreground truncate">
               {s.startTime} – {s.endTime} · {s.location}

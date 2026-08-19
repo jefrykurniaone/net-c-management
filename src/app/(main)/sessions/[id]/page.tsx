@@ -77,7 +77,6 @@ export default async function SessionDetailPage({
                 select: {
                     id: true,
                     name: true,
-                    color: true,
                     allowsMonthly: true,
                     allowsPerSession: true,
                     monthlyFee: true,
@@ -261,7 +260,6 @@ export default async function SessionDetailPage({
                     <div className='flex items-center gap-2 flex-wrap'>
                         <ActivityBadge
                             name={activitySession.activity.name}
-                            color={activitySession.activity.color}
                         />
                         <StateMark
                             state={sessionState(activitySession.status)}
