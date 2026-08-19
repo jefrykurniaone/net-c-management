@@ -41,7 +41,6 @@ async function main() {
         create: {
             name: settings.communityName ?? DEFAULTS.communityName,
             slug: 'badminton',
-            color: '#16a34a',
             monthlyFee: Number(
                 settings.defaultMonthlyFee ?? DEFAULTS.defaultMonthlyFee,
             ),

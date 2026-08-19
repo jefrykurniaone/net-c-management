@@ -85,11 +85,10 @@ export function Lattice({ children }: Readonly<{ children: ReactNode }>) {
 
 /**
  * An Activity's livery: a magnet tile bearing its initial, **with no colour.**
- * Not a coloured square and never an edge stripe. `Activity.color` is published
- * by the public read and deliberately discarded here — Court Green is the only
- * green the system permits, and an arbitrary admin-chosen hex can be trusted
- * neither to carry legible lettering nor to clear contrast on both board
- * materials. The omission is the design law, not an oversight.
+ * Not a coloured square and never an edge stripe. There is no Activity colour to
+ * read — Court Green is the only green the system permits, and an arbitrary
+ * admin-chosen hex can be trusted neither to carry legible lettering nor to
+ * clear contrast on both board materials, so the column was dropped outright.
  */
 export function Livery({ initial }: Readonly<{ initial: string }>) {
     return (

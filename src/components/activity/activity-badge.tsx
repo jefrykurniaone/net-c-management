@@ -7,18 +7,13 @@ import { cn } from '@/lib/utils';
  * in ink, with no colour fill. Court Green is the only green the system
  * permits, so a member-configured Activity colour would either compete with
  * the identity or dissolve into it — and an arbitrary hex can carry neither
- * legible lettering nor reliable contrast on both board materials.
- *
- * The `color` prop is still accepted and deliberately ignored: this is the
- * expand half of an expand–contract. Member surfaces have stopped passing it;
- * admin call sites still do, and the prop goes when they migrate.
+ * legible lettering nor reliable contrast on both board materials. There is no
+ * colour prop to pass: the column behind it has been dropped.
  */
 
 type ActivityLiveryProps = Readonly<{
     name: string;
-    /** Accepted for call-site compatibility. Ignored — livery carries no colour. */
-    color?: string;
-    /** Likewise accepted and ignored; call sites still pass it. */
+    /** Accepted and ignored; call sites still pass it. */
     icon?: string | null;
     className?: string;
 }>;

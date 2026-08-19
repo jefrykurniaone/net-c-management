@@ -54,7 +54,7 @@ export async function GET(req: Request) {
             take: limit,
             include: {
                 _count: { select: { attendances: true } },
-                activity: { select: { id: true, name: true, color: true } },
+                activity: { select: { id: true, name: true } },
                 attendances: {
                     where: { userId: session.user.id },
                     select: { id: true, status: true },

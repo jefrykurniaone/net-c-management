@@ -132,7 +132,9 @@ model Activity {
   name            String
   slug            String   @unique // e.g. "badminton"
   description     String?  @db.Text
-  color           String   @default("#16a34a") // badge color (inline style)
+  // No colour: the livery is a magnet tile bearing the Activity's initial, so
+  // an admin-chosen hex has nowhere to render and could clear neither contrast
+  // nor legibility on both board materials (DESIGN.md:316).
   icon            String? // optional lucide icon name
   monthlyFee       Int     @default(0) // consolidated monthly dues per Activity (AR-7)
   sessionFee       Int     @default(0) // default per-session price inherited by new Sessions (FR-8)
