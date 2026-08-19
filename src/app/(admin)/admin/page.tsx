@@ -330,7 +330,7 @@ export default async function AdminDashboardPage() {
                                                 locale: dateLocale,
                                             })}
                                         </span>
-                                        <span className='text-[15px] font-bold text-foreground leading-none'>
+                                        <span className='text-[15px] font-bold text-foreground leading-none tabular-nums'>
                                             {format(new Date(s.date), 'dd')}
                                         </span>
                                     </span>
