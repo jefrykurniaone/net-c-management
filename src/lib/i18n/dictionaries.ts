@@ -35,8 +35,9 @@ const en = {
         darkMode: 'Themes',
     },
     landing: {
-        purpose:
-            'The board for this community: sessions posted, seats claimed, dues settled.',
+        // Kept short on purpose: type-display holds at two lines at its 3rem cap
+        // only if the copy is authored short (DESIGN.md, Display hierarchy).
+        purpose: 'Sessions, seats and dues.',
         accountNote:
             'Continuing with Google signs you in, and creates your account the first time you do it.',
         footer: 'All rights reserved.',
@@ -747,8 +748,7 @@ const id: typeof en = {
         darkMode: 'Tema',
     },
     landing: {
-        purpose:
-            'Papan untuk komunitas ini: sesi dipasang, kursi diambil, iuran dilunasi.',
+        purpose: 'Sesi, kursi, dan iuran.',
         accountNote:
             'Lanjut dengan Google membuatmu masuk, dan membuatkan akunmu saat pertama kali kamu memakainya.',
         footer: 'Semua hak dilindungi.',

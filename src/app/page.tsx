@@ -14,8 +14,9 @@ import { GoogleMark } from '@/components/auth/GoogleMark';
 // authenticated visitor is redirected away before this renders, so the only
 // people who see it are members of this community who are not signed in, and
 // for them signing in *is* signing up. The page is therefore the board's own
-// header plate and one way onto it — identity, one sentence of what the board
-// is for, one action, and the truth about what that action does.
+// header plate and one way onto it — identity, a statement of what this is with
+// the sentence that explains it, one action, and the truth about what that
+// action does.
 
 // DESIGN.md: containers max at 72rem for board surfaces and 40rem for
 // single-task columns.
@@ -64,10 +65,19 @@ function ThresholdTile({ t }: Readonly<{ t: Dictionary }>) {
     // it carries one.
     return (
         <div className='w-full max-w-[40rem] border border-rule bg-card'>
-            <h1 className='type-display text-balance p-block text-card-foreground'>
-                {t.landing.purpose}
-            </h1>
-            <div className='flex flex-col gap-cell border-t border-rule p-block'>
+            {/* Statement and the sentence explaining it are one block above the
+                rule: the rule divides what this is from the way in. The body
+                sentence reads auth.signInSubtitle rather than owning a key, so
+                both doors are worded identically and cannot drift apart. */}
+            <div className='flex flex-col gap-block p-bay'>
+                <h1 className='type-display text-balance text-card-foreground'>
+                    {t.landing.purpose}
+                </h1>
+                <p className='type-body max-w-[65ch] text-secondary-foreground'>
+                    {t.auth.signInSubtitle}
+                </p>
+            </div>
+            <div className='flex flex-col gap-cell border-t border-rule p-bay'>
                 <form action={continueWithGoogle}>
                     <Button
                         type='submit'
@@ -103,12 +113,20 @@ export default async function LandingPage() {
     return (
         <div className='flex min-h-dvh flex-col bg-background'>
             <IdentityRail communityName={communityName} logoUrl={logoUrl} />
-            <main className='flex flex-1 items-center justify-center px-block py-bay'>
+            {/* Top-anchored inside the board's own 72rem gutter, so the tile's
+                left edge is structurally the identity plate's and the footer's.
+                Centring here put a 40rem tile in the full viewport width, 240px
+                right of the logo at 1440px. DESIGN.md, Layout. */}
+            <main
+                className={`mx-auto flex w-full ${BOARD_WIDTH_CLASS} flex-1 items-start justify-start px-block py-bay`}>
                 <ThresholdTile t={t} />
             </main>
-            <footer className='border-t border-rule px-block py-cell'>
+            {/* px-block sits inside the 72rem wrapper, matching the rail: with
+                the padding outside it the footer line landed 16px left of the
+                identity plate and the tile, breaking the shared gutter. */}
+            <footer className='border-t border-rule'>
                 <p
-                    className={`mx-auto ${BOARD_WIDTH_CLASS} type-caption text-muted-foreground`}>
+                    className={`mx-auto ${BOARD_WIDTH_CLASS} type-caption px-block py-cell text-muted-foreground`}>
                     ©{' '}
                     <span className='tabular-nums'>
                         {new Date().getFullYear()}
