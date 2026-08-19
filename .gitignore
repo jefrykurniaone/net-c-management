@@ -54,8 +54,10 @@ public/uploads/
 # local planning notes (not part of the project)
 plans/
 
-# QA docs & generated test-case reports (local artifacts, not app source)
-docs/
+# QA docs & generated test-case reports (local artifacts, not app source).
+# docs/agents/ is the exception — agent-skill config that must travel with the repo.
+docs/*
+!docs/agents/
 
 # Playwright MCP browser artifacts
 .playwright-mcp/

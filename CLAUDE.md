@@ -82,6 +82,20 @@ Declared in `vercel.json`, protected by the `CRON_SECRET` bearer token (auto-inj
 
 This project uses **Next.js 16**, which may differ from training data. Read `node_modules/next/dist/docs/` for authoritative API references before writing code that touches routing, middleware, or data-fetching patterns.
 
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues in `jefrykurniaone/net-c-management`, driven by the `gh` CLI — this is where `/to-spec`, `/to-tickets`, `/triage` and `/wayfinder` publish. Wayfinder maps are issues labelled `wayfinder:map` with sub-issues as tickets, never markdown under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, each label string equal to its name: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one root `CONTEXT.md` plus `docs/adr/`. See `docs/agents/domain.md`.
+
 <!-- rtk-instructions v2 -->
 # RTK (Rust Token Killer) - Token-Optimized Commands
 
