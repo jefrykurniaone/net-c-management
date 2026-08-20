@@ -25,6 +25,12 @@ export interface BoardCopyContext {
     /** The Activities the member has joined — see `SlotActionInput.isJoined`. */
     readonly joinedActivityIds: ReadonlySet<string>;
     /**
+     * The Sessions on this board whose Seats cost this member nothing more,
+     * their Dues for that billing period being live already — see
+     * `SlotActionInput.hasLiveDues`.
+     */
+    readonly duesCoveredSessionIds: ReadonlySet<string>;
+    /**
      * The instant the board is read, which the RSVP window is measured against.
      * Defaults to the present; injectable so a caller can pin it.
      */
@@ -81,6 +87,7 @@ function postedSlot(
                 ownStatus,
                 seats,
                 isJoined: context.joinedActivityIds.has(slot.activity.id),
+                hasLiveDues: context.duesCoveredSessionIds.has(session.id),
                 now: context.now,
             }),
         },

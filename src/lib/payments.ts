@@ -596,6 +596,85 @@ export async function isFreeRegisterAllowed(input: {
   return hasLiveMonthlyPayment({ userId, activityId: session.activityId, month, year });
 }
 
+/** `${activityId}:${year}-${month}` — one Activity in one billing period. */
+export function freeClaimKey(activityId: string, month: number, year: number): string {
+  return `${activityId}:${year}-${month}`;
+}
+
+/**
+ * The batched twin of `isFreeRegisterAllowed`, for a surface drawing many
+ * Sessions at once.
+ *
+ * A board row has to say *before* the tap whether claiming this Seat will ask
+ * for money, and "the Session has a fee" is not that question: a MONTHLY member
+ * whose Dues for the period are already live claims a fee-bearing Seat with no
+ * bill at all. Labelling their control "Claim & pay" tells them they owe money
+ * they do not owe, and the reserve route then answers `payUrl: null` and charges
+ * nothing — so the row was simply wrong.
+ *
+ * The rule is not restated here; the free-eligibility decision is the same three
+ * steps `isFreeRegisterAllowed` takes, run over a set of periods in three
+ * queries instead of three per row. Fee is deliberately **not** considered: the
+ * caller knows each Session's own fee and a fee-0 Session is free to everyone.
+ */
+export async function readFreeClaimPeriods(input: {
+  userId: string;
+  periods: readonly { activityId: string; month: number; year: number }[];
+}): Promise<ReadonlySet<string>> {
+  const { userId, periods } = input;
+  const free = new Set<string>();
+  if (periods.length === 0) return free;
+
+  const activityIds = [...new Set(periods.map((one) => one.activityId))];
+  const [memberships, activities, payments] = await Promise.all([
+    prisma.membership.findMany({
+      where: { userId, activityId: { in: activityIds }, isActive: true },
+      select: {
+        activityId: true,
+        paymentMode: true,
+        effectiveFrom: true,
+        pendingMode: true,
+        pendingEffectiveFrom: true,
+      },
+    }),
+    prisma.activity.findMany({
+      where: { id: { in: activityIds }, isActive: true },
+      select: { id: true, allowsMonthly: true, allowsPerSession: true },
+    }),
+    prisma.payment.findMany({
+      where: {
+        userId,
+        activityId: { in: activityIds },
+        type: PaymentType.MONTHLY,
+        status: { in: LIVE_PAYMENT_STATUSES },
+      },
+      select: { activityId: true, month: true, year: true },
+    }),
+  ]);
+
+  const membershipBy = new Map(memberships.map((one) => [one.activityId, one]));
+  const activityBy = new Map(activities.map((one) => [one.id, one]));
+  const paid = new Set(
+    payments.map((one) => freeClaimKey(one.activityId, one.month, one.year)),
+  );
+
+  for (const { activityId, month, year } of periods) {
+    const membership = membershipBy.get(activityId);
+    const activity = activityBy.get(activityId);
+    if (!membership || !activity) continue;
+    const offered = {
+      allowsMonthly: activity.allowsMonthly,
+      allowsPerSession: activity.allowsPerSession,
+    };
+    if (resolvePaymentMode(membership, offered, month, year) !== PaymentMode.MONTHLY) {
+      continue;
+    }
+    const key = freeClaimKey(activityId, month, year);
+    if (paid.has(key)) free.add(key);
+  }
+  return free;
+}
+
 /**
  * Register every PAID monthly member into the Activity's open sessions of a
  * billing period. A paid month buys the whole month: called after a monthly

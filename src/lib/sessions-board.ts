@@ -6,6 +6,8 @@ import { getUserActivityIds } from './activity';
 import { getSessionQuotas, type SessionQuota } from './recurring-sessions';
 import { buildBoardDays, type BoardActivity, type BoardDay } from './board-days';
 import { wibDayStart, wibDayStartFromKey } from './wib';
+import { readFreeClaimPeriods, freeClaimKey } from './payments';
+import { currentPeriod } from './payment-mode';
 
 /**
  * The one read behind the sessions board. `buildBoardDays` reads nothing and
@@ -66,6 +68,13 @@ export interface SessionsBoardData {
      * bill from a row that shows neither — so the offer is withheld there.
      */
     readonly joinedActivityIds: ReadonlySet<string>;
+    /**
+     * The Sessions on this board whose Seats this member claims without a bill,
+     * their Dues for that Session's billing period being live already. It
+     * decides whether a row offers "Claim a Seat" or "Claim & pay" — see
+     * `readFreeClaimPeriods`.
+     */
+    readonly duesCoveredSessionIds: ReadonlySet<string>;
     readonly hasJoinedActivities: boolean;
     /** False only for a community that has never had a Session at all. */
     readonly hasAnySession: boolean;
@@ -187,6 +196,26 @@ function seatsOf(sessions: readonly BoardSessionRow[]): Map<string, BoardSeats> 
     return seats;
 }
 
+/**
+ * The week's Sessions whose Seats raise no bill for this member, resolved from
+ * the Activity-and-period answer to the Session ids a row can look itself up
+ * by. The view seam stays free of period arithmetic — and of any import from
+ * the server-only payments module.
+ */
+function duesCoveredOf(
+    sessions: readonly BoardSessionRow[],
+    freeClaimKeys: ReadonlySet<string>,
+): ReadonlySet<string> {
+    const covered = new Set<string>();
+    for (const row of sessions) {
+        const { month, year } = currentPeriod(row.date);
+        if (freeClaimKeys.has(freeClaimKey(row.activityId, month, year))) {
+            covered.add(row.id);
+        }
+    }
+    return covered;
+}
+
 async function readOwnSeats(
     userId: string,
     sessionIds: readonly string[],
@@ -264,12 +293,21 @@ async function readBoard(
         weekStart,
         weekEnd,
     );
-    const [quotas, ownBySession] = await Promise.all([
+    const [quotas, ownBySession, freeClaimKeys] = await Promise.all([
         getSessionQuotas(sessions),
         readOwnSeats(
             params.userId,
             sessions.map((row) => row.id),
         ),
+        readFreeClaimPeriods({
+            userId: params.userId,
+            // A week can straddle a month end, so the period is taken from each
+            // Session's own date rather than from the week's.
+            periods: sessions.map((row) => ({
+                activityId: row.activityId,
+                ...currentPeriod(row.date),
+            })),
+        }),
     ]);
     return {
         activities,
@@ -280,6 +318,7 @@ async function readBoard(
         hasAnySession,
         quotas,
         ownBySession,
+        duesCoveredSessionIds: duesCoveredOf(sessions, freeClaimKeys),
     };
 }
 
@@ -309,6 +348,7 @@ export async function getSessionsBoard(
         activities: read.activities,
         offered: read.offered,
         joinedActivityIds: read.joinedIds,
+        duesCoveredSessionIds: read.duesCoveredSessionIds,
         hasJoinedActivities: read.hasJoined,
         hasAnySession: read.hasAnySession,
     };
