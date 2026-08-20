@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { ActivityInitial } from '@/components/activity/activity-badge';
 import { useLocale } from '@/components/providers/locale-provider';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
+import type { MembershipRowView } from '@/lib/membership-mode-view';
 import { AccountSettings } from './account-settings';
 import { EditProfileDialog } from './edit-profile-dialog';
 import { LeaveActivityDialog } from './leave-activity-dialog';
+import { Lattice, SectionHead } from './BoardCells';
+import { MembershipCell } from './MembershipCell';
 
 interface ProfileUser {
     name: string | null;
@@ -20,122 +22,226 @@ interface ProfileUser {
     phone: string | null;
 }
 
-interface MembershipView {
-    activityId: string;
-    name: string;
-    joinedDate: string;
+/** The Activity a leave dialog is open for, or `null` when it is closed. */
+type LeavingActivity = { id: string; name: string } | null;
+
+interface ProfilePanelProps {
+    user: ProfileUser;
+    memberSinceDate: string;
+    memberships: readonly MembershipRowView[];
 }
 
+/**
+ * The member's profile and their per-Activity Memberships, on one surface.
+ *
+ * They belong together because payment mode is a property of a Membership and
+ * not of the person: a member changing Badminton to per-Session would otherwise
+ * reasonably assume they had changed Futsal too. Each Membership is its own cell
+ * with its own control, and the section says so in a line of its own.
+ *
+ * Structure is a ruled lattice — cells sharing their rules with their
+ * neighbours — never gaps between floating panels.
+ */
 export function ProfilePanel({
     user,
     memberSinceDate,
     memberships,
-}: Readonly<{
-    user: ProfileUser;
-    memberSinceDate: string;
-    memberships: MembershipView[];
-}>) {
+}: Readonly<ProfilePanelProps>) {
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const router = useRouter();
     const [profile, setProfile] = useState(user);
     const [editOpen, setEditOpen] = useState(false);
-    const [leaving, setLeaving] = useState<{ id: string; name: string } | null>(
-        null,
-    );
+    const [leaving, setLeaving] = useState<LeavingActivity>(null);
 
+    return (
+        <div className='flex flex-col gap-bay'>
+            <ProfileBays
+                profile={profile}
+                memberSinceDate={memberSinceDate}
+                memberships={memberships}
+                t={t}
+                onEdit={() => setEditOpen(true)}
+                onLeave={setLeaving}
+            />
+            <ProfileDialogs
+                profile={profile}
+                setProfile={setProfile}
+                editOpen={editOpen}
+                setEditOpen={setEditOpen}
+                leaving={leaving}
+                setLeaving={setLeaving}
+            />
+        </div>
+    );
+}
+
+interface ProfileBaysProps {
+    profile: ProfileUser;
+    memberSinceDate: string;
+    memberships: readonly MembershipRowView[];
+    t: Dictionary;
+    onEdit: () => void;
+    onLeave: (activity: LeavingActivity) => void;
+}
+
+/** The surface itself, in reading order: who you are, what you pay for, settings. */
+function ProfileBays({
+    profile,
+    memberSinceDate,
+    memberships,
+    t,
+    onEdit,
+    onLeave,
+}: Readonly<ProfileBaysProps>) {
+    return (
+        <>
+            <Lattice>
+                <IdentityCell
+                    profile={profile}
+                    memberSinceDate={memberSinceDate}
+                    t={t}
+                    onEdit={onEdit}
+                />
+            </Lattice>
+            <MembershipsSection
+                memberships={memberships}
+                t={t}
+                onLeave={onLeave}
+            />
+            <AccountSettings phone={profile.phone} onEditPhone={onEdit} />
+            <SignOutAction label={t.nav.signOut} />
+        </>
+    );
+}
+
+interface IdentityCellProps {
+    profile: ProfileUser;
+    memberSinceDate: string;
+    t: Dictionary;
+    onEdit: () => void;
+}
+
+/**
+ * Who the member is. The avatar is the one genuinely round object on this
+ * surface — a photo pinned to the board — and its lettered fallback stays
+ * neutral rather than tinting a cell with the identity green.
+ */
+function IdentityCell({
+    profile,
+    memberSinceDate,
+    t,
+    onEdit,
+}: Readonly<IdentityCellProps>) {
     const initial = (profile.name ?? profile.email ?? '?')[0].toUpperCase();
 
     return (
-        <div className='space-y-6'>
-            {/* Identity card */}
-            <div className='flex items-center gap-3.5 rounded-xl border border-border bg-card p-4'>
-                <Avatar className='size-12'>
-                    <AvatarImage
-                        src={profile.image ?? ''}
-                        alt={profile.name ?? ''}
-                    />
-                    <AvatarFallback className='bg-primary/10 text-lg font-bold text-primary'>
-                        {initial}
-                    </AvatarFallback>
-                </Avatar>
-                <div className='min-w-0 flex-1'>
-                    <p className='truncate font-semibold text-foreground'>
-                        {profile.name ?? t.profile.roleMember}
-                    </p>
-                    <p className='truncate text-sm text-muted-foreground'>
-                        {profile.email}
-                    </p>
-                    <p className='mt-0.5 text-xs text-subtle-foreground'>
-                        {t.profile.memberSince} {memberSinceDate}
-                    </p>
-                </div>
-                <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => setEditOpen(true)}>
-                    {t.profile.editButton}
-                </Button>
-            </div>
-
-            {/* Memberships — join happens via session RSVP; each row can be left */}
-            <section className='space-y-2'>
-                <p className='px-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground'>
-                    {t.profile.membershipsLabel}
+        <div className='flex items-center gap-cell p-block'>
+            <Avatar className='size-12'>
+                <AvatarImage
+                    src={profile.image ?? ''}
+                    alt={profile.name ?? ''}
+                />
+                <AvatarFallback className='type-title bg-board text-secondary-foreground'>
+                    {initial}
+                </AvatarFallback>
+            </Avatar>
+            <div className='min-w-0 flex-1'>
+                <p className='type-title truncate text-card-foreground'>
+                    {profile.name ?? t.profile.roleMember}
                 </p>
-                <div className='divide-y divide-border overflow-hidden rounded-xl border border-border bg-card'>
-                    {memberships.length === 0 ? (
-                        <p className='p-4 text-sm text-muted-foreground'>
-                            {t.profile.noMemberships}
-                        </p>
-                    ) : (
-                        memberships.map((m) => (
-                            <div
-                                key={m.activityId}
-                                className='flex items-center gap-3 p-3.5'>
-                                <ActivityInitial
-                                    name={m.name}
-                                    className='size-9 rounded-sm text-sm'
-                                />
-                                <div className='min-w-0 flex-1'>
-                                    <p className='truncate text-sm font-semibold text-foreground'>
-                                        {m.name}
-                                    </p>
-                                    <p className='text-xs text-muted-foreground'>
-                                        {t.profile.joinedPrefix} {m.joinedDate}
-                                    </p>
-                                </div>
-                                <Button
-                                    variant='ghost'
-                                    size='sm'
-                                    className='text-muted-foreground hover:text-destructive'
-                                    onClick={() =>
-                                        setLeaving({
-                                            id: m.activityId,
-                                            name: m.name,
-                                        })
-                                    }>
-                                    {t.profile.leaveButton}
-                                </Button>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </section>
-
-            <AccountSettings
-                phone={profile.phone}
-                onEditPhone={() => setEditOpen(true)}
-            />
-
-            <Button
-                variant='destructive-outline'
-                className='w-full'
-                onClick={() => signOut({ callbackUrl: '/' })}>
-                <LogOut />
-                {t.nav.signOut}
+                <p className='type-caption truncate text-secondary-foreground'>
+                    {profile.email}
+                </p>
+                <p className='type-caption text-subtle-foreground'>
+                    {t.profile.memberSince} {memberSinceDate}
+                </p>
+            </div>
+            <Button variant='outline' size='sm' onClick={onEdit}>
+                {t.profile.editButton}
             </Button>
+        </div>
+    );
+}
 
+interface MembershipsSectionProps {
+    memberships: readonly MembershipRowView[];
+    t: Dictionary;
+    onLeave: (activity: LeavingActivity) => void;
+}
+
+/** Every Membership, one ruled cell each, sharing rules with its neighbours. */
+function MembershipsSection({
+    memberships,
+    t,
+    onLeave,
+}: Readonly<MembershipsSectionProps>) {
+    return (
+        <section className='flex flex-col gap-block'>
+            <SectionHead
+                label={t.profile.membershipsLabel}
+                hint={t.profile.membershipsHint}
+            />
+            <Lattice>
+                {memberships.length === 0 ? (
+                    <p className='type-body p-block text-secondary-foreground'>
+                        {t.profile.noMemberships}
+                    </p>
+                ) : (
+                    memberships.map((row) => (
+                        <MembershipCell
+                            key={row.activityId}
+                            row={row}
+                            t={t}
+                            onLeave={() =>
+                                onLeave({ id: row.activityId, name: row.name })
+                            }
+                        />
+                    ))
+                )}
+            </Lattice>
+        </section>
+    );
+}
+
+/** Ends the auth session — not a Session, which is a thing you turn up to. */
+function SignOutAction({ label }: Readonly<{ label: string }>) {
+    return (
+        <Button
+            variant='destructive-outline'
+            className='w-full'
+            onClick={() => signOut({ callbackUrl: '/' })}>
+            <LogOut />
+            {label}
+        </Button>
+    );
+}
+
+interface ProfileDialogsProps {
+    profile: ProfileUser;
+    setProfile: Dispatch<SetStateAction<ProfileUser>>;
+    editOpen: boolean;
+    setEditOpen: Dispatch<SetStateAction<boolean>>;
+    leaving: LeavingActivity;
+    setLeaving: Dispatch<SetStateAction<LeavingActivity>>;
+}
+
+/**
+ * The two dialogs this surface opens. Both refresh the Server Component on
+ * success, which is what re-derives the Billing Period sentences from the
+ * resolver rather than guessing at them on the client.
+ */
+function ProfileDialogs({
+    profile,
+    setProfile,
+    editOpen,
+    setEditOpen,
+    leaving,
+    setLeaving,
+}: Readonly<ProfileDialogsProps>) {
+    const router = useRouter();
+
+    return (
+        <>
             <EditProfileDialog
                 open={editOpen}
                 onOpenChange={setEditOpen}
@@ -149,7 +255,6 @@ export function ProfilePanel({
                     router.refresh();
                 }}
             />
-
             <LeaveActivityDialog
                 activity={leaving}
                 onOpenChange={(open) => !open && setLeaving(null)}
@@ -158,6 +263,6 @@ export function ProfilePanel({
                     router.refresh();
                 }}
             />
-        </div>
+        </>
     );
 }

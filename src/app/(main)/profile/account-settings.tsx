@@ -5,7 +5,12 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { ChevronRight } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
-import { getDictionary, type Locale } from '@/lib/i18n/dictionaries';
+import {
+    getDictionary,
+    type Dictionary,
+    type Locale,
+} from '@/lib/i18n/dictionaries';
+import { Lattice, SectionHead } from './BoardCells';
 
 // Hydration-safe flag: false during SSR and the first client render, true
 // after — so a client-only value (resolved theme) never triggers a mismatch.
@@ -18,6 +23,7 @@ function useIsHydrated(): boolean {
     );
 }
 
+/** One ruled cell you can press: what the setting is, what it is set to, and a way in. */
 function Row({
     label,
     value,
@@ -27,16 +33,47 @@ function Row({
         <button
             type='button'
             onClick={onClick}
-            className='flex min-h-14 w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'>
-            <span className='flex-1 text-sm font-medium text-foreground'>
+            className='flex min-h-14 w-full items-center gap-cell p-block text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'>
+            <span className='type-body flex-1 text-card-foreground'>
                 {label}
             </span>
-            <span className='max-w-[45%] truncate text-right text-sm text-muted-foreground'>
+            <span className='type-body max-w-[45%] truncate text-right text-secondary-foreground'>
                 {value}
             </span>
             <ChevronRight className='size-4 shrink-0 text-subtle-foreground' />
         </button>
     );
+}
+
+/**
+ * The resolved theme is client-only, so it reads empty until hydration rather
+ * than guessing and flipping. Split out of the row so the value is one decision
+ * per line instead of a nested conditional.
+ */
+function themeValue(hydrated: boolean, isDark: boolean, t: Dictionary): string {
+    if (!hydrated) return '';
+    return isDark ? t.profile.themeDark : t.profile.themeLight;
+}
+
+/**
+ * Flip the locale: persist it in the cookie the server reads, mirror it in the
+ * provider so client copy follows immediately, then re-render the Server
+ * Component so its own strings — the Billing Period sentences included — come
+ * back in the new language.
+ */
+async function switchLocale(
+    locale: Locale,
+    setLocale: (next: Locale) => void,
+    refresh: () => void,
+): Promise<void> {
+    const next: Locale = locale === 'en' ? 'id' : 'en';
+    await fetch('/api/locale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locale: next }),
+    });
+    setLocale(next);
+    refresh();
 }
 
 export function AccountSettings({
@@ -48,26 +85,12 @@ export function AccountSettings({
     const router = useRouter();
     const { resolvedTheme, setTheme } = useTheme();
     const hydrated = useIsHydrated();
-
-    async function toggleLocale() {
-        const next: Locale = locale === 'en' ? 'id' : 'en';
-        await fetch('/api/locale', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ locale: next }),
-        });
-        setLocale(next);
-        router.refresh();
-    }
-
     const isDark = resolvedTheme === 'dark';
 
     return (
-        <section className='space-y-2'>
-            <p className='px-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground'>
-                {t.profile.accountLabel}
-            </p>
-            <div className='divide-y divide-border overflow-hidden rounded-xl border border-border bg-card'>
+        <section className='flex flex-col gap-block'>
+            <SectionHead label={t.profile.accountLabel} />
+            <Lattice>
                 <Row
                     label={t.profile.phoneRow}
                     value={phone || t.profile.phoneNotSet}
@@ -76,20 +99,16 @@ export function AccountSettings({
                 <Row
                     label={t.profile.language}
                     value={locale === 'en' ? 'English' : 'Bahasa Indonesia'}
-                    onClick={toggleLocale}
+                    onClick={() =>
+                        switchLocale(locale, setLocale, () => router.refresh())
+                    }
                 />
                 <Row
                     label={t.profile.theme}
-                    value={
-                        !hydrated
-                            ? ''
-                            : isDark
-                              ? t.profile.themeDark
-                              : t.profile.themeLight
-                    }
+                    value={themeValue(hydrated, isDark, t)}
                     onClick={() => setTheme(isDark ? 'light' : 'dark')}
                 />
-            </div>
+            </Lattice>
         </section>
     );
 }
