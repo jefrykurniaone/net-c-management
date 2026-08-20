@@ -315,6 +315,31 @@ The recurring unit of the whole system — one Session on the board. A rule-boun
 
 **Livery is a magnet tile bearing the Activity's initial, with no colour.** Not a coloured square, and never an edge stripe. Two reasons, both decided: Court Green is the only green permitted, so a member-configured Activity colour would compete with or dissolve into the identity; and an arbitrary hex can never be trusted to carry legible lettering or to clear contrast on both board materials. An initial in ink solves both.
 
+**The cell is a seam, not a pattern.** `src/components/sessions/slot-cell.tsx` is the only place in the app that draws a Session, and it takes **data, never nodes** — no `children`, no slot props, no ordering prop. A caller that can pass a node can reorder the cell, and a cell that reorders is a board whose two-second read is gone. The dashboard, the sessions board and the session detail header are all callers of it. Only the middle of the cell varies in height; the livery is pinned to the bottom, so nothing below a longer title moves.
+
+**The top-right slot holds exactly one thing.** Free Seats *or* a mark — which is what the "or" above is doing — resolved in a fixed precedence: a cancelled Session (Strike) overrides everything, including the reader's own Seat; the reader's own Seat overrides where the Session is in its life; then Ongoing and Completed; then a Session with no Seats left, which takes a **Blank** mark rather than the figure, because nobody has placed those Seats and nobody now can; then the figure. Opted Out is deliberately absent from that list — the member released that Seat, so the free-Seat figure is the fact they now need. Nothing produces a No-Show, so nothing here draws **Hollow**: it is renderable the moment a producer exists, and is never inferred from a row that is merely missing.
+
+**Free Seats means free, not taken.** The figure is `free/max`, so a full Session reads `0/16`. Taken-over-max makes "full" a comparison the reader has to perform; free-over-max makes it a zero. The figure carries a spoken form beside it, because `2/16` on its own does not say which number is which.
+
+### The settled decision: the mark-and-seats collision
+
+A seven-column week cannot fit the day, the date and a tracked-caps mark on one line at the container width. The worst case is an Indonesian session mark — `DIJADWALKAN`, `BERLANGSUNG` — which at Label size with `0.1em` tracking and the mark's own wash padding runs about 105px; the stacked day-and-date block is about 28px, with `10px` of cell gap between them. That is roughly 143px of content in a cell that also spends `10px` of padding on each side. The line wraps, and a cell that reflows under pressure breaks the fixed-position promise for **every** cell, not only its own.
+
+Three routes were identified. Two are refused, on the record:
+
+- **Shortening the mark labels.** Mark labels live in one shared dictionary block and resolve through one seam, so the payments history and the admin queue read the same strings. Trimming them to fit one cell degrades every surface to solve a problem none of the others have.
+- **Dropping the tracking inside cells.** It contradicts *The Tracked-Caps-Are-Structural Rule*, which names marks as the board's own furniture; and it would set a mark inside a cell differently from the identical mark everywhere else, which is two mark appearances in one product.
+
+**What ships is the third route: the columns carry a floor, and the week scrolls rather than the cells reflowing.** `grid-template-columns: repeat(7, minmax(11rem, 1fr))`. The floor is the width the fixed positions were measured against, so a column can never narrow below it; where seven floors do not fit, the rail scrolls horizontally. This is the only one of the three that holds **by construction rather than by fitting today's strings** — Activity names are runtime configuration and mark labels are translated, so any route that buys its margin in pixels is one long string away from wrapping again, silently. Same reasoning as *The Never-Bleed Rule*: guarantee the structure, and let a violation degrade visibly instead of breaking the page.
+
+`11rem` is 176px, leaving 156px of content against the ~143px worst case — about 13px of headroom, deliberately more than the arithmetic needs. Widening the floor costs scroll; narrowing it costs correctness.
+
+The cost is bounded and named. The rail scrolls only at and above `md`, where a scrollbar is an ordinary affordance and the alternative is a wrapping cell; below `md` the board is ruled day rows in one column and nothing scrolls sideways at all. A week lattice is two-dimensional data, which is what WCAG 1.4.10 Reflow exempts. The rail takes a tab stop of its own, so a keyboard user can still reach a column whose cells are all unposted and therefore not focusable.
+
+**A constraint recorded rather than worked around.** This document caps board surfaces at `72rem`; `src/app/(main)/layout.tsx` caps the member route at `max-w-2xl`, which is 42rem. Seven `11rem` floors is `77rem`, so inside 42rem the week scrolls at every desktop width rather than only at narrow ones. Reconciling the two is a one-line change to a layout shared by every member surface, so it is not this component's to make; until it is made, the floor is what keeps the cells honest and the rail is what pays for it.
+
+**One DOM, collapsed by axis.** The lattice and the day rows are the same markup: one grid, `gap-px` over a rule-coloured ground so cells share their rules in both directions, seven columns above `md` and one below it. The day's heading is the same element in both — the row's tracked-caps label below the breakpoint, `sr-only` above it, where the column head is what a sighted reader sees — so heading order is identical at every viewport and there is no second tree to keep in step. Building the wide lattice first and bolting the collapse on afterwards is exactly what produces an unruled card list on a phone; they ship together, or the rules are lost.
+
 ## Do's and Don'ts
 
 ### Do:
