@@ -467,6 +467,8 @@ const en = {
             'Takes effect in the {next} Billing Period. {current} is already paid and does not change.',
         modeEffectUnchanged:
             'Already how you pay for the {period} Billing Period.',
+        modeEffectCancels:
+            'Cancels the change queued for {next}. You stay on this from {current} onward.',
     },
     admin: {
         dashboardTitle: 'Admin Dashboard',
@@ -1261,6 +1263,8 @@ const id: typeof en = {
             'Berlaku mulai Periode Tagihan {next}. {current} sudah dibayar dan tidak berubah.',
         modeEffectUnchanged:
             'Sudah menjadi cara Anda membayar untuk Periode Tagihan {period}.',
+        modeEffectCancels:
+            'Membatalkan perubahan yang dijadwalkan untuk {next}. Anda tetap memakai ini sejak {current}.',
     },
     admin: {
         dashboardTitle: 'Admin Dashboard',

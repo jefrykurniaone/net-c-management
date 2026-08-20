@@ -41,6 +41,18 @@ function fill(template: string, token: string, value: string): string {
     return template.replace(`{${token}}`, value);
 }
 
+/** The two Billing Periods every sentence on this surface is written against. */
+interface PeriodLabels {
+    readonly current: string;
+    readonly next: string;
+}
+
+/** A sentence naming both periods — the change lands in one, the other is settled. */
+function fillPeriods(template: string, periods: PeriodLabels): string {
+    const withNext = fill(template, 'next', periods.next);
+    return fill(withNext, 'current', periods.current);
+}
+
 /** Both modes, in the order a member reads them: the standing commitment first. */
 const ORDERED_MODES: readonly PaymentMode[] = [
     PaymentMode.MONTHLY,
@@ -120,12 +132,6 @@ function summarise(
     };
 }
 
-/** The two Billing Periods every sentence on this surface is written against. */
-interface PeriodLabels {
-    readonly current: string;
-    readonly next: string;
-}
-
 /** The two facts that decide which of those periods a switch lands in. */
 interface SwitchGate {
     readonly hasLivePayment: boolean;
@@ -140,9 +146,10 @@ interface SwitchGate {
  * sentence beside the control names the period the server will actually use:
  * a first-ever selection applies now, because nothing is owed yet; a change
  * against a period with no money in it may still be re-decided, so it also
- * applies now; re-picking the standing mode cancels a queued switch and so lands
- * now too; and a change against a period that is already paid queues for the
- * next period, leaving the settled one untouched.
+ * applies now; re-picking the standing mode drops a queued switch, which is a
+ * different thing from a change taking effect and says so; and a change against
+ * a period that is already paid queues for the next period, leaving the settled
+ * one untouched.
  */
 function effectSentence(
     target: PaymentMode,
@@ -154,17 +161,13 @@ function effectSentence(
     const isFirstSelection = standingMode === null;
     if (!isFirstSelection && target === standingMode) {
         return gate.isSwitchQueued
-            ? fill(t.profile.modeEffectNow, 'period', periods.current)
+            ? fillPeriods(t.profile.modeEffectCancels, periods)
             : fill(t.profile.modeEffectUnchanged, 'period', periods.current);
     }
     if (isFirstSelection || !gate.hasLivePayment) {
         return fill(t.profile.modeEffectNow, 'period', periods.current);
     }
-    return fill(
-        fill(t.profile.modeEffectNext, 'next', periods.next),
-        'current',
-        periods.current,
-    );
+    return fillPeriods(t.profile.modeEffectNext, periods);
 }
 
 function buildOptions(
