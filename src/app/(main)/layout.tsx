@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { MemberTopBar, MemberBottomNav } from '@/components/layout/member-nav';
 import { getSettings } from '@/lib/settings';
 import { isAdmittedSession } from '@/lib/admission';
-import { isAdminRole } from '@/lib/utils';
 
 // Nothing behind auth belongs in a search index (ticket 12 decision 7). The root
 // layout already default-denies; this restates it on the group itself so a member
@@ -37,22 +36,21 @@ export default async function MainLayout({
         redirect('/pending');
     }
 
-    const isAdmin = isAdminRole(session.user.role);
-
     return (
         <div className='flex flex-col h-screen overflow-hidden bg-background'>
             <MemberTopBar
                 communityName={settings.communityName}
                 logoUrl={settings.logoUrl}
-                isAdmin={isAdmin}
             />
 
-            {/* Single centered column; bottom padding clears the fixed mobile nav. */}
+            {/* Single centered column; bottom padding reserves room for the
+                fixed mobile rail so it never sits on top of a page's primary
+                action. */}
             <main className='flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6'>
                 <div className='mx-auto w-full max-w-2xl'>{children}</div>
             </main>
 
-            <MemberBottomNav isAdmin={isAdmin} />
+            <MemberBottomNav />
         </div>
     );
 }
