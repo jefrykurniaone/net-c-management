@@ -424,6 +424,33 @@ const en = {
         alreadyConfirmed: 'This payment has already been confirmed.',
         outstandingReservations: 'Reserved · pay now',
         payWithin: 'Pay within {time}',
+        // When no activity resolves to monthly billing for this period, the
+        // uploader names which cause applies and where it is resolved. Two
+        // causes used to render as the same empty select; a third (no activity
+        // at all) and a fourth (an activity offering no payment mode) are
+        // distinct situations that must not be folded into either.
+        modeUnchosenTitle: 'You have not chosen how you pay yet',
+        modeUnchosenBody:
+            'You have not chosen how you pay for {activities}, so no monthly dues have been raised for {period}. You pick monthly or per session when you claim a seat in a session.',
+        modeUnchosenAction: 'Choose how you pay',
+        perSessionOnlyTitle: 'Nothing monthly to pay here',
+        perSessionOnlyBody:
+            'You are billed per session for {activities}, so there are no monthly dues for {period}. A session fee is paid from the session itself, when you claim a seat.',
+        perSessionOnlyAction: 'Go to sessions',
+        noActivityTitle: 'You have not joined an activity yet',
+        noActivityBody:
+            'Monthly dues belong to an activity and you have not joined one, so there is nothing to pay for {period}. Claiming a seat in a session joins its activity.',
+        noActivityAction: 'Browse sessions',
+        noBillingTitle: 'No payment mode is set up yet',
+        noBillingBody:
+            'No payment mode is configured for {activities}, so nothing can be billed for {period}. Ask an admin to set the payment options.',
+        periodLocked: 'The current period, set by the calendar',
+        activityNotChosen:
+            'No activity chosen. Pick the activity these monthly dues are for, then submit again.',
+        proofMissing:
+            'No proof attached. Choose a photo or screenshot of your transfer, then submit again.',
+        proofFileFix:
+            'Attach a photo or screenshot of the transfer — JPG, PNG, or WebP, up to 5MB.',
     },
     profile: {
         title: 'Profile',
@@ -1210,6 +1237,28 @@ const id: typeof en = {
         alreadyConfirmed: 'Pembayaran ini sudah dikonfirmasi.',
         outstandingReservations: 'Dipesan · bayar sekarang',
         payWithin: 'Bayar dalam {time}',
+        modeUnchosenTitle: 'Kamu belum memilih cara pembayaran',
+        modeUnchosenBody:
+            'Kamu belum memilih cara pembayaran untuk {activities}, jadi belum ada iuran bulanan untuk {period}. Pilihan bulanan atau per sesi kamu tentukan saat mengambil kursi di sebuah sesi.',
+        modeUnchosenAction: 'Pilih cara pembayaran',
+        perSessionOnlyTitle: 'Tidak ada iuran bulanan di sini',
+        perSessionOnlyBody:
+            'Kamu membayar per sesi untuk {activities}, jadi tidak ada iuran bulanan untuk {period}. Biaya sesi dibayar dari sesinya sendiri, saat kamu mengambil kursi.',
+        perSessionOnlyAction: 'Buka daftar sesi',
+        noActivityTitle: 'Kamu belum bergabung di aktivitas mana pun',
+        noActivityBody:
+            'Iuran bulanan mengikuti aktivitas dan kamu belum bergabung di satu pun, jadi tidak ada yang perlu dibayar untuk {period}. Mengambil kursi di sebuah sesi otomatis menggabungkanmu ke aktivitasnya.',
+        noActivityAction: 'Lihat daftar sesi',
+        noBillingTitle: 'Metode pembayaran belum diatur',
+        noBillingBody:
+            'Belum ada metode pembayaran yang dikonfigurasi untuk {activities}, jadi belum ada yang bisa ditagih untuk {period}. Minta admin mengatur opsi pembayarannya.',
+        periodLocked: 'Periode berjalan, mengikuti kalender',
+        activityNotChosen:
+            'Aktivitas belum dipilih. Pilih aktivitas yang iuran bulanannya kamu bayar, lalu kirim lagi.',
+        proofMissing:
+            'Bukti belum dilampirkan. Pilih foto atau tangkapan layar bukti transfer kamu, lalu kirim lagi.',
+        proofFileFix:
+            'Lampirkan foto atau tangkapan layar bukti transfer — JPG, PNG, atau WebP, maksimal 5MB.',
     },
     profile: {
         title: 'Profil',
