@@ -3,16 +3,17 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
-import { Mark, StateMark, MarkedValue } from "@/components/ui/mark";
-import { paymentState } from "@/lib/status-mark";
+import { Mark } from "@/components/ui/mark";
 import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
 import { HoldCountdown } from "@/components/payments/hold-countdown";
+import { PaymentHistoryFilters } from "@/components/payments/payment-history-filters";
+import { PaymentHistoryList } from "@/components/payments/payment-history-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { parsePagination } from "@/lib/table-params";
 import Link from "next/link";
-import { CreditCard, ExternalLink, MessageCircle } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
@@ -261,111 +262,22 @@ export default async function PaymentsPage({
           {t.payments.historyLabel}
         </p>
 
-        {/* History filters */}
-        <form method="GET" className="flex flex-wrap gap-2">
-          <select
-            name="historyStatus"
-            defaultValue={historyStatus ?? ""}
-            data-testid="history-status-filter"
-            className="h-8 border border-input rounded-lg px-2.5 text-xs font-medium text-secondary-foreground bg-card">
-            <option value="">{t.table.filter.allStatuses}</option>
-            <option value="PENDING">{t.payments.historyStatus.PENDING}</option>
-            <option value="CONFIRMED">{t.payments.historyStatus.CONFIRMED}</option>
-            <option value="REJECTED">{t.payments.historyStatus.REJECTED}</option>
-          </select>
-          {userActivities.length > 1 && (
-            <select
-              name="historyActivity"
-              defaultValue={historyActivity ?? ""}
-              data-testid="history-activity-filter"
-              className="h-8 border border-input rounded-lg px-2.5 text-xs font-medium text-secondary-foreground bg-card">
-              <option value="">{t.table.filter.allActivities}</option>
-              {userActivities.map((a) => (
-                <option key={a.id} value={a.id}>{a.name}</option>
-              ))}
-            </select>
-          )}
-          {historyPageSize !== 10 && <input type="hidden" name="historyPageSize" value={String(historyPageSize)} />}
-          <button
-            type="submit"
-            className="h-8 border border-input rounded-lg px-3 text-xs font-semibold text-secondary-foreground bg-card hover:bg-muted transition-colors">
-            {t.table.search.btn}
-          </button>
-        </form>
+        <PaymentHistoryFilters
+          t={t}
+          historyStatus={historyStatus}
+          historyActivity={historyActivity}
+          userActivities={userActivities}
+          historyPageSize={historyPageSize}
+        />
 
         {historyPayments.length === 0 ? (
           <EmptyState icon={CreditCard} title={t.payments.noPayments} />
         ) : (
-          <div className="space-y-3">
-            {historyPayments.map((payment) => (
-              <div
-                key={payment.id}
-                className="bg-card rounded-xl border border-border p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  {/* The Activity is identified the way it is everywhere else
-                      on the board: its initial on a magnet tile, with the name
-                      beside it. */}
-                  <div className="flex min-w-0 gap-3">
-                    <ActivityInitial name={payment.activity.name} />
-                    <div className="min-w-0">
-                      <p className="font-semibold text-foreground truncate">
-                        {payment.activity.name} · {t.months[payment.month]}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
-                        {t.payments.submitted}{" "}
-                        {format(new Date(payment.createdAt), "MMM d", { locale: dateLocale })} ·{" "}
-                        <MarkedValue state={paymentState(payment.status)}>
-                          Rp {payment.amount.toLocaleString("id-ID")}
-                        </MarkedValue>
-                      </p>
-                      {payment.status === "REJECTED" && payment.notes && (
-                        <p className="text-xs text-destructive mt-1">
-                          {t.payments.rejectReason}: {payment.notes}
-                        </p>
-                      )}
-                      {payment.status === "REJECTED" && (
-                        <p className="text-xs text-warning mt-1">
-                          {t.payments.rejectedRefundWarning}
-                          {payment.activity.adminWhatsapp && (
-                            <>
-                              {" "}
-                              <a
-                                href={`https://wa.me/${payment.activity.adminWhatsapp.replace(/\D/g, "")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 font-medium text-success hover:underline"
-                              >
-                                <MessageCircle className="w-3 h-3" />
-                                {t.sessions.contactAdmin}
-                              </a>
-                            </>
-                          )}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-2 shrink-0">
-                    <StateMark
-                      state={paymentState(payment.status)}
-                      labels={t.marks}
-                    />
-                    {payment.proofUrl && (
-                      <a
-                        href={payment.proofUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline flex items-center gap-1"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        {t.payments.viewProof}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <PaymentHistoryList
+            payments={historyPayments}
+            t={t}
+            dateLocale={dateLocale}
+          />
         )}
         <DataTablePagination
           total={historyTotal}

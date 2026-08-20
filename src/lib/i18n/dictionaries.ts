@@ -451,6 +451,11 @@ const en = {
             'No proof attached. Choose a photo or screenshot of your transfer, then submit again.',
         proofFileFix:
             'Attach a photo or screenshot of the transfer — JPG, PNG, or WebP, up to 5MB.',
+        // Payments history (#58): every amount says which of the two it
+        // settles, matching the wording profile settled for the same pair
+        // (#56) so the two surfaces agree.
+        duesLabel: 'Dues',
+        feeLabel: 'Fee',
     },
     profile: {
         title: 'Profile',
@@ -1281,6 +1286,8 @@ const id: typeof en = {
             'Bukti belum dilampirkan. Pilih foto atau tangkapan layar bukti transfer kamu, lalu kirim lagi.',
         proofFileFix:
             'Lampirkan foto atau tangkapan layar bukti transfer — JPG, PNG, atau WebP, maksimal 5MB.',
+        duesLabel: 'Iuran',
+        feeLabel: 'Biaya Sesi',
     },
     profile: {
         title: 'Profil',
