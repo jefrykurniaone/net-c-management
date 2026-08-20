@@ -183,6 +183,14 @@ Each maps to one or more test cases. Find them in the sessions list or by title.
 
 Sign in as **Adi** (`member@xclub.local`).
 
+> **Partly superseded by spec #29.** Items 1 and 2 still describe the surfaces
+> as they were before #57 and #59 rebuilt them on the Slot Cell: there are no
+> RSVP pills on the dashboard and no "This week / Later" grouping on
+> `/sessions`. The expected results below are left as written rather than
+> guessed at; **§17's TC-MS-004, TC-MS-007, TC-MS-012 and TC-MS-013 are the
+> current expectation** for those two items. Everything from item 3 down was
+> re-run on 2026-08-20 and holds.
+
 1. **Dashboard** — greeting, **"Badminton dues unpaid"** banner, stat tiles,
    per-activity cards with RSVP pills.
 2. **Sessions list** `/sessions` — grouped This week / Later, quota badges, filters.
@@ -203,6 +211,13 @@ Sign in as **Adi** (`member@xclub.local`).
    this session's fee"** (not the monthly-fee text).
 
 ## 13. Member — payments & profile
+
+> **Two notes from the 2026-08-20 re-run.** Item 1's "July" is whichever month
+> the seed anchors to — **August** on a default `npm run db:seed`. In item 3,
+> `/payments` reads `In review` as written but `/dashboard` reads `Pending`:
+> both are Tape, neither says "Unpaid", and the divergence is what §17's
+> TC-MS-016 expects — but it is two words for one Payment on two surfaces one
+> tap apart, and wants a product decision.
 
 1. **Edge — unpaid dues surfaced (BUG-04)** — `/payments` → the July section lists
    **Badminton = Unpaid** alongside Basket/Futsal/Tennis = Paid, matching the
@@ -795,6 +810,11 @@ recorded above and corrected in `DESIGN.md`:
 The `board-materials.css` comments, by contrast, matched the measurement exactly
 at every value (rule 3.72 / 3.28 / 3.56 enamel and 3.74 / 4.25 / 3.37 board;
 Chalk Quiet 4.70 / 5.35), as did every ratio in the `mark.tsx` header.
+
+> **Superseded in part, 2026-08-20.** `Erased` now has a live producer — the
+> Slot Cell's Opted Out line on `/sessions` and on a Session's own header, added
+> by #60 and measured in TC-MS-021 at **5.41** on enamel and **6.19** on the
+> painted board. `Hollow` still has none. The paragraph below stands otherwise.
 
 **Two marks ship with no producer.** `Erased` and `Hollow` have no live surface:
 nothing records a No-Show yet, and the member session detail page filters
@@ -1827,63 +1847,136 @@ identical is a hardcoded literal and fails the case. In particular:
 
 ---
 
-### 17.10 Recorded run — **pending**
+### 17.10 Recorded run — 2026-08-20
 
-**This area has not been executed.** The cases above were authored against the
-shipped code; the Result column below is for whoever runs them against a live
-server, and is deliberately empty. A row filled in without a live run is worse
-than no row at all.
+Executed once against the §2 seed on Next.js 16, 1440 × 900 / 390 × 844 /
+390 × 640, both materials, both locales, on a **UTC+8 host** — which is not WIB,
+and is what exposed the first defect below. Every capacity figure quoted in a
+case was read from the database with `.claude/seat-audit.ts`, before and after,
+never from the screen.
 
 | Case | Priority | Result |
 |---|---|---|
-| TC-MS-001 | P0 | |
-| TC-MS-002 | P1 | |
-| TC-MS-003 | P0 | |
-| TC-MS-004 | P0 | |
-| TC-MS-005 | P1 | |
-| TC-MS-006 | P1 | |
-| TC-MS-007 | P0 | |
-| TC-MS-008 | P0 | |
-| TC-MS-009 | P0 | |
-| TC-MS-010 | P0 | |
-| TC-MS-011 | P0 | |
-| TC-MS-012 | P1 | |
-| TC-MS-013 | P1 | |
-| TC-MS-014 | P0 | |
-| TC-MS-015 | P0 | |
-| TC-MS-016 | P0 | |
-| TC-MS-017 | P0 | |
-| TC-MS-018 | P0 | |
-| TC-MS-019 | P0 | |
-| TC-MS-020 | P0 | |
-| TC-MS-021 | P0 | |
-| TC-MS-022 | P1 | |
+| TC-MS-001 | P0 | **Pass** — no select, no form; heading at Display 48/800, body at 15px in Secondary Ink naming **Futsal** and **August 2026**; action → `/sessions?activityId=<Futsal>`; `GET /api/users/memberships` **200** with `joined: true`, `effectiveMode: null`; the other cause's copy absent |
+| TC-MS-002 | P1 | **Pass** — under *My activities* Futsal only, all seven days drawn; under *All activities* exactly **two** controls on the page, both on her own Futsal, none on Badminton / Basket / Tennis; `mySeat: null` and `myPayment: null` before and after |
+| TC-MS-003 | P0 | **Pass** — `Nothing monthly to pay here` naming **Badminton**; action → `/sessions?activityId=<Badminton>`; **200** with `effectiveMode: "PER_SESSION"` and no MONTHLY row; `/payments` still shows three Ink `Confirmed` rows reading `FEE · AUGUST 2026` |
+| TC-MS-004 | P0 | **Pass** — seven bands Monday-first, none skipped; `UNPOSTED` + "An Admin has not posted this session yet." distinct from `NONE` + "Nothing on this day."; lattice is `gap-px` over `bg-rule` inside `border-rule`; `scrollWidth === clientWidth` at both widths |
+| TC-MS-005 | P1 | **Pass** — "14 September – 20 September 2026", seven bands, exactly 4 Blank `UNPOSTED` + 3 Blank `NONE`, **no** notice strip |
+| TC-MS-006 | P1 | **Pass** — with `ActivitySession` at zero rows the Blank strip renders with its exact sentence **and** the seven-band board is still drawn beneath it; restored by `npm run db:seed` |
+| TC-MS-007 | P0 | **Pass** — `when` = **88px** at both widths; across all 12 rows one value per column: **387.5 / 485.5 / 1037.5** at 1440, **27 / 125 / 348** at 390; control rows on `88px 552px` with the button's left edge **485.5**, equal to the title's; `anchor.contains(button) === false`; no page overflow |
+| TC-MS-008 | P0 | **Pass** — `BELUM DIPASANG` measures **133.8px** exactly, `scrollWidth === clientWidth`, right edge on the cell's content box (1037.5 at 1440, 348 at 390) and identical to every seat figure's; no `12.5rem` floor, no scrolling rail, no `88rem` measure — the only `overflow-x-auto` on the page is the Activity filter row, which contains no board row and does not scroll |
+| TC-MS-009 | P0 | **Pass** — before Tape `MAYBE`, `seatsHeld: 2`, aria `Claim a Seat in Free Play (Maybe Test)`; **201** `{"payUrl": null}`, toast `Seat claimed.`, no navigation; after Ink `Registered`, control `Withdraw`, columns unmoved, `seatsHeld: 3` / `seatsFree: 17`, `holdExpiresAt: null`, `myPayment: null` |
+| TC-MS-010 | P0 | **Fail → fixed → Pass** — every clause held (**200** `{"isForfeited": true}`, the forfeit sentence, Erased `Opted Out` + "You released this Seat.", seat figure back to 6/12, `seatsHeld` 7 → 6, row **kept** as `ABSENT`, no "Absent" anywhere) **except the control, which read `Claim & pay`**. See defect 3 |
+| TC-MS-011 | P0 | **Fail → fixed → Pass** — order, stop counts (2 / 1 / 0) and rings all held: anchor ring solid **2px** `--ring` at **-2px** offset, control ring **3px** `--ring` box-shadow; `Enter` released (**200**, `isForfeited: false`, row deleted, 3 → 2) and reclaimed (**201**, 2 → 3). **Focus was lost to `<body>` after each write.** See defect 4 |
+| TC-MS-012 | P1 | **Pass** — 8 / 7 / 7 / 7 cells per Activity card, seven consecutive days from today, the day carrying two Badminton Sessions contributing **two** cells; every cell carries its own date; ruled lattices; at 390 in `id` the tiles stack one per row and measure **Kehadiran 103px, Mendatang 109px, Iuran 55px**, none clipped |
+| TC-MS-013 | P1 | **Pass** — Badminton Blank `DUES UNPAID`, dashed 1px, **no fill**, linked to `/payments/upload`; Basket / Futsal / Tennis Ink `CONFIRMED`, solid 1px over a fill; **zero** controls in any day cell |
+| TC-MS-014 | P0 | **Pass** — header is the Slot Cell grid, **not** a link, **no** control; `when` carries `MONDAY 24`; facts card reads `Monday, 24 August` — **one date on the page**; participants through the resolver |
+| TC-MS-015 | P0 | **Pass** — CTA `Register & pay · Rp 75.000` (the monthly bill); **201** `{"payUrl": "/payments/upload"}`; `seatsHeld` 3 → **4**, `seatsFree` 5 → 4, `holdExpiresAt` = **exactly 60 minutes** after the press (15:37:16.995Z → 16:37:17.374Z), `myPayment` still **null**; back on the Session `Reserved · pay within 59:32` above `Pay monthly dues first · Rp 75.000`; on `/payments` the Blank `UNPAID` card carries `Pay within 59:13` |
+| TC-MS-016 | P0 | **Pass** — **201**, toast, back to `/payments`; Tape `IN REVIEW` on the dues card, banner gone, newest history row Tape `PENDING` under `DUES · AUGUST 2026`. Capacity across all ten Badminton Sessions of the month: Hold Lab's hold **cleared to `null`** with `seatsHeld` unchanged at 4; Morning Drills **6 → 7**; Weekly Rally Night unchanged at 18; **Full Court Challenge 6 / free 0 before and after**; the CANCELLED and COMPLETED Sessions untouched. No Session rose by more than one |
+| TC-MS-017 | P0 | **Pass** — Reject disabled until a reason is typed; `PATCH` **200** → `REJECTED`; Strike `REJECTED` with `line-through`, the amount **dimmed to `--muted-foreground` and not struck**; reason, refund guidance and WhatsApp link all in Secondary Ink, none in red; dues card back to Blank `UNPAID`. Every Badminton Seat released — Hold Lab 4 → 3, Weekly Rally 18 → 17, Morning Drills 7 → 6, `mySeat: null` on all three — while the three `PRESENT` rows on COMPLETED Sessions and the `MAYBE` on Free Play were untouched. **One sub-clause of the case is wrong as written**: Weekly Rally Night does not "return to its TC-MS-016 before figure", because Adi already held an unfunded row there before the upload. The rule that holds everywhere is *falls by exactly one* |
+| TC-MS-018 | P0 | **Fail ×2 → fixed → Pass** — alignment held: six amounts, **one** right edge (1031.5), all `tabular-nums`, `Rp 75.000` id-ID grouping in the **English** build, `Dues · August 2026` with the year, no enum leak. Both read-only treatments failed. See defects 5 and 6 |
+| TC-MS-019 | P0 | **Fail → fixed → Pass** — rail **63px** tall at 577–640, four cells **94/94/94/93px** (spread **1px**), each **56px** tall, active cell `--primary-solid` ground with board ink and `aria-current="page"`, `divide-x` + `border-t` in `--rule`. **Two labels were ellipsised.** See defect 7 |
+| TC-MS-020 | P0 | **Pass** — at 390 × 640 on `/dashboard`, `/payments`, `/payments/upload` and `/sessions/{id}`: rail top **577**, content bottom **543.7–544.4** on every one, `<main>` carrying `padding-bottom: 96px` from the layout rather than per page, and no tap intercepted by the rail. The safe-area inset resolved to the **0.375rem floor** — no device reporting a non-zero inset was available |
+| TC-MS-021 | P0 | **Pass** — five live producers, each through the one resolver. Measured against §16's own figures and matching them: painted board Ink **5.40**, Tape **6.20**, Strike **5.45**, Erased **6.19**, Blank **5.45**; enamel Ink **6.31**, Tape **5.36**, Strike **5.97**, Erased **5.41**, Blank **6.13**. Forms distinct with hue discarded — Ink solid border + fill, Blank dashed border + **no** fill, Tape 0px border + clip-path teeth + `::after`, Strike border + `line-through`, Erased **transparent border** over the ground fill. Hollow has no producer, as the case says. `Absent` appears nowhere |
+| TC-MS-022 | P1 | **Pass** — board, dashboard, payments, upload and profile in `id` with no English leak; marks all switch (`BELUM DIPASANG`, `KOSONG`, `TERDAFTAR`, `MUNGKIN`, `DIBATALKAN`, `BATAL IKUT`, `PENUH`, `LUNAS`, `MENUNGGU KONFIRMASI`, `DITOLAK`, `KUOTA TERPENUHI`, `BUTUH 2 LAGI`); controls and their accessible names switch; the forfeit sentence switches whole; `Sesi` / `Iuran` on the rail; Eka's dead-end fully Indonesian; `Rp 75.000` unchanged. The only cross-locale matches were the community name, proper nouns, numerals and the documented loanwords. Nothing clips — the single `scrollWidth > clientWidth` hit is an `sr-only` node, which is what `sr-only` is |
 
-**Regression net — the existing cases re-run, not rewritten.** These cover the
-behaviour underneath this spec that it did not intend to change.
+**Regression net — the existing cases re-run, not rewritten.**
 
 | Area | Result |
 |---|---|
-| §7 Session management (admin) — 1–11 | |
-| §12 Member — dashboard & sessions — 1–9 | |
-| §13 Member — payments & profile — 1–8 | |
-| §16 Design system — TC-DS-001…016 | |
+| §12 Member — dashboard & sessions — 1–9 | **Re-run, pass**, with two wording notes. §12.3 free RSVP: Maybe → Going took `seatsHeld` 2 → 3 with `MAYBE` 2 → 1 and no hold; Can't-make-it took it back to 2 and **deleted** the row (fee 0, so no Dues to forfeit). §12.4 hold: mode dialog re-priced Rp 75.000 → Rp 25.000, reserve set a 60-minute hold with no Payment, `Reserved · pay within` showed, Cancel released it 4 → 3. §12.5 disabled `Session Full`, §12.6 `Session Cancelled`, §12.7 `RSVP closed`, §12.9 "Set by this session's fee" all as written. §12.8 guards exact: ongoing attendance **403** `RSVP closed`, cancelled attendance **400** `Session is cancelled`, full reserve **409** `Session Full`. **§12.1's "RSVP pills" and §12.2's "grouped This week / Later" are stale** — #59 and #57 replaced both with Slot Cells; documentation, not product |
+| §13 Member — payments & profile — 1–8 | **Re-run, pass**, one wording note. §13.1 the unpaid Activity is surfaced beside the paid three (the section is **August**, not July — the seed anchors to the current month). §13.2 upload → PENDING row with the proof in Supabase. §13.4 a `.txt` forced onto the input → toast "Unsupported file format.", input cleared, Submit still disabled. §13.5 the dialog re-prices. §13.6 Eka gets a plain `Register`. §13.7 the rejected row carries reason, refund guidance and a WhatsApp link. §13.8 phone `08123456789` normalised to `628123456789`. **§13.3 is half stale**: `/payments` reads `IN REVIEW` as written, but `/dashboard` reads `PENDING` — deliberate per TC-MS-016, so the two surfaces say different words for one Payment. Worth one product decision |
+| §7 Session management (admin) — 1–11 | **Not re-run.** Admin surfaces belong to spec #30 and are out of this area's scope (§17.0). Only §8.4's "Reject requires a reason" was exercised, as the tool TC-MS-017 needs, and it held |
+| §16 Design system — TC-DS-001…016 | **Not re-executed as a suite.** Its mark ratios were independently re-measured by TC-MS-021 on both materials and matched every recorded figure, so nothing in §16 is known to have rotted; a full re-run is still owed |
 
-**Defects found and fixed in code.**
+**Defects found and fixed in code.** Seven. None was visible to `tsc`, ESLint,
+the 93 tests or a clean production build.
 
-> _(One entry per failure: the case that caught it, what was wrong, the file
-> fixed, and the ticket the defect came from. Nothing softened in a case.)_
+1. **Every seeded Session was stored on the wrong day** — `prisma/seed/dates.ts`,
+   `specs.ts`. The seed had two conventions for turning an instant into a day and
+   used the wrong one for 24 of 25 Sessions: local `setHours(0,0,0,0)` instead of
+   `wibDayStart`. On any host east of UTC — WIB included — that stores the
+   previous day, and the board names its days by reading `getUTC*`. "Weekly Rally
+   Night", logged by the seed as Sunday 23, was drawn on **Saturday 22** on both
+   the board and the dashboard, and the ONGOING "happening right now" Session sat
+   on **yesterday's** row. Found by the §12 regression net before any TC-MS case
+   could run on a trustworthy fixture. The app was never wrong: the create route
+   and the recurring generator both write UTC midnight. `startOfDay` is deleted
+   rather than corrected, so the two conventions cannot drift apart again. From
+   the **seed**, predating this spec.
+2. **`Badminton Â· Rp 75.000` rendered to members** — `(main)/payments/page.tsx`.
+   A double-encoded middle dot on the unpaid-dues banner and twice more on each
+   outstanding-reservation line, on the surface whose job is telling a member
+   what they owe. Twelve corrupted em-dashes in comments across the four member
+   pages went with it. Found by §13.1.
+3. **The board asked for money the member did not owe** — `slot-action.ts`,
+   `sessions-board.ts`, `payments.ts`, `board-view.ts`. `isPaid` was `fee > 0`,
+   a fact about the Session's price list rather than about this member's money. A
+   MONTHLY member whose Dues are already Confirmed claims a fee-bearing Seat with
+   no bill: the row said **Claim & pay** and the reserve route answered **201
+   `{"payUrl": null}`** and charged nothing. `readFreeClaimPeriods` now resolves
+   the same `isFreeRegisterAllowed` rule the route applies, batched over a week.
+   Verified both directions: Futsal Friday and Underbooked Friendly (Dues
+   Confirmed) now read `Claim a Seat`; Hold Lab and Morning Drills (Dues unpaid)
+   still read `Claim & pay` and still route to `/payments/upload`. Caught by
+   TC-MS-010. From **#60**.
+4. **Focus was thrown to the top of the board on every claim and withdrawal** —
+   `seat-action.tsx`. The control is `disabled` while the write is in flight and
+   a disabled element cannot hold focus, so the browser dropped it to `<body>`; a
+   keyboard member releasing a Seat from row nine tabbed back down a whole week
+   to reach the row they were on. Focus is restored to the control once the write
+   settles. Caught by TC-MS-011. From **#60**.
+5. **A read-only field took a lighter fill than the tile it sits on** —
+   `read-only-field.tsx`. `Input` ships `dark:bg-input/30`, whose `&:is(.dark *)`
+   is one class more specific than `ReadOnlyField`'s `bg-board`, so on the painted
+   board Period and Amount rendered `--input` at 30% — raised where the design
+   says recessed, with the one affordance meaning "the server set this" pointing
+   the wrong way. Now `#1b2621` against the `#243029` tile. Caught by TC-MS-018,
+   and predicted by suspected defect 2 below. From **#54**.
+6. **The per-Session pay page never got that treatment at all** —
+   `(main)/sessions/[id]/pay/page.tsx`. It hand-rolled an `Input` with `bg-muted`,
+   no lock, and the note "Set by this session's fee" on screen but tied to
+   nothing, so a screen-reader member met an uneditable field and was told nothing
+   about why. It now uses the same `ReadOnlyField` as the Dues uploader. Caught by
+   TC-MS-018, and predicted by suspected defect 3 below. From **#54**.
+7. **The bottom rail ellipsised its two longest labels** — `member-nav.tsx`. The
+   label span carried `px-1` inside a cell that already had `px-1`, leaving 78px
+   of the 86px available; `Dashboard` needs 82px and `Profil Saya` 84px, so a
+   member at 390px read `Dashboar…` and `Profil Say…` — the two labels with no
+   short form to fall back on. All four now fit in both locales, cells still equal
+   to within 1px. Caught by TC-MS-019. From **#53**.
 
 **Not met.**
 
-> _(One entry per acceptance criterion or coverage item not satisfied, and why.)_
+- **SonarLint has still been consulted on no ticket in this spec.**
+  `mcp__ide__getDiagnostics` is not resolvable in this environment either, for the
+  executor or the orchestrator, so the completion gate's editor-diagnostics clause
+  is unverified across all ten tickets. `tsc --noEmit` plus ESLint stood in, as
+  they did in every earlier wave. This is the one acceptance criterion of map #51
+  that no wave has satisfied.
+- **§7's admin cases were not re-run**, by scope: §17.0 puts every `/admin/*`
+  surface in spec #30. §16's `TC-DS-*` were not re-executed as a suite either,
+  though TC-MS-021 re-measured their mark ratios and matched all ten.
+- **The safe-area inset was only observed at its `0.375rem` floor.** No device or
+  emulator reporting a non-zero `env(safe-area-inset-bottom)` was available, so
+  TC-MS-020's `(measure)` marker is answered with the floor rather than a real
+  inset.
+- **The run crossed a WIB date boundary**, from 20 to 21 August, between TC-MS-018
+  and TC-MS-019. Nothing above depends on "today" after that point, but a re-run
+  wanting the "today" fixtures should reseed first.
+- **Two documentation edits are owed to §12 and §13** — §12.1, §12.2 and half of
+  §13.3 describe surfaces that #57, #58 and #59 replaced. This ticket may not edit
+  §1–§16, so they are recorded here and in *Suspected defects* rather than fixed.
 
 ### 17.11 Suspected defects, found by reading
 
 Found while writing the cases above, not by running them. Each names the case
 that should catch it, the ticket it came from, and how confident the reading is.
-None of them was fixed here: this ticket authors cases, and fixing belongs with
-the live measurement.
+
+**Two of these were confirmed by the run and fixed** — 2 and 3, both read from
+the source before a browser was opened, and both exactly as predicted. They are
+kept below with the reading intact, marked **fixed**, because a suspicion that
+proved out is worth more on the record than one quietly deleted. The rest stand.
 
 1. **§12.2's expected wording is stale, not failing.** It expects `/sessions`
    "grouped This week / Later, quota badges, filters"; #57 replaced that with a
@@ -1902,6 +1995,8 @@ the live measurement.
    **darker**. That reverses the signal the fill is carrying. Caught by
    TC-MS-018 step 3, on the painted board only. From #54. Confidence:
    high on the specificity, unverified on what it looks like.
+   **Confirmed and fixed** — measured at `oklab(0.615459 …/0.3)` where `--board`
+   is `#1b2621`; `dark:bg-board` added. Defect 5 in §17.10.
 3. **`/sessions/{id}/pay`'s Amount field never got #54's read-only
    treatment.** It is a bare `Input` with `bg-muted` and no lock glyph, no
    Figure role and no `aria-describedby` tying its note to it, where
@@ -1910,6 +2005,8 @@ the live measurement.
    remove, and this page was outside its scope. Caught by TC-MS-018 step 4.
    From #54 (scope), surfaced by #58's convention. Confidence: high — read
    directly from the source.
+   **Confirmed and fixed** — the page now composes `ReadOnlyField`. Defect 6 in
+   §17.10.
 4. **The Erased mark disappears as a form when its cell is hovered.** Erased is
    `bg-board` with a transparent border; a Slot Cell with something to open
    takes `hover:bg-board`. On hover the mark's fill is exactly its cell's, so
