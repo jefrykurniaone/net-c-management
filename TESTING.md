@@ -212,11 +212,13 @@ Sign in as **Adi** (`member@xclub.local`).
 
 ## 13. Member — payments & profile
 
-> **One note from the 2026-08-20 re-run.** Item 1's "July" is whichever month
-> the seed anchors to — **August** on a default `npm run db:seed`. Item 3 now
-> holds on every surface: the run found `/dashboard` and `/profile` reading
-> `Pending` where `/payments` read `In review`, and the label was unified on
-> **In review** rather than the case being softened. See §17.10, defect 8.
+> **Two notes from the 2026-08-20 re-run.** Item 1's "July" is whichever month
+> the seed anchors to — **August** on a default `npm run db:seed`, and the
+> Badminton mark there now reads **Pending** rather than "Unpaid". Item 3 holds
+> on every surface: the run found `/dashboard` and `/profile` reading `Pending`
+> where `/payments` read `In review`, and the two states were given two words —
+> **In review** once a Proof is sent, **Pending** while nothing has been — rather
+> than the case being softened. See §17.10, defect 8.
 
 1. **Edge — unpaid dues surfaced (BUG-04)** — `/payments` → the July section lists
    **Badminton = Unpaid** alongside Basket/Futsal/Tennis = Paid, matching the
@@ -1411,7 +1413,7 @@ Activity.
 **Expected result:**
 
 - Badminton, whose Dues are unpaid this period, carries a **Blank** mark reading
-  `dues unpaid` / `iuran belum dibayar` — Dues nobody has placed yet — and it is
+  `Pending` / `Pending` — Dues nobody has placed yet — and it is
   a link to `/payments/upload`.
 - Basket, Futsal and Tennis, whose Dues are **Confirmed**, each carry an **Ink**
   mark reading `Confirmed` / `Lunas`, from the mark resolver and not from a
@@ -1508,7 +1510,7 @@ minutes in the seed.
 - Back on `/sessions/{holdLabId}`: the RSVP card shows the countdown `Reserved ·
   pay within MM:SS` above a `Pay monthly first · Rp 75.000` button and a cancel
   control. On `/payments`, the Badminton dues card carries the same deadline as
-  a countdown beside its **Blank** `Unpaid` / `Belum bayar` mark.
+  a countdown beside its **Blank** `Pending` mark.
 - **Known gap, recorded rather than asserted as a pass:** on the `/sessions`
   board the Hold Lab row now offers `Withdraw` and says nothing about the
   deadline — the board's read carries no `holdExpiresAt`. #60 judged a third
@@ -1553,9 +1555,11 @@ hold. Any JPEG/PNG/WebP under 5MB will do as the Proof image.
   mark reading `In review` / `Ditinjau` with `Dues · {Month} {Year}` /
   `Iuran · {Month} {Year}` above the amount. `/dashboard` and `/profile`: the
   Badminton mark is `In review` / `Ditinjau` too, no longer the Blank
-  `dues unpaid`. **One Payment reads the same word wherever a member meets it** —
-  a card saying `Pending` beside a card saying `In review` for one state fails
-  the case, and did until the run of 2026-08-20.
+  Blank `Pending`. **The two states never borrow each other's word.** `In review`
+  means a Proof was sent and an Admin has not looked at it; `Pending` means
+  nothing has been sent. A surface saying `In review` before a Proof exists, or
+  `Pending` after one does, fails the case — and every surface but the dues card
+  said `Pending` for both until the run of 2026-08-20.
   A card still reading `Unpaid` after a Proof was sent fails the case — the
   member has acted.
 - The Tape mark's form survives colour removal: a filled rectangle whose right
@@ -1605,7 +1609,7 @@ Payment. Sign in as `owner@xclub.local` for steps 1–2, then back as Adi.
   reason (`Reject reason: wrong amount` / the Indonesian equivalent), the refund
   guidance, and a WhatsApp link to the Admin. A rejected row with no reason, or
   with the reason in red, fails the case.
-- The Badminton dues card is a **Blank** `Unpaid` / `Belum bayar` mark again and
+- The Badminton dues card is a **Blank** `Pending` mark again and
   is a link to `/payments/upload` — a rejected Proof leaves the member with
   something to do, and the way to do it. On `/dashboard` the Badminton card's
   mark is `Rejected` / `Ditolak`, still a link to the uploader.
@@ -1779,7 +1783,7 @@ mark or its own status colour:
 | **Tape** | `/sessions` standing column on a `MAYBE` row; `/payments` dues card and history on a Payment awaiting review; `/payments` outstanding-reservation row; `/dashboard` and `/profile` Activity mark; `/sessions` quota line when short | `Maybe` / `Mungkin`, `In review` / `Ditinjau`, `Needs {n} more` / `Butuh {n} lagi` |
 | **Strike** | `/sessions` standing column on **Rained Out (Cancelled)**; `/payments` history on a Rejected Payment (TC-MS-017) | `Cancelled` / `Dibatalkan`, `Rejected` / `Ditolak` |
 | **Erased** | `/sessions` and `/sessions/{id}` note line after a withdrawal that forfeited Dues (TC-MS-010) | `Opted Out` / `Batal Ikut` |
-| **Blank** | `/sessions` unposted standing slot and empty day; `/sessions` standing column on **Full Court Challenge**; `/payments` dues card when unpaid; `/dashboard` Activity mark when no Payment exists; `/profile` Membership row for an unpaid period | `Unposted` / `Belum Dipasang`, `None` / `Kosong`, `Full` / `Penuh`, `Unpaid` / `Belum bayar` |
+| **Blank** | `/sessions` unposted standing slot and empty day; `/sessions` standing column on **Full Court Challenge**; `/payments` dues card when unpaid; `/dashboard` Activity mark when no Payment exists; `/profile` Membership row for an unpaid period | `Unposted` / `Belum Dipasang`, `None` / `Kosong`, `Full` / `Penuh`, `Pending` (both locales — the loanword the Indonesian dictionary already keeps) |
 | **Hollow** | **No producer.** Nothing in this product records a No-Show, and nothing infers one from a missing row. | `No-Show` / `Tidak Hadir` |
 
 - Every mark clears **4.5:1** against the wash it sits on, in both materials —
@@ -1871,10 +1875,10 @@ never from the screen.
 | TC-MS-010 | P0 | **Fail → fixed → Pass** — every clause held (**200** `{"isForfeited": true}`, the forfeit sentence, Erased `Opted Out` + "You released this Seat.", seat figure back to 6/12, `seatsHeld` 7 → 6, row **kept** as `ABSENT`, no "Absent" anywhere) **except the control, which read `Claim & pay`**. See defect 3 |
 | TC-MS-011 | P0 | **Fail → fixed → Pass** — order, stop counts (2 / 1 / 0) and rings all held: anchor ring solid **2px** `--ring` at **-2px** offset, control ring **3px** `--ring` box-shadow; `Enter` released (**200**, `isForfeited: false`, row deleted, 3 → 2) and reclaimed (**201**, 2 → 3). **Focus was lost to `<body>` after each write.** See defect 4 |
 | TC-MS-012 | P1 | **Pass** — 8 / 7 / 7 / 7 cells per Activity card, seven consecutive days from today, the day carrying two Badminton Sessions contributing **two** cells; every cell carries its own date; ruled lattices; at 390 in `id` the tiles stack one per row and measure **Kehadiran 103px, Mendatang 109px, Iuran 55px**, none clipped |
-| TC-MS-013 | P1 | **Pass** — Badminton Blank `DUES UNPAID`, dashed 1px, **no fill**, linked to `/payments/upload`; Basket / Futsal / Tennis Ink `CONFIRMED`, solid 1px over a fill; **zero** controls in any day cell |
+| TC-MS-013 | P1 | **Pass** — Badminton Blank `PENDING`, dashed 1px, **no fill**, linked to `/payments/upload`; Basket / Futsal / Tennis Ink `CONFIRMED`, solid 1px over a fill; **zero** controls in any day cell |
 | TC-MS-014 | P0 | **Pass** — header is the Slot Cell grid, **not** a link, **no** control; `when` carries `MONDAY 24`; facts card reads `Monday, 24 August` — **one date on the page**; participants through the resolver |
-| TC-MS-015 | P0 | **Pass** — CTA `Register & pay · Rp 75.000` (the monthly bill); **201** `{"payUrl": "/payments/upload"}`; `seatsHeld` 3 → **4**, `seatsFree` 5 → 4, `holdExpiresAt` = **exactly 60 minutes** after the press (15:37:16.995Z → 16:37:17.374Z), `myPayment` still **null**; back on the Session `Reserved · pay within 59:32` above `Pay monthly dues first · Rp 75.000`; on `/payments` the Blank `UNPAID` card carries `Pay within 59:13` |
-| TC-MS-016 | P0 | **Pass, after defect 8** — **201**, toast, back to `/payments`; Tape on the dues card, banner gone, newest history row Tape under `DUES · AUGUST 2026`. On the first run the dues card read `IN REVIEW` while the history row beneath it, the dashboard and the profile all read `PENDING`; all four now read **`IN REVIEW`** / **`DITINJAU`**. Capacity across all ten Badminton Sessions of the month: Hold Lab's hold **cleared to `null`** with `seatsHeld` unchanged at 4; Morning Drills **6 → 7**; Weekly Rally Night unchanged at 18; **Full Court Challenge 6 / free 0 before and after**; the CANCELLED and COMPLETED Sessions untouched. No Session rose by more than one |
+| TC-MS-015 | P0 | **Pass** — CTA `Register & pay · Rp 75.000` (the monthly bill); **201** `{"payUrl": "/payments/upload"}`; `seatsHeld` 3 → **4**, `seatsFree` 5 → 4, `holdExpiresAt` = **exactly 60 minutes** after the press (15:37:16.995Z → 16:37:17.374Z), `myPayment` still **null**; back on the Session `Reserved · pay within 59:32` above `Pay monthly dues first · Rp 75.000`; on `/payments` the Blank `PENDING` card carries `Pay within 59:13` |
+| TC-MS-016 | P0 | **Pass, after defect 8** — **201**, toast, back to `/payments`; Tape on the dues card, banner gone, newest history row Tape under `DUES · AUGUST 2026`. On the first run the dues card read `IN REVIEW` while the history row beneath it, the dashboard and the profile all read `PENDING` — the same word those three used for Dues with *nothing* sent. The submitted state is now **`IN REVIEW`** / **`DITINJAU`** on all four, and the not-yet-paid state is **`PENDING`**, verified by watching Badminton cross from one to the other on all three surfaces. Capacity across all ten Badminton Sessions of the month: Hold Lab's hold **cleared to `null`** with `seatsHeld` unchanged at 4; Morning Drills **6 → 7**; Weekly Rally Night unchanged at 18; **Full Court Challenge 6 / free 0 before and after**; the CANCELLED and COMPLETED Sessions untouched. No Session rose by more than one |
 | TC-MS-017 | P0 | **Pass** — Reject disabled until a reason is typed; `PATCH` **200** → `REJECTED`; Strike `REJECTED` with `line-through`, the amount **dimmed to `--muted-foreground` and not struck**; reason, refund guidance and WhatsApp link all in Secondary Ink, none in red; dues card back to Blank `UNPAID`. Every Badminton Seat released — Hold Lab 4 → 3, Weekly Rally 18 → 17, Morning Drills 7 → 6, `mySeat: null` on all three — while the three `PRESENT` rows on COMPLETED Sessions and the `MAYBE` on Free Play were untouched. **One sub-clause of the case is wrong as written**: Weekly Rally Night does not "return to its TC-MS-016 before figure", because Adi already held an unfunded row there before the upload. The rule that holds everywhere is *falls by exactly one* |
 | TC-MS-018 | P0 | **Fail ×2 → fixed → Pass** — alignment held: six amounts, **one** right edge (1031.5), all `tabular-nums`, `Rp 75.000` id-ID grouping in the **English** build, `Dues · August 2026` with the year, no enum leak. Both read-only treatments failed. See defects 5 and 6 |
 | TC-MS-019 | P0 | **Fail → fixed → Pass** — rail **63px** tall at 577–640, four cells **94/94/94/93px** (spread **1px**), each **56px** tall, active cell `--primary-solid` ground with board ink and `aria-current="page"`, `divide-x` + `border-t` in `--rule`. **Two labels were ellipsised.** See defect 7 |
@@ -1891,7 +1895,7 @@ never from the screen.
 | §7 Session management (admin) — 1–11 | **Not re-run.** Admin surfaces belong to spec #30 and are out of this area's scope (§17.0). Only §8.4's "Reject requires a reason" was exercised, as the tool TC-MS-017 needs, and it held |
 | §16 Design system — TC-DS-001…016 | **Not re-executed as a suite.** Its mark ratios were independently re-measured by TC-MS-021 on both materials and matched every recorded figure, so nothing in §16 is known to have rotted; a full re-run is still owed |
 
-**Defects found and fixed in code.** Eight. None was visible to `tsc`, ESLint,
+**Defects found and fixed in code.** Nine. None was visible to `tsc`, ESLint,
 the 93 tests or a clean production build.
 
 1. **Every seeded Session was stored on the wrong day** — `prisma/seed/dates.ts`,
@@ -1947,20 +1951,38 @@ the 93 tests or a clean production build.
    member at 390px read `Dashboar…` and `Profil Say…` — the two labels with no
    short form to fall back on. All four now fit in both locales, cells still equal
    to within 1px. Caught by TC-MS-019. From **#53**.
-8. **One Payment was called two things** — `dictionaries.ts`. `PENDING` means the
-   member has sent Proof and an Admin has not reviewed it yet. `/payments`' dues
-   card said **In review**; the history row directly beneath it, `/dashboard`,
-   `/profile` and the Admin queue all said **Pending**, because the dues card
-   uses `payments.inReview` while everything else resolves through
-   `marks.pending`. The member had already acted, and half the product described
-   that in the passive voice. `marks.pending` is the **only** label a Payment's
-   PENDING status resolves to (`PAYMENT_MARKS`), so one dictionary line in each
-   locale — `In review` / `Ditinjau` — aligned all five surfaces at once, and
-   also aligned the history rows with the `In review` option in their own filter
-   dropdown, which had never matched. Verified on `/payments` (card **and** row),
-   `/dashboard`, `/profile`, `/admin/payments` and in `id`. Caught by §13.3;
-   settled as a **product decision** rather than by picking a word myself. From
-   **#58/#59** jointly — neither surface was wrong alone.
+8. **Two different states shared one word, and one state had two** —
+   `dictionaries.ts`, `money-mark.tsx`. There are two things a member can be told
+   about this period's Dues, and the product was not telling them apart:
+
+   | State | Before | After |
+   |---|---|---|
+   | Proof sent, Admin has not reviewed it | `/payments` card **In review**; history row, `/dashboard`, `/profile`, Admin queue **Pending** | **In review** / **Ditinjau** everywhere |
+   | Nothing sent at all | **Unpaid** / **dues unpaid** / **Belum bayar** | **Pending**, both locales |
+
+   The dues card read `payments.inReview` while everything else resolved through
+   `marks.pending`, so a member who had already paid was told so on one card and
+   left in the passive voice on the next, one tap apart — and the word used for
+   them there was the same one now reserved for having paid nothing.
+   `marks.pending` is the only label a Payment's PENDING status resolves to
+   (`PAYMENT_MARKS`), so one line per locale moved all five surfaces;
+   `paymentStatus` went with it so the Admin queue's filter matches its own rows.
+   The unpaid Blank marks took `Pending` in their place. `dashboard` needed a new
+   key for its mark — `duesUnpaidBanner` is prose the dues banner reads as
+   "{Activity} dues unpaid", and sharing it would have produced "Badminton
+   Pending". Verified by watching Badminton cross from one state to the other on
+   `/payments` (card and row), `/dashboard` and `/profile`, in both locales, with
+   the banner prose intact. Caught by §13.3; the two-word split is a **product
+   decision**, not one I picked. From **#58/#59** jointly.
+9. **The seed refused to run every WIB evening** — `prisma/seed/dates.ts`. A
+   regression from defect 1's own fix, and caught only because the run crossed
+   into the evening: `resolveRange` compared its derived `to` — UTC midnight of
+   today's WIB day — against `now` as an instant. Those are different kinds of
+   thing. From 17:00Z until midnight, UTC midnight of the *current* WIB day is
+   still in the future, so `npm run db:seed` died on its own default with
+   `--to must be on or before the anchor (--date)`. Now compared as days. Both
+   the default and the `--date/--from/--to` path re-run clean. Mine, from this
+   ticket.
 
 **Not met.**
 

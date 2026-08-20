@@ -43,7 +43,7 @@ function duesMark(paymentStatus: PaymentStatus | undefined, t: Dictionary) {
     if (!paymentStatus) {
         return (
             <Link href='/payments/upload'>
-                <Mark kind='blank'>{t.dashboard.duesUnpaidBanner}</Mark>
+                <Mark kind='blank'>{t.dashboard.duesPendingMark}</Mark>
             </Link>
         );
     }

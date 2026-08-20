@@ -95,7 +95,12 @@ function resolveRange(): { from: Date; to: Date } {
     if (from.getTime() > to.getTime()) {
         throw new Error('--from must be on or before --to');
     }
-    if (to.getTime() > now.getTime()) {
+    // Compared as *days*, not as instants. `from` and `to` are UTC midnights of
+    // WIB days, and UTC midnight of today's WIB day runs ahead of the present
+    // instant for the seven hours from 17:00Z until midnight — so measuring the
+    // default `to` against `now` rejected the seed's own default every WIB
+    // evening with "--to must be on or before the anchor".
+    if (to.getTime() > wibDayStart(now).getTime()) {
         throw new Error('--to must be on or before the anchor (--date)');
     }
     return { from, to };
