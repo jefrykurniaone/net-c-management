@@ -14,5 +14,10 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // Scoped to `src/` rather than the whole tree: a git worktree checked out
+    // under `.claude/worktrees/` carries its own copy of every test file, and
+    // the default `**/*.test.ts` glob counts them all, so a run reports several
+    // hundred passing tests while an agent's branch is checked out.
+    include: ['src/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
   },
 });
