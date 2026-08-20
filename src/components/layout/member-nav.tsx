@@ -171,7 +171,11 @@ export function MemberBottomNav() {
                         href={href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                            'type-label flex min-h-14 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+                            // `min-w-0` is what makes the cells actually equal:
+                            // a flex item's default `min-width: auto` floors it
+                            // at its own min-content, so without this the wider
+                            // labels claim more than their share of the rail.
+                            'type-label flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
                             active
                                 ? 'bg-primary-solid text-primary-solid-foreground focus-visible:ring-primary-solid-foreground'
                                 : 'text-secondary-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring',

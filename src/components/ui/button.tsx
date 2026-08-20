@@ -61,6 +61,18 @@ function Button({
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
+  // Slot.Root runs React.Children.only, which counts a `false` branch as a
+  // second child — so an asChild Button must pass `children` through as the one
+  // and only child rather than alongside a spinner slot that renders nothing.
+  const content = asChild ? (
+    children
+  ) : (
+    <>
+      {loading && <Loader2 className="animate-spin" />}
+      {children}
+    </>
+  )
+
   return (
     <Comp
       data-slot="button"
@@ -71,8 +83,7 @@ function Button({
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     >
-      {loading && !asChild && <Loader2 className="animate-spin" />}
-      {children}
+      {content}
     </Comp>
   )
 }
