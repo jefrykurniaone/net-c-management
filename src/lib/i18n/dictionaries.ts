@@ -910,7 +910,9 @@ const en = {
         CANCELLED: 'Cancelled',
     },
     paymentStatus: {
-        PENDING: 'Pending',
+        // The Admin queue's status filter. Reads the same word as the rows it
+        // filters, which take theirs from `marks.pending`.
+        PENDING: 'In review',
         CONFIRMED: 'Confirmed',
         REJECTED: 'Rejected',
     },
@@ -930,7 +932,16 @@ const en = {
         completed: 'Completed',
         cancelled: 'Cancelled',
         confirmed: 'Confirmed',
-        pending: 'Pending',
+        /**
+         * A Payment the member has sent Proof for and an Admin has not reviewed
+         * yet. "In review", not "Pending": it says who is holding it and that
+         * the member has already done their part. This is the only label key a
+         * Payment's PENDING status resolves to (`PAYMENT_MARKS` in
+         * `status-mark.ts`), so every surface showing that state — the
+         * dashboard, the profile, the dues history and the Admin queue — reads
+         * the same word as `payments.inReview` on the dues card.
+         */
+        pending: 'In review',
         rejected: 'Rejected',
         registered: 'Registered',
         maybe: 'Maybe',
@@ -1762,7 +1773,7 @@ const id: typeof en = {
         CANCELLED: 'Dibatalkan',
     },
     paymentStatus: {
-        PENDING: 'Menunggu Konfirmasi',
+        PENDING: 'Ditinjau',
         CONFIRMED: 'Lunas',
         REJECTED: 'Ditolak',
     },
@@ -1778,7 +1789,7 @@ const id: typeof en = {
         completed: 'Selesai',
         cancelled: 'Dibatalkan',
         confirmed: 'Lunas',
-        pending: 'Menunggu Konfirmasi',
+        pending: 'Ditinjau',
         rejected: 'Ditolak',
         registered: 'Terdaftar',
         maybe: 'Mungkin',
