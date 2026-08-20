@@ -443,9 +443,16 @@ export async function reserveSeat(input: {
   });
 }
 
-/** Outcome of a member's self-cancel attempt. */
+/**
+ * Outcome of a member's self-cancel attempt. `isForfeited` reports which of the
+ * two release branches below ran: true where MONTHLY dues already covered this
+ * period, so the row was kept as ABSENT and the session is forfeited rather than
+ * credited. It is reported, never decided, here — the caller needs it to tell
+ * the member the truth about their money, and inferring it from the stored
+ * ABSENT afterwards would be a guess.
+ */
 export type SeatReleaseResult =
-  | { released: true }
+  | { released: true; isForfeited: boolean }
   | { released: false; reason: 'notRegistered' | 'confirmedLocked' };
 
 /**
@@ -511,10 +518,10 @@ export async function releaseSessionSeat(input: {
         where: { userId_sessionId: { userId, sessionId } },
         data: { status: AttendanceStatus.ABSENT },
       });
-    } else {
-      await tx.attendance.deleteMany({ where: { userId, sessionId } });
+      return { released: true, isForfeited: true };
     }
-    return { released: true };
+    await tx.attendance.deleteMany({ where: { userId, sessionId } });
+    return { released: true, isForfeited: false };
   });
 }
 

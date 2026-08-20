@@ -21,6 +21,9 @@ import { after, NextResponse } from 'next/server';
 
 const SESSION_FULL_STATUS = 409;
 
+/** Machine-readable form of "this member has not chosen how they pay yet". */
+const MODE_REQUIRED_CODE = 'MODE_REQUIRED';
+
 /** The mode the member chose on a both-offered Activity; null when unspecified. */
 function readMode(body: unknown): PaymentMode | null {
   const mode = (body as { mode?: unknown } | null)?.mode;
@@ -93,7 +96,13 @@ export async function POST(
   // Paid seat: the effective mode decides which bill the member owes.
   const effective = await resolveEffectiveMode(userId, activitySession.activityId, activitySession.date);
   if (effective === null) {
-    return NextResponse.json({ error: t.sessions.chooseModeFirst }, { status: 400 });
+    // A code as well as a message: a caller with no room to put the choice in
+    // front of the member (a board row) needs to recognise this one refusal and
+    // route them to where the choice lives, without matching a translated string.
+    return NextResponse.json(
+      { error: t.sessions.chooseModeFirst, code: MODE_REQUIRED_CODE },
+      { status: 400 },
+    );
   }
   const payUrl =
     effective === PaymentMode.MONTHLY ? '/payments/upload' : `/sessions/${sessionId}/pay`;

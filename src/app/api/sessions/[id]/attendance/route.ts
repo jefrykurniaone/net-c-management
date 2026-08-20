@@ -171,5 +171,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Not registered" }, { status: 404 });
   }
 
-  return NextResponse.json({ success: true });
+  // isForfeited says the seat was released but the money stays spent (monthly
+  // dues cover the month, not this session), so the client can say so instead of
+  // letting the member expect a credit.
+  return NextResponse.json({ success: true, isForfeited: result.isForfeited });
 }
