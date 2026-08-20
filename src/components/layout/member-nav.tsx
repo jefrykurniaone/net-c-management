@@ -181,7 +181,13 @@ export function MemberBottomNav() {
                                 : 'text-secondary-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring',
                         )}>
                         <Icon className='w-5 h-5 shrink-0' aria-hidden='true' />
-                        <span className='truncate max-w-full px-1'>
+                        {/* No padding of its own: the cell already carries
+                            `px-1`, and doubling it left 78px of the 86px a cell
+                            has for text. `Dashboard` needs 82px and `Profil
+                            Saya` 84px in tracked caps at 11px, so both were
+                            ellipsised on a 390px screen — the two labels with
+                            no short form to fall back on. */}
+                        <span className='truncate max-w-full'>
                             {shortLabel ?? label}
                         </span>
                     </Link>
