@@ -1,6 +1,6 @@
 import { Mark } from '@/components/ui/mark';
 import { SlotCell } from '@/components/sessions/slot-cell';
-import type { BoardDay } from '@/lib/board-days';
+import type { BoardDay, BoardSlot } from '@/lib/board-days';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { dashboardSlotCell, type DashboardSlotContext } from './dashboard-slot-data';
 
@@ -43,6 +43,17 @@ function EmptyDayCell({
     );
 }
 
+/**
+ * The board's own key rule. A posted Session is identified by its own id: two
+ * Sessions of the same Activity on the same day are ordinary — an early and a
+ * late slot — and keying both by day and Activity would collide. A standing
+ * slot has no Session to name it, so the day and the Activity do.
+ */
+function slotKey(day: BoardDay, slot: BoardSlot): string {
+    if (slot.kind === 'posted') return slot.session.id;
+    return `${day.dayKey}:${slot.activity.id}`;
+}
+
 export function ActivityDayCells({
     days,
     context,
@@ -54,7 +65,7 @@ export function ActivityDayCells({
                     ? [<EmptyDayCell key={day.dayKey} day={day} t={context.t} />]
                     : day.slots.map((slot) => (
                           <SlotCell
-                              key={`${day.dayKey}:${slot.activity.id}`}
+                              key={slotKey(day, slot)}
                               data={dashboardSlotCell(slot, day, context)}
                               t={context.t}
                           />
