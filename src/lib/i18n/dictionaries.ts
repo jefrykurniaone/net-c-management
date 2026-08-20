@@ -259,6 +259,13 @@ const en = {
         viewAllShort: 'View all',
         payNow: 'Pay now',
         duesUnpaidBanner: 'dues unpaid',
+        /**
+         * The Activity card's Blank mark when nothing has been sent for the
+         * period. Its own key rather than `duesUnpaidBanner`, which is prose the
+         * dues banner reads as "{Activity} dues unpaid" and would become
+         * "Badminton Pending" if the two shared one.
+         */
+        duesPendingMark: 'Pending',
         reservationsToPay: '{n} reservations awaiting payment',
         reservationsToPaySub: 'Pay before the hold expires or the seat is released.',
         toPay: '{n} to pay',
@@ -412,7 +419,8 @@ const en = {
         unpaidDuesTitle: '{count} unpaid dues for {month}',
         perMonth: '/month',
         paid: 'Paid',
-        unpaid: 'Unpaid',
+        /** Blank mark: Dues owed with nothing sent yet. Cf. `inReview`. */
+        unpaid: 'Pending',
         historyLabel: 'History',
         submitted: 'Submitted',
         historyStatus: {
@@ -543,7 +551,7 @@ const en = {
         modeSingleOffered: 'This activity offers one way to pay.',
         modeSaveButton: 'Save payment mode',
         currentPeriodRowLabel: 'This Billing Period',
-        markNotPaid: 'Unpaid',
+        markNotPaid: 'Pending',
         modeEffectNow: 'Takes effect now, for the {period} Billing Period.',
         modeEffectNext:
             'Takes effect in the {next} Billing Period. {current} is already paid and does not change.',
@@ -934,12 +942,17 @@ const en = {
         confirmed: 'Confirmed',
         /**
          * A Payment the member has sent Proof for and an Admin has not reviewed
-         * yet. "In review", not "Pending": it says who is holding it and that
-         * the member has already done their part. This is the only label key a
-         * Payment's PENDING status resolves to (`PAYMENT_MARKS` in
-         * `status-mark.ts`), so every surface showing that state — the
-         * dashboard, the profile, the dues history and the Admin queue — reads
-         * the same word as `payments.inReview` on the dues card.
+         * yet. **In review**, because the member has already done their part and
+         * someone else is holding it now.
+         *
+         * The word a member has not paid at all is **Pending** — money still
+         * owed, nothing sent. Two states, two words, and neither borrows the
+         * other's: see `payments.unpaid`, `profile.markNotPaid` and
+         * `dashboard.duesPendingMark`, which are the Blank marks for that one.
+         *
+         * This is the only label key a Payment's PENDING status resolves to
+         * (`PAYMENT_MARKS` in `status-mark.ts`), so every surface showing a
+         * submitted Proof reads the same word.
          */
         pending: 'In review',
         rejected: 'Rejected',
@@ -1151,6 +1164,7 @@ const id: typeof en = {
         viewAllShort: 'Lihat semua',
         payNow: 'Bayar',
         duesUnpaidBanner: 'iuran belum dibayar',
+        duesPendingMark: 'Pending',
         reservationsToPay: '{n} reservasi menunggu pembayaran',
         reservationsToPaySub: 'Bayar sebelum masa tahan habis atau kursi dilepas.',
         toPay: '{n} perlu dibayar',
@@ -1287,7 +1301,7 @@ const id: typeof en = {
         unpaidDuesTitle: '{count} iuran belum dibayar untuk {month}',
         perMonth: '/bulan',
         paid: 'Lunas',
-        unpaid: 'Belum bayar',
+        unpaid: 'Pending',
         historyLabel: 'Riwayat',
         submitted: 'Dikirim',
         historyStatus: {
@@ -1409,7 +1423,7 @@ const id: typeof en = {
         modeSingleOffered: 'Aktivitas ini hanya punya satu cara pembayaran.',
         modeSaveButton: 'Simpan cara pembayaran',
         currentPeriodRowLabel: 'Periode Tagihan ini',
-        markNotPaid: 'Belum dibayar',
+        markNotPaid: 'Pending',
         modeEffectNow: 'Berlaku sekarang, untuk Periode Tagihan {period}.',
         modeEffectNext:
             'Berlaku mulai Periode Tagihan {next}. {current} sudah dibayar dan tidak berubah.',
