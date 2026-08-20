@@ -1,4 +1,5 @@
-import { auth } from '@/lib/auth';
+﻿import { auth } from '@/lib/auth';
+import { COLUMN_MEASURE } from '@/components/layout/measure';
 import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import { format } from 'date-fns';
@@ -34,7 +35,7 @@ import { isRsvpClosed, rsvpCloseAt } from '@/lib/rsvp';
 
 const MINUTES_PER_HOUR = 60;
 
-/** "19:00" + "21:00" → "2 hours" (or "1.5 hours"); empty when unparseable. */
+/** "19:00" + "21:00" â†’ "2 hours" (or "1.5 hours"); empty when unparseable. */
 function formatDuration(
     start: string,
     end: string,
@@ -86,7 +87,7 @@ export default async function SessionDetailPage({
             },
             attendances: {
                 // ABSENT rows (monthly members who cancelled) are opt-out
-                // markers, not participants — hide them. MAYBE is a tentative
+                // markers, not participants â€” hide them. MAYBE is a tentative
                 // RSVP: shown in the list, but it holds no seat (see _count).
                 where: { status: { in: ['REGISTERED', 'MAYBE', 'PRESENT'] } },
                 include: {
@@ -114,7 +115,7 @@ export default async function SessionDetailPage({
 
     // Resolve the member's effective payment mode for THIS session's period,
     // their per-session payment status, and whether this period's monthly dues
-    // are in (seat lock follows money — an unpaid monthly member can't register).
+    // are in (seat lock follows money â€” an unpaid monthly member can't register).
     const period = currentPeriod(activitySession.date);
     const [membership, sessionPayment, monthlyPayment] = await Promise.all([
         prisma.membership.findUnique({
@@ -157,7 +158,7 @@ export default async function SessionDetailPage({
         allowsPerSession: activitySession.activity.allowsPerSession,
     };
     // Non-members may register too (join-on-register), so a missing membership
-    // resolves like an unselected one: the offered set decides — a single
+    // resolves like an unselected one: the offered set decides â€” a single
     // offered mode auto-applies, both-offered stays null until the join dialog.
     const effectiveMode = membership?.isActive
         ? resolvePaymentMode(membership, offered, period.month, period.year)
@@ -195,7 +196,7 @@ export default async function SessionDetailPage({
         (a) => a.userId === authSession.user.id,
     );
     const rsvpStatus = myAttendance?.status ?? null;
-    // "Registered" means holding a seat — a MAYBE row is a tentative RSVP that
+    // "Registered" means holding a seat â€” a MAYBE row is a tentative RSVP that
     // does not, so it isn't treated as registered for capacity/CTA purposes.
     const isRegistered =
         rsvpStatus === 'REGISTERED' || rsvpStatus === 'PRESENT';
@@ -226,7 +227,7 @@ export default async function SessionDetailPage({
     );
     const players: PlayerItem[] = activitySession.attendances.map((a) => ({
         id: a.id,
-        name: a.user.name ?? '—',
+        name: a.user.name ?? 'â€”',
         initials:
             a.user.name
                 ?.split(' ')
@@ -240,7 +241,7 @@ export default async function SessionDetailPage({
     }));
 
     return (
-        <div className='max-w-2xl mx-auto'>
+        <div className={COLUMN_MEASURE}>
             {/* Back header */}
             <div className='mb-4 flex items-center gap-2 border-b border-border pb-4'>
                 <Link
@@ -287,7 +288,7 @@ export default async function SessionDetailPage({
                     <div className='flex items-center gap-3 py-3'>
                         <Clock className='w-[18px] h-[18px] shrink-0 text-primary' />
                         <span className='tabular-nums text-foreground'>
-                            {activitySession.startTime} –{' '}
+                            {activitySession.startTime} â€“{' '}
                             {activitySession.endTime}
                             {duration && (
                                 <span className='ml-1.5 text-muted-foreground'>

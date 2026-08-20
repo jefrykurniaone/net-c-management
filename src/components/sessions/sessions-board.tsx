@@ -69,11 +69,17 @@ export function BoardNotice({
     );
 }
 
-/** A day with nothing planned and nothing posted. It keeps its cell. */
+/**
+ * A day with nothing planned and nothing posted. It keeps its cell, and it
+ * takes a Blank mark like an unposted day — but not the *same label*. Unposted
+ * means an Admin owed a Session here and has not put one up; this day was never
+ * a day anybody was going to play. Labelling both "Unposted" tells a member the
+ * Admin is behind on a day nothing was ever planned for.
+ */
 function EmptyDay({ t }: Readonly<{ t: Dictionary }>) {
     return (
         <div className='flex flex-1 flex-wrap items-center gap-cell bg-tile p-cell'>
-            <Mark kind='blank'>{t.marks.unposted}</Mark>
+            <Mark kind='blank'>{t.sessions.boardNothingMark}</Mark>
             <p className='type-caption text-muted-foreground'>
                 {t.sessions.boardNothingOnDay}
             </p>
@@ -117,18 +123,12 @@ export function SessionsBoard({
         <section
             aria-label={t.sessions.boardLabel}
             tabIndex={0}
-            /* Seven 12.5rem floors are 87.5rem of track, and with the 6px of
-               shared rules between them and the 2px outer border the lattice is
-               88rem wide. The member layout caps its column at 42rem, so inside
-               that column the week would scroll at every desktop width, not
-               only narrow ones (see DESIGN.md, the settled decision). From `md`
-               up the rail escapes the column and takes the lattice's own
-               measure, capped at that 88rem so the week completes at 1440px;
-               where the viewport is narrower it still scrolls, which is the cost
-               the decision already names. Below `md` the board is one column and
-               keeps the column's width, so it stays flush with the heading and
-               filters above it. */
-            className='overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:[outline-offset:-2px] md:relative md:left-1/2 md:w-[min(100vw-2rem,88rem)] md:-translate-x-1/2'>
+            /* The rail scrolls where the viewport cannot hold the lattice, and
+               that is all it does — the surface's width is the page's to
+               declare, via `BOARD_MEASURE`, so the board and the heading and
+               filters above it share one measure instead of the rail escaping
+               its own column. */
+            className='overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:[outline-offset:-2px]'>
             <div
                 className={`grid grid-cols-1 gap-px rounded-sm border border-rule bg-rule ${LATTICE_COLUMNS}`}>
                 {weekdayHeads.map((head) => (

@@ -374,6 +374,9 @@ const en = {
         boardThisWeek: 'This week',
         boardNextWeek: 'Next week',
         boardWeekOf: '{start} – {end}',
+        // A day nobody planned anything on, as opposed to one an Admin still
+        // owes a Session. Both draw a Blank mark; only the second is late.
+        boardNothingMark: 'None',
         boardNothingOnDay: 'Nothing on this day.',
         boardNotPosted: 'An Admin has not posted this session yet.',
         boardNeverPosted:
@@ -1224,6 +1227,7 @@ const id: typeof en = {
         boardThisWeek: 'Minggu ini',
         boardNextWeek: 'Minggu berikutnya',
         boardWeekOf: '{start} – {end}',
+        boardNothingMark: 'Kosong',
         boardNothingOnDay: 'Tidak ada apa pun di hari ini.',
         boardNotPosted: 'Admin belum mengumumkan sesi ini.',
         boardNeverPosted:

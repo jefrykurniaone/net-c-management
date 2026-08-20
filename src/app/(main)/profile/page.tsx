@@ -1,4 +1,5 @@
-import { auth } from '@/lib/auth';
+﻿import { auth } from '@/lib/auth';
+import { COLUMN_MEASURE } from '@/components/layout/measure';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
@@ -94,7 +95,7 @@ async function loadProfile(userId: string, period: BillingPeriod) {
 
 /**
  * One Membership as the surface renders it. The Billing Period sentences are
- * derived here, on the server, from the resolver's own output — the page reads
+ * derived here, on the server, from the resolver's own output â€” the page reads
  * that logic and never restates it, and no API response grows a field for it.
  */
 function toRow(
@@ -160,7 +161,7 @@ export default async function ProfilePage() {
     if (!user) redirect('/auth/signin');
 
     return (
-        <div className='flex flex-col gap-bay'>
+        <div className={`${COLUMN_MEASURE} flex flex-col gap-bay`}>
             <h1 className='type-display text-foreground'>{t.profile.title}</h1>
             <ProfilePanel
                 user={{

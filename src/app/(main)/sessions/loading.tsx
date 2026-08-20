@@ -8,11 +8,14 @@
  * sideways when the real cells arrive.
  */
 
+import { BOARD_MEASURE } from '@/components/layout/measure';
+
 const DAYS_IN_WEEK = 7;
 const COLUMNS = Array.from({ length: DAYS_IN_WEEK }, (_, index) => index);
 
+/** The board's floor, repeated here so the skeleton does not shift sideways. */
 const LATTICE_COLUMNS =
-    'md:[grid-template-columns:repeat(7,minmax(11rem,1fr))]';
+    'md:[grid-template-columns:repeat(7,minmax(12.5rem,1fr))]';
 const BAR = 'animate-pulse rounded-sm bg-board';
 
 function DayPlaceholder() {
@@ -34,7 +37,7 @@ function DayPlaceholder() {
 
 export default function Loading() {
     return (
-        <div className='flex flex-col gap-bay'>
+        <div className={`${BOARD_MEASURE} flex flex-col gap-bay`}>
             <span className={`${BAR} h-8 w-40`} />
             <span className={`${BAR} h-11 w-56`} />
             <div

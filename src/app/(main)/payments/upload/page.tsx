@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
+import { TASK_MEASURE } from '@/components/layout/measure';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { NoMonthlyDues } from '@/components/payments/no-monthly-dues';
 import { ProofUploadForm } from '@/components/payments/proof-upload-form';
@@ -15,9 +16,9 @@ import {
 
 /**
  * A single-task column, so it takes the 40rem measure rather than the wider
- * gutter shared by surfaces that carry a whole schedule (DESIGN.md, Layout).
+ * one a surface carrying a whole schedule takes (DESIGN.md, Layout).
  */
-const TASK_COLUMN = 'mx-auto w-full max-w-[40rem] space-y-block';
+const TASK_COLUMN = `${TASK_MEASURE} space-y-block`;
 
 const NOW = new Date();
 const CURRENT_MONTH = NOW.getMonth() + 1;

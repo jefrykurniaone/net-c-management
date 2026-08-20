@@ -1,4 +1,5 @@
-import { auth } from '@/lib/auth';
+﻿import { auth } from '@/lib/auth';
+import { COLUMN_MEASURE } from '@/components/layout/measure';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
@@ -107,7 +108,7 @@ export default async function DashboardPage() {
                 },
             }),
             // Attendance rate measures sessions that have already happened this
-            // month — cap the denominator at `now` so upcoming sessions (which
+            // month â€” cap the denominator at `now` so upcoming sessions (which
             // nobody can have attended yet) don't drag the percentage down.
             prisma.activitySession.count({
                 where: {
@@ -151,7 +152,7 @@ export default async function DashboardPage() {
     }
     const upcomingCount = upcomingSessions.length;
     // A CONFIRMED payment is settled; a PENDING one is in review (member already
-    // acted) — neither counts as an unpaid due that still needs the member's
+    // acted) â€” neither counts as an unpaid due that still needs the member's
     // attention, so both drop out of the banner/count (matches /payments).
     const unpaidMonthly = myActivities.filter((a) => {
         if (!monthlyActivityIds.has(a.id)) return false;
@@ -162,7 +163,7 @@ export default async function DashboardPage() {
     const duesCount = unpaidMonthly.length + outstandingBills.length;
 
     return (
-        <div className='space-y-6'>
+        <div className={`${COLUMN_MEASURE} space-y-6`}>
             {/* Page header */}
             <div className='space-y-0.5'>
                 <p className='text-xs font-medium text-muted-foreground uppercase tracking-[0.08em]'>
@@ -174,7 +175,7 @@ export default async function DashboardPage() {
                 </h1>
             </div>
 
-            {/* Dues alert banner — monthly dues take priority; otherwise surface
+            {/* Dues alert banner â€” monthly dues take priority; otherwise surface
                 any per-session reservations still awaiting payment. */}
             {firstUnpaid ? (
                 <Link
@@ -186,7 +187,7 @@ export default async function DashboardPage() {
                             {firstUnpaid.name} {t.dashboard.duesUnpaidBanner}
                         </p>
                         <p className='truncate text-xs text-warning-soft-foreground/80'>
-                            {t.months[currentMonth]} · Rp{' '}
+                            {t.months[currentMonth]} Â· Rp{' '}
                             {firstUnpaid.monthlyFee.toLocaleString('id-ID')}
                         </p>
                     </div>
@@ -323,7 +324,7 @@ export default async function DashboardPage() {
                                                         <span className='block text-xs text-muted-foreground truncate'>
                                                             {s.startTime}
                                                             {s.location
-                                                                ? ` · ${s.location}`
+                                                                ? ` Â· ${s.location}`
                                                                 : ''}
                                                         </span>
                                                     </span>

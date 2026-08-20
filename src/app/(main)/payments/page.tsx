@@ -1,4 +1,5 @@
-import { auth } from "@/lib/auth";
+﻿import { auth } from "@/lib/auth";
+import { COLUMN_MEASURE } from "@/components/layout/measure";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
@@ -36,7 +37,7 @@ export default async function PaymentsPage({
 
   await releaseExpiredHolds();
 
-  // History filters from URL — validate against enum to prevent Prisma errors
+  // History filters from URL â€” validate against enum to prevent Prisma errors
   const sp = await searchParams;
   const raw = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
   const VALID_PAYMENT_STATUSES = ["PENDING", "CONFIRMED", "REJECTED"] as const;
@@ -108,7 +109,7 @@ export default async function PaymentsPage({
       }),
     ]);
 
-  // Earliest live hold per activity — a MONTHLY member's reserved seat lapses
+  // Earliest live hold per activity â€” a MONTHLY member's reserved seat lapses
   // at this instant unless the dues are paid, so the dues card shows it.
   const holdByActivity = new Map<string, Date>();
   for (const hold of liveHolds) {
@@ -125,9 +126,9 @@ export default async function PaymentsPage({
   // Bill only for the mode the member actually chose: a MONTHLY membership owes
   // this month's dues; a PER_SESSION membership owes per reserved session (the
   // outstandingBills below); an unselected (null) mode owes nothing yet. Every
-  // MONTHLY membership with a fee is surfaced for the period — the dashboard's
+  // MONTHLY membership with a fee is surfaced for the period â€” the dashboard's
   // unpaid banner uses the same rule, so the two views stay consistent (they
-  // used to diverge when a registered seat carried no live hold — BUG-04).
+  // used to diverge when a registered seat carried no live hold â€” BUG-04).
   const monthlyActivities = memberships
     .filter(
       (m) =>
@@ -153,7 +154,7 @@ export default async function PaymentsPage({
   const monthLabel = `${t.months[currentMonth]} ${currentYear}`;
 
   return (
-    <div className="space-y-6">
+    <div className={`${COLUMN_MEASURE} space-y-6`}>
       <h1 className="text-2xl font-bold text-foreground">{t.payments.title}</h1>
 
       {/* Unpaid dues banner */}
@@ -162,13 +163,13 @@ export default async function PaymentsPage({
           title={t.payments.unpaidDuesTitle
             .replace("{count}", String(unpaidActivities.length))
             .replace("{month}", t.months[currentMonth])}
-          description={`${firstUnpaid.name} · Rp ${firstUnpaid.monthlyFee.toLocaleString("id-ID")}`}
+          description={`${firstUnpaid.name} Â· Rp ${firstUnpaid.monthlyFee.toLocaleString("id-ID")}`}
           ctaLabel={t.payments.payNow}
           href="/payments/upload"
         />
       )}
 
-      {/* Outstanding per-session reservations — pay before the hold lapses */}
+      {/* Outstanding per-session reservations â€” pay before the hold lapses */}
       {outstandingBills.length > 0 && (
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
@@ -187,12 +188,12 @@ export default async function PaymentsPage({
                   {/* The Activity name rides the caption line: the tile alone
                       cannot tell apart two Activities sharing an initial. */}
                   <p className="text-xs text-muted-foreground tabular-nums">
-                    {bill.activity.name} · Rp {bill.fee.toLocaleString("id-ID")} ·{" "}
+                    {bill.activity.name} Â· Rp {bill.fee.toLocaleString("id-ID")} Â·{" "}
                     {format(new Date(bill.date), "d MMM", { locale: dateLocale })}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  {/* A Seat held on money not yet sent is provisional — tape. */}
+                  {/* A Seat held on money not yet sent is provisional â€” tape. */}
                   <Mark kind="tape">{t.payments.payNow}</Mark>
                   <p className="text-[11px] text-warning tabular-nums">
                     <HoldCountdown
