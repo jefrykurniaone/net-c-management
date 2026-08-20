@@ -26,9 +26,10 @@ import { SlotCell, type SlotCellData } from './slot-cell';
  * cannot fit the day, the date and a tracked-caps mark on one line inside the
  * member container — the top line wraps, which breaks the fixed-position
  * promise for every cell at once. The columns therefore carry a **floor**
- * (`minmax(11rem, 1fr)`), and where seven floors do not fit, the week scrolls
+ * (`minmax(12.5rem, 1fr)`), and where seven floors do not fit, the week scrolls
  * horizontally instead of the cells reflowing. See DESIGN.md, *Signature
- * Component: the Slot Cell*, for the two routes this was chosen over.
+ * Component: the Slot Cell*, for the two routes this was chosen over and for
+ * the measurement the floor comes from.
  *
  * Below the breakpoint the single column has no floor and nothing scrolls
  * sideways — the collapse is the answer there, not the rail.
@@ -36,7 +37,7 @@ import { SlotCell, type SlotCellData } from './slot-cell';
 
 /** Seven columns, each with a floor. Written out because Tailwind scans text. */
 const LATTICE_COLUMNS =
-    'md:[grid-template-columns:repeat(7,minmax(11rem,1fr))]';
+    'md:[grid-template-columns:repeat(7,minmax(12.5rem,1fr))]';
 
 const HEAD_CLASS =
     'hidden bg-tile px-cell py-cell type-label text-muted-foreground md:block';
@@ -116,16 +117,18 @@ export function SessionsBoard({
         <section
             aria-label={t.sessions.boardLabel}
             tabIndex={0}
-            /* Seven 11rem floors are 77rem, and the member layout caps its
-               column at 42rem — so inside that column the week would scroll at
-               every desktop width, not only narrow ones (see DESIGN.md, the
-               settled decision). From `md` up the rail escapes the column and
-               takes the lattice's own measure, capped at 77rem so it completes
-               at desktop width; where the viewport is narrower than the lattice
-               it still scrolls, which is the cost the decision already names.
-               Below `md` the board is one column and keeps the column's width,
-               so it stays flush with the heading and filters above it. */
-            className='overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:[outline-offset:-2px] md:relative md:left-1/2 md:w-[min(100vw-3rem,77rem)] md:-translate-x-1/2'>
+            /* Seven 12.5rem floors are 87.5rem of track, and with the 6px of
+               shared rules between them and the 2px outer border the lattice is
+               88rem wide. The member layout caps its column at 42rem, so inside
+               that column the week would scroll at every desktop width, not
+               only narrow ones (see DESIGN.md, the settled decision). From `md`
+               up the rail escapes the column and takes the lattice's own
+               measure, capped at that 88rem so the week completes at 1440px;
+               where the viewport is narrower it still scrolls, which is the cost
+               the decision already names. Below `md` the board is one column and
+               keeps the column's width, so it stays flush with the heading and
+               filters above it. */
+            className='overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:[outline-offset:-2px] md:relative md:left-1/2 md:w-[min(100vw-2rem,88rem)] md:-translate-x-1/2'>
             <div
                 className={`grid grid-cols-1 gap-px rounded-sm border border-rule bg-rule ${LATTICE_COLUMNS}`}>
                 {weekdayHeads.map((head) => (
