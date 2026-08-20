@@ -486,6 +486,28 @@ const en = {
             "You'll be removed from this activity. Upcoming reserved sessions you haven't paid for will be released. Sessions you've already paid for and had confirmed stay booked. Paid dues are not refunded.",
         leaveConfirm: 'Leave activity',
         leaveToast: 'You left {name}',
+        // Per-Activity payment mode, and when a change to it takes effect.
+        // Payment mode belongs to a Membership, not to the person, so the copy
+        // names the Activity every time. `markNotPaid` labels the Blank mark for
+        // a Billing Period nothing has been paid against yet — it lives here
+        // rather than in `marks` because it labels a thing with no stored state.
+        membershipsHint:
+            'You pay for each activity on its own. Changing one leaves the others as they are.',
+        modeLegend: 'How you pay for {name}',
+        modeDuesLabel: 'Dues',
+        modeFeeLabel: 'Fee',
+        modeNoneChosen: 'Not chosen yet',
+        modeSingleOffered: 'This activity offers one way to pay.',
+        modeSaveButton: 'Save payment mode',
+        currentPeriodRowLabel: 'This Billing Period',
+        markNotPaid: 'Unpaid',
+        modeEffectNow: 'Takes effect now, for the {period} Billing Period.',
+        modeEffectNext:
+            'Takes effect in the {next} Billing Period. {current} is already paid and does not change.',
+        modeEffectUnchanged:
+            'Already how you pay for the {period} Billing Period.',
+        modeEffectCancels:
+            'Cancels the change queued for {next}. You stay on this from {current} onward.',
     },
     admin: {
         dashboardTitle: 'Admin Dashboard',
@@ -1294,6 +1316,24 @@ const id: typeof en = {
             'Anda akan dikeluarkan dari aktivitas ini. Sesi mendatang yang belum Anda bayar akan dilepas. Sesi yang sudah Anda bayar dan dikonfirmasi tetap terpesan. Iuran yang sudah dibayar tidak dikembalikan.',
         leaveConfirm: 'Keluar dari aktivitas',
         leaveToast: 'Anda keluar dari {name}',
+        // Metode pembayaran per aktivitas, dan kapan perubahannya berlaku.
+        membershipsHint:
+            'Pembayaran diatur per aktivitas. Mengubah satu aktivitas tidak mengubah yang lain.',
+        modeLegend: 'Cara Anda membayar {name}',
+        modeDuesLabel: 'Iuran',
+        modeFeeLabel: 'Biaya Sesi',
+        modeNoneChosen: 'Belum dipilih',
+        modeSingleOffered: 'Aktivitas ini hanya punya satu cara pembayaran.',
+        modeSaveButton: 'Simpan cara pembayaran',
+        currentPeriodRowLabel: 'Periode Tagihan ini',
+        markNotPaid: 'Belum dibayar',
+        modeEffectNow: 'Berlaku sekarang, untuk Periode Tagihan {period}.',
+        modeEffectNext:
+            'Berlaku mulai Periode Tagihan {next}. {current} sudah dibayar dan tidak berubah.',
+        modeEffectUnchanged:
+            'Sudah menjadi cara Anda membayar untuk Periode Tagihan {period}.',
+        modeEffectCancels:
+            'Membatalkan perubahan yang dijadwalkan untuk {next}. Anda tetap memakai ini sejak {current}.',
     },
     admin: {
         dashboardTitle: 'Admin Dashboard',
