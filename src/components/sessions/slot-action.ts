@@ -39,6 +39,13 @@ export interface SlotActionInput {
      * word "join". They keep the row's link to the Session, where both are said.
      */
     readonly isJoined: boolean;
+    /**
+     * Whether this member's Dues already cover this Session's billing period,
+     * so claiming raises no bill even though the Session carries a Fee. Read
+     * from `readFreeClaimPeriods`, which mirrors the `isFreeRegisterAllowed`
+     * rule the reserve route itself applies.
+     */
+    readonly hasLiveDues: boolean;
     /** Defaults to the present instant; injectable so a caller can pin it. */
     readonly now?: Date;
 }
@@ -47,7 +54,9 @@ export function slotActionFor(input: SlotActionInput): SlotCellAction | null {
     if (input.status !== 'SCHEDULED') return null;
     if (isRsvpClosed(input.date, input.startTime, input.now)) return null;
 
-    const isPaid = input.fee > 0;
+    // "Claim & pay" is a statement about this member's money, not about the
+    // Session's price list. A Fee nobody will charge them is not a Fee they pay.
+    const isPaid = input.fee > 0 && !input.hasLiveDues;
     const { sessionId } = input;
     const holdsSeat =
         input.ownStatus !== null && SEAT_HOLDING.includes(input.ownStatus);

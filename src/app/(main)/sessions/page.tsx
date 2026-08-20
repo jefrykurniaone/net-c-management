@@ -190,6 +190,7 @@ function BoardSurface({
         seatsBySession: board.seatsBySession,
         ownBySession: board.ownBySession,
         joinedActivityIds: board.joinedActivityIds,
+        duesCoveredSessionIds: board.duesCoveredSessionIds,
     });
 
     return (
