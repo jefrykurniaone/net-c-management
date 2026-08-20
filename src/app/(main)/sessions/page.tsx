@@ -25,7 +25,7 @@ import {
 
 /**
  * The sessions board. Every day of the displayed week gets a cell, whether or
- * not anything is on it â€” a day with nothing posted carries a Blank mark and
+ * not anything is on it — a day with nothing posted carries a Blank mark and
  * says so, so a member knows an Admin has not posted rather than that they are
  * missing something.
  *
@@ -60,7 +60,7 @@ function weekHref(scope: URLSearchParams, week: string): string {
 /**
  * The board's own designed states, both of them a Blank-marked strip above a
  * board that still draws every day. Blank means *expected but not yet placed*,
- * which is the honest state of a community that has just been set up â€” and a
+ * which is the honest state of a community that has just been set up — and a
  * dropped surface would read as broken rather than as quiet.
  */
 function noticeFor(

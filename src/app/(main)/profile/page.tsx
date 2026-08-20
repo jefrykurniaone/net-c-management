@@ -95,7 +95,7 @@ async function loadProfile(userId: string, period: BillingPeriod) {
 
 /**
  * One Membership as the surface renders it. The Billing Period sentences are
- * derived here, on the server, from the resolver's own output â€” the page reads
+ * derived here, on the server, from the resolver's own output — the page reads
  * that logic and never restates it, and no API response grows a field for it.
  */
 function toRow(
