@@ -32,6 +32,13 @@ export interface SlotActionInput {
     readonly fee: number;
     readonly ownStatus: AttendanceStatus | null;
     readonly seats: SlotCellSeats | null;
+    /**
+     * Whether the member has joined this Session's Activity. Reserving joins it,
+     * so a claim offered on an Activity they are only browsing would enrol them
+     * and open a bill in one tap, from a row carrying neither the price nor the
+     * word "join". They keep the row's link to the Session, where both are said.
+     */
+    readonly isJoined: boolean;
     /** Defaults to the present instant; injectable so a caller can pin it. */
     readonly now?: Date;
 }
@@ -44,7 +51,9 @@ export function slotActionFor(input: SlotActionInput): SlotCellAction | null {
     const { sessionId } = input;
     const holdsSeat =
         input.ownStatus !== null && SEAT_HOLDING.includes(input.ownStatus);
+    // A member holding a Seat may always release it, joined or not.
     if (holdsSeat) return { kind: 'withdraw', sessionId, isPaid };
+    if (!input.isJoined) return null;
 
     // No Seat to claim is not an action — the standing column already says full.
     if (input.seats === null || input.seats.free <= 0) return null;

@@ -11,7 +11,8 @@ import { PlayerList, type PlayerItem } from '@/components/sessions/player-list';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getLocale } from '@/lib/i18n/locale';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
+import { monthDayLabel } from '@/components/sessions/board-view';
 import {
     resolvePaymentMode,
     singleOfferedMode,
@@ -23,6 +24,16 @@ import { getSettings } from '@/lib/settings';
 import { WhatsappButton } from '@/components/sessions/whatsapp-button';
 import { ShareSessionCard } from '@/components/sessions/share-session-card';
 import { isRsvpClosed, rsvpCloseAt } from '@/lib/rsvp';
+
+/**
+ * The Session's own WIB day, read with `getUTC*` and named from the dictionary.
+ * The Slot Cell in the header above reads the date this way; a locale formatter
+ * reads the machine's zone instead, which on a UTC or UTC+8 host puts a
+ * different weekday and date beside it on the very same screen.
+ */
+function sessionDateLabel(date: Date, t: Dictionary): string {
+    return `${t.days[date.getUTCDay()]}, ${monthDayLabel(date, t)}`;
+}
 
 export default async function SessionDetailPage({
     params,
@@ -199,14 +210,13 @@ export default async function SessionDetailPage({
     );
 
     const attendeeCount = activitySession._count.attendances;
-    const dateFormat = locale === 'id' ? 'EEEE, d MMMM' : 'EEEE, MMMM d';
     const fillPercent = Math.min(
         (attendeeCount / activitySession.maxPlayers) * 100,
         100,
     );
     const players: PlayerItem[] = activitySession.attendances.map((a) => ({
         id: a.id,
-        name: a.user.name ?? 'â€”',
+        name: a.user.name ?? '—',
         initials:
             a.user.name
                 ?.split(' ')
@@ -263,11 +273,7 @@ export default async function SessionDetailPage({
                     venue or the quota a second time. */}
                 <SessionFacts
                     session={{
-                        dateLabel: format(
-                            new Date(activitySession.date),
-                            dateFormat,
-                            { locale: dateLocale },
-                        ),
+                        dateLabel: sessionDateLabel(activitySession.date, t),
                         startTime: activitySession.startTime,
                         endTime: activitySession.endTime,
                         location: activitySession.location,

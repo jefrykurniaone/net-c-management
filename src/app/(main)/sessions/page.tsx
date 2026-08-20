@@ -189,6 +189,7 @@ function BoardSurface({
         t,
         seatsBySession: board.seatsBySession,
         ownBySession: board.ownBySession,
+        joinedActivityIds: board.joinedActivityIds,
     });
 
     return (

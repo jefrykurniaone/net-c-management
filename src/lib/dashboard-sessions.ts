@@ -167,7 +167,10 @@ export async function getDashboardSessionsBoard(
     const sessions = await prisma.activitySession.findMany({
         where: {
             activityId: { in: activities.map((a) => a.id) },
-            date: { gte: start, lte: end },
+            // Up to the end of the last day — see the same bound in
+            // `sessions-board.ts`: a row stored with a time of day would
+            // otherwise drop out of the range and read as never posted.
+            date: { gte: start, lt: addDays(end, 1) },
         },
         orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
         select: DASHBOARD_SESSION_SELECT,

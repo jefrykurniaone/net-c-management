@@ -60,6 +60,12 @@ export interface SessionsBoardData {
     readonly activities: readonly BoardActivity[];
     /** Everything the filter may offer — the scoped list before filtering. */
     readonly offered: readonly BoardActivity[];
+    /**
+     * The Activities the member has actually joined. "All" draws Activities they
+     * have not, and a one-tap claim on one of those would join them and open a
+     * bill from a row that shows neither — so the offer is withheld there.
+     */
+    readonly joinedActivityIds: ReadonlySet<string>;
     readonly hasJoinedActivities: boolean;
     /** False only for a community that has never had a Session at all. */
     readonly hasAnySession: boolean;
@@ -145,6 +151,7 @@ async function readActivities(params: SessionsBoardParams): Promise<{
     activities: BoardActivity[];
     offered: BoardActivity[];
     hasJoined: boolean;
+    joinedIds: ReadonlySet<string>;
 }> {
     const [all, joinedIds] = await Promise.all([
         prisma.activity.findMany({
@@ -160,7 +167,12 @@ async function readActivities(params: SessionsBoardParams): Promise<{
     const activities = offered.some((one) => one.id === params.activityId)
         ? offered.filter((one) => one.id === params.activityId)
         : offered;
-    return { activities, offered, hasJoined: joined.size > 0 };
+    return {
+        activities,
+        offered,
+        hasJoined: joined.size > 0,
+        joinedIds: joined,
+    };
 }
 
 function seatsOf(sessions: readonly BoardSessionRow[]): Map<string, BoardSeats> {
@@ -208,7 +220,12 @@ async function readWeekSessions(
         prisma.activitySession.findMany({
             where: {
                 activityId: { in: activities.map((one) => one.id) },
-                date: { gte: weekStart, lte: weekEnd },
+                // Up to the *end* of the last day, not its midnight. A Session
+                // is meant to be stored at UTC midnight of its WIB day, but a
+                // row carrying any time of day would otherwise fall out of the
+                // week — and a Session missing from the board does not read as
+                // missing, it reads as an Admin who never posted it.
+                date: { gte: weekStart, lt: addDays(weekEnd, 1) },
             },
             orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
             select: BOARD_SESSION_SELECT,
@@ -240,7 +257,8 @@ async function readBoard(
     weekStart: Date,
     weekEnd: Date,
 ) {
-    const { activities, offered, hasJoined } = await readActivities(params);
+    const { activities, offered, hasJoined, joinedIds } =
+        await readActivities(params);
     const { sessions, hasAnySession } = await readWeekSessions(
         activities,
         weekStart,
@@ -257,6 +275,7 @@ async function readBoard(
         activities,
         offered,
         hasJoined,
+        joinedIds,
         sessions,
         hasAnySession,
         quotas,
@@ -289,6 +308,7 @@ export async function getSessionsBoard(
         quotas: read.quotas,
         activities: read.activities,
         offered: read.offered,
+        joinedActivityIds: read.joinedIds,
         hasJoinedActivities: read.hasJoined,
         hasAnySession: read.hasAnySession,
     };
