@@ -197,6 +197,18 @@ const en = {
         activityHint: 'Select at least one activity to join.',
         submit: 'Save Profile',
         submitting: 'Saving...',
+        // Rendered at the render site (src/app/onboarding), keyed off the
+        // Zod issue code — the schema in src/lib/validations/user.ts stays
+        // untouched and shared with the profile edit form. Each one names
+        // both the problem and the fix, per DESIGN.md's Inputs error rule.
+        nameErrorTooShort: 'Enter at least 2 characters for your name.',
+        nameErrorTooLong: 'Shorten your name to 100 characters or fewer.',
+        phoneErrorTooShort:
+            'Enter a WhatsApp number with at least 9 digits, for example 628123456789.',
+        phoneErrorTooLong: 'Enter a WhatsApp number with 15 digits or fewer.',
+        phoneErrorInvalidChars:
+            'Use digits only for your WhatsApp number — remove spaces, dashes, or letters.',
+        activityErrorRequired: 'Select at least one activity to continue.',
     },
     /**
      * The Applicant's waiting room — its own top-level namespace, and the
@@ -996,6 +1008,14 @@ const id: typeof en = {
         activityHint: 'Pilih minimal satu aktivitas untuk diikuti.',
         submit: 'Simpan Profil',
         submitting: 'Menyimpan...',
+        nameErrorTooShort: 'Isi nama kamu minimal 2 karakter.',
+        nameErrorTooLong: 'Perpendek nama kamu menjadi maksimal 100 karakter.',
+        phoneErrorTooShort:
+            'Isi nomor WhatsApp kamu minimal 9 digit, misalnya 628123456789.',
+        phoneErrorTooLong: 'Isi nomor WhatsApp kamu maksimal 15 digit.',
+        phoneErrorInvalidChars:
+            'Gunakan angka saja untuk nomor WhatsApp kamu — hapus spasi, tanda hubung, atau huruf.',
+        activityErrorRequired: 'Pilih minimal satu aktivitas untuk melanjutkan.',
     },
     pending: {
         waitingMark: 'Menunggu',
