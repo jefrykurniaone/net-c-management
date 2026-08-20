@@ -37,27 +37,103 @@ const CHIP_OFF = 'bg-tile text-secondary-foreground hover:bg-board hover:text-fo
 
 const RULED_GROUP = 'inline-flex divide-x divide-rule rounded-sm border border-rule';
 
+/** Builds the href for one filter state, holding the rest of the board's. */
+type HrefFor = (next: { activityId?: string; view?: SessionView }) => string;
+
+/** One cell of a ruled filter group. On or off; never colour alone. */
+function Chip({
+    href,
+    isOn,
+    children,
+}: Readonly<{ href: string; isOn: boolean; children: React.ReactNode }>) {
+    return (
+        <Link
+            href={href}
+            aria-current={isOn ? 'true' : undefined}
+            className={cn(CHIP_BASE, isOn ? CHIP_ON : CHIP_OFF)}>
+            {children}
+        </Link>
+    );
+}
+
+/**
+ * Mine against all. Switching view resets the single-Activity filter: an id
+ * from the narrower list means nothing in the wider one.
+ */
+function ViewSwitch({
+    view,
+    href,
+    labels,
+}: Readonly<{
+    view: SessionView;
+    href: HrefFor;
+    labels: Readonly<{ viewMine: string; viewAll: string }>;
+}>) {
+    return (
+        <div className={RULED_GROUP}>
+            {(['mine', 'all'] as const).map((value) => (
+                <Chip
+                    key={value}
+                    href={href({ view: value, activityId: '' })}
+                    isOn={view === value}>
+                    {value === 'mine' ? labels.viewMine : labels.viewAll}
+                </Chip>
+            ))}
+        </div>
+    );
+}
+
+/** Every Activity the current view offers, plus the one that clears it. */
+function ActivityChips({
+    activities,
+    selected,
+    href,
+    allLabel,
+}: Readonly<{
+    activities: readonly Activity[];
+    selected?: string;
+    href: HrefFor;
+    allLabel: string;
+}>) {
+    return (
+        <div className='flex overflow-x-auto'>
+            <div className={RULED_GROUP}>
+                <Chip href={href({ activityId: '' })} isOn={selected === undefined}>
+                    {allLabel}
+                </Chip>
+                {activities.map((activity) => (
+                    <Chip
+                        key={activity.id}
+                        href={href({ activityId: activity.id })}
+                        isOn={selected === activity.id}>
+                        <ActivityTile name={activity.name} />
+                        {activity.name}
+                    </Chip>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+type SessionsFilterProps = Readonly<{
+    activities: readonly Activity[];
+    selected?: string;
+    view: SessionView;
+    /** The week the board is on, carried so a filter change stays on it. */
+    week?: string;
+    labels: Readonly<{ all: string; viewMine: string; viewAll: string }>;
+}>;
+
 export function SessionsFilter({
     activities,
     selected,
     view,
     week,
     labels,
-}: Readonly<{
-    activities: readonly Activity[];
-    selected?: string;
-    view: SessionView;
-    /** The week the board is on, carried so a filter change stays on it. */
-    week?: string;
-    labels: Readonly<{
-        all: string;
-        viewMine: string;
-        viewAll: string;
-    }>;
-}>) {
+}: SessionsFilterProps) {
     const pathname = usePathname();
 
-    function href(next: { activityId?: string; view?: SessionView }) {
+    const href: HrefFor = (next) => {
         const activityId = next.activityId ?? selected ?? '';
         const nextView = next.view ?? view;
         const params = new URLSearchParams();
@@ -66,59 +142,18 @@ export function SessionsFilter({
         if (week) params.set('week', week);
         const qs = params.toString();
         return qs ? `${pathname}?${qs}` : pathname;
-    }
+    };
 
     return (
         <div className='flex flex-col gap-cell'>
-            {/* Switching view resets the single-Activity filter: an id from the
-                narrower list means nothing in the wider one. */}
-            <div className={RULED_GROUP}>
-                {(['mine', 'all'] as const).map((value) => (
-                    <Link
-                        key={value}
-                        href={href({ view: value, activityId: '' })}
-                        aria-current={view === value ? 'true' : undefined}
-                        className={cn(
-                            CHIP_BASE,
-                            view === value ? CHIP_ON : CHIP_OFF,
-                        )}>
-                        {value === 'mine' ? labels.viewMine : labels.viewAll}
-                    </Link>
-                ))}
-            </div>
-
+            <ViewSwitch view={view} href={href} labels={labels} />
             {activities.length > 0 && (
-                <div className='flex overflow-x-auto'>
-                    <div className={RULED_GROUP}>
-                        <Link
-                            href={href({ activityId: '' })}
-                            aria-current={
-                                selected === undefined ? 'true' : undefined
-                            }
-                            className={cn(
-                                CHIP_BASE,
-                                selected === undefined ? CHIP_ON : CHIP_OFF,
-                            )}>
-                            {labels.all}
-                        </Link>
-                        {activities.map((activity) => {
-                            const isOn = selected === activity.id;
-                            return (
-                                <Link
-                                    key={activity.id}
-                                    href={href({ activityId: activity.id })}
-                                    aria-current={isOn ? 'true' : undefined}
-                                    className={cn(
-                                        CHIP_BASE,
-                                        isOn ? CHIP_ON : CHIP_OFF,
-                                    )}>
-                                    <ActivityTile name={activity.name} />
-                                    {activity.name}
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </div>
+                <ActivityChips
+                    activities={activities}
+                    selected={selected}
+                    href={href}
+                    allLabel={labels.all}
+                />
             )}
         </div>
     );

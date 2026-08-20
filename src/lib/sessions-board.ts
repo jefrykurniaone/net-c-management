@@ -191,21 +191,19 @@ async function readOwnSeats(
  * Every day of one week, whatever is or is not on them. The hold sweep runs
  * before the figures are read, never after.
  */
-export async function getSessionsBoard(
-    params: SessionsBoardParams,
-): Promise<SessionsBoardData> {
-    const now = params.now ?? new Date();
-    const weekStart = resolveWeekStart(params.weekKey, now);
-    const weekEnd = addDays(weekStart, SUNDAY_SHIFT);
-
-    await releaseExpiredHolds();
-
-    const { activities, offered, hasJoined } = await readActivities(params);
-
-    /* The count is deliberately community-wide and unfiltered: the question it
-       answers is "has an Admin ever posted a Session", which is what earns the
-       board its own designed state. Scoping it to the filter would tell a
-       member who narrowed to one quiet Activity that the community is new. */
+/**
+ * The week's Sessions, and whether the community has *ever* had one.
+ *
+ * The count is deliberately community-wide and unfiltered: the question it
+ * answers is "has an Admin ever posted a Session", which is what earns the
+ * board its own designed state. Scoping it to the filter would tell a member
+ * who narrowed to one quiet Activity that the community is new.
+ */
+async function readWeekSessions(
+    activities: readonly BoardActivity[],
+    weekStart: Date,
+    weekEnd: Date,
+): Promise<{ sessions: BoardSessionRow[]; hasAnySession: boolean }> {
     const [sessions, anySession] = await Promise.all([
         prisma.activitySession.findMany({
             where: {
@@ -217,7 +215,37 @@ export async function getSessionsBoard(
         }),
         prisma.activitySession.count(),
     ]);
+    return { sessions, hasAnySession: anySession > 0 };
+}
 
+/** The three weeks the nav can reach from the one on screen. */
+function weekKeys(
+    weekStart: Date,
+    now: Date,
+): { prevWeekKey: string; thisWeekKey: string; nextWeekKey: string } {
+    return {
+        prevWeekKey: dayKeyOf(addDays(weekStart, -DAYS_IN_WEEK)),
+        thisWeekKey: dayKeyOf(weekStartOf(wibDayStart(now))),
+        nextWeekKey: dayKeyOf(addDays(weekStart, DAYS_IN_WEEK)),
+    };
+}
+
+/**
+ * Every read the board needs for one week, in the order their dependencies
+ * allow: the Activities decide which Sessions to ask for, and the Sessions
+ * decide which quotas and own-Seat rows to ask for.
+ */
+async function readBoard(
+    params: SessionsBoardParams,
+    weekStart: Date,
+    weekEnd: Date,
+) {
+    const { activities, offered, hasJoined } = await readActivities(params);
+    const { sessions, hasAnySession } = await readWeekSessions(
+        activities,
+        weekStart,
+        weekEnd,
+    );
     const [quotas, ownBySession] = await Promise.all([
         getSessionQuotas(sessions),
         readOwnSeats(
@@ -225,25 +253,43 @@ export async function getSessionsBoard(
             sessions.map((row) => row.id),
         ),
     ]);
+    return {
+        activities,
+        offered,
+        hasJoined,
+        sessions,
+        hasAnySession,
+        quotas,
+        ownBySession,
+    };
+}
+
+export async function getSessionsBoard(
+    params: SessionsBoardParams,
+): Promise<SessionsBoardData> {
+    const now = params.now ?? new Date();
+    const weekStart = resolveWeekStart(params.weekKey, now);
+    const weekEnd = addDays(weekStart, SUNDAY_SHIFT);
+
+    await releaseExpiredHolds();
+    const read = await readBoard(params, weekStart, weekEnd);
 
     return {
         days: buildBoardDays({
             range: { start: weekStart, end: weekEnd },
-            activities,
-            sessions,
-            quotas,
+            activities: read.activities,
+            sessions: read.sessions,
+            quotas: read.quotas,
         }),
         weekStart,
         weekEnd,
-        prevWeekKey: dayKeyOf(addDays(weekStart, -DAYS_IN_WEEK)),
-        thisWeekKey: dayKeyOf(weekStartOf(wibDayStart(now))),
-        nextWeekKey: dayKeyOf(addDays(weekStart, DAYS_IN_WEEK)),
-        seatsBySession: seatsOf(sessions),
-        ownBySession,
-        quotas,
-        activities,
-        offered,
-        hasJoinedActivities: hasJoined,
-        hasAnySession: anySession > 0,
+        ...weekKeys(weekStart, now),
+        seatsBySession: seatsOf(read.sessions),
+        ownBySession: read.ownBySession,
+        quotas: read.quotas,
+        activities: read.activities,
+        offered: read.offered,
+        hasJoinedActivities: read.hasJoined,
+        hasAnySession: read.hasAnySession,
     };
 }

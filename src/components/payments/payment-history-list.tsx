@@ -84,7 +84,6 @@ function PaymentHistoryRow({
     t: Dictionary;
     dateLocale: DateFnsLocale;
 }>) {
-    const state = paymentState(payment.status);
     const periodLabel = `${billingTypeLabel(payment.type, t)} · ${t.months[payment.month]} ${payment.year}`;
 
     return (
@@ -104,25 +103,49 @@ function PaymentHistoryRow({
                     <RejectedPaymentNotice payment={payment} t={t} />
                 )}
             </div>
-            <div className='flex shrink-0 flex-col items-end gap-hair text-right'>
-                <p className='type-label text-muted-foreground'>{periodLabel}</p>
-                <MarkedValue
-                    state={state}
-                    className='type-figure tabular-nums text-card-foreground'>
-                    Rp {RUPIAH_FORMAT.format(payment.amount)}
-                </MarkedValue>
-                <StateMark state={state} labels={t.marks} />
-                {payment.proofUrl && (
-                    <a
-                        href={payment.proofUrl}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='type-caption inline-flex items-center gap-hair text-primary hover:underline'>
-                        <ExternalLink aria-hidden='true' className='size-3' />
-                        {t.payments.viewProof}
-                    </a>
-                )}
-            </div>
+            <PaymentStanding
+                payment={payment}
+                periodLabel={periodLabel}
+                t={t}
+            />
+        </div>
+    );
+}
+
+/**
+ * What the Payment is worth, what period it settles, and where it stands. The
+ * amount dims under a void state rather than being struck — the Strike mark
+ * beside it carries the line.
+ */
+function PaymentStanding({
+    payment,
+    periodLabel,
+    t,
+}: Readonly<{
+    payment: HistoryPayment;
+    periodLabel: string;
+    t: Dictionary;
+}>) {
+    const state = paymentState(payment.status);
+    return (
+        <div className='flex shrink-0 flex-col items-end gap-hair text-right'>
+            <p className='type-label text-muted-foreground'>{periodLabel}</p>
+            <MarkedValue
+                state={state}
+                className='type-figure tabular-nums text-card-foreground'>
+                Rp {RUPIAH_FORMAT.format(payment.amount)}
+            </MarkedValue>
+            <StateMark state={state} labels={t.marks} />
+            {payment.proofUrl && (
+                <a
+                    href={payment.proofUrl}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='type-caption inline-flex items-center gap-hair text-primary hover:underline'>
+                    <ExternalLink aria-hidden='true' className='size-3' />
+                    {t.payments.viewProof}
+                </a>
+            )}
         </div>
     );
 }

@@ -81,6 +81,62 @@ function noticeFor(
     return null;
 }
 
+/** Which week is on screen, and the way to the weeks either side of it. */
+function WeekNav({
+    board,
+    scope,
+    t,
+}: Readonly<{
+    board: SessionsBoardData;
+    scope: URLSearchParams;
+    t: Dictionary;
+}>) {
+    return (
+        <BoardWeekNav
+            caption={t.sessions.boardWeekOf
+                .replace('{start}', monthDayLabel(board.weekStart, t))
+                .replace('{end}', monthDayYearLabel(board.weekEnd, t))}
+            prevHref={weekHref(scope, board.prevWeekKey)}
+            thisHref={weekHref(scope, board.thisWeekKey)}
+            nextHref={weekHref(scope, board.nextWeekKey)}
+            t={t}
+        />
+    );
+}
+
+/**
+ * The board's filters. A single offered Activity is no choice at all, so the
+ * Activity chips only appear once there is more than one to choose between.
+ */
+function BoardFilters({
+    board,
+    view,
+    activityId,
+    week,
+    t,
+}: Readonly<{
+    board: SessionsBoardData;
+    view: SessionView;
+    activityId?: string;
+    week?: string;
+    t: Dictionary;
+}>) {
+    const hasChoice = board.offered.length > 1;
+    return (
+        <SessionsFilter
+            activities={hasChoice ? board.offered : []}
+            selected={hasChoice ? activityId : undefined}
+            view={view}
+            week={week}
+            labels={{
+                all: t.sessions.chipAll,
+                viewMine: t.sessions.viewMine,
+                viewAll: t.sessions.viewAll,
+            }}
+        />
+    );
+}
+
 export default async function SessionsPage({
     searchParams,
 }: Readonly<{ searchParams: Promise<RawParams> }>) {
@@ -95,52 +151,63 @@ export default async function SessionsPage({
     const view: SessionsBoardView =
         first(params, 'view') === 'all' ? 'all' : 'mine';
     const activityId = first(params, 'activityId');
+    const week = first(params, 'week');
 
     const board = await getSessionsBoard({
         userId: session.user.id,
         view,
         activityId,
-        weekKey: first(params, 'week'),
+        weekKey: week,
     });
 
+    return (
+        <BoardSurface
+            board={board}
+            view={view}
+            activityId={activityId}
+            week={week}
+            t={t}
+        />
+    );
+}
+
+/** The board surface itself, once the page has read what it draws. */
+function BoardSurface({
+    board,
+    view,
+    activityId,
+    week,
+    t,
+}: Readonly<{
+    board: SessionsBoardData;
+    view: SessionsBoardView;
+    activityId?: string;
+    week?: string;
+    t: Dictionary;
+}>) {
+    const notice = noticeFor(board, view, t);
     const days = boardDayViews(board.days, {
         t,
         seatsBySession: board.seatsBySession,
         ownBySession: board.ownBySession,
     });
-    const scope = scopeParams(view, activityId);
-    const notice = noticeFor(board, view, t);
 
     return (
         <div className={`${BOARD_MEASURE} flex flex-col gap-bay`}>
             <h1 className='type-display text-foreground'>{t.sessions.title}</h1>
-
-            <SessionsFilter
-                activities={board.offered.length > 1 ? board.offered : []}
-                selected={board.offered.length > 1 ? activityId : undefined}
+            <BoardFilters
+                board={board}
                 view={view}
-                week={first(params, 'week')}
-                labels={{
-                    all: t.sessions.chipAll,
-                    viewMine: t.sessions.viewMine,
-                    viewAll: t.sessions.viewAll,
-                }}
-            />
-
-            <BoardWeekNav
-                caption={t.sessions.boardWeekOf
-                    .replace('{start}', monthDayLabel(board.weekStart, t))
-                    .replace('{end}', monthDayYearLabel(board.weekEnd, t))}
-                prevHref={weekHref(scope, board.prevWeekKey)}
-                thisHref={weekHref(scope, board.thisWeekKey)}
-                nextHref={weekHref(scope, board.nextWeekKey)}
+                activityId={activityId}
+                week={week}
                 t={t}
             />
-
-            {notice && (
-                <BoardNotice label={notice.label} body={notice.body} />
-            )}
-
+            <WeekNav
+                board={board}
+                scope={scopeParams(view, activityId)}
+                t={t}
+            />
+            {notice && <BoardNotice label={notice.label} body={notice.body} />}
             <SessionsBoard days={days} weekdayHeads={weekdayHeads(t)} t={t} />
         </div>
     );
