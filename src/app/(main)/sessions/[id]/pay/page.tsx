@@ -8,8 +8,8 @@ import {
 } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ReadOnlyField } from '@/components/payments/read-only-field';
 import { toast } from 'sonner';
 import { Upload, ArrowLeft, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -124,25 +124,24 @@ export default function SessionPayPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className='space-y-5'>
-                    {/* Amount — server-authoritative from the Session's fee */}
+                    {/* Amount — server-authoritative from the Session's fee.
+                        The same ReadOnlyField the Dues uploader uses, rather
+                        than a second hand-rolled one: this page had the note on
+                        screen but never tied to the input, and no lock at all,
+                        so a screen-reader member met a field that would not
+                        accept typing and was told nothing about why. */}
                     <div className='space-y-1.5'>
-                        <Label htmlFor='amount'>{t.payments.amountLabel}</Label>
-                        <Input
+                        <ReadOnlyField
                             id='amount'
-                            type='text'
-                            readOnly
-                            className='tabular-nums bg-muted'
+                            label={t.payments.amountLabel}
                             value={
                                 session
                                     ? `Rp ${session.fee.toLocaleString('id-ID')}`
                                     : ''
                             }
+                            note={t.payments.sessionAmountLocked}
+                            isFigure
                         />
-                        {session && (
-                            <p className='text-xs text-muted-foreground'>
-                                {t.payments.sessionAmountLocked}
-                            </p>
-                        )}
                         {owedLabel && (
                             <p className='text-sm text-muted-foreground'>
                                 {owedLabel}
