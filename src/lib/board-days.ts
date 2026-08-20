@@ -21,18 +21,16 @@ import type { SessionQuota } from './recurring-sessions';
  * is the whole point: both draw a Blank mark, but only the second is a day
  * somebody owed the board a Session, and the copy differs.
  *
- * Three things this deliberately does not do:
- *
- *  1. **It reads nothing.** Data in, data out — no Prisma, no React, no Next, so
- *     it is unit-testable without a DOM the way `landing-board.ts` is. The reads
- *     stay with the caller, the only place that knows whose Activities these are.
- *  2. **It counts nothing.** Committed-versus-needed seats and the Activity's
- *     minimum-members viability floor are `getSessionQuotas`' job
- *     (`src/lib/recurring-sessions.ts`); its result arrives as
- *     {@link BoardDaysInput.quotas} and passes through untouched.
- *  3. **It writes no copy.** Day and month names, the Blank mark's two different
- *     sentences and every mark label live in the dictionary; a day carries its
- *     situation and its numbers, and the surface resolves the words.
+ * Three things this deliberately does not do. **It reads nothing** — data in,
+ * data out, no Prisma, no React, no Next, so it is unit-testable without a DOM
+ * the way `landing-board.ts` is, and the reads stay with the caller, the only
+ * place that knows whose Activities these are. **It counts nothing** —
+ * committed-versus-needed seats and the Activity's minimum-members viability
+ * floor are `getSessionQuotas`' job (`src/lib/recurring-sessions.ts`); its
+ * result arrives as {@link BoardDaysInput.quotas} and passes through untouched.
+ * **It writes no copy** — day and month names, the Blank mark's two different
+ * sentences and every mark label live in the dictionary, so a day carries its
+ * situation and its numbers and the surface resolves the words.
  *
  * Session dates are stored as UTC midnight of their WIB calendar day, so every
  * field below is read with the `getUTC*` accessors. A locale-aware formatter
@@ -93,9 +91,8 @@ export interface BoardDaysInput {
 }
 
 /**
- * What is on one Activity's line on one day. Time and venue are the Session's
- * where one is posted and the standing weekly slot's where none is, so a cell
- * reads them from one place either way.
+ * One Activity's line on one day. Time and venue are the Session's where one is
+ * posted and the standing weekly slot's where none is — one place either way.
  */
 interface BoardSlotBase {
     readonly activity: BoardActivity;
@@ -120,16 +117,16 @@ export type BoardSlot =
  */
 export type BoardDayKind = 'posted' | 'unposted' | 'empty';
 
+/**
+ * `date` is UTC midnight of this WIB calendar day and `dayKey` its `YYYY-MM-DD`
+ * form. `weekday` (0 = Sunday) indexes the dictionary's `days`, `monthNumber`
+ * (1 = January) its `months`; `dayOfMonth` is the Slot Cell's Figure Lead.
+ */
 export interface BoardDay {
-    /** UTC midnight of this WIB calendar day, as Sessions are stored. */
     readonly date: Date;
-    /** `YYYY-MM-DD` — a stable React key and a stable test assertion. */
     readonly dayKey: string;
-    /** 0 (Sunday) – 6 (Saturday): the index into the dictionary's `days`. */
     readonly weekday: number;
-    /** The day of the month, which a Slot Cell leads with as its Figure Lead. */
     readonly dayOfMonth: number;
-    /** 1 (January) – 12: the index into the dictionary's `months`. */
     readonly monthNumber: number;
     readonly year: number;
     readonly kind: BoardDayKind;
@@ -137,7 +134,6 @@ export interface BoardDay {
     readonly slots: readonly BoardSlot[];
 }
 
-/** UTC midnight of the calendar day `date` falls on. */
 function utcDayStart(date: Date): Date {
     return new Date(
         Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
@@ -157,8 +153,7 @@ function dayKeyOf(date: Date): string {
 
 /**
  * Every day of the range, ascending, both ends included. An end before the start
- * describes no days and yields none; an unparsable date compares false and does
- * the same rather than looping forever.
+ * yields none; so does a `NaN` date, which compares false instead of looping.
  */
 function eachDay(range: BoardRange): Date[] {
     const end = utcDayStart(range.end).getTime();
@@ -173,7 +168,7 @@ function eachDay(range: BoardRange): Date[] {
     return days;
 }
 
-/** A Session already matched to the Activity whose line it sits on. */
+/** A Session matched to the Activity whose line it sits on. */
 interface PostedSession {
     readonly activity: BoardActivity;
     readonly session: BoardSession;
@@ -185,7 +180,6 @@ interface DayContext {
     readonly quotas: ReadonlyMap<string, SessionQuota>;
 }
 
-/** Push onto the bucket for `key`, creating it on first use. */
 function pushInto<K, T>(buckets: Map<K, T[]>, key: K, value: T): void {
     const bucket = buckets.get(key);
     if (bucket === undefined) buckets.set(key, [value]);
@@ -209,8 +203,8 @@ function groupSessionsByDay(
  * The Activities whose standing weekly slot lands on each weekday. Derived from
  * `recurringDay` alone — the Activity's own statement of when it meets, and the
  * field the public board already publishes as its weekly slot. What the
- * generator *would* create is narrower (it also requires the Monthly mode), and
- * answering that instead would hide a day the Admin still owes a Session on.
+ * generator *would* create is narrower (it also wants the Monthly mode); asking
+ * that instead would hide a day the Admin still owes a Session on.
  */
 function groupActivitiesByWeekday(
     activities: readonly BoardActivity[],
@@ -224,41 +218,20 @@ function groupActivitiesByWeekday(
     return byWeekday;
 }
 
-function postedSlot(
-    { activity, session }: PostedSession,
-    quotas: ReadonlyMap<string, SessionQuota>,
-): BoardSlot {
-    return {
+function postedSlots(day: Date, context: DayContext): BoardSlot[] {
+    const posted = context.postedByDay.get(dayKeyOf(day)) ?? [];
+    return posted.map(({ activity, session }) => ({
         kind: 'posted',
         activity,
         session,
-        quota: quotas.get(session.id) ?? null,
+        quota: context.quotas.get(session.id) ?? null,
         startTime: session.startTime,
         endTime: session.endTime,
         location: session.location,
-    };
+    }));
 }
 
-function postedSlots(day: Date, context: DayContext): BoardSlot[] {
-    const posted = context.postedByDay.get(dayKeyOf(day)) ?? [];
-    return posted.map((one) => postedSlot(one, context.quotas));
-}
-
-function unpostedSlot(activity: BoardActivity): BoardSlot {
-    return {
-        kind: 'unposted',
-        activity,
-        startTime: activity.recurringStartTime,
-        endTime: activity.recurringEndTime,
-        location: activity.defaultLocation,
-    };
-}
-
-/**
- * The standing slots landing on this day that nothing has been posted for. An
- * Activity with a Session already on the day is not also unposted, however many
- * Sessions it has there.
- */
+/** Standing slots landing here with nothing posted — one per Activity at most. */
 function unpostedSlots(
     day: Date,
     posted: readonly BoardSlot[],
@@ -268,7 +241,13 @@ function unpostedSlots(
     const postedIds = new Set(posted.map((slot) => slot.activity.id));
     return planned
         .filter((activity) => !postedIds.has(activity.id))
-        .map(unpostedSlot);
+        .map((activity) => ({
+            kind: 'unposted',
+            activity,
+            startTime: activity.recurringStartTime,
+            endTime: activity.recurringEndTime,
+            location: activity.defaultLocation,
+        }));
 }
 
 /** A day reads by the clock, then by name so two slots never swap on a re-read. */

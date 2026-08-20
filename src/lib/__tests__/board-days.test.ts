@@ -2,16 +2,17 @@ import { describe, it, expect } from 'vitest';
 import {
     buildBoardDays,
     type BoardActivity,
+    type BoardDay,
+    type BoardDaysInput,
     type BoardSession,
 } from '../board-days';
 import type { SessionQuota } from '../recurring-sessions';
 
 /**
- * The board's day range. What is worth testing here is the module's own laws
- * rather than any markup: every day of the range gets an entry, a day the Admin
- * was expected to post on is told apart from a day nobody planned anything for,
- * and a stored calendar day is read as itself whatever zone the test runner
- * happens to sit in.
+ * The board's day range. What is worth testing is the module's own laws rather
+ * than any markup: every day of the range gets an entry, a day the Admin was
+ * expected to post on is told apart from a day nobody planned anything for, and
+ * a stored calendar day is read as itself whatever zone the runner sits in.
  */
 
 const SUNDAY = 0;
@@ -26,8 +27,8 @@ function utcDay(dayKey: string): Date {
     return new Date(`${dayKey}T00:00:00.000Z`);
 }
 
-/* Named so an index into a week is checkable by eye. August 2026 starts its
-   weeks on the 23rd: Sunday 23 through Saturday 29. */
+/* Named so an index into a week is checkable by eye: August 2026 runs a week
+   from Sunday the 23rd to Saturday the 29th. */
 const SUN_23_AUG = '2026-08-23';
 const TUE_25_AUG = '2026-08-25';
 const WED_26_AUG = '2026-08-26';
@@ -67,24 +68,29 @@ function session(overrides: Partial<BoardSession> = {}): BoardSession {
     };
 }
 
+/** One Tuesday Activity across the whole week, and nothing posted. */
+function board(input: Partial<BoardDaysInput> = {}): BoardDay[] {
+    return buildBoardDays({
+        range: WEEK,
+        activities: [activity()],
+        sessions: [],
+        ...input,
+    });
+}
+
+/** The week's situations in one readable line. */
+function kindsOf(days: readonly BoardDay[]): string {
+    return days.map((day) => day.kind).join(' ');
+}
+
+const EMPTY_WEEK = 'empty empty empty empty empty empty empty';
+
 describe('buildBoardDays', () => {
     it('marks the recurring day unposted across a week with no Sessions', () => {
-        const days = buildBoardDays({
-            range: WEEK,
-            activities: [activity()],
-            sessions: [],
-        });
+        const days = board();
 
         expect(days).toHaveLength(DAYS_IN_WEEK);
-        expect(days.map((day) => day.kind)).toEqual([
-            'empty',
-            'empty',
-            'unposted',
-            'empty',
-            'empty',
-            'empty',
-            'empty',
-        ]);
+        expect(kindsOf(days)).toBe('empty empty unposted empty empty empty empty');
         const tuesday = days[TUESDAY];
         expect(tuesday.dayKey).toBe(TUE_25_AUG);
         expect(tuesday.weekday).toBe(TUESDAY);
@@ -96,11 +102,7 @@ describe('buildBoardDays', () => {
     });
 
     it('returns every day of the range in order, none skipped', () => {
-        const days = buildBoardDays({
-            range: WEEK,
-            activities: [activity()],
-            sessions: [session()],
-        });
+        const days = board({ sessions: [session()] });
 
         expect(days.map((day) => day.dayKey)).toEqual([
             SUN_23_AUG,
@@ -115,8 +117,7 @@ describe('buildBoardDays', () => {
     });
 
     it('tells the posted recurring day from the unposted ones', () => {
-        const days = buildBoardDays({
-            range: WEEK,
+        const days = board({
             activities: [
                 activity({ id: 'a1', name: 'Badminton', recurringDay: MONDAY }),
                 activity({ id: 'a2', name: 'Futsal', recurringDay: TUESDAY }),
@@ -126,33 +127,25 @@ describe('buildBoardDays', () => {
             sessions: [session({ id: 's2', activityId: 'a2' })],
         });
 
-        expect(days.map((day) => day.kind)).toEqual([
-            'empty',
-            'unposted',
-            'posted',
-            'empty',
-            'unposted',
-            'empty',
-            'empty',
-        ]);
+        expect(kindsOf(days)).toBe(
+            'empty unposted posted empty unposted empty empty',
+        );
         const posted = days[TUESDAY].slots[0];
-        expect(posted.kind).toBe('posted');
         expect(posted.activity.name).toBe('Futsal');
         expect(posted.kind === 'posted' && posted.session.id).toBe('s2');
     });
 
     it('a community with no Sessions at all still has planned days', () => {
-        const days = buildBoardDays({
-            range: WEEK,
+        const days = board({
             activities: [
                 activity({ id: 'a1', recurringDay: SUNDAY }),
                 activity({ id: 'a2', recurringDay: TUESDAY }),
             ],
-            sessions: [],
         });
 
-        expect(days.filter((day) => day.kind === 'unposted')).toHaveLength(2);
-        expect(days.every((day) => day.kind !== 'posted')).toBe(true);
+        expect(kindsOf(days)).toBe(
+            'unposted empty unposted empty empty empty empty',
+        );
     });
 
     it('crosses a month boundary without dropping or renumbering a day', () => {
@@ -171,12 +164,7 @@ describe('buildBoardDays', () => {
         expect(days.map((day) => day.dayOfMonth)).toEqual([30, 31, 1, 2]);
         expect(days.map((day) => day.monthNumber)).toEqual([8, 8, 9, 9]);
         expect(days.map((day) => day.year)).toEqual([2026, 2026, 2026, 2026]);
-        expect(days.map((day) => day.kind)).toEqual([
-            'empty',
-            'empty',
-            'posted',
-            'empty',
-        ]);
+        expect(kindsOf(days)).toBe('empty empty posted empty');
     });
 
     it('crosses a year boundary the same way', () => {
@@ -186,10 +174,7 @@ describe('buildBoardDays', () => {
             sessions: [],
         });
 
-        expect(days.map((day) => day.dayKey)).toEqual([
-            '2026-12-31',
-            '2027-01-01',
-        ]);
+        expect(days.map((day) => day.dayKey)).toEqual(['2026-12-31', '2027-01-01']);
         expect(days.map((day) => day.year)).toEqual([2026, 2027]);
     });
 
@@ -206,35 +191,25 @@ describe('buildBoardDays', () => {
     });
 
     it('never plans a day for an Activity with no recurring day', () => {
-        const days = buildBoardDays({
-            range: WEEK,
-            activities: [activity({ recurringDay: null })],
-            sessions: [],
-        });
+        const days = board({ activities: [activity({ recurringDay: null })] });
 
-        expect(days.every((day) => day.kind === 'empty')).toBe(true);
+        expect(kindsOf(days)).toBe(EMPTY_WEEK);
         expect(days.every((day) => day.slots.length === 0)).toBe(true);
     });
 
     it('still posts a Session for an Activity with no recurring day', () => {
-        const days = buildBoardDays({
-            range: WEEK,
+        const days = board({
             activities: [activity({ recurringDay: null })],
             sessions: [session()],
         });
 
-        expect(days[TUESDAY].kind).toBe('posted');
-        expect(days.filter((day) => day.kind === 'empty')).toHaveLength(
-            DAYS_IN_WEEK - 1,
-        );
+        expect(kindsOf(days)).toBe('empty empty posted empty empty empty empty');
     });
 
     it('reads the stored calendar day, not a locally-shifted one', () => {
         // Late in the UTC day: a local-time formatter running east of UTC would
         // file this Session under the 26th, a day after it happened.
-        const days = buildBoardDays({
-            range: WEEK,
-            activities: [activity()],
+        const days = board({
             sessions: [
                 session({ date: new Date(`${TUE_25_AUG}T23:30:00.000Z`) }),
             ],
@@ -248,9 +223,7 @@ describe('buildBoardDays', () => {
 
     it('carries the quota the caller read, and null where it read none', () => {
         const quota: SessionQuota = { committed: 3, needed: 8, isMet: false };
-        const days = buildBoardDays({
-            range: WEEK,
-            activities: [activity()],
+        const days = board({
             sessions: [session(), session({ id: 's2', startTime: '07:00' })],
             quotas: new Map([['s1', quota]]),
         });
@@ -261,22 +234,14 @@ describe('buildBoardDays', () => {
     });
 
     it('keeps an Activity off the unposted list once it has a Session', () => {
-        const days = buildBoardDays({
-            range: WEEK,
-            activities: [activity()],
-            sessions: [session()],
-        });
+        const days = board({ sessions: [session()] });
 
         expect(days[TUESDAY].slots).toHaveLength(1);
         expect(days[TUESDAY].slots[0].kind).toBe('posted');
     });
 
     it('carries a cancelled Session rather than calling the day unposted', () => {
-        const days = buildBoardDays({
-            range: WEEK,
-            activities: [activity()],
-            sessions: [session({ status: 'CANCELLED' })],
-        });
+        const days = board({ sessions: [session({ status: 'CANCELLED' })] });
 
         const [slot] = days[TUESDAY].slots;
         expect(days[TUESDAY].kind).toBe('posted');
@@ -284,8 +249,7 @@ describe('buildBoardDays', () => {
     });
 
     it('reads a day by the clock, earliest line first', () => {
-        const days = buildBoardDays({
-            range: WEEK,
+        const days = board({
             activities: [
                 activity({ id: 'a1', name: 'Badminton' }),
                 activity({
@@ -306,23 +270,20 @@ describe('buildBoardDays', () => {
             'unposted',
             'posted',
         ]);
-        expect(days[TUESDAY].kind).toBe('posted');
     });
 
     it('ignores a Session whose Activity was not supplied', () => {
-        const days = buildBoardDays({
-            range: WEEK,
+        const days = board({
             activities: [activity({ id: 'a1', recurringDay: null })],
             sessions: [session({ id: 's9', activityId: 'gone' })],
         });
 
-        expect(days.every((day) => day.slots.length === 0)).toBe(true);
+        expect(kindsOf(days)).toBe(EMPTY_WEEK);
     });
 
     it('describes no days when the range ends before it starts', () => {
-        const days = buildBoardDays({
+        const days = board({
             range: { start: utcDay(TUE_25_AUG), end: utcDay(SUN_23_AUG) },
-            activities: [activity()],
             sessions: [session()],
         });
 
