@@ -1,14 +1,12 @@
-﻿import { auth } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { COLUMN_MEASURE } from '@/components/layout/measure';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
-import { Shapes, AlertTriangle } from 'lucide-react';
-import { Mark } from '@/components/ui/mark';
+import { Shapes } from 'lucide-react';
 import { StatCard } from '@/components/ui/stat-card';
 import { EmptyState } from '@/components/ui/empty-state';
-import { ActivityInitial } from '@/components/activity/activity-badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getLocale } from '@/lib/i18n/locale';
@@ -17,9 +15,10 @@ import { getUserActivityIds } from '@/lib/activity';
 import { resolvePaymentMode } from '@/lib/payment-mode';
 import { getOutstandingSessionBills } from '@/lib/payments';
 import { releaseExpiredHolds } from '@/lib/holds';
-import { MoneyMark } from '@/components/dashboard/money-mark';
-
-const UPCOMING_PER_ACTIVITY = 3;
+import { getDashboardSessionsBoard } from '@/lib/dashboard-sessions';
+import { DuesBanner } from '@/components/dashboard/dues-banner';
+import { ActivitySummaryCard } from '@/components/dashboard/activity-summary-card';
+import type { DashboardSlotContext } from '@/components/dashboard/dashboard-slot-data';
 
 export default async function DashboardPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -40,85 +39,73 @@ export default async function DashboardPage() {
     await releaseExpiredHolds();
     const myActivityIds = await getUserActivityIds(userId);
 
-    const [memberships, upcomingSessions, monthPayments, attendanceCount, totalSessions, outstandingBills] =
-        await Promise.all([
-            prisma.membership.findMany({
-                where: { userId, isActive: true, activity: { isActive: true } },
-                select: {
-                    paymentMode: true,
-                    effectiveFrom: true,
-                    pendingMode: true,
-                    pendingEffectiveFrom: true,
-                    activity: {
-                        select: {
-                            id: true,
-                            name: true,
-                            monthlyFee: true,
-                            allowsMonthly: true,
-                            allowsPerSession: true,
-                        },
+    const [
+        memberships,
+        upcomingCount,
+        monthPayments,
+        attendanceCount,
+        totalSessions,
+        outstandingBills,
+        dashboardBoard,
+    ] = await Promise.all([
+        prisma.membership.findMany({
+            where: { userId, isActive: true, activity: { isActive: true } },
+            select: {
+                paymentMode: true,
+                effectiveFrom: true,
+                pendingMode: true,
+                pendingEffectiveFrom: true,
+                activity: {
+                    select: {
+                        id: true,
+                        name: true,
+                        monthlyFee: true,
+                        allowsMonthly: true,
+                        allowsPerSession: true,
                     },
                 },
-            }),
-            prisma.activitySession.findMany({
-                where: {
-                    activityId: { in: myActivityIds },
-                    date: { gte: today },
-                    status: { in: ['SCHEDULED', 'ONGOING'] },
-                },
-                orderBy: { date: 'asc' },
-                include: {
-                    activity: { select: { id: true, name: true } },
-                    attendances: {
-                        where: {
-                            userId,
-                            status: { in: ['REGISTERED', 'PRESENT'] },
-                        },
-                        select: { status: true },
-                    },
-                    _count: {
-                        select: {
-                            attendances: {
-                                where: {
-                                    status: { in: ['REGISTERED', 'PRESENT'] },
-                                },
-                            },
-                        },
-                    },
-                },
-            }),
-            prisma.payment.findMany({
-                where: {
-                    userId,
-                    month: currentMonth,
-                    year: currentYear,
-                    type: 'MONTHLY',
-                    activityId: { in: myActivityIds },
-                },
-                select: { activityId: true, status: true, amount: true },
-            }),
-            prisma.attendance.count({
-                where: {
-                    userId,
-                    status: 'PRESENT',
-                    session: {
-                        activityId: { in: myActivityIds },
-                        date: { gte: monthStart, lte: now },
-                    },
-                },
-            }),
-            // Attendance rate measures sessions that have already happened this
-            // month â€” cap the denominator at `now` so upcoming sessions (which
-            // nobody can have attended yet) don't drag the percentage down.
-            prisma.activitySession.count({
-                where: {
+            },
+        }),
+        prisma.activitySession.count({
+            where: {
+                activityId: { in: myActivityIds },
+                date: { gte: today },
+                status: { in: ['SCHEDULED', 'ONGOING'] },
+            },
+        }),
+        prisma.payment.findMany({
+            where: {
+                userId,
+                month: currentMonth,
+                year: currentYear,
+                type: 'MONTHLY',
+                activityId: { in: myActivityIds },
+            },
+            select: { activityId: true, status: true, amount: true },
+        }),
+        prisma.attendance.count({
+            where: {
+                userId,
+                status: 'PRESENT',
+                session: {
                     activityId: { in: myActivityIds },
                     date: { gte: monthStart, lte: now },
-                    status: { not: 'CANCELLED' },
                 },
-            }),
-            getOutstandingSessionBills({ userId }),
-        ]);
+            },
+        }),
+        // Attendance rate measures sessions that have already happened this
+        // month — cap the denominator at `now` so upcoming sessions (which
+        // nobody can have attended yet) don't drag the percentage down.
+        prisma.activitySession.count({
+            where: {
+                activityId: { in: myActivityIds },
+                date: { gte: monthStart, lte: now },
+                status: { not: 'CANCELLED' },
+            },
+        }),
+        getOutstandingSessionBills({ userId }),
+        getDashboardSessionsBoard({ userId, activityIds: myActivityIds, now }),
+    ]);
 
     const attendanceRate =
         totalSessions > 0
@@ -150,9 +137,8 @@ export default async function DashboardPage() {
     for (const bill of outstandingBills) {
         billsByActivity.set(bill.activity.id, (billsByActivity.get(bill.activity.id) ?? 0) + 1);
     }
-    const upcomingCount = upcomingSessions.length;
     // A CONFIRMED payment is settled; a PENDING one is in review (member already
-    // acted) â€” neither counts as an unpaid due that still needs the member's
+    // acted) — neither counts as an unpaid due that still needs the member's
     // attention, so both drop out of the banner/count (matches /payments).
     const unpaidMonthly = myActivities.filter((a) => {
         if (!monthlyActivityIds.has(a.id)) return false;
@@ -161,6 +147,15 @@ export default async function DashboardPage() {
     });
     const firstUnpaid = unpaidMonthly[0];
     const duesCount = unpaidMonthly.length + outstandingBills.length;
+
+    const boardsByActivity = new Map(
+        dashboardBoard.boards.map((board) => [board.activityId, board]),
+    );
+    const slotContext: DashboardSlotContext = {
+        t,
+        seatsBySession: dashboardBoard.seatsBySession,
+        ownBySession: dashboardBoard.ownBySession,
+    };
 
     return (
         <div className={`${COLUMN_MEASURE} space-y-6`}>
@@ -175,50 +170,19 @@ export default async function DashboardPage() {
                 </h1>
             </div>
 
-            {/* Dues alert banner â€” monthly dues take priority; otherwise surface
-                any per-session reservations still awaiting payment. */}
-            {firstUnpaid ? (
-                <Link
-                    href='/payments/upload'
-                    className='flex items-center gap-3 rounded-xl border border-warning-soft-border bg-warning-soft px-3.5 py-3 hover:bg-warning-soft/80 transition-colors'>
-                    <AlertTriangle className='size-[18px] shrink-0 text-warning-soft-foreground' />
-                    <div className='min-w-0 flex-1'>
-                        <p className='truncate text-[13px] font-semibold text-warning-soft-foreground'>
-                            {firstUnpaid.name} {t.dashboard.duesUnpaidBanner}
-                        </p>
-                        <p className='truncate text-xs text-warning-soft-foreground/80'>
-                            {t.months[currentMonth]} Â· Rp{' '}
-                            {firstUnpaid.monthlyFee.toLocaleString('id-ID')}
-                        </p>
-                    </div>
-                    <span className='shrink-0 rounded-lg bg-warning-solid px-3 py-1.5 text-xs font-semibold text-warning-solid-foreground'>
-                        {t.dashboard.payNow}
-                    </span>
-                </Link>
-            ) : outstandingBills.length > 0 ? (
-                <Link
-                    href='/payments'
-                    className='flex items-center gap-3 rounded-xl border border-warning-soft-border bg-warning-soft px-3.5 py-3 hover:bg-warning-soft/80 transition-colors'>
-                    <AlertTriangle className='size-[18px] shrink-0 text-warning-soft-foreground' />
-                    <div className='min-w-0 flex-1'>
-                        <p className='truncate text-[13px] font-semibold text-warning-soft-foreground'>
-                            {t.dashboard.reservationsToPay.replace(
-                                '{n}',
-                                String(outstandingBills.length),
-                            )}
-                        </p>
-                        <p className='truncate text-xs text-warning-soft-foreground/80'>
-                            {t.dashboard.reservationsToPaySub}
-                        </p>
-                    </div>
-                    <span className='shrink-0 rounded-lg bg-warning-solid px-3 py-1.5 text-xs font-semibold text-warning-solid-foreground'>
-                        {t.dashboard.payNow}
-                    </span>
-                </Link>
-            ) : null}
+            <DuesBanner
+                firstUnpaid={firstUnpaid}
+                outstandingCount={outstandingBills.length}
+                monthLabel={t.months[currentMonth]}
+                t={t}
+            />
 
-            {/* Summary strip */}
-            <div className='grid grid-cols-3 gap-2.5 sm:gap-4'>
+            {/* Summary strip. Stacked below `sm` (640px): three equal columns at
+                390px have no room for the longer of the two locales' tracked-caps
+                labels — `MENDATANG`/`KEHADIRAN` clip mid-word there — so each card
+                takes the full row until there is width to share, matching the
+                breakpoint `StatCardsSkeleton` already uses while this loads. */}
+            <div className='grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-4'>
                 <StatCard
                     label={t.dashboard.attendanceTitle}
                     value={`${attendanceRate}%`}
@@ -266,87 +230,18 @@ export default async function DashboardPage() {
                         </Link>
                     </div>
                     {myActivities.map((activity) => {
-                        const sessions = upcomingSessions
-                            .filter((s) => s.activityId === activity.id)
-                            .slice(0, UPCOMING_PER_ACTIVITY);
                         const payment = paymentByActivity.get(activity.id);
-                        const isMonthlyDue = monthlyActivityIds.has(activity.id);
-                        const outstanding = billsByActivity.get(activity.id) ?? 0;
+                        const board = boardsByActivity.get(activity.id);
                         return (
-                            <div
+                            <ActivitySummaryCard
                                 key={activity.id}
-                                className='bg-card rounded-xl border border-border overflow-hidden'>
-                                <div className='flex items-center gap-2.5 p-4 pb-3'>
-                                    <ActivityInitial name={activity.name} />
-                                    <span className='flex-1 text-[15px] font-semibold text-foreground truncate'>
-                                        {activity.name}
-                                    </span>
-                                    <MoneyMark
-                                        isMonthlyDue={isMonthlyDue}
-                                        paymentStatus={payment?.status}
-                                        outstanding={outstanding}
-                                        t={t}
-                                    />
-                                </div>
-                                <div className='px-4 pb-4 space-y-2'>
-                                    {sessions.length === 0 ? (
-                                        <p className='text-sm text-muted-foreground py-2'>
-                                            {t.dashboard.noUpcoming}
-                                        </p>
-                                    ) : (
-                                        sessions.map((s) => {
-                                            const isRegistered =
-                                                s.attendances.length > 0;
-                                            return (
-                                                <Link
-                                                    key={s.id}
-                                                    href={`/sessions/${s.id}`}
-                                                    className='flex items-center gap-3 rounded-sm bg-muted/60 p-2.5 pr-3 hover:bg-accent transition-colors'>
-                                                    <span className='flex w-10 shrink-0 flex-col items-center'>
-                                                        <span className='text-[10px] font-semibold uppercase text-primary'>
-                                                            {format(
-                                                                new Date(s.date),
-                                                                'EEE',
-                                                                { locale: dateLocale },
-                                                            )}
-                                                        </span>
-                                                        <span className='text-[17px] font-bold text-foreground leading-tight tabular-nums'>
-                                                            {format(
-                                                                new Date(s.date),
-                                                                'dd',
-                                                            )}
-                                                        </span>
-                                                    </span>
-                                                    <span className='min-w-0 flex-1'>
-                                                        <span className='block text-sm font-semibold text-foreground truncate'>
-                                                            {s.title}
-                                                        </span>
-                                                        <span className='block text-xs text-muted-foreground truncate'>
-                                                            {s.startTime}
-                                                            {s.location
-                                                                ? ` Â· ${s.location}`
-                                                                : ''}
-                                                        </span>
-                                                    </span>
-                                                    {isRegistered ? (
-                                                        <Mark
-                                                            kind='ink'
-                                                            className='shrink-0'>
-                                                            {t.dashboard.going}
-                                                        </Mark>
-                                                    ) : (
-                                                        <Mark
-                                                            kind='blank'
-                                                            className='shrink-0'>
-                                                            {t.dashboard.rsvp}
-                                                        </Mark>
-                                                    )}
-                                                </Link>
-                                            );
-                                        })
-                                    )}
-                                </div>
-                            </div>
+                                activity={activity}
+                                days={board?.days ?? []}
+                                isMonthlyDue={monthlyActivityIds.has(activity.id)}
+                                paymentStatus={payment?.status}
+                                outstanding={billsByActivity.get(activity.id) ?? 0}
+                                slotContext={slotContext}
+                            />
                         );
                     })}
                 </div>
