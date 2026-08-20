@@ -5,130 +5,121 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { ActivityTile } from './activity-badge';
 
-export type SessionTab = 'upcoming' | 'past';
+/**
+ * What the board is scoped to: the reader's own Activities or every one the
+ * community runs, and optionally a single Activity. URL-driven — `?view=`,
+ * `?activityId=` — so the board re-reads server-side.
+ *
+ * There is no Upcoming/Past tab and no pager here any more. A board shows a
+ * range and every day in it keeps a cell, so moving through time is the week
+ * nav's job. Text search went with them for the same reason: a board that hides
+ * the days whose Sessions did not match would draw a Blank mark on them, which
+ * says an Admin has not posted — a search result quietly lying about the state
+ * of the week.
+ *
+ * Controls are square ruled tiles in tracked caps, and the active one is a
+ * filled Court Green tile rather than an underline (DESIGN.md, Navigation).
+ */
+
 export type SessionView = 'mine' | 'all';
 
 type Activity = { id: string; name: string };
 
-/**
- * Sessions filter: a My/All view toggle, a scrollable row of activity chips
- * (initial tile + name), and an Upcoming/Past tab row. URL-driven —
- * `?view=`, `?activityId=`, `?tab=` — so the server component re-renders with
- * the right query. "My" scopes to joined activities; "All" reveals every active
- * Activity for discovery + join-on-register.
- */
+const CHIP_BASE = [
+    'inline-flex min-h-11 shrink-0 items-center gap-cell px-block type-label',
+    'whitespace-nowrap transition-colors',
+    'focus-visible:outline-2 focus-visible:outline-ring',
+    'focus-visible:[outline-offset:-2px]',
+].join(' ');
+
+const CHIP_ON = 'bg-primary-solid text-primary-solid-foreground';
+const CHIP_OFF = 'bg-tile text-secondary-foreground hover:bg-board hover:text-foreground';
+
+const RULED_GROUP = 'inline-flex divide-x divide-rule rounded-sm border border-rule';
+
 export function SessionsFilter({
     activities,
     selected,
-    tab,
     view,
-    search,
+    week,
     labels,
 }: Readonly<{
-    activities: Activity[];
+    activities: readonly Activity[];
     selected?: string;
-    tab: SessionTab;
     view: SessionView;
-    search?: string;
-    labels: {
+    /** The week the board is on, carried so a filter change stays on it. */
+    week?: string;
+    labels: Readonly<{
         all: string;
-        upcoming: string;
-        past: string;
         viewMine: string;
         viewAll: string;
-    };
+    }>;
 }>) {
     const pathname = usePathname();
 
-    function href(next: { activityId?: string; tab?: SessionTab; view?: SessionView }) {
+    function href(next: { activityId?: string; view?: SessionView }) {
         const activityId = next.activityId ?? selected ?? '';
-        const nextTab = next.tab ?? tab;
         const nextView = next.view ?? view;
         const params = new URLSearchParams();
         if (activityId) params.set('activityId', activityId);
-        if (nextTab === 'past') params.set('tab', 'past');
         if (nextView === 'all') params.set('view', 'all');
-        if (search) params.set('search', search);
+        if (week) params.set('week', week);
         const qs = params.toString();
         return qs ? `${pathname}?${qs}` : pathname;
     }
 
-    const chipBase =
-        'flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
-
     return (
-        <div className='space-y-3'>
-            {/* My / All view toggle — switching resets the activity chip filter */}
-            <div className='inline-flex rounded-full bg-muted/60 p-0.5 text-xs font-semibold'>
+        <div className='flex flex-col gap-cell'>
+            {/* Switching view resets the single-Activity filter: an id from the
+                narrower list means nothing in the wider one. */}
+            <div className={RULED_GROUP}>
                 {(['mine', 'all'] as const).map((value) => (
                     <Link
                         key={value}
                         href={href({ view: value, activityId: '' })}
                         aria-current={view === value ? 'true' : undefined}
                         className={cn(
-                            'rounded-full px-4 py-1.5 transition-colors',
-                            view === value
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-muted-foreground hover:text-foreground',
+                            CHIP_BASE,
+                            view === value ? CHIP_ON : CHIP_OFF,
                         )}>
                         {value === 'mine' ? labels.viewMine : labels.viewAll}
                     </Link>
                 ))}
             </div>
 
-            {/* Activity chips */}
             {activities.length > 0 && (
-                <div className='flex gap-2 overflow-x-auto pb-1 -mx-1 px-1'>
-                    <Link
-                        href={href({ activityId: '' })}
-                        className={cn(
-                            chipBase,
-                            selected === undefined
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted/60 border border-input text-secondary-foreground hover:bg-muted',
-                        )}>
-                        {labels.all}
-                    </Link>
-                    {activities.map((a) => {
-                        const active = selected === a.id;
-                        return (
-                            <Link
-                                key={a.id}
-                                href={href({ activityId: a.id })}
-                                className={cn(
-                                    chipBase,
-                                    active
-                                        ? 'bg-primary text-primary-foreground'
-                                        : 'bg-muted/60 border border-input text-secondary-foreground hover:bg-muted',
-                                )}>
-                                <ActivityTile name={a.name} />
-                                {a.name}
-                            </Link>
-                        );
-                    })}
+                <div className='flex overflow-x-auto'>
+                    <div className={RULED_GROUP}>
+                        <Link
+                            href={href({ activityId: '' })}
+                            aria-current={
+                                selected === undefined ? 'true' : undefined
+                            }
+                            className={cn(
+                                CHIP_BASE,
+                                selected === undefined ? CHIP_ON : CHIP_OFF,
+                            )}>
+                            {labels.all}
+                        </Link>
+                        {activities.map((activity) => {
+                            const isOn = selected === activity.id;
+                            return (
+                                <Link
+                                    key={activity.id}
+                                    href={href({ activityId: activity.id })}
+                                    aria-current={isOn ? 'true' : undefined}
+                                    className={cn(
+                                        CHIP_BASE,
+                                        isOn ? CHIP_ON : CHIP_OFF,
+                                    )}>
+                                    <ActivityTile name={activity.name} />
+                                    {activity.name}
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
-
-            {/* Upcoming / Past tabs */}
-            <div className='flex gap-6 border-b border-border'>
-                {(['upcoming', 'past'] as const).map((value) => {
-                    const active = tab === value;
-                    return (
-                        <Link
-                            key={value}
-                            href={href({ tab: value })}
-                            aria-current={active ? 'page' : undefined}
-                            className={cn(
-                                'pb-2.5 -mb-px border-b-2 text-[13px] font-semibold transition-colors',
-                                active
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-muted-foreground hover:text-foreground',
-                            )}>
-                            {value === 'upcoming' ? labels.upcoming : labels.past}
-                        </Link>
-                    );
-                })}
-            </div>
         </div>
     );
 }

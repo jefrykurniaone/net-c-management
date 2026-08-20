@@ -1,279 +1,146 @@
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
-import { format, endOfWeek } from "date-fns";
-import { id as localeId, enUS } from "date-fns/locale";
-import { CalendarDays } from "lucide-react";
-import { Mark } from "@/components/ui/mark";
-import { ActivityBadge } from "@/components/activity/activity-badge";
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
+import { getLocale } from '@/lib/i18n/locale';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import {
-  SessionsFilter,
-  type SessionTab,
-  type SessionView,
-} from "@/components/activity/sessions-filter";
-import { EmptyState } from "@/components/ui/empty-state";
-import { DataTablePagination } from "@/components/ui/data-table-pagination";
-import { parsePagination, parseSearch } from "@/lib/table-params";
-import Link from "next/link";
-import type { Prisma } from "@prisma/client";
-import { getLocale } from "@/lib/i18n/locale";
-import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getUserActivityIds } from "@/lib/activity";
-import { releaseExpiredHolds } from "@/lib/holds";
+    getSessionsBoard,
+    type SessionsBoardData,
+    type SessionsBoardView,
+} from '@/lib/sessions-board';
 import {
-  getSessionQuotas,
-} from "@/lib/recurring-sessions";
+    SessionsFilter,
+    type SessionView,
+} from '@/components/activity/sessions-filter';
+import {
+    BoardNotice,
+    SessionsBoard,
+} from '@/components/sessions/sessions-board';
+import { BoardWeekNav } from '@/components/sessions/board-week-nav';
+import {
+    boardDayViews,
+    monthDayLabel,
+    monthDayYearLabel,
+    weekdayHeads,
+} from '@/components/sessions/board-view';
 
-const SESSION_INCLUDE = {
-  _count: {
-    select: {
-      attendances: {
-        where: { status: { in: ["REGISTERED", "PRESENT"] } },
-      },
-    },
-  },
-  activity: { select: { id: true, name: true, icon: true } },
-} satisfies Prisma.ActivitySessionInclude;
+/**
+ * The sessions board. Every day of the displayed week gets a cell, whether or
+ * not anything is on it — a day with nothing posted carries a Blank mark and
+ * says so, so a member knows an Admin has not posted rather than that they are
+ * missing something.
+ *
+ * The page reads and composes; it renders no cell of its own. One Session is
+ * drawn in exactly one place in this app, the Slot Cell, and this surface is
+ * one of its callers.
+ */
 
-type SessionRow = Prisma.ActivitySessionGetPayload<{
-  include: typeof SESSION_INCLUDE;
-}> & { attendances: { status: string }[] };
+const SESSIONS_PATH = '/sessions';
+
+type RawParams = Record<string, string | string[] | undefined>;
+
+function first(params: RawParams, key: string): string | undefined {
+    const value = params[key];
+    return Array.isArray(value) ? value[0] : value;
+}
+
+/** The reader's scope, carried onto every week link so it survives navigation. */
+function scopeParams(view: SessionView, activityId?: string): URLSearchParams {
+    const params = new URLSearchParams();
+    if (activityId) params.set('activityId', activityId);
+    if (view === 'all') params.set('view', 'all');
+    return params;
+}
+
+function weekHref(scope: URLSearchParams, week: string): string {
+    const params = new URLSearchParams(scope);
+    params.set('week', week);
+    return `${SESSIONS_PATH}?${params.toString()}`;
+}
+
+/**
+ * The board's own designed states, both of them a Blank-marked strip above a
+ * board that still draws every day. Blank means *expected but not yet placed*,
+ * which is the honest state of a community that has just been set up — and a
+ * dropped surface would read as broken rather than as quiet.
+ */
+function noticeFor(
+    board: SessionsBoardData,
+    view: SessionView,
+    t: Dictionary,
+): { label: string; body: string } | null {
+    if (!board.hasAnySession) {
+        return { label: t.marks.unposted, body: t.sessions.boardNeverPosted };
+    }
+    if (view === 'mine' && !board.hasJoinedActivities) {
+        return {
+            label: t.marks.unposted,
+            body: t.sessions.noJoinedActivities,
+        };
+    }
+    return null;
+}
 
 export default async function SessionsPage({
-  searchParams,
-}: Readonly<{
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}>) {
-  const [session, locale] = await Promise.all([auth(), getLocale()]);
-  if (!session?.user?.id) redirect("/auth/signin");
+    searchParams,
+}: Readonly<{ searchParams: Promise<RawParams> }>) {
+    const [session, locale, params] = await Promise.all([
+        auth(),
+        getLocale(),
+        searchParams,
+    ]);
+    if (!session?.user?.id) redirect('/auth/signin');
 
-  const t = getDictionary(locale);
-  const dateLocale = locale === "id" ? localeId : enUS;
+    const t = getDictionary(locale);
+    const view: SessionsBoardView =
+        first(params, 'view') === 'all' ? 'all' : 'mine';
+    const activityId = first(params, 'activityId');
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+    const board = await getSessionsBoard({
+        userId: session.user.id,
+        view,
+        activityId,
+        weekKey: first(params, 'week'),
+    });
 
-  await releaseExpiredHolds();
+    const days = boardDayViews(board.days, {
+        t,
+        seatsBySession: board.seatsBySession,
+        ownBySession: board.ownBySession,
+    });
+    const scope = scopeParams(view, activityId);
+    const notice = noticeFor(board, view, t);
 
-  const [allActivities, myActivityIds] = await Promise.all([
-    prisma.activity.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    }),
-    getUserActivityIds(session.user.id),
-  ]);
-
-  const sp = await searchParams;
-  const raw = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : sp[k]);
-
-  const view: SessionView = raw("view") === "all" ? "all" : "mine";
-  const search = parseSearch(sp);
-  const myActivities = allActivities.filter((a) => myActivityIds.includes(a.id));
-  const baseActivities = view === "all" ? allActivities : myActivities;
-  const baseIds = baseActivities.map((e) => e.id);
-  const selected = baseActivities.some((e) => e.id === raw("activityId"))
-    ? raw("activityId")
-    : undefined;
-  const tab: SessionTab = raw("tab") === "past" ? "past" : "upcoming";
-  const isPast = tab === "past";
-  const { page, pageSize, skip, take } = parsePagination(sp);
-
-  const searchFilter: Prisma.ActivitySessionWhereInput = search
-    ? {
-        OR: [
-          { title: { contains: search, mode: "insensitive" } },
-          { location: { contains: search, mode: "insensitive" } },
-        ],
-      }
-    : {};
-
-  const baseWhere: Prisma.ActivitySessionWhereInput = {
-    activityId: selected ?? { in: baseIds },
-    ...searchFilter,
-    ...(isPast
-      ? { date: { lt: today } }
-      : { date: { gte: today }, status: { in: ["SCHEDULED", "ONGOING"] } }),
-  };
-
-  const [sessions, total] = await Promise.all([
-    prisma.activitySession.findMany({
-      where: baseWhere,
-      orderBy: { date: isPast ? "desc" : "asc" },
-      skip,
-      take,
-      include: {
-        ...SESSION_INCLUDE,
-        attendances: {
-          where: {
-            userId: session.user.id,
-            status: { in: ["REGISTERED", "PRESENT"] },
-          },
-          select: { status: true },
-        },
-      },
-    }),
-    prisma.activitySession.count({ where: baseWhere }),
-  ]);
-
-  const quotas = await getSessionQuotas(sessions);
-
-  const thisWeek = isPast
-    ? []
-    : sessions.filter((s) => new Date(s.date) <= weekEnd);
-  const later = isPast
-    ? sessions
-    : sessions.filter((s) => new Date(s.date) > weekEnd);
-
-  function renderCard(s: SessionRow) {
-    const isRegistered = s.attendances.length > 0;
-    const isFull = s._count.attendances >= s.maxPlayers;
-    const unclaimedLabel = isFull ? t.sessions.full : t.sessions.rsvp;
-    const quota = quotas.get(s.id);
-    const hasQuota = quota !== undefined && quota.needed > 0;
     return (
-      <Link key={s.id} href={`/sessions/${s.id}`} className="block">
-        <div className="flex items-center gap-3 bg-card rounded-xl border border-border p-3.5 pr-4 hover:border-primary/40 hover:shadow-sm transition-all">
-          <span className="flex w-11 shrink-0 flex-col items-center rounded-sm bg-accent py-1.5">
-            <span className="text-[10px] font-semibold uppercase text-primary">
-              {format(new Date(s.date), "EEE", { locale: dateLocale })}
-            </span>
-            <span className="text-lg font-bold text-foreground leading-tight tabular-nums">
-              {format(new Date(s.date), "dd")}
-            </span>
-          </span>
-          <div className="flex-1 min-w-0 space-y-0.5">
-            {/* The register mixes Activities, so the name travels with the
-                tile: an initial alone cannot separate two that share one. */}
-            <div className="flex items-center gap-2 min-w-0">
-              <h3 className="text-sm font-semibold text-foreground truncate">
-                {s.title}
-              </h3>
-              <ActivityBadge name={s.activity.name} />
-            </div>
-            <p className="text-xs text-muted-foreground truncate">
-              {s.startTime} – {s.endTime} · {s.location}
-            </p>
-            <p className="text-[11px] text-subtle-foreground truncate tabular-nums">
-              {s._count.attendances}/{s.maxPlayers} {t.sessions.participants}
-              {s.fee > 0 && <> · Rp {s.fee.toLocaleString("id-ID")}{t.sessions.feePerPerson}</>}
-            </p>
-            {hasQuota && (
-              <Mark kind={quota.isMet ? "ink" : "tape"} className="mt-1">
-                {quota.isMet
-                  ? t.sessions.quotaMet
-                  : t.sessions.quotaNeedMore.replace("{n}", String(quota.needed - quota.committed))}
-                {" "}
-                <span className="tabular-nums">
-                  ({quota.committed}/{quota.needed})
-                </span>
-              </Mark>
+        <div className='flex flex-col gap-bay'>
+            <h1 className='type-display text-foreground'>{t.sessions.title}</h1>
+
+            <SessionsFilter
+                activities={board.offered.length > 1 ? board.offered : []}
+                selected={board.offered.length > 1 ? activityId : undefined}
+                view={view}
+                week={first(params, 'week')}
+                labels={{
+                    all: t.sessions.chipAll,
+                    viewMine: t.sessions.viewMine,
+                    viewAll: t.sessions.viewAll,
+                }}
+            />
+
+            <BoardWeekNav
+                caption={t.sessions.boardWeekOf
+                    .replace('{start}', monthDayLabel(board.weekStart, t))
+                    .replace('{end}', monthDayYearLabel(board.weekEnd, t))}
+                prevHref={weekHref(scope, board.prevWeekKey)}
+                thisHref={weekHref(scope, board.thisWeekKey)}
+                nextHref={weekHref(scope, board.nextWeekKey)}
+                t={t}
+            />
+
+            {notice && (
+                <BoardNotice label={notice.label} body={notice.body} />
             )}
-          </div>
-          <div className="shrink-0 flex flex-col items-end gap-1">
-            {/* A Seat held is written in ink; a Seat nobody has placed — whether
-                it is still free or the Session is full — is left blank. */}
-            {isRegistered ? (
-              <Mark kind="ink">{t.sessions.going}</Mark>
-            ) : (
-              <Mark kind="blank">{unclaimedLabel}</Mark>
-            )}
-          </div>
+
+            <SessionsBoard days={days} weekdayHeads={weekdayHeads(t)} t={t} />
         </div>
-      </Link>
     );
-  }
-
-  function renderGroup(label: string, rows: SessionRow[]) {
-    if (rows.length === 0) return null;
-    return (
-      <div className="space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-          {label}
-        </p>
-        <div className="space-y-3">{rows.map(renderCard)}</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {t.sessions.title}
-          </h1>
-          {t.sessions.subtitle && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {t.sessions.subtitle}
-            </p>
-          )}
-        </div>
-
-        {/* Search input */}
-        <form method="GET" className="flex gap-2">
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder={t.table.search.titlePlaceholder}
-            data-testid="search-input"
-            className="flex-1 h-9 border border-input rounded-lg px-3 text-sm bg-card placeholder:text-subtle-foreground"
-          />
-          {view === "all" && <input type="hidden" name="view" value="all" />}
-          {tab === "past" && <input type="hidden" name="tab" value="past" />}
-          {selected && <input type="hidden" name="activityId" value={selected} />}
-          {pageSize !== 10 && <input type="hidden" name="pageSize" value={String(pageSize)} />}
-          <button
-            type="submit"
-            className="h-9 border border-input rounded-lg px-4 text-sm font-semibold text-secondary-foreground bg-card hover:bg-muted transition-colors">
-            {t.table.search.btn}
-          </button>
-        </form>
-
-        <SessionsFilter
-          activities={baseActivities.length > 1 ? baseActivities : []}
-          selected={selected}
-          tab={tab}
-          view={view}
-          search={search}
-          labels={{
-            all: t.sessions.chipAll,
-            upcoming: t.sessions.tabUpcoming,
-            past: t.sessions.tabPast,
-            viewMine: t.sessions.viewMine,
-            viewAll: t.sessions.viewAll,
-          }}
-        />
-      </div>
-
-      {sessions.length === 0 ? (
-        <EmptyState
-          icon={CalendarDays}
-          title={
-            view === "mine" && myActivities.length === 0
-              ? t.sessions.noJoinedActivities
-              : isPast
-                ? t.sessions.noPast
-                : t.sessions.noSessions
-          }
-        />
-      ) : isPast ? (
-        <div className="space-y-3">{later.map(renderCard)}</div>
-      ) : (
-        <div className="space-y-6">
-          {renderGroup(t.sessions.groupThisWeek, thisWeek)}
-          {renderGroup(t.sessions.groupLater, later)}
-        </div>
-      )}
-
-      <DataTablePagination
-        total={total}
-        page={page}
-        pageSize={pageSize}
-        searchParams={sp}
-        labels={t.table.pagination}
-      />
-    </div>
-  );
 }

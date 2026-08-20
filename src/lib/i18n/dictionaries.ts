@@ -363,6 +363,23 @@ const en = {
         shareViaTwitter: 'Share on X',
         copyLink: 'Copy link',
         linkCopied: 'Copied!',
+        // The sessions board. The day label *inside* a cell is the short form:
+        // the full name is the column head, and the cell's own label has to
+        // clear the column floor the fixed positions were measured against.
+        // Sunday-first, so it indexes `BoardDay.weekday` directly.
+        boardDaysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        boardLabel: 'Sessions by day',
+        boardWeekNavLabel: 'Change week',
+        boardPrevWeek: 'Previous week',
+        boardThisWeek: 'This week',
+        boardNextWeek: 'Next week',
+        boardWeekOf: '{start} – {end}',
+        boardNothingOnDay: 'Nothing on this day.',
+        boardNotPosted: 'An Admin has not posted this session yet.',
+        boardNeverPosted:
+            'Sessions have not been posted yet. They appear here as soon as an Admin posts one.',
+        boardSeatsFree: 'Free',
+        boardSeatsAria: '{n} of {max} seats free',
     },
     payments: {
         title: 'Monthly Dues',
@@ -1200,6 +1217,19 @@ const id: typeof en = {
         shareViaTwitter: 'Bagikan di X',
         copyLink: 'Salin tautan',
         linkCopied: 'Tersalin!',
+        boardDaysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+        boardLabel: 'Sesi per hari',
+        boardWeekNavLabel: 'Ganti minggu',
+        boardPrevWeek: 'Minggu sebelumnya',
+        boardThisWeek: 'Minggu ini',
+        boardNextWeek: 'Minggu berikutnya',
+        boardWeekOf: '{start} – {end}',
+        boardNothingOnDay: 'Tidak ada apa pun di hari ini.',
+        boardNotPosted: 'Admin belum mengumumkan sesi ini.',
+        boardNeverPosted:
+            'Belum ada sesi yang diumumkan. Sesi akan muncul di sini begitu Admin mengumumkan satu.',
+        boardSeatsFree: 'Sisa',
+        boardSeatsAria: '{n} dari {max} kursi tersisa',
     },
     payments: {
         title: 'Iuran Bulanan',
