@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -129,8 +129,27 @@ export function SeatAction({
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const [isBusy, setIsBusy] = useState(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const wasPressed = useRef(false);
+
+    /**
+     * Put focus back on the control the member just used.
+     *
+     * While the write is in flight the button is `disabled`, and a disabled
+     * element cannot hold focus — the browser drops it to `<body>`. For a
+     * keyboard member that means releasing a Seat throws them to the top of the
+     * document and they tab back down a whole week of rows to reach the row they
+     * were already on. The control keeps its place in the row either way; only
+     * its label changes, from Withdraw to Claim and back.
+     */
+    useEffect(() => {
+        if (isBusy || !wasPressed.current) return;
+        wasPressed.current = false;
+        buttonRef.current?.focus();
+    }, [isBusy]);
 
     async function run(): Promise<void> {
+        wasPressed.current = true;
         setIsBusy(true);
         const ctx: ActionContext = { router, t };
         try {
@@ -149,6 +168,7 @@ export function SeatAction({
     const copy = actionCopy(action, title, t);
     return (
         <Button
+            ref={buttonRef}
             type='button'
             size='sm'
             variant={action.kind === 'withdraw' ? 'outline' : 'default'}
