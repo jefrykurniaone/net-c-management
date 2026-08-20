@@ -12,21 +12,17 @@
  * rather than how wide it happens to be:
  *
  * - {@link TASK_MEASURE} — one task, one column. A form the member fills in.
- * - {@link COLUMN_MEASURE} — a reading column. Records, settings, a profile.
- * - {@link BOARD_MEASURE} — a board. Seven `12.5rem` day columns plus the 6px
- *   of shared rules between them and the 2px outer border (see DESIGN.md,
- *   *the settled decision*).
+ * - {@link COLUMN_MEASURE} — a reading column. Records, settings, a profile,
+ *   and the sessions board, which reads as a week down the page.
  *
- * DESIGN.md's own board cap is 72rem, which predates the lattice's measured
- * width; the two want reconciling in the document, not by narrowing the board
- * until its cells reflow.
+ * There is deliberately no board-width measure. The seven-column week lattice
+ * needed one — 88rem, wider than this document's own 72rem board cap — and
+ * that width was what made the board sit oddly against its own heading and
+ * filters. A week read top to bottom needs no more room than any other column.
  */
 
 /** A single-task column: the Proof upload, onboarding. */
 export const TASK_MEASURE = 'mx-auto w-full max-w-[40rem]';
 
-/** A reading column: payments history, profile, a Session's detail. */
+/** A reading column: the sessions board, payments history, profile, detail. */
 export const COLUMN_MEASURE = 'mx-auto w-full max-w-2xl';
-
-/** A board surface: the sessions board, and the dashboard that composes it. */
-export const BOARD_MEASURE = 'mx-auto w-full max-w-[88rem]';

@@ -1,5 +1,5 @@
 ﻿import { redirect } from 'next/navigation';
-import { BOARD_MEASURE } from '@/components/layout/measure';
+import { COLUMN_MEASURE } from '@/components/layout/measure';
 import { auth } from '@/lib/auth';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
@@ -21,7 +21,6 @@ import {
     boardDayViews,
     monthDayLabel,
     monthDayYearLabel,
-    weekdayHeads,
 } from '@/components/sessions/board-view';
 
 /**
@@ -193,7 +192,7 @@ function BoardSurface({
     });
 
     return (
-        <div className={`${BOARD_MEASURE} flex flex-col gap-bay`}>
+        <div className={`${COLUMN_MEASURE} flex flex-col gap-bay`}>
             <h1 className='type-display text-foreground'>{t.sessions.title}</h1>
             <BoardFilters
                 board={board}
@@ -208,7 +207,7 @@ function BoardSurface({
                 t={t}
             />
             {notice && <BoardNotice label={notice.label} body={notice.body} />}
-            <SessionsBoard days={days} weekdayHeads={weekdayHeads(t)} t={t} />
+            <SessionsBoard days={days} t={t} />
         </div>
     );
 }

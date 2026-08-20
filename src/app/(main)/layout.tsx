@@ -49,11 +49,7 @@ export default async function MainLayout({
                 member surface. A board is not a form, and one cap cannot fit
                 both; each surface declares its own measure from
                 `src/components/layout/measure.ts`. */}
-            {/* `xl:px-4` buys the board the last 16px it needs: the week
-                lattice is 88rem, and a 24px gutter leaves only 1392px at
-                1440px wide. Column surfaces are centred inside their own cap,
-                so a narrower gutter at xl does not move them at all. */}
-            <main className='flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6 xl:px-4'>
+            <main className='flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6'>
                 {children}
             </main>
 

@@ -321,7 +321,17 @@ The recurring unit of the whole system — one Session on the board. A rule-boun
 
 **Free Seats means free, not taken.** The figure is `free/max`, so a full Session reads `0/16`. Taken-over-max makes "full" a comparison the reader has to perform; free-over-max makes it a zero. The figure carries a spoken form beside it, because `2/16` on its own does not say which number is which.
 
-### The settled decision: the mark-and-seats collision
+### The board reads down the page, not across it
+
+**The week is one column of ruled day rows, at every width.** One row per day, top to bottom, each keeping its rule-bounded cell with the day's own tracked-caps label at its head. There are no column heads, no horizontal scrolling, and no board-specific container width: the surface takes the same reading column as the payments history and the profile.
+
+This replaced a seven-column week lattice, and the record of why is below, because the constraints it hit are real and anyone proposing to bring the lattice back should read them first.
+
+The lattice put a whole week on one screen. It paid for that with a column floor of `12.5rem`, a horizontally scrolling rail, and a surface `88rem` wide — wider than this document's own `72rem` board cap — which left the board visibly out of step with the heading, filters and week nav sitting above it in a narrower column. Reading the week downward needs none of that: a day row is as wide as the page, so no mark can collide with a seat figure, nothing scrolls sideways, and there is no second layout to keep in step.
+
+The Slot Cell's own contract is unchanged. Its six elements stay in their fixed positions, it still takes data and never nodes, and the dashboard and the session detail header still compose it. Only the board's arrangement of cells changed.
+
+#### What the lattice ran into, kept on the record
 
 A seven-column week cannot fit the day, the date and a tracked-caps mark on one line at the container width. The line wraps, and a cell that reflows under pressure breaks the fixed-position promise for **every** cell, not only its own.
 
@@ -334,17 +344,13 @@ Three routes were identified. Two are refused, on the record:
 - **Shortening the mark labels.** Mark labels live in one shared dictionary block and resolve through one seam, so the payments history and the admin queue read the same strings. Trimming them to fit one cell degrades every surface to solve a problem none of the others have.
 - **Dropping the tracking inside cells.** It contradicts *The Tracked-Caps-Are-Structural Rule*, which names marks as the board's own furniture; and it would set a mark inside a cell differently from the identical mark everywhere else, which is two mark appearances in one product.
 
-**What ships is the third route: the columns carry a floor, and the week scrolls rather than the cells reflowing.** `grid-template-columns: repeat(7, minmax(12.5rem, 1fr))`. The floor is the width the fixed positions were measured against, so a column can never narrow below it; where seven floors do not fit, the rail scrolls horizontally. This is the only one of the three that holds **by construction rather than by fitting today's strings** — Activity names are runtime configuration and mark labels are translated, so any route that buys its margin in pixels is one long string away from wrapping again, silently. Same reasoning as *The Never-Bleed Rule*: guarantee the structure, and let a violation degrade visibly instead of breaking the page.
+The third route was the one taken while the lattice stood: the columns carried a floor of `12.5rem` and the week scrolled rather than the cells reflowing. It was the only one of the three that held **by construction rather than by fitting today's strings** — Activity names are runtime configuration and mark labels are translated, so any route that buys its margin in pixels is one long string away from wrapping again, silently.
 
-That the floor moved from `11rem` to `12.5rem` on one measurement, with no cell reflowed and no copy trimmed, is the mechanism working: the floor is a single number, and correcting it is a one-number change. Widening it costs scroll; narrowing it costs correctness.
+**Reading down the page dissolves the collision rather than paying for it.** A day row is the width of the column, so the mark and the seat figure never compete for the same 200px, whatever an Activity is named and whatever language it is read in. The `12.5rem` floor, the scrolling rail and the `88rem` measure all went with the lattice. What stays worth knowing is the measurement: the widest mark this product sets is `BELUM DIPASANG`, and any future arrangement that puts a mark beside a figure inside a fixed-width cell has to budget 133.8px for it, not the ~105px a session status suggests.
 
-The cost is bounded and named. The rail scrolls only at and above `md`, where a scrollbar is an ordinary affordance and the alternative is a wrapping cell; below `md` the board is ruled day rows in one column and nothing scrolls sideways at all. A week lattice is two-dimensional data, which is what WCAG 1.4.10 Reflow exempts. The rail takes a tab stop of its own, so a keyboard user can still reach a column whose cells are all unposted and therefore not focusable.
+**The container question the lattice forced is closed.** It needed `88rem`, against this document's `72rem` board cap and the member layout's own `42rem` column — three numbers that could not all be right. `src/app/(main)/layout.tsx` no longer imposes any width: it sets the gutter and the mobile-rail clearance, and each surface names the measure its content needs from `src/components/layout/measure.ts`. With the board reading downward there is no board-width measure at all, so the `72rem` cap in this document now governs nothing and no surface contradicts it.
 
-**A constraint still open.** This document caps board surfaces at `72rem`; `src/app/(main)/layout.tsx` caps the member route at `max-w-2xl`, which is 42rem. Seven `12.5rem` floors is `87.5rem`, so the lattice exceeds *both* numbers, and inside 42rem the week would scroll at every desktop width rather than only at narrow ones.
-
-Rather than widen a layout shared by every member surface, the board rail escapes that column from `md` up and takes its own measure, capped at `88rem` — seven `12.5rem` tracks plus the 6px of shared rules between them and the 2px outer border, which is the lattice's real width — so the week completes at 1440px and scrolls only where the viewport genuinely cannot hold it. That keeps the fix inside the one surface that needs it. Reconciling the layout's 42rem with this document's 72rem board cap is still the open question, and it belongs to whoever settles what a board surface's container is; the escape is deliberately the smaller, reversible move until then.
-
-**One DOM, collapsed by axis.** The lattice and the day rows are the same markup: one grid, `gap-px` over a rule-coloured ground so cells share their rules in both directions, seven columns above `md` and one below it. The day's heading is the same element in both — the row's tracked-caps label below the breakpoint, `sr-only` above it, where the column head is what a sighted reader sees — so heading order is identical at every viewport and there is no second tree to keep in step. Building the wide lattice first and bolting the collapse on afterwards is exactly what produces an unruled card list on a phone; they ship together, or the rules are lost.
+**One arrangement, one DOM.** One grid, `gap-px` over a rule-coloured ground so cells share their rules with their neighbours rather than sitting in gaps, one column at every width. Each day names itself at the head of its own row, so heading order is identical at every viewport and there is no second layout to keep in step. What must not happen is the rules going away: an unruled list of day cards is the arrangement this world exists to refuse, on a phone or a desktop alike.
 
 ## Do's and Don'ts
 

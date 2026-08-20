@@ -17,17 +17,10 @@ import type { BoardDayView, BoardSlotView } from './sessions-board';
  * Sunday-first because `Activity.recurringDay` is; the board reads Monday-first
  * because a week of sport does. One indexes, the other orders.
  */
-const COLUMN_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
-
 export interface BoardCopyContext {
     readonly t: Dictionary;
     readonly seatsBySession: ReadonlyMap<string, BoardSeats>;
     readonly ownBySession: ReadonlyMap<string, AttendanceStatus>;
-}
-
-/** The seven tracked-caps column heads, in the board's own order. */
-export function weekdayHeads(t: Dictionary): string[] {
-    return COLUMN_ORDER.map((weekday) => t.days[weekday]);
 }
 
 /** "18 August" — the day and its month, never a formatter's idea of either. */
@@ -40,7 +33,7 @@ export function monthDayYearLabel(date: Date, t: Dictionary): string {
     return `${monthDayLabel(date, t)} ${date.getUTCFullYear()}`;
 }
 
-/** "Monday 18 August" — the row's label below the breakpoint, spoken above it. */
+/** "Monday 18 August" — the day row's own label, at every width. */
 function dayHeading(day: BoardDay, t: Dictionary): string {
     return `${t.days[day.weekday]} ${day.dayOfMonth} ${t.months[day.monthNumber]}`;
 }

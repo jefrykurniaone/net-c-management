@@ -8,39 +8,21 @@ import { SlotCell, type SlotCellData } from './slot-cell';
  * arrangement this world exists to refuse — and it is also what makes a quiet
  * community look broken rather than merely quiet.
  *
- * **One DOM, two layouts, collapsed by axis.** The same `gap-px` + rule-coloured
- * ground draws every rule in both, so the cells share their rules with their
- * neighbours rather than sitting in gaps:
+ * **One column of ruled day rows, at every width.** The week reads top to
+ * bottom: one row per day, each keeping its rule-bounded cell, with the day's
+ * own tracked-caps label at its head. The `gap-px` over a rule-coloured ground
+ * is what draws the rules, so cells share them with their neighbours rather
+ * than sitting in gaps — it never becomes an unruled card list; losing the
+ * rules loses the world.
  *
- * - at and above `md`, seven columns with tracked-caps column heads;
- * - below it, one column of ruled day rows, where each day keeps its
- *   rule-bounded row and the column head becomes the row's own tracked-caps
- *   label. It never becomes an unruled card list; losing the rules loses the
- *   world.
- *
- * The day heading is the same element in both: visible as the row label below
- * the breakpoint, `sr-only` above it, where the column head is what a sighted
- * reader sees. So the heading order is the same at every viewport.
- *
- * **The column floor, and the collision it settles.** A seven-column week
- * cannot fit the day, the date and a tracked-caps mark on one line inside the
- * member container — the top line wraps, which breaks the fixed-position
- * promise for every cell at once. The columns therefore carry a **floor**
- * (`minmax(12.5rem, 1fr)`), and where seven floors do not fit, the week scrolls
- * horizontally instead of the cells reflowing. See DESIGN.md, *Signature
- * Component: the Slot Cell*, for the two routes this was chosen over and for
- * the measurement the floor comes from.
- *
- * Below the breakpoint the single column has no floor and nothing scrolls
- * sideways — the collapse is the answer there, not the rail.
+ * This replaces the seven-column week lattice. That arrangement put a whole
+ * week on one screen, but it bought that by making every cell live inside a
+ * 12.5rem column — which meant a column floor, a horizontally scrolling rail,
+ * and a board far wider than the heading and filters above it. Reading a week
+ * down the page needs none of that, so the floor, the rail and the board's
+ * extra-wide measure are all gone with it. See DESIGN.md, *Signature Component:
+ * the Slot Cell*.
  */
-
-/** Seven columns, each with a floor. Written out because Tailwind scans text. */
-const LATTICE_COLUMNS =
-    'md:[grid-template-columns:repeat(7,minmax(12.5rem,1fr))]';
-
-const HEAD_CLASS =
-    'hidden bg-tile px-cell py-cell type-label text-muted-foreground md:block';
 
 /** One cell and its identity. Keys stay out of the Slot Cell's own contract. */
 export type BoardSlotView = Readonly<{ key: string; cell: SlotCellData }>;
@@ -93,7 +75,7 @@ function BoardDay({
 }: Readonly<{ day: BoardDayView; t: Dictionary }>) {
     return (
         <div className='flex flex-col gap-px bg-rule'>
-            <h2 className='bg-tile px-cell pt-cell type-label text-muted-foreground md:sr-only'>
+            <h2 className='bg-tile px-cell pt-cell type-label text-muted-foreground'>
                 {day.heading}
             </h2>
             {day.slots.length === 0 ? (
@@ -109,33 +91,14 @@ function BoardDay({
 
 export function SessionsBoard({
     days,
-    weekdayHeads,
     t,
-}: Readonly<{
-    days: readonly BoardDayView[];
-    weekdayHeads: readonly string[];
-    t: Dictionary;
-}>) {
+}: Readonly<{ days: readonly BoardDayView[]; t: Dictionary }>) {
     return (
-        /* The rail takes a tab stop of its own: a keyboard user has to be able
-           to scroll it (WCAG 2.1.1), and a week whose far columns are all
-           unposted holds no focusable cell to reach instead. */
-        <section
-            aria-label={t.sessions.boardLabel}
-            tabIndex={0}
-            /* The rail scrolls where the viewport cannot hold the lattice, and
-               that is all it does — the surface's width is the page's to
-               declare, via `BOARD_MEASURE`, so the board and the heading and
-               filters above it share one measure instead of the rail escaping
-               its own column. */
-            className='overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:[outline-offset:-2px]'>
-            <div
-                className={`grid grid-cols-1 gap-px rounded-sm border border-rule bg-rule ${LATTICE_COLUMNS}`}>
-                {weekdayHeads.map((head) => (
-                    <span key={head} className={HEAD_CLASS}>
-                        {head}
-                    </span>
-                ))}
+        /* No tab stop and no scroll rail: the week runs down the page, so there
+           is nothing to scroll sideways and every cell is reached in reading
+           order. Each day names itself, so the board needs no column heads. */
+        <section aria-label={t.sessions.boardLabel}>
+            <div className='grid grid-cols-1 gap-px rounded-sm border border-rule bg-rule'>
                 {days.map((day) => (
                     <BoardDay key={day.key} day={day} t={t} />
                 ))}
