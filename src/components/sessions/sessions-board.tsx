@@ -60,11 +60,16 @@ export function BoardNotice({
  */
 function EmptyDay({ t }: Readonly<{ t: Dictionary }>) {
     return (
-        <div className='flex flex-1 flex-wrap items-center gap-cell bg-tile p-cell'>
-            <Mark kind='blank'>{t.sessions.boardNothingMark}</Mark>
-            <p className='type-caption text-muted-foreground'>
-                {t.sessions.boardNothingOnDay}
-            </p>
+        /* An empty day takes the Session column too, so its sentence starts on
+           the same left edge as every title above and below it. */
+        <div className='grid grid-cols-[5.5rem_minmax(0,1fr)] items-baseline gap-cell bg-tile p-cell'>
+            <span aria-hidden='true' />
+            <span className='flex flex-wrap items-center gap-cell'>
+                <Mark kind='blank'>{t.sessions.boardNothingMark}</Mark>
+                <span className='type-caption text-muted-foreground'>
+                    {t.sessions.boardNothingOnDay}
+                </span>
+            </span>
         </div>
     );
 }
@@ -75,7 +80,9 @@ function BoardDay({
 }: Readonly<{ day: BoardDayView; t: Dictionary }>) {
     return (
         <div className='flex flex-col gap-px bg-rule'>
-            <h2 className='bg-tile px-cell pt-cell type-label text-muted-foreground'>
+            {/* The day band. It owns the date for every row beneath it, which is
+                why the rows themselves carry only a time. */}
+            <h2 className='bg-board px-cell py-hair type-label text-muted-foreground'>
                 {day.heading}
             </h2>
             {day.slots.length === 0 ? (

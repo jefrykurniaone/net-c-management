@@ -11,21 +11,25 @@ import { cn } from '@/lib/utils';
  * one anywhere in the app. The dashboard, the sessions board and the session
  * detail header compose from this rather than each inventing their own card.
  *
- * Six elements, in fixed positions, always:
+ * **A row of three columns, in fixed positions, always:**
  *
- * 1. the day as Label and 2. the date as Figure Lead, top-left;
- * 3. free Seats as `n/max` in Figure **or** a mark, top-right;
- * 4. the Session title as Title;
- * 5. time and venue as Caption;
- * 6. the Activity's livery at the bottom.
+ * 1. **when** — the start time as Figure, in a fixed-width leading column, so
+ *    times line up down the whole week. Where the caller has no day band above
+ *    the row to carry the date, {@link SlotCellData.day} puts it in this same
+ *    column above the time; the board leaves it out because its band owns it.
+ * 2. **what** — the Session title as Title, on the first line; then venue and
+ *    the Activity's livery as Caption on the second.
+ * 3. **standing** — free Seats as `n/max` in Figure **or** a mark, hard right of
+ *    the first line, so every mark on the surface sits on one edge.
  *
- * The positions are non-negotiable: a member reads any cell in two seconds
- * because everything is always in the same place, and one cell that reflows
- * under pressure breaks that promise for every cell. So this component takes
+ * The unposted sentence and the quota share the second column below the venue —
+ * only one of them can ever apply.
+ *
+ * The positions are non-negotiable: a member reads any row in two seconds
+ * because everything is always in the same place, and one row that reflows
+ * under pressure breaks that promise for every row. So this component takes
  * **data, never nodes** — there is no `children`, no slot props and no ordering
- * prop, because a caller that can pass a node can reorder the cell. The middle
- * of the cell is the only part that varies in height, and the livery is pinned
- * to the bottom with `mt-auto` so it does not move when it does.
+ * prop, because a caller that can pass a node can reorder the row.
  *
  * Livery is a magnet tile bearing the Activity's initial, with no colour
  * ({@link ActivityTile}) — never a coloured square and never an edge stripe.
@@ -49,9 +53,12 @@ export type SlotCellQuota = Readonly<{
 }>;
 
 export type SlotCellData = Readonly<{
-    /** The short day name — the full one is the column head. */
-    dayLabel: string;
-    dayOfMonth: number;
+    /**
+     * The date, for a caller with no day band above the row to carry it — the
+     * dashboard, a detail header. `null` on the sessions board, whose band says
+     * the date once for every row under it.
+     */
+    day: Readonly<{ label: string; dayOfMonth: number }> | null;
     title: string;
     startTime: string;
     endTime: string;
@@ -79,7 +86,15 @@ const OWN_STATES_MARKED: readonly AttendanceStatus[] = [
     'MAYBE',
 ];
 
-const CELL_CLASS = 'flex h-full flex-col gap-cell bg-tile p-cell';
+/**
+ * Three columns: the fixed-width `when` rail, the Session, and the standing
+ * hard right. `items-baseline` sets the time on the title's baseline rather
+ * than its box, so the two read as one line.
+ */
+const CELL_CLASS = [
+    'grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-baseline',
+    'gap-x-cell gap-y-hair bg-tile p-cell',
+].join(' ');
 
 /* An offset ring would be clipped by the lattice's own `overflow-hidden`, so
    the focus ring is drawn 2px *inside* the cell edge instead. */
@@ -209,33 +224,58 @@ function SlotNote({
     return <QuotaLine quota={data.quota} t={t} />;
 }
 
+/**
+ * The `when` rail. The time is what every row shares, so it leads; the date sits
+ * above it only for a caller with no band of its own (see {@link SlotCellData}).
+ */
+function SlotWhen({ data }: Readonly<{ data: SlotCellData }>) {
+    return (
+        <span className='flex flex-col gap-hair'>
+            {data.day && (
+                <>
+                    <span className='type-label text-muted-foreground'>
+                        {data.day.label}
+                    </span>
+                    <span className='type-figure-lead text-foreground'>
+                        {data.day.dayOfMonth}
+                    </span>
+                </>
+            )}
+            <span className='type-figure text-foreground'>{data.startTime}</span>
+            <span className='type-caption text-muted-foreground'>
+                {data.endTime}
+            </span>
+        </span>
+    );
+}
+
 function SlotCellBody({
     data,
     t,
 }: Readonly<{ data: SlotCellData; t: Dictionary }>) {
     return (
         <>
-            <div className='flex items-start justify-between gap-cell'>
-                <span className='flex flex-col gap-hair'>
-                    <span className='type-label text-muted-foreground'>
-                        {data.dayLabel}
-                    </span>
-                    <span className='type-figure-lead text-foreground'>
-                        {data.dayOfMonth}
-                    </span>
-                </span>
-                <TopRight data={data} t={t} />
-            </div>
+            <SlotWhen data={data} />
             <SlotTitle data={data} />
-            <p className='type-caption text-secondary-foreground'>
-                {data.startTime}–{data.endTime} · {data.location}
-            </p>
-            <SlotNote data={data} t={t} />
-            <span className='mt-auto flex items-center gap-cell pt-cell'>
-                <ActivityTile name={data.activityName} />
-                <span className='type-caption truncate text-muted-foreground'>
-                    {data.activityName}
+            <span className='justify-self-end'>
+                <TopRight data={data} t={t} />
+            </span>
+            {/* The venue, the livery and any note share the Session's column,
+                under its title — never the `when` rail, which stays a column of
+                times and nothing else. */}
+            <span className='col-start-2 col-end-4 flex flex-col gap-hair'>
+                <span className='flex flex-wrap items-center gap-x-cell gap-y-hair'>
+                    <span className='type-caption text-secondary-foreground'>
+                        {data.location}
+                    </span>
+                    <span className='flex items-center gap-hair'>
+                        <ActivityTile name={data.activityName} />
+                        <span className='type-caption truncate text-muted-foreground'>
+                            {data.activityName}
+                        </span>
+                    </span>
                 </span>
+                <SlotNote data={data} t={t} />
             </span>
         </>
     );

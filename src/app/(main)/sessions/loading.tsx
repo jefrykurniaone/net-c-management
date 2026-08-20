@@ -15,20 +15,22 @@ const DAYS = Array.from({ length: DAYS_IN_WEEK }, (_, index) => index);
 
 const BAR = 'animate-pulse rounded-sm bg-board';
 
+/** One day: its band, then a row shaped like the real one — time, Session, mark. */
 function DayPlaceholder() {
     return (
-        <div className='flex flex-col gap-cell bg-tile p-cell'>
-            <span className={`${BAR} h-2 w-24`} />
-            <div className='flex items-start justify-between gap-cell'>
-                <span className='flex flex-col gap-hair'>
-                    <span className={`${BAR} h-2 w-8`} />
-                    <span className={`${BAR} h-5 w-6`} />
-                </span>
-                <span className={`${BAR} h-4 w-12`} />
+        <>
+            <div className='bg-board px-cell py-hair'>
+                <span className={`${BAR} h-2 w-28`} />
             </div>
-            <span className={`${BAR} h-4 w-3/4`} />
-            <span className={`${BAR} h-3 w-full`} />
-        </div>
+            <div className='grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-baseline gap-x-cell gap-y-hair bg-tile p-cell'>
+                <span className={`${BAR} h-4 w-12`} />
+                <span className={`${BAR} h-4 w-2/3`} />
+                <span className={`${BAR} h-4 w-20 justify-self-end`} />
+                <span className='col-start-2 col-end-4'>
+                    <span className={`${BAR} block h-3 w-1/2`} />
+                </span>
+            </div>
+        </>
     );
 }
 

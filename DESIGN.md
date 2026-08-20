@@ -311,7 +311,13 @@ Header rail: full-bleed, 1px bottom rule, stencilled community Mark at left, con
 
 ### Signature Component: the Slot Cell
 
-The recurring unit of the whole system — one Session on the board. A rule-bounded cell carrying, in fixed positions: the day as Label and date as Figure Lead at top-left; free Seats as `n/max` in Figure, or a mark, at top-right; the Session title as Title; time and venue as Caption; the Activity's livery at the bottom.
+The recurring unit of the whole system — one Session on the board. A rule-bounded **row of three columns**, in fixed positions:
+
+1. **when** — the start time as Figure in a fixed 5.5rem leading column, with the end time as Caption beneath it, so times line up down the whole week. A caller with no day band above the row to carry the date puts it in this same column, above the time: the day as Label, the date as Figure Lead. The sessions board leaves it out, because its band says the date once for every row under it.
+2. **what** — the Session title as Title on the first line; then venue and the Activity's livery as Caption on the second, with the unposted sentence or the quota below that. Only one of those two can ever apply.
+3. **standing** — free Seats as `n/max` in Figure, **or** a mark, hard right of the first line, so every mark on the surface lands on one edge.
+
+Measured on the shipped board: the time column, the title column and the standing edge each hold a single value down all eight rows of a week, at 1440px and at 390px alike.
 
 **Livery is a magnet tile bearing the Activity's initial, with no colour.** Not a coloured square, and never an edge stripe. Two reasons, both decided: Court Green is the only green permitted, so a member-configured Activity colour would compete with or dissolve into the identity; and an arbitrary hex can never be trusted to carry legible lettering or to clear contrast on both board materials. An initial in ink solves both.
 
@@ -329,7 +335,7 @@ This replaced a seven-column week lattice, and the record of why is below, becau
 
 The lattice put a whole week on one screen. It paid for that with a column floor of `12.5rem`, a horizontally scrolling rail, and a surface `88rem` wide — wider than this document's own `72rem` board cap — which left the board visibly out of step with the heading, filters and week nav sitting above it in a narrower column. Reading the week downward needs none of that: a day row is as wide as the page, so no mark can collide with a seat figure, nothing scrolls sideways, and there is no second layout to keep in step.
 
-The Slot Cell's own contract is unchanged. Its six elements stay in their fixed positions, it still takes data and never nodes, and the dashboard and the session detail header still compose it. Only the board's arrangement of cells changed.
+The cell became a row when the board became a list of days: a square tile with the date at its top-left made sense inside a seven-column week, and reads as wasted space and a repeated date inside a day band that already carries one. What did not change is the contract — fixed positions, data and never nodes, no `children` and no ordering prop — and the dashboard and the session detail header still compose the same seam.
 
 #### What the lattice ran into, kept on the record
 

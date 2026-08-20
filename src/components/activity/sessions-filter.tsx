@@ -35,7 +35,15 @@ const CHIP_BASE = [
 const CHIP_ON = 'bg-primary-solid text-primary-solid-foreground';
 const CHIP_OFF = 'bg-tile text-secondary-foreground hover:bg-board hover:text-foreground';
 
-const RULED_GROUP = 'inline-flex divide-x divide-rule rounded-sm border border-rule';
+/**
+ * `inline-flex` is not enough on its own: a flex item is blockified to `flex`,
+ * and the column's own `align-items: stretch` then pulls the group to the full
+ * width of the surface — which put 383px of empty bordered box to the right of
+ * the last chip. `w-fit` and `self-start` are what actually hold it to its
+ * content.
+ */
+const RULED_GROUP =
+    'inline-flex w-fit self-start divide-x divide-rule rounded-sm border border-rule';
 
 /** Builds the href for one filter state, holding the rest of the board's. */
 type HrefFor = (next: { activityId?: string; view?: SessionView }) => string;
@@ -145,7 +153,9 @@ export function SessionsFilter({
     };
 
     return (
-        <div className='flex flex-col gap-cell'>
+        /* Both groups on one row, each sized to its own content, so the surface
+           has one header block rather than three strips of differing width. */
+        <div className='flex flex-wrap items-center gap-cell'>
             <ViewSwitch view={view} href={href} labels={labels} />
             {activities.length > 0 && (
                 <ActivityChips

@@ -47,8 +47,8 @@ function postedSlot(
     return {
         key: session.id,
         cell: {
-            dayLabel: context.t.sessions.boardDaysShort[day.weekday],
-            dayOfMonth: day.dayOfMonth,
+            // The board's day band says the date once for every row beneath it.
+            day: null,
             title: session.title,
             startTime: slot.startTime,
             endTime: slot.endTime,
@@ -72,13 +72,11 @@ function postedSlot(
 function unpostedSlot(
     slot: Extract<BoardSlot, { kind: 'unposted' }>,
     day: BoardDay,
-    t: Dictionary,
 ): BoardSlotView {
     return {
         key: `${day.dayKey}:${slot.activity.id}`,
         cell: {
-            dayLabel: t.sessions.boardDaysShort[day.weekday],
-            dayOfMonth: day.dayOfMonth,
+            day: null,
             title: slot.activity.name,
             startTime: slot.startTime,
             endTime: slot.endTime,
@@ -99,7 +97,7 @@ function slotView(
     context: BoardCopyContext,
 ): BoardSlotView {
     if (slot.kind === 'posted') return postedSlot(slot, day, context);
-    return unpostedSlot(slot, day, context.t);
+    return unpostedSlot(slot, day);
 }
 
 /** Every day, in order, none dropped — including the ones with nothing on them. */
