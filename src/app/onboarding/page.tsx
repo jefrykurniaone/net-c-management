@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
     buildOnboardingSchema,
     type OnboardingFormData,
@@ -16,35 +16,89 @@ import {
     FormField,
     FormItem,
     FormLabel,
-    FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
-import { getDictionary } from '@/lib/i18n/dictionaries';
-import { communityAbbr } from '@/lib/utils';
-import { ActivityTile } from '@/components/activity/activity-badge';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
+import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import type { ActivityOption } from '@/types/activity';
+import { ActivityField } from './activity-field';
+import {
+    FieldErrorMessage,
+    NAME_ERROR_KEYS,
+    PHONE_ERROR_KEYS,
+} from './field-error-message';
 
-export default function OnboardingPage() {
-    const router = useRouter();
-    const { locale } = useLocale();
-    const t = getDictionary(locale);
-    const [isLoading, setIsLoading] = useState(false);
+/**
+ * The onboarding form, brought onto the board (issue 55).
+ *
+ * Signing in is signing up: Google login auto-creates the account, and this
+ * is the first real screen most members ever see. It is one task — complete
+ * your profile — so it takes the 40rem single-task column DESIGN.md gives
+ * every such form (Proof upload, sign-in, an Applicant's waiting page), top-
+ * anchored under the identity rail like any other board surface rather than
+ * vertically centred, since a multi-field form is not the two-affordance
+ * interstitial that reservation is for.
+ *
+ * What it collects and where it redirects on completion are unchanged: the
+ * same three fields, POSTed to the same `/api/users/onboarding`, landing on
+ * `/dashboard`. Only the treatment — container, field, and error copy — is
+ * new.
+ */
+
+/** The 40rem single-task column. */
+const COLUMN_CLASS = 'max-w-[40rem]';
+
+/**
+ * `Input` ships transparent with a soft focus halo (`src/components/ui/
+ * input.tsx`, unmodified here). DESIGN.md's Inputs section calls for an
+ * Enamel Tile ground — "a cell you write in" — plus a Court Green border
+ * with a 2px *offset* ring on focus, so this composes those two classes onto
+ * the primitive rather than rewriting it.
+ */
+const FIELD_CLASS =
+    'bg-tile focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+
+function IdentityRail({
+    communityName,
+    logoUrl,
+}: Readonly<{ communityName: string; logoUrl: string }>) {
+    return (
+        <header className='border-b border-rule bg-background'>
+            <div
+                className={`mx-auto flex w-full ${COLUMN_CLASS} items-center gap-cell px-block py-cell`}>
+                <CommunityIdentityMark
+                    communityName={communityName}
+                    logoUrl={logoUrl}
+                    size='md'
+                />
+                {/* Same never-bleed guarantee every other rail carries: the
+                    community name is runtime configuration of unknown length. */}
+                <span className='type-mark min-w-0 break-words text-foreground'>
+                    {communityName}
+                </span>
+            </div>
+        </header>
+    );
+}
+
+function useOnboardingContext(t: Dictionary) {
     const [communityName, setCommunityName] = useState(
         t.brand.defaultCommunityName,
     );
+    const [logoUrl, setLogoUrl] = useState('');
     const [activities, setActivities] = useState<ActivityOption[]>([]);
 
     useEffect(() => {
         fetch('/api/settings')
             .then((r) => r.json())
-            .then((data: { communityName?: string }) => {
+            .then((data: { communityName?: string; logoUrl?: string }) => {
                 if (data.communityName) setCommunityName(data.communityName);
+                if (data.logoUrl) setLogoUrl(data.logoUrl);
             })
             .catch((err) => {
                 console.error('[Onboarding] fetchSettings:', err);
-                return undefined;
             });
         fetch('/api/activities')
             .then((r) => r.json())
@@ -53,6 +107,16 @@ export default function OnboardingPage() {
             )
             .catch(() => setActivities([]));
     }, []);
+
+    return { communityName, logoUrl, activities };
+}
+
+export default function OnboardingPage() {
+    const router = useRouter();
+    const { locale } = useLocale();
+    const t = getDictionary(locale);
+    const [isLoading, setIsLoading] = useState(false);
+    const { communityName, logoUrl, activities } = useOnboardingContext(t);
 
     const form = useForm<OnboardingFormData>({
         resolver: zodResolver(buildOnboardingSchema(t)),
@@ -81,142 +145,93 @@ export default function OnboardingPage() {
             router.push('/dashboard');
             router.refresh();
         } catch (err) {
-            toast.error(
-                err instanceof Error ? err.message : t.common.error,
-            );
+            toast.error(err instanceof Error ? err.message : t.common.error);
         } finally {
             setIsLoading(false);
         }
     }
 
     return (
-        <div className='min-h-screen flex items-center justify-center bg-muted px-4'>
-            <div className='bg-card rounded-2xl shadow-xl p-6 sm:p-8 w-full max-w-md'>
-                <div className='flex flex-col items-center gap-2 mb-6'>
-                    <div className='w-12 h-12 bg-muted rounded-full flex items-center justify-center'>
-                        <span className='text-primary font-bold text-xl'>
-                            {communityAbbr(communityName)}
-                        </span>
+        <div className='flex min-h-screen flex-col bg-background'>
+            <IdentityRail communityName={communityName} logoUrl={logoUrl} />
+            <main className='flex flex-1 justify-center px-block py-bay'>
+                <div className={`flex w-full ${COLUMN_CLASS} flex-col gap-block`}>
+                    <div className='flex flex-col gap-cell'>
+                        <h1 className='type-display text-foreground'>
+                            {t.onboarding.title}
+                        </h1>
+                        <p className='type-body text-secondary-foreground'>
+                            {t.onboarding.welcome} {communityName}
+                            {t.onboarding.welcomeSuffix} {t.onboarding.subtitle}
+                        </p>
                     </div>
-                    <h1 className='text-2xl font-bold text-foreground'>
-                        {t.onboarding.title}
-                    </h1>
-                    <p className='text-sm text-muted-foreground text-center'>
-                        {t.onboarding.welcome} {communityName}
-                        {t.onboarding.welcomeSuffix} {t.onboarding.subtitle}
-                    </p>
+
+                    <Form {...form}>
+                        <form
+                            onSubmit={form.handleSubmit(onSubmit)}
+                            className='flex flex-col gap-block rounded-[2px] border border-rule bg-tile p-block'>
+                            <FormField
+                                control={form.control}
+                                name='name'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t.onboarding.name}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                className={FIELD_CLASS}
+                                                placeholder={t.onboarding.namePlaceholder}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FieldErrorMessage
+                                            t={t}
+                                            keyMap={NAME_ERROR_KEYS}
+                                        />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name='phone'
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t.onboarding.phone}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                className={FIELD_CLASS}
+                                                placeholder={t.onboarding.phonePlaceholder}
+                                                type='tel'
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            {t.common.phoneCountryCodeHint}
+                                        </FormDescription>
+                                        <FieldErrorMessage
+                                            t={t}
+                                            keyMap={PHONE_ERROR_KEYS}
+                                        />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <ActivityField
+                                control={form.control}
+                                activities={activities}
+                                t={t}
+                            />
+
+                            <Button
+                                type='submit'
+                                className='w-full'
+                                loading={isLoading}>
+                                {t.onboarding.submit}
+                            </Button>
+                        </form>
+                    </Form>
                 </div>
-
-                <Form {...form}>
-                    <form
-                        onSubmit={form.handleSubmit(onSubmit)}
-                        className='space-y-4'>
-                        <FormField
-                            control={form.control}
-                            name='name'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.onboarding.name}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t.onboarding.namePlaceholder}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name='phone'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t.onboarding.phone}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder={t.onboarding.phonePlaceholder}
-                                            type='tel'
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        {t.common.phoneCountryCodeHint}
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name='activityIds'
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>
-                                        {t.onboarding.activityLabel}
-                                    </FormLabel>
-                                    <div className='flex flex-wrap gap-2'>
-                                        {activities.map((e) => {
-                                            const selected =
-                                                field.value?.includes(e.id) ??
-                                                false;
-                                            return (
-                                                <button
-                                                    type='button'
-                                                    key={e.id}
-                                                    onClick={() =>
-                                                        field.onChange(
-                                                            selected
-                                                                ? field.value.filter(
-                                                                      (x) =>
-                                                                          x !==
-                                                                          e.id,
-                                                                  )
-                                                                : [
-                                                                      ...(field.value ??
-                                                                          []),
-                                                                      e.id,
-                                                                  ],
-                                                        )
-                                                    }
-                                                    aria-pressed={selected}
-                                                    className={`inline-flex min-h-11 items-center gap-2 rounded-full border py-1.5 pl-2 pr-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                                                        selected
-                                                            ? 'border-transparent bg-primary text-primary-foreground'
-                                                            : 'border-border text-muted-foreground hover:bg-muted'
-                                                    }`}>
-                                                    {/* Same livery as every
-                                                        other member surface:
-                                                        the initial on a magnet
-                                                        tile, beside the name
-                                                        that identifies it. */}
-                                                    <ActivityTile
-                                                        name={e.name}
-                                                    />
-                                                    {e.name}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    <p className='text-xs text-muted-foreground'>
-                                        {t.onboarding.activityHint}
-                                    </p>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <Button
-                            type='submit'
-                            className='w-full'
-                            loading={isLoading}>
-                            {t.onboarding.submit}
-                        </Button>
-                    </form>
-                </Form>
-            </div>
+            </main>
         </div>
     );
 }
