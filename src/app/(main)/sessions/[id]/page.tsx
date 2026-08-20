@@ -64,7 +64,7 @@ export default async function SessionDetailPage({
             },
             attendances: {
                 // ABSENT rows (monthly members who cancelled) are opt-out
-                // markers, not participants â€” hide them. MAYBE is a tentative
+                // markers, not participants — hide them. MAYBE is a tentative
                 // RSVP: shown in the list, but it holds no seat (see _count).
                 where: { status: { in: ['REGISTERED', 'MAYBE', 'PRESENT'] } },
                 include: {
@@ -92,7 +92,7 @@ export default async function SessionDetailPage({
 
     // Resolve the member's effective payment mode for THIS session's period,
     // their per-session payment status, and whether this period's monthly dues
-    // are in (seat lock follows money â€” an unpaid monthly member can't register).
+    // are in (seat lock follows money — an unpaid monthly member can't register).
     const period = currentPeriod(activitySession.date);
     const [membership, sessionPayment, monthlyPayment, mySeat] =
         await Promise.all([
@@ -149,7 +149,7 @@ export default async function SessionDetailPage({
         allowsPerSession: activitySession.activity.allowsPerSession,
     };
     // Non-members may register too (join-on-register), so a missing membership
-    // resolves like an unselected one: the offered set decides â€” a single
+    // resolves like an unselected one: the offered set decides — a single
     // offered mode auto-applies, both-offered stays null until the join dialog.
     const effectiveMode = membership?.isActive
         ? resolvePaymentMode(membership, offered, period.month, period.year)
@@ -184,7 +184,7 @@ export default async function SessionDetailPage({
         activitySession.activity.adminWhatsapp || settings.adminWhatsapp || '';
 
     const rsvpStatus = mySeat?.status ?? null;
-    // "Registered" means holding a seat â€” a MAYBE row is a tentative RSVP that
+    // "Registered" means holding a seat — a MAYBE row is a tentative RSVP that
     // does not, so it isn't treated as registered for capacity/CTA purposes.
     const isRegistered =
         rsvpStatus === 'REGISTERED' || rsvpStatus === 'PRESENT';

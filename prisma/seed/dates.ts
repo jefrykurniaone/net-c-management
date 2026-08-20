@@ -33,9 +33,11 @@ function parseDay(value: string, flag: string): Date {
         throw new Error(`--${flag} must be YYYY-MM-DD (got "${value}")`);
     }
     const [y, m, d] = value.split('-').map(Number);
-    const date = new Date(y, m - 1, d);
+    const date = new Date(Date.UTC(y, m - 1, d));
     const isReal =
-        date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+        date.getUTCFullYear() === y &&
+        date.getUTCMonth() === m - 1 &&
+        date.getUTCDate() === d;
     if (!isReal) throw new Error(`--${flag}: "${value}" is not a real calendar date`);
     return date;
 }
@@ -52,36 +54,44 @@ function resolveAnchor(): Date {
 /** "Today" for every relative computation in the seed. */
 export const now = resolveAnchor();
 
-export function startOfDay(date: Date): Date {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
-}
-
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
 
+/** `date`'s WIB wall-clock fields, readable through the getUTC* accessors. */
+function toWib(date: Date): Date {
+    return new Date(date.getTime() + WIB_OFFSET_MS);
+}
+
 /**
- * UTC-midnight of the WIB (UTC+7) calendar day containing `date`. The
- * generate-sessions and day-reminder crons key off the WIB day and match on
- * dates stored as UTC midnight, so a "today" scenario session must use this
- * (not the local-timezone startOfDay) to land inside the cron's window.
+ * UTC-midnight of the WIB (UTC+7) calendar day containing `date` — the one way
+ * this seed is allowed to turn an instant into a day.
+ *
+ * A Session's `date` is stored as UTC midnight of its WIB day, which is what
+ * `src/lib/wib.ts` documents, what the create route writes (`new Date(date)`
+ * over a `YYYY-MM-DD` string) and what the board reads back with `getUTC*`.
+ * A local-midnight `setHours(0,0,0,0)` looks identical on a UTC host and is
+ * wrong everywhere else: on WIB itself it stores the previous day at 17:00Z,
+ * so every seeded Session lands one day early on the board and the fixture
+ * stops matching the day TESTING.md §4 says it is on. That is what this
+ * function exists to prevent, and why nothing here calls `setHours`.
  */
 export function wibDayStart(date: Date = now): Date {
-    const wib = new Date(date.getTime() + WIB_OFFSET_MS);
+    const wib = toWib(date);
     return new Date(
         Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate()),
     );
 }
 
+/** UTC-midnight of the 1st of the WIB month containing `date`. */
 function startOfMonth(date: Date): Date {
-    return new Date(date.getFullYear(), date.getMonth(), 1);
+    const wib = toWib(date);
+    return new Date(Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), 1));
 }
 
 function resolveRange(): { from: Date; to: Date } {
     const fromValue = flagValue('from');
     const toValue = flagValue('to');
     const from = fromValue ? parseDay(fromValue, 'from') : startOfMonth(now);
-    const to = toValue ? parseDay(toValue, 'to') : startOfDay(now);
+    const to = toValue ? parseDay(toValue, 'to') : wibDayStart(now);
     if (from.getTime() > to.getTime()) {
         throw new Error('--from must be on or before --to');
     }
@@ -98,7 +108,7 @@ export const PAST_TO = RANGE.to;
 
 export function addDays(date: Date, days: number): Date {
     const d = new Date(date);
-    d.setDate(d.getDate() + days);
+    d.setUTCDate(d.getUTCDate() + days);
     return d;
 }
 
@@ -108,11 +118,10 @@ export function addMinutes(date: Date, minutes: number): Date {
 
 /** Next occurrence of `weekday` at least MIN_DAYS_OUT days ahead of `from`. */
 export function nextWeekday(from: Date, weekday: number): Date {
-    const d = startOfDay(from);
-    const delta = (weekday - d.getDay() + DAYS_PER_WEEK) % DAYS_PER_WEEK;
+    const d = wibDayStart(from);
+    const delta = (weekday - d.getUTCDay() + DAYS_PER_WEEK) % DAYS_PER_WEEK;
     const add = delta < MIN_DAYS_OUT ? delta + DAYS_PER_WEEK : delta;
-    d.setDate(d.getDate() + add);
-    return d;
+    return addDays(d, add);
 }
 
 export interface Period {
@@ -121,7 +130,8 @@ export interface Period {
 }
 
 export function periodOf(date: Date): Period {
-    return { month: date.getMonth() + 1, year: date.getFullYear() };
+    const wib = toWib(date);
+    return { month: wib.getUTCMonth() + 1, year: wib.getUTCFullYear() };
 }
 
 export function periodKey(p: Period): number {
@@ -146,12 +156,21 @@ export function monthsAgo(back: number, day: number): Date {
     return new Date(now.getFullYear(), now.getMonth() - back, day, 9, 0, 0);
 }
 
-/** Evenly spaced instants within [PAST_FROM, PAST_TO] — all already elapsed. */
+/**
+ * Evenly spaced days within [PAST_FROM, PAST_TO] — all already elapsed.
+ *
+ * Snapped to `wibDayStart`, like every other Session date: a past Session that
+ * kept the raw spread instant carried a time of day, and the board named its
+ * day from `getUTC*`, so a Session seeded at 19:25Z showed up on the previous
+ * day when a member paged back through the weeks.
+ */
 export function pastSessionDates(count: number): Date[] {
     const span = PAST_TO.getTime() - PAST_FROM.getTime();
     const dates: Date[] = [];
     for (let i = 1; i <= count; i++) {
-        dates.push(new Date(PAST_FROM.getTime() + Math.floor((span * i) / (count + 1))));
+        dates.push(
+            wibDayStart(new Date(PAST_FROM.getTime() + Math.floor((span * i) / (count + 1)))),
+        );
     }
     return dates;
 }
