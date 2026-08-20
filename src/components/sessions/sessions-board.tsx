@@ -116,7 +116,16 @@ export function SessionsBoard({
         <section
             aria-label={t.sessions.boardLabel}
             tabIndex={0}
-            className='overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:[outline-offset:-2px]'>
+            /* Seven 11rem floors are 77rem, and the member layout caps its
+               column at 42rem — so inside that column the week would scroll at
+               every desktop width, not only narrow ones (see DESIGN.md, the
+               settled decision). From `md` up the rail escapes the column and
+               takes the lattice's own measure, capped at 77rem so it completes
+               at desktop width; where the viewport is narrower than the lattice
+               it still scrolls, which is the cost the decision already names.
+               Below `md` the board is one column and keeps the column's width,
+               so it stays flush with the heading and filters above it. */
+            className='overflow-x-auto focus-visible:outline-2 focus-visible:outline-ring focus-visible:[outline-offset:-2px] md:relative md:left-1/2 md:w-[min(100vw-3rem,77rem)] md:-translate-x-1/2'>
             <div
                 className={`grid grid-cols-1 gap-px rounded-sm border border-rule bg-rule ${LATTICE_COLUMNS}`}>
                 {weekdayHeads.map((head) => (
