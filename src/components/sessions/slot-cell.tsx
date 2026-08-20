@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import type { AttendanceStatus, SessionStatus } from '@prisma/client';
 import { ActivityTile } from '@/components/activity/activity-badge';
-import { Mark, MarkedValue, StateMark } from '@/components/ui/mark';
-import { attendanceState, sessionState } from '@/lib/status-mark';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { cn } from '@/lib/utils';
+import type { SlotCellAction, SlotCellData } from './slot-cell-data';
+import { SeatAction } from './seat-action';
+import { SlotNote, SlotTitle, SlotWhen } from './slot-lines';
+import { TopRight } from './slot-standing';
 
 /**
  * The Slot Cell — one Session on the board, and the single seam for rendering
@@ -18,12 +19,9 @@ import { cn } from '@/lib/utils';
  *    the row to carry the date, {@link SlotCellData.day} puts it in this same
  *    column above the time; the board leaves it out because its band owns it.
  * 2. **what** — the Session title as Title, on the first line; then venue and
- *    the Activity's livery as Caption on the second.
+ *    the Activity's livery as Caption on the second, with one note below that.
  * 3. **standing** — free Seats as `n/max` in Figure **or** a mark, hard right of
  *    the first line, so every mark on the surface sits on one edge.
- *
- * The unposted sentence and the quota share the second column below the venue —
- * only one of them can ever apply.
  *
  * The positions are non-negotiable: a member reads any row in two seconds
  * because everything is always in the same place, and one row that reflows
@@ -31,60 +29,29 @@ import { cn } from '@/lib/utils';
  * **data, never nodes** — there is no `children`, no slot props and no ordering
  * prop, because a caller that can pass a node can reorder the row.
  *
+ * **The action is a sibling of the link, never a child of it.** A row that is
+ * one whole anchor cannot hold a button: a control nested inside a link is
+ * invalid, unreachable in the tab order some of the time, and activated
+ * differently by different browsers. So the cell is a ground that holds two
+ * children — the anchor covering the three columns, and, only where the caller
+ * resolved one, an action row beneath it aligned to the Session's own column.
+ * The three columns are untouched by it, no mark leaves its shared right edge,
+ * and the row-wide tap target that opens the Session survives. A cell with no
+ * action renders exactly the arrangement it did before there were any.
+ *
  * Livery is a magnet tile bearing the Activity's initial, with no colour
  * ({@link ActivityTile}) — never a coloured square and never an edge stripe.
  *
- * Every state here comes from the mark resolver. The two direct {@link Mark}
- * uses are the two things on this surface with no stored state: a day nobody
- * has posted a Session on, and a Seat nobody has claimed.
+ * Every state here comes from the mark resolver — see `slot-standing.tsx` for
+ * the standing column's fixed precedence and `slot-lines.tsx` for the note.
  */
 
-export type SlotCellSeats = Readonly<{
-    /** Free Seats — capacity minus the seat-holding rows. */
-    free: number;
-    max: number;
-}>;
-
-/** `getSessionQuotas`' result for one Session. `needed <= 0` means no quota. */
-export type SlotCellQuota = Readonly<{
-    committed: number;
-    needed: number;
-    isMet: boolean;
-}>;
-
-export type SlotCellData = Readonly<{
-    /**
-     * The date, for a caller with no day band above the row to carry it — the
-     * dashboard, a detail header. `null` on the sessions board, whose band says
-     * the date once for every row under it.
-     */
-    day: Readonly<{ label: string; dayOfMonth: number }> | null;
-    title: string;
-    startTime: string;
-    endTime: string;
-    location: string;
-    activityName: string;
-    /** `null` where there is nothing to open — an unposted standing slot. */
-    href: string | null;
-    /** `null` means unposted: a standing weekly slot with no Session on it. */
-    status: SessionStatus | null;
-    /** The reader's own Seat state in this Session, where they have one. */
-    ownStatus: AttendanceStatus | null;
-    seats: SlotCellSeats | null;
-    quota: SlotCellQuota | null;
-}>;
-
-/**
- * The own-Seat states worth preempting the seat figure with. `ABSENT` — Opted
- * Out — is deliberately absent: the member released that Seat, so the free-Seat
- * figure is the fact they now need, and their own withdrawal is on the Session
- * itself. Nothing produces a No-Show, so nothing here draws Hollow.
- */
-const OWN_STATES_MARKED: readonly AttendanceStatus[] = [
-    'REGISTERED',
-    'PRESENT',
-    'MAYBE',
-];
+export type {
+    SlotCellAction,
+    SlotCellData,
+    SlotCellQuota,
+    SlotCellSeats,
+} from './slot-cell-data';
 
 /**
  * Three columns: the fixed-width `when` rail, the Session, and the standing
@@ -93,161 +60,31 @@ const OWN_STATES_MARKED: readonly AttendanceStatus[] = [
  */
 const CELL_CLASS = [
     'grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-baseline',
-    'gap-x-cell gap-y-hair bg-tile p-cell',
+    'gap-x-cell gap-y-hair p-cell',
 ].join(' ');
 
 /* An offset ring would be clipped by the lattice's own `overflow-hidden`, so
-   the focus ring is drawn 2px *inside* the cell edge instead. */
+   the focus ring is drawn 2px *inside* the cell edge instead. The hover tint
+   belongs to the ground, not to the anchor: the action row shares the cell, and
+   half a cell lighting up reads as two objects. */
 const CELL_INTERACTIVE = cn(
-    'transition-colors hover:bg-board active:shadow-tile-pressed',
+    'active:shadow-tile-pressed',
     'focus-visible:outline-2 focus-visible:outline-ring',
     'focus-visible:[outline-offset:-2px]',
 );
 
-/** Free Seats as `n/max`, in tabular figures under a tracked-caps label. */
-function FreeSeats({
-    seats,
-    t,
-}: Readonly<{ seats: SlotCellSeats; t: Dictionary }>) {
-    const spoken = t.sessions.boardSeatsAria
-        .replace('{n}', String(seats.free))
-        .replace('{max}', String(seats.max));
-    return (
-        <span className='flex flex-col items-end gap-hair'>
-            <span className='type-label text-muted-foreground'>
-                {t.sessions.boardSeatsFree}
-            </span>
-            <span className='type-figure text-foreground'>
-                <span aria-hidden='true'>
-                    {seats.free}/{seats.max}
-                </span>
-                <span className='sr-only'>{spoken}</span>
-            </span>
-        </span>
-    );
-}
+/** The cell's own ground. One grid child of the lattice, so rules are unchanged. */
+const CELL_GROUND = 'flex flex-col bg-tile transition-colors';
 
 /**
- * The top-right slot, which holds exactly one thing. A cancelled Session
- * overrides the reader's own Seat, their own Seat overrides the Session's point
- * in its life, and the seat figure is what a live Session with Seats left shows.
+ * The action's own row, on the same fixed template as the cell above it so the
+ * control starts on the Session column's left edge and the `when` rail stays a
+ * column of times and nothing else.
  */
-function TopRight({
-    data,
-    t,
-}: Readonly<{ data: SlotCellData; t: Dictionary }>) {
-    if (data.status === null) {
-        return <Mark kind='blank'>{t.marks.unposted}</Mark>;
-    }
-    if (data.status === 'CANCELLED') {
-        return <StateMark state={sessionState(data.status)} labels={t.marks} />;
-    }
-    if (data.ownStatus !== null && OWN_STATES_MARKED.includes(data.ownStatus)) {
-        return (
-            <StateMark state={attendanceState(data.ownStatus)} labels={t.marks} />
-        );
-    }
-    if (data.status !== 'SCHEDULED') {
-        return <StateMark state={sessionState(data.status)} labels={t.marks} />;
-    }
-    if (data.seats === null) {
-        return <Mark kind='blank'>{t.marks.unposted}</Mark>;
-    }
-    if (data.seats.free <= 0) {
-        return <Mark kind='blank'>{t.sessions.full}</Mark>;
-    }
-    return <FreeSeats seats={data.seats} t={t} />;
-}
-
-const TITLE_CLASS = 'type-title text-card-foreground';
-
-/**
- * A void Session dims its title rather than striking it — the strike lives on
- * the mark's own label, where one line through two words reads as a stamp
- * instead of as damage to the cell.
- */
-function SlotTitle({ data }: Readonly<{ data: SlotCellData }>) {
-    if (data.status === null) {
-        return <h3 className={TITLE_CLASS}>{data.title}</h3>;
-    }
-    return (
-        <h3>
-            <MarkedValue
-                state={sessionState(data.status)}
-                className={TITLE_CLASS}>
-                {data.title}
-            </MarkedValue>
-        </h3>
-    );
-}
-
-/**
- * The Activity's minimum-members viability floor, per Session, from
- * `getSessionQuotas`. It wraps rather than running out of the cell: a mark that
- * overflows would be clipped by the lattice.
- */
-function QuotaLine({
-    quota,
-    t,
-}: Readonly<{ quota: SlotCellQuota; t: Dictionary }>) {
-    const label = quota.isMet
-        ? t.sessions.quotaMet
-        : t.sessions.quotaNeedMore.replace(
-              '{n}',
-              String(quota.needed - quota.committed),
-          );
-    return (
-        <Mark
-            kind={quota.isMet ? 'ink' : 'tape'}
-            className='max-w-full justify-start whitespace-normal text-left'>
-            <span>{label}</span>
-            <span className='tabular-nums'>
-                ({quota.committed}/{quota.needed})
-            </span>
-        </Mark>
-    );
-}
-
-/** Either the unposted sentence or the quota — never both; one is unposted. */
-function SlotNote({
-    data,
-    t,
-}: Readonly<{ data: SlotCellData; t: Dictionary }>) {
-    if (data.status === null) {
-        return (
-            <p className='type-caption text-muted-foreground'>
-                {t.sessions.boardNotPosted}
-            </p>
-        );
-    }
-    if (data.quota === null || data.quota.needed <= 0) return null;
-    return <QuotaLine quota={data.quota} t={t} />;
-}
-
-/**
- * The `when` rail. The time is what every row shares, so it leads; the date sits
- * above it only for a caller with no band of its own (see {@link SlotCellData}).
- */
-function SlotWhen({ data }: Readonly<{ data: SlotCellData }>) {
-    return (
-        <span className='flex flex-col gap-hair'>
-            {data.day && (
-                <>
-                    <span className='type-label text-muted-foreground'>
-                        {data.day.label}
-                    </span>
-                    <span className='type-figure-lead text-foreground'>
-                        {data.day.dayOfMonth}
-                    </span>
-                </>
-            )}
-            <span className='type-figure text-foreground'>{data.startTime}</span>
-            <span className='type-caption text-muted-foreground'>
-                {data.endTime}
-            </span>
-        </span>
-    );
-}
+const ACTION_ROW_CLASS = [
+    'grid grid-cols-[5.5rem_minmax(0,1fr)] items-center',
+    'gap-x-cell px-cell pb-cell',
+].join(' ');
 
 function SlotCellBody({
     data,
@@ -281,7 +118,8 @@ function SlotCellBody({
     );
 }
 
-export function SlotCell({
+/** The three columns. An anchor where there is something to open, else a box. */
+function SlotCellRow({
     data,
     t,
 }: Readonly<{ data: SlotCellData; t: Dictionary }>) {
@@ -296,5 +134,36 @@ export function SlotCell({
         <Link href={data.href} className={cn(CELL_CLASS, CELL_INTERACTIVE)}>
             <SlotCellBody data={data} t={t} />
         </Link>
+    );
+}
+
+function SlotActionRow({
+    action,
+    title,
+}: Readonly<{ action: SlotCellAction; title: string }>) {
+    return (
+        <div className={ACTION_ROW_CLASS}>
+            <span aria-hidden='true' />
+            <span className='justify-self-start'>
+                <SeatAction action={action} title={title} />
+            </span>
+        </div>
+    );
+}
+
+export function SlotCell({
+    data,
+    t,
+}: Readonly<{ data: SlotCellData; t: Dictionary }>) {
+    const action = data.action ?? null;
+    return (
+        <div
+            className={cn(
+                CELL_GROUND,
+                data.href !== null && 'hover:bg-board',
+            )}>
+            <SlotCellRow data={data} t={t} />
+            {action && <SlotActionRow action={action} title={data.title} />}
+        </div>
     );
 }

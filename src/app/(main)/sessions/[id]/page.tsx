@@ -4,20 +4,11 @@ import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
 import { format } from 'date-fns';
 import { id as localeId, enUS } from 'date-fns/locale';
-import { Mark, StateMark, MarkedValue } from '@/components/ui/mark';
-import { sessionState } from '@/lib/status-mark';
-import { ActivityBadge } from '@/components/activity/activity-badge';
 import { RSVPButton } from '@/components/sessions/rsvp-button';
+import { SessionDetailHeader } from '@/components/sessions/session-detail-header';
+import { SessionFacts } from '@/components/sessions/session-facts';
 import { PlayerList, type PlayerItem } from '@/components/sessions/player-list';
-import {
-    ArrowLeft,
-    MapPin,
-    Clock,
-    Users,
-    CalendarDays,
-    CreditCard,
-    FileText,
-} from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -32,31 +23,6 @@ import { getSettings } from '@/lib/settings';
 import { WhatsappButton } from '@/components/sessions/whatsapp-button';
 import { ShareSessionCard } from '@/components/sessions/share-session-card';
 import { isRsvpClosed, rsvpCloseAt } from '@/lib/rsvp';
-
-const MINUTES_PER_HOUR = 60;
-
-/** "19:00" + "21:00" â†’ "2 hours" (or "1.5 hours"); empty when unparseable. */
-function formatDuration(
-    start: string,
-    end: string,
-    hourLabel: string,
-    hoursLabel: string,
-): string {
-    const [startH, startM] = start.split(':').map(Number);
-    const [endH, endM] = end.split(':').map(Number);
-    const minutes =
-        endH * MINUTES_PER_HOUR + endM - (startH * MINUTES_PER_HOUR + startM);
-    if (!Number.isFinite(minutes) || minutes <= 0) return '';
-    const hours = minutes / MINUTES_PER_HOUR;
-    const value = Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
-    return `${value} ${hours === 1 ? hourLabel : hoursLabel}`;
-}
-
-function mapsUrl(location: string): string {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        location,
-    )}`;
-}
 
 export default async function SessionDetailPage({
     params,
@@ -117,42 +83,56 @@ export default async function SessionDetailPage({
     // their per-session payment status, and whether this period's monthly dues
     // are in (seat lock follows money â€” an unpaid monthly member can't register).
     const period = currentPeriod(activitySession.date);
-    const [membership, sessionPayment, monthlyPayment] = await Promise.all([
-        prisma.membership.findUnique({
-            where: {
-                userId_activityId: {
+    const [membership, sessionPayment, monthlyPayment, mySeat] =
+        await Promise.all([
+            prisma.membership.findUnique({
+                where: {
+                    userId_activityId: {
+                        userId: authSession.user.id,
+                        activityId: activitySession.activityId,
+                    },
+                },
+                select: {
+                    isActive: true,
+                    paymentMode: true,
+                    effectiveFrom: true,
+                    pendingMode: true,
+                    pendingEffectiveFrom: true,
+                },
+            }),
+            prisma.payment.findFirst({
+                where: {
+                    userId: authSession.user.id,
+                    sessionId: activitySession.id,
+                    type: 'SESSION',
+                },
+                select: { status: true, notes: true },
+            }),
+            prisma.payment.findFirst({
+                where: {
                     userId: authSession.user.id,
                     activityId: activitySession.activityId,
+                    type: 'MONTHLY',
+                    month: period.month,
+                    year: period.year,
+                    status: { in: ['PENDING', 'CONFIRMED'] },
                 },
-            },
-            select: {
-                isActive: true,
-                paymentMode: true,
-                effectiveFrom: true,
-                pendingMode: true,
-                pendingEffectiveFrom: true,
-            },
-        }),
-        prisma.payment.findFirst({
-            where: {
-                userId: authSession.user.id,
-                sessionId: activitySession.id,
-                type: 'SESSION',
-            },
-            select: { status: true, notes: true },
-        }),
-        prisma.payment.findFirst({
-            where: {
-                userId: authSession.user.id,
-                activityId: activitySession.activityId,
-                type: 'MONTHLY',
-                month: period.month,
-                year: period.year,
-                status: { in: ['PENDING', 'CONFIRMED'] },
-            },
-            select: { id: true },
-        }),
-    ]);
+                select: { id: true },
+            }),
+            // The reader's own row, read directly rather than picked out of the
+            // participants list: that list filters ABSENT out (an Opted Out row
+            // is not a Participant), which is exactly the state the header and
+            // the forfeit sentence below have to be able to see.
+            prisma.attendance.findUnique({
+                where: {
+                    userId_sessionId: {
+                        userId: authSession.user.id,
+                        sessionId: activitySession.id,
+                    },
+                },
+                select: { status: true, holdExpiresAt: true },
+            }),
+        ]);
     const offered = {
         allowsMonthly: activitySession.activity.allowsMonthly,
         allowsPerSession: activitySession.activity.allowsPerSession,
@@ -192,14 +172,19 @@ export default async function SessionDetailPage({
     const whatsapp =
         activitySession.activity.adminWhatsapp || settings.adminWhatsapp || '';
 
-    const myAttendance = activitySession.attendances.find(
-        (a) => a.userId === authSession.user.id,
-    );
-    const rsvpStatus = myAttendance?.status ?? null;
+    const rsvpStatus = mySeat?.status ?? null;
     // "Registered" means holding a seat â€” a MAYBE row is a tentative RSVP that
     // does not, so it isn't treated as registered for capacity/CTA purposes.
     const isRegistered =
         rsvpStatus === 'REGISTERED' || rsvpStatus === 'PRESENT';
+    // A Dues member who released this Seat forfeited the Session: monthly Dues
+    // buy availability for the month, not a per-Session credit, so nothing is
+    // owed back. `releaseSessionSeat` keeps the row as ABSENT in exactly this
+    // case, which is why the three facts together are the whole test.
+    const hasForfeitedSeat =
+        rsvpStatus === 'ABSENT' &&
+        effectiveMode === 'MONTHLY' &&
+        monthlyPayment !== null;
     const isFull =
         activitySession._count.attendances >= activitySession.maxPlayers;
     const isFreeSession = activitySession.fee === 0;
@@ -215,12 +200,6 @@ export default async function SessionDetailPage({
 
     const attendeeCount = activitySession._count.attendances;
     const dateFormat = locale === 'id' ? 'EEEE, d MMMM' : 'EEEE, MMMM d';
-    const duration = formatDuration(
-        activitySession.startTime,
-        activitySession.endTime,
-        t.sessions.durationHour,
-        t.sessions.durationHours,
-    );
     const fillPercent = Math.min(
         (attendeeCount / activitySession.maxPlayers) * 100,
         100,
@@ -256,104 +235,47 @@ export default async function SessionDetailPage({
             </div>
 
             <div className='space-y-4'>
-                {/* Title */}
-                <div className='space-y-2.5'>
-                    <div className='flex items-center gap-2 flex-wrap'>
-                        <ActivityBadge
-                            name={activitySession.activity.name}
-                        />
-                        <StateMark
-                            state={sessionState(activitySession.status)}
-                            labels={t.marks}
-                        />
-                    </div>
-                    <h1 className='text-2xl font-bold text-foreground leading-tight'>
-                        <MarkedValue
-                            state={sessionState(activitySession.status)}>
-                            {activitySession.title}
-                        </MarkedValue>
-                    </h1>
-                </div>
+                {/* The header is the Slot Cell — one Session, drawn one way,
+                    wherever it appears. */}
+                <SessionDetailHeader
+                    session={{
+                        title: activitySession.title,
+                        date: activitySession.date,
+                        startTime: activitySession.startTime,
+                        endTime: activitySession.endTime,
+                        location: activitySession.location,
+                        activityName: activitySession.activity.name,
+                        status: activitySession.status,
+                        ownStatus: rsvpStatus,
+                        seats: {
+                            free: Math.max(
+                                activitySession.maxPlayers - attendeeCount,
+                                0,
+                            ),
+                            max: activitySession.maxPlayers,
+                        },
+                        quota: quota ?? null,
+                    }}
+                    t={t}
+                />
 
-                {/* Details card */}
-                <div className='bg-card rounded-xl border border-border p-5 text-sm text-secondary-foreground divide-y divide-border'>
-                    <div className='flex items-center gap-3 pb-3'>
-                        <CalendarDays className='w-[18px] h-[18px] shrink-0 text-primary' />
-                        <span className='text-foreground'>
-                            {format(new Date(activitySession.date), dateFormat, {
-                                locale: dateLocale,
-                            })}
-                        </span>
-                    </div>
-                    <div className='flex items-center gap-3 py-3'>
-                        <Clock className='w-[18px] h-[18px] shrink-0 text-primary' />
-                        <span className='tabular-nums text-foreground'>
-                            {activitySession.startTime} â€“{' '}
-                            {activitySession.endTime}
-                            {duration && (
-                                <span className='ml-1.5 text-muted-foreground'>
-                                    ({duration})
-                                </span>
-                            )}
-                        </span>
-                    </div>
-                    <div className='flex items-center gap-3 py-3'>
-                        <MapPin className='w-[18px] h-[18px] shrink-0 text-primary' />
-                        <span className='flex-1 text-foreground'>
-                            {activitySession.location}
-                        </span>
-                        {activitySession.location && (
-                            <a
-                                href={mapsUrl(activitySession.location)}
-                                target='_blank'
-                                rel='noopener noreferrer'
-                                className='shrink-0 font-medium text-primary hover:underline'>
-                                {t.sessions.mapLink}
-                            </a>
-                        )}
-                    </div>
-                    {activitySession.fee > 0 && (
-                        <div className='flex items-center gap-3 py-3'>
-                            <CreditCard className='w-[18px] h-[18px] shrink-0 text-primary' />
-                            <span className='text-foreground'>
-                                <span className='tabular-nums'>
-                                    Rp{' '}
-                                    {activitySession.fee.toLocaleString('id-ID')}
-                                </span>
-                                <span className='text-muted-foreground'>
-                                    {t.sessions.perPlayer}
-                                </span>
-                            </span>
-                        </div>
-                    )}
-                    {quota && quota.needed > 0 && (
-                        <div className='flex items-center gap-3 py-3'>
-                            <Users className='w-[18px] h-[18px] shrink-0 text-primary' />
-                            <span className='tabular-nums'>
-                                {quota.committed}/{quota.needed}
-                            </span>
-                            <span className='flex-1'>
-                                {t.sessions.quotaLabel}
-                            </span>
-                            <Mark kind={quota.isMet ? 'ink' : 'tape'}>
-                                {quota.isMet
-                                    ? t.sessions.quotaMet
-                                    : t.sessions.quotaNeedMore.replace(
-                                          '{n}',
-                                          String(quota.needed - quota.committed),
-                                      )}
-                            </Mark>
-                        </div>
-                    )}
-                    {activitySession.notes && (
-                        <div className='flex items-start gap-3 pt-3'>
-                            <FileText className='w-[18px] h-[18px] shrink-0 text-primary mt-0.5' />
-                            <span className='whitespace-pre-wrap'>
-                                {activitySession.notes}
-                            </span>
-                        </div>
-                    )}
-                </div>
+                {/* Only what the header above cannot say — never the times, the
+                    venue or the quota a second time. */}
+                <SessionFacts
+                    session={{
+                        dateLabel: format(
+                            new Date(activitySession.date),
+                            dateFormat,
+                            { locale: dateLocale },
+                        ),
+                        startTime: activitySession.startTime,
+                        endTime: activitySession.endTime,
+                        location: activitySession.location,
+                        fee: activitySession.fee,
+                        notes: activitySession.notes,
+                    }}
+                    t={t}
+                />
 
                 {/* RSVP card */}
                 <div className='bg-card rounded-xl border border-border p-5 space-y-3'>
@@ -385,10 +307,15 @@ export default async function SessionDetailPage({
                         sessionPaymentStatus={sessionPayment?.status ?? null}
                         sessionPaymentNotes={sessionPayment?.notes ?? null}
                         holdExpiresAtISO={
-                            myAttendance?.holdExpiresAt?.toISOString() ?? null
+                            mySeat?.holdExpiresAt?.toISOString() ?? null
                         }
                         adminWhatsapp={whatsapp}
                     />
+                    {hasForfeitedSeat && (
+                        <p className='text-center text-xs text-muted-foreground'>
+                            {t.sessions.duesForfeited}
+                        </p>
+                    )}
                     {pendingSwitchNote && (
                         <p className='text-center text-xs text-muted-foreground'>
                             {pendingSwitchNote}

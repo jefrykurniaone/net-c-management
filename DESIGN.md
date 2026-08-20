@@ -327,6 +327,25 @@ Measured on the shipped board: the time column, the title column and the standin
 
 **Free Seats means free, not taken.** The figure is `free/max`, so a full Session reads `0/16`. Taken-over-max makes "full" a comparison the reader has to perform; free-over-max makes it a zero. The figure carries a spoken form beside it, because `2/16` on its own does not say which number is which.
 
+#### The action is a sibling of the link, never a child of it
+
+Claiming a Seat is the commonest thing a member does, so it happens in the row they are already reading. That collides with the cell as it stood: the whole row was one `<Link>`, and a control inside a link is invalid markup — it is not reliably reachable in the tab order, screen readers announce one thing where there are two, and browsers disagree about which of the two a click activates. A button dropped into the old cell would have been a broken cell.
+
+Three routes were available. **Making the title the only link** and the row a plain container was refused: it throws away the row-wide tap target, which on a phone is the difference between hitting a Session and hitting the 16px of text inside it. **Letting the caller pass the action in** was refused harder — it is `children` by another name, and the cell takes data and never nodes for the reason stated above.
+
+The route taken: **the cell is a ground with two children.** The first is the anchor, covering the three columns exactly as before. The second — rendered only where the caller resolved an action — is an action row beneath it, on the same `grid-cols-[5.5rem_minmax(0,1fr)]` template, so the control starts on the Session column's own left edge and the `when` rail stays a column of times and nothing else. The two are siblings, so nothing is ever nested in the anchor, and both are one grid child of the lattice, so the shared rules are untouched.
+
+What this buys, and what it costs:
+
+- **The three columns never move.** The action is on its own row, so no mark leaves the shared right edge and the standing column's precedence is exactly what it was. A cell with no action renders the arrangement it rendered before there were any actions at all — which is what lets the dashboard and the detail header keep composing the same seam without opting into anything.
+- **The row-wide tap target survives.** Tapping the row still opens the Session; tapping the control still claims the Seat. Two tab stops per cell, in reading order.
+- **The hover tint belongs to the ground, not to the anchor.** Tinting only the anchor would light up the top two-thirds of a cell and leave the action strip behind, which reads as two objects rather than one. Only a cell with something to open takes the tint at all.
+- **The action carries an id and two facts, not a callback.** A cell that accepted a handler would let one surface claim and another cancel from an identical-looking control. Which action applies is resolved once, server-side, by `slotActionFor` — a row cannot work it out, because the answer needs the RSVP window and the seat-holding rule.
+
+**The offer is not the permission.** Both actions call the routes the session page has always called, and the server re-checks status, window and capacity under a row lock before it writes. So the board deciding what to *offer* can, at worst, cost a member one refused tap on a stale row — never a wrong write. That is also why the offer is deliberately narrow: a Session that is not Scheduled, or whose window has closed, gets no control rather than one that always fails.
+
+**Opted Out is said on the Session's own line, not in the standing column.** That column still holds exactly one thing, and for a member who released a Seat the free-Seat figure is the fact they now need — so their withdrawal takes the note position under the venue instead, as an **erased** mark reading *Opted Out* beside a plain sentence. Erased, because a member's own choice is not a failure and must not be drawn as one; and it outranks the quota there, because the reader's own standing matters more to them than the community's floor. The forfeit is stated where the money is known: a member on Dues who releases a Seat is told plainly that Dues cover the month rather than the Session, so nothing comes back.
+
 ### The board reads down the page, not across it
 
 **The week is one column of ruled day rows, at every width.** One row per day, top to bottom, each keeping its rule-bounded cell with the day's own tracked-caps label at its head. There are no column heads, no horizontal scrolling, and no board-specific container width: the surface takes the same reading column as the payments history and the profile.

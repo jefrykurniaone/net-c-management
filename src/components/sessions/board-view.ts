@@ -3,6 +3,7 @@ import type { BoardDay, BoardSlot } from '@/lib/board-days';
 import type { BoardSeats } from '@/lib/sessions-board';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { BoardDayView, BoardSlotView } from './sessions-board';
+import { slotActionFor } from './slot-action';
 
 /**
  * `BoardDay` carries a day's situation and its numbers; the dictionary carries
@@ -21,6 +22,11 @@ export interface BoardCopyContext {
     readonly t: Dictionary;
     readonly seatsBySession: ReadonlyMap<string, BoardSeats>;
     readonly ownBySession: ReadonlyMap<string, AttendanceStatus>;
+    /**
+     * The instant the board is read, which the RSVP window is measured against.
+     * Defaults to the present; injectable so a caller can pin it.
+     */
+    readonly now?: Date;
 }
 
 /** "18 August" — the day and its month, never a formatter's idea of either. */
@@ -44,6 +50,8 @@ function postedSlot(
     context: BoardCopyContext,
 ): BoardSlotView {
     const { session } = slot;
+    const ownStatus = context.ownBySession.get(session.id) ?? null;
+    const seats = context.seatsBySession.get(session.id) ?? null;
     return {
         key: session.id,
         cell: {
@@ -56,9 +64,22 @@ function postedSlot(
             activityName: slot.activity.name,
             href: `/sessions/${session.id}`,
             status: session.status,
-            ownStatus: context.ownBySession.get(session.id) ?? null,
-            seats: context.seatsBySession.get(session.id) ?? null,
+            ownStatus,
+            seats,
             quota: slot.quota,
+            // Claiming a Seat is the common action, so it is offered where the
+            // member already is. What the server will allow is re-checked there
+            // under a row lock; this only decides what to put in front of them.
+            action: slotActionFor({
+                sessionId: session.id,
+                status: session.status,
+                date: session.date,
+                startTime: session.startTime,
+                fee: session.fee,
+                ownStatus,
+                seats,
+                now: context.now,
+            }),
         },
     };
 }
@@ -87,6 +108,8 @@ function unpostedSlot(
             ownStatus: null,
             seats: null,
             quota: null,
+            // Nothing to claim: there is no Session here yet to claim it in.
+            action: null,
         },
     };
 }

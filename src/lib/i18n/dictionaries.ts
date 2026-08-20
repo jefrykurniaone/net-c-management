@@ -383,6 +383,24 @@ const en = {
             'Sessions have not been posted yet. They appear here as soon as an Admin posts one.',
         boardSeatsFree: 'Free',
         boardSeatsAria: '{n} of {max} seats free',
+        // Claiming and releasing a Seat from the row the member is reading.
+        // Every control on the surface reads the same two words, so each one
+        // names its own Session to a screen reader.
+        boardClaim: 'Claim a Seat',
+        boardClaimAndPay: 'Claim & pay',
+        boardClaimAria: 'Claim a Seat in {title}',
+        boardWithdraw: 'Withdraw',
+        boardWithdrawAria: 'Withdraw from {title}',
+        boardClaimed: 'Seat claimed.',
+        boardWithdrawn: 'Seat released — somebody else can take it now.',
+        // Dues buy availability for the month, not this Session, so releasing a
+        // Seat forfeits it. Said plainly, so nobody waits for money back.
+        boardForfeited:
+            'Seat released. Your Dues cover the month, not this Session, so nothing is refunded.',
+        boardChooseMode: 'Choose how you pay for this activity first.',
+        boardOptedOut: 'You released this Seat.',
+        duesForfeited:
+            'You opted out of this Session. Your Dues cover the month, not this Session, so nothing is refunded.',
     },
     payments: {
         title: 'Monthly Dues',
@@ -1234,6 +1252,19 @@ const id: typeof en = {
             'Belum ada sesi yang diumumkan. Sesi akan muncul di sini begitu Admin mengumumkan satu.',
         boardSeatsFree: 'Sisa',
         boardSeatsAria: '{n} dari {max} kursi tersisa',
+        boardClaim: 'Ambil kursi',
+        boardClaimAndPay: 'Ambil & bayar',
+        boardClaimAria: 'Ambil kursi di {title}',
+        boardWithdraw: 'Batal ikut',
+        boardWithdrawAria: 'Batal ikut {title}',
+        boardClaimed: 'Kursi diambil.',
+        boardWithdrawn: 'Kursi dilepas — anggota lain bisa mengambilnya sekarang.',
+        boardForfeited:
+            'Kursi dilepas. Iuranmu menanggung satu bulan, bukan sesi ini, jadi tidak ada pengembalian dana.',
+        boardChooseMode: 'Pilih dulu cara pembayaran untuk aktivitas ini.',
+        boardOptedOut: 'Kamu melepas kursi ini.',
+        duesForfeited:
+            'Kamu batal ikut sesi ini. Iuranmu menanggung satu bulan, bukan sesi ini, jadi tidak ada pengembalian dana.',
     },
     payments: {
         title: 'Iuran Bulanan',
