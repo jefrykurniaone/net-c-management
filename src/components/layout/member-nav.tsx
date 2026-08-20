@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { ShieldCheck, User, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     DropdownMenu,
@@ -20,24 +20,19 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { getMemberNav, isNavActive, type NavItem } from './nav-items';
 
-type ShellProps = Readonly<{ communityName: string; logoUrl?: string; isAdmin: boolean }>;
+type ShellProps = Readonly<{ communityName: string; logoUrl?: string }>;
 
-/** Nav items shared by both surfaces: member core (+ Profile on mobile) + Admin entry when admin. */
-function useMemberItems({
-    withProfile,
-    isAdmin,
-}: {
-    withProfile: boolean;
-    isAdmin: boolean;
-}): NavItem[] {
+/**
+ * Nav items shared by both member shell surfaces: member core (+ Profile on
+ * mobile). Deliberately member-only — an admin destination does not belong
+ * in the member rail; an Admin reaches `/admin` from the admin shell itself.
+ */
+function useMemberItems({ withProfile }: { withProfile: boolean }): NavItem[] {
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const items = [...getMemberNav(t)];
     if (withProfile) {
         items.push({ label: t.nav.profile, href: '/profile', icon: User });
-    }
-    if (isAdmin) {
-        items.push({ label: t.nav.admin, href: '/admin', icon: ShieldCheck });
     }
     return items;
 }
@@ -113,11 +108,11 @@ function ProfileMenu() {
 }
 
 /** Sticky top bar: identity mark + inline desktop nav (≥ md) + profile menu. */
-export function MemberTopBar({ communityName, logoUrl, isAdmin }: ShellProps) {
+export function MemberTopBar({ communityName, logoUrl }: ShellProps) {
     const pathname = usePathname();
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const items = useMemberItems({ withProfile: false, isAdmin });
+    const items = useMemberItems({ withProfile: false });
 
     return (
         <header className='sticky top-0 z-30 flex items-center gap-4 px-4 py-3 bg-card border-b border-border'>
@@ -133,12 +128,12 @@ export function MemberTopBar({ communityName, logoUrl, isAdmin }: ShellProps) {
                             href={href}
                             aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-2 px-3 min-h-11 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                'flex items-center gap-2 px-3 min-h-11 rounded-sm text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2',
                                 active
-                                    ? 'bg-accent text-accent-foreground font-semibold'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                    ? 'bg-primary-solid text-primary-solid-foreground font-semibold focus-visible:ring-primary-solid-foreground'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring',
                             )}>
-                            <Icon className='w-4 h-4 shrink-0' />
+                            <Icon className='w-4 h-4 shrink-0' aria-hidden='true' />
                             {label}
                         </Link>
                     );
@@ -151,17 +146,23 @@ export function MemberTopBar({ communityName, logoUrl, isAdmin }: ShellProps) {
     );
 }
 
-/** Fixed bottom tab bar — mobile only (< md). */
-export function MemberBottomNav({ isAdmin }: Readonly<{ isAdmin: boolean }>) {
+/**
+ * Fixed bottom rail — mobile only (< md). A rail of equal cells divided by
+ * 1px rules (never floating pills with gaps between them, per the Cell-Scale
+ * Rule), full-bleed to both screen edges. The active cell is a filled Court
+ * Green identity tile — form (a filled rectangle), not colour alone, is what
+ * marks it, matching the Mark-Not-Hue Rule the rest of the system follows.
+ */
+export function MemberBottomNav() {
     const pathname = usePathname();
     const { locale } = useLocale();
     const t = getDictionary(locale);
-    const items = useMemberItems({ withProfile: true, isAdmin });
+    const items = useMemberItems({ withProfile: true });
 
     return (
         <nav
             aria-label={t.nav.mainLabel}
-            className='md:hidden fixed bottom-0 inset-x-0 z-30 flex items-stretch justify-around gap-1 bg-card border-t border-border px-3 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.375rem)]'>
+            className='md:hidden fixed bottom-0 inset-x-0 z-30 flex divide-x divide-rule border-t border-rule bg-tile pb-[max(env(safe-area-inset-bottom),0.375rem)]'>
             {items.map(({ label, shortLabel, href, icon: Icon }) => {
                 const active = isNavActive(pathname, href);
                 return (
@@ -170,12 +171,12 @@ export function MemberBottomNav({ isAdmin }: Readonly<{ isAdmin: boolean }>) {
                         href={href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                            'flex flex-1 flex-col items-center justify-center gap-1 py-1.5 min-h-14 rounded-sm text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                            'type-label flex min-h-14 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
                             active
-                                ? 'bg-accent text-accent-foreground font-semibold'
-                                : 'text-subtle-foreground hover:text-foreground',
+                                ? 'bg-primary-solid text-primary-solid-foreground focus-visible:ring-primary-solid-foreground'
+                                : 'text-secondary-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring',
                         )}>
-                        <Icon className='w-5 h-5 shrink-0' />
+                        <Icon className='w-5 h-5 shrink-0' aria-hidden='true' />
                         <span className='truncate max-w-full px-1'>
                             {shortLabel ?? label}
                         </span>
