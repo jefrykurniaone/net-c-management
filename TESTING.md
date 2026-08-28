@@ -1585,6 +1585,12 @@ hold. Any JPEG/PNG/WebP under 5MB will do as the Proof image.
 **Preconditions:** TC-MS-016 has run and left one PENDING Badminton MONTHLY
 Payment. Sign in as `owner@xclub.local` for steps 1–2, then back as Adi.
 
+Adi also holds three *historical* Attendance rows on Badminton Sessions dated
+inside that same calendar month — one `PRESENT`, one `ABSENT` (Opted Out) and
+one `NO_SHOW`, the last recorded by an Admin from the Session edit form's
+attendance control. Record their `Attendance.id` values before step 2; the case
+asserts on them in step 7.
+
 **Steps:**
 1. As owner, open `/admin/payments`, filter Status = Pending, find Adi's
    Badminton row.
@@ -1595,6 +1601,8 @@ Payment. Sign in as `owner@xclub.local` for steps 1–2, then back as Adi.
 4. Read the rejected row: mark, amount, reason, and what follows it.
 5. Read the Badminton dues card and the `/dashboard` Badminton mark.
 6. Re-run the helper calls from TC-MS-016 step 1.
+7. Re-read the three precondition Attendance rows by `Attendance.id`, straight
+   from the database.
 
 **Expected result:**
 
@@ -1617,9 +1625,17 @@ Payment. Sign in as `owner@xclub.local` for steps 1–2, then back as Adi.
   Payment was holding this period: every `REGISTERED` row of Adi's across
   Badminton's Sessions in that calendar month is deleted, so each of those
   Sessions' `seatsHeld` falls by exactly one and returns to its TC-MS-016
-  "before" figure. `PRESENT` and `ABSENT` rows are untouched — a completed
-  Session's history is never rewritten. Assert this on **Hold Lab** and on
+  "before" figure. `PRESENT`, `ABSENT` and `NO_SHOW` rows are untouched — a
+  completed Session's history is never rewritten, and a No-Show is history in
+  exactly the way the other two are. Assert this on **Hold Lab** and on
   **Weekly Rally Night**: `mySeat` is `null` on both afterwards.
+- **History survives the Reject, from the database.** Re-read the three
+  precondition rows by `Attendance.id`. All three still exist and all three
+  still carry their original status — `PRESENT`, `ABSENT` and `NO_SHOW`. A
+  missing `NO_SHOW` row, or one whose status changed, fails the case: the
+  cleanup deletes on `status: 'REGISTERED'` and nothing else, and No-Show is
+  preserved by that construction rather than by a rule of its own
+  (`docs/adr/0001-no-show-attendance-value.md`).
 
 #### TC-MS-018 · P0 · Positive — Money display: a column of amounts aligns, and a server-set amount is visibly not the member's to edit
 

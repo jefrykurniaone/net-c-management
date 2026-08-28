@@ -2,9 +2,25 @@ import { auth } from "@/lib/auth";
 import { admissionDenied, isAdmittedSession } from "@/lib/admission";
 import { prisma } from "@/lib/prisma";
 import { isAdminRole } from "@/lib/utils";
+import { AttendanceStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
-// POST /api/sessions/[id]/attendance/manual — admin marks user as PRESENT
+/**
+ * What an Admin may set by hand. `MAYBE` stays out: it is the member's own
+ * tentative RSVP, never an Admin's judgement about them. `NO_SHOW` is in,
+ * because an Admin recording one deliberately is the *only* way a No-Show is
+ * ever written — nothing derives it from a Session that ended with rows still
+ * `REGISTERED` (docs/adr/0001-no-show-attendance-value.md).
+ */
+const ADMIN_SETTABLE_STATUSES: AttendanceStatus[] = [
+  AttendanceStatus.REGISTERED,
+  AttendanceStatus.PRESENT,
+  AttendanceStatus.ABSENT,
+  AttendanceStatus.NO_SHOW,
+];
+
+// POST /api/sessions/[id]/attendance/manual — admin records one member's
+// attendance: Registered, Present, Opted Out or No-Show.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -19,9 +35,9 @@ export async function POST(
 
   const { id: sessionId } = await params;
   const body = await req.json();
-  const { userId, status } = body as { userId: string; status: "PRESENT" | "ABSENT" | "REGISTERED" };
+  const { userId, status } = body as { userId: string; status: AttendanceStatus };
 
-  if (!userId || !["PRESENT", "ABSENT", "REGISTERED"].includes(status)) {
+  if (!userId || !ADMIN_SETTABLE_STATUSES.includes(status)) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
   }
 

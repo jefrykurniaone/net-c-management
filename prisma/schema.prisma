@@ -25,11 +25,21 @@ enum SessionStatus {
   CANCELLED
 }
 
+// What became of one Participant's Seat in one Session, in CONTEXT.md's words.
+// REGISTERED is a Seat held with money behind it; MAYBE is a tentative RSVP that
+// holds no Seat; PRESENT is a Seat held and attended. ABSENT is **Opted Out** —
+// the member held a Seat and withdrew, their own choice — and is deliberately
+// not renamed to match that word (docs/adr/0001-no-show-attendance-value.md).
+// NO_SHOW is **No-Show**: held a Seat, did not withdraw, did not attend. It
+// differs from ABSENT in exactly one way — nobody decided — so only an Admin
+// records it, and no code path derives it from a Session that has ended.
+// Only REGISTERED and PRESENT hold a Seat; NO_SHOW changes no capacity figure.
 enum AttendanceStatus {
   REGISTERED
   MAYBE
   PRESENT
   ABSENT
+  NO_SHOW
 }
 
 enum PaymentStatus {
@@ -135,7 +145,6 @@ model Activity {
   // No colour: the livery is a magnet tile bearing the Activity's initial, so
   // an admin-chosen hex has nowhere to render and could clear neither contrast
   // nor legibility on both board materials (DESIGN.md:316).
-  icon            String? // optional lucide icon name
   monthlyFee       Int     @default(0) // consolidated monthly dues per Activity (AR-7)
   sessionFee       Int     @default(0) // default per-session price inherited by new Sessions (FR-8)
   allowsMonthly    Boolean @default(true) // Activity offers the Monthly payment mode (FR-9)

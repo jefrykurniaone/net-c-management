@@ -13,8 +13,6 @@ import { cn } from '@/lib/utils';
 
 type ActivityLiveryProps = Readonly<{
     name: string;
-    /** Accepted and ignored; call sites still pass it. */
-    icon?: string | null;
     className?: string;
 }>;
 

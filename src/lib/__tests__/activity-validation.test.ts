@@ -44,4 +44,15 @@ describe('buildCreateActivitySchema', () => {
         expect(parsed.success).toBe(true);
         expect(parsed.success && 'color' in parsed.data).toBe(false);
     });
+
+    it('drops an icon a stale client still sends rather than rejecting it', () => {
+        const parsed = buildCreateActivitySchema(t).safeParse({
+            ...VALID_ACTIVITY,
+            icon: 'dumbbell',
+        });
+        // The icon column is gone the same way colour's is — a cached admin
+        // bundle posting the old shape must still create an Activity.
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && 'icon' in parsed.data).toBe(false);
+    });
 });

@@ -82,6 +82,21 @@ describe('resolveStatusMark — Attendance', () => {
         });
     });
 
+    it('leaves a No-Show hollow', () => {
+        // Held a Seat, did not withdraw, did not attend — nobody decided.
+        expect(resolveStatusMark({ domain: 'attendance', status: 'NO_SHOW' })).toEqual({
+            kind: 'hollow',
+            labelKey: 'noShow',
+        });
+    });
+
+    it('tells No-Show apart from Opted Out by mark and by label', () => {
+        const optedOut = resolveStatusMark({ domain: 'attendance', status: 'ABSENT' });
+        const noShow = resolveStatusMark({ domain: 'attendance', status: 'NO_SHOW' });
+        expect(noShow.kind).not.toBe(optedOut.kind);
+        expect(noShow.labelKey).not.toBe(optedOut.labelKey);
+    });
+
     it('never surfaces the stored ABSENT wording', () => {
         expect(
             resolveStatusMark({ domain: 'attendance', status: 'ABSENT' }).labelKey,
@@ -101,7 +116,7 @@ describe('the mark vocabulary', () => {
         ]);
     });
 
-    it('never resolves a domain state to hollow — No-Show has no producer yet', () => {
+    it('resolves exactly one domain state to hollow — the No-Show value', () => {
         const every: StatusMark[] = [
             ...(['SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED'] as const).map((status) =>
                 resolveStatusMark({ domain: 'session', status }),
@@ -109,11 +124,13 @@ describe('the mark vocabulary', () => {
             ...(['PENDING', 'CONFIRMED', 'REJECTED'] as const).map((status) =>
                 resolveStatusMark({ domain: 'payment', status }),
             ),
-            ...(['REGISTERED', 'MAYBE', 'PRESENT', 'ABSENT'] as const).map((status) =>
-                resolveStatusMark({ domain: 'attendance', status }),
+            ...(['REGISTERED', 'MAYBE', 'PRESENT', 'ABSENT', 'NO_SHOW'] as const).map(
+                (status) => resolveStatusMark({ domain: 'attendance', status }),
             ),
         ];
-        expect(every.some((mark) => mark.kind === 'hollow')).toBe(false);
+        expect(every.filter((mark) => mark.kind === 'hollow')).toEqual([
+            { kind: 'hollow', labelKey: 'noShow' },
+        ]);
     });
 
     it('resolves every state to a kind inside the closed union', () => {
