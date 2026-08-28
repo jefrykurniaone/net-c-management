@@ -22,7 +22,7 @@ import type { Prisma } from "@prisma/client";
 
 type PaymentRow = Payment & {
   user: { name: string | null; email: string | null };
-  activity: { id: string; name: string; icon: string | null };
+  activity: { id: string; name: string };
 };
 
 const VALID_SORT: Record<string, Prisma.PaymentOrderByWithRelationInput> = {
@@ -98,7 +98,7 @@ export default async function AdminPaymentsPage({
       take,
       include: {
         user: { select: { name: true, email: true } },
-        activity: { select: { id: true, name: true, icon: true } },
+        activity: { select: { id: true, name: true } },
       },
     }),
     prisma.payment.count({ where }),
@@ -222,7 +222,7 @@ export default async function AdminPaymentsPage({
                     <p className="text-xs text-subtle-foreground">{p.user.email}</p>
                   </td>
                   <td className="px-5 py-3 whitespace-nowrap">
-                    <ActivityBadge name={p.activity.name} icon={p.activity.icon} />
+                    <ActivityBadge name={p.activity.name} />
                   </td>
                   <td className="px-5 py-3 text-secondary-foreground whitespace-nowrap">
                     {t.months[p.month]} {p.year}

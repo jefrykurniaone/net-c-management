@@ -1,4 +1,4 @@
-﻿import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { COLUMN_MEASURE } from "@/components/layout/measure";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -66,7 +66,7 @@ export default async function PaymentsPage({
         take: historyTake,
         include: {
           activity: {
-            select: { id: true, name: true, icon: true, adminWhatsapp: true },
+            select: { id: true, name: true, adminWhatsapp: true },
           },
         },
       }),
