@@ -842,6 +842,15 @@ const en = {
         deactivate: 'Deactivate',
         activate: 'Activate',
         noActivity: 'No activities yet.',
+        // The Applicants register (ticket #66). Column heads are the board's
+        // own furniture, so they are set as tracked caps — and they double as
+        // each cell's own label once the register collapses by axis, which is
+        // why they have to read as a label on their own line too.
+        colApplicant: 'Applicant',
+        colAsked: 'Asked',
+        colMembershipsPicked: 'Memberships picked',
+        // Names the register for a screen reader; never drawn on screen.
+        applicantsCaption: 'Applicants waiting for a decision',
     },
     activity: {
         label: 'Activity',
@@ -1711,6 +1720,10 @@ const id: typeof en = {
         deactivate: 'Nonaktifkan',
         activate: 'Aktifkan',
         noActivity: 'Belum ada aktivitas.',
+        colApplicant: 'Pendaftar',
+        colAsked: 'Mengajukan',
+        colMembershipsPicked: 'Keanggotaan dipilih',
+        applicantsCaption: 'Pendaftar yang menunggu keputusan',
     },
     activity: {
         label: 'Aktivitas',
