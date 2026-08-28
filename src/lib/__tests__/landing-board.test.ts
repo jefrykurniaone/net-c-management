@@ -20,7 +20,6 @@ function activity(overrides: Partial<PublicActivity> = {}): PublicActivity {
     return {
         id: 'a1',
         name: 'Badminton',
-        icon: null,
         recurringDay: TUESDAY,
         recurringStartTime: '19:00',
         recurringEndTime: '21:00',

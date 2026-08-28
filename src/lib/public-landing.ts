@@ -87,13 +87,12 @@ const REVALIDATE_SECONDS = 60 * 60;
  * No `color`: `DESIGN.md:316` makes livery a magnet tile bearing the initial
  * with no colour, because an admin-chosen hex can be trusted neither to carry
  * legible lettering nor to clear contrast on both materials, and the column has
- * been dropped. `icon` is still published and deliberately never rendered —
- * that field stands, so do not "fix" the omission at the render site.
+ * been dropped. No `icon` either — that column is gone too, for the same
+ * reason: nothing ever rendered it.
  */
 export const PUBLIC_ACTIVITY_SELECT = {
     id: true,
     name: true,
-    icon: true,
     recurringDay: true,
     recurringStartTime: true,
     recurringEndTime: true,

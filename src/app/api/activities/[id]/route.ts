@@ -62,7 +62,7 @@ export async function PATCH(
             where: { id },
             data: parsed.data,
         });
-        // Name, icon, weekly slot, fees and `isActive` all publish.
+        // Name, weekly slot, fees and `isActive` all publish.
         invalidatePublicLanding();
         return NextResponse.json(activity);
     } catch (err) {

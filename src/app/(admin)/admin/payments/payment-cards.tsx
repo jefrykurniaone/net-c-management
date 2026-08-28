@@ -11,7 +11,7 @@ import type { Payment } from "@prisma/client";
 
 type PaymentRow = Payment & {
   user: { name: string | null; email: string | null };
-  activity: { id: string; name: string; icon: string | null };
+  activity: { id: string; name: string };
 };
 
 function PaymentCard({
@@ -26,7 +26,7 @@ function PaymentCard({
         <p className="truncate text-xs text-muted-foreground">{p.user.email}</p>
       </div>
       <CardField label={t.activity.label}>
-        <ActivityBadge name={p.activity.name} icon={p.activity.icon} />
+        <ActivityBadge name={p.activity.name} />
       </CardField>
       <CardField label={t.admin.colMonth}>
         {t.months[p.month]} {p.year}
