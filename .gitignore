@@ -55,9 +55,13 @@ public/uploads/
 plans/
 
 # QA docs & generated test-case reports (local artifacts, not app source).
-# docs/agents/ is the exception — agent-skill config that must travel with the repo.
+# Exceptions travel with the repo: agent-skill config, spec mirrors
+# (docs/spec-<slug>-v<N>.md), ADRs, and the Owner-role rules document.
 docs/*
 !docs/agents/
+!docs/spec-*.md
+!docs/adr/
+!docs/owner-role-immutability.md
 
 # Playwright MCP browser artifacts
 .playwright-mcp/
