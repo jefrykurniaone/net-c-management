@@ -4,7 +4,8 @@
 |---|---|
 | Spec | [#30](https://github.com/jefrykurniaone/net-c-management/issues/30) — `spec:admin-registers` |
 | Run | `run:admin-registers` |
-| Execution map | pending — filled in when the map issue is created |
+| Execution map | [#74](https://github.com/jefrykurniaone/net-c-management/issues/74) |
+| Tickets | #64–#73, sub-issues of #30 |
 | Version | v1 (spec revision 2, 2026-08-28) |
 | Depends on | [#28](https://github.com/jefrykurniaone/net-c-management/issues/28) design system (closed), [#29](https://github.com/jefrykurniaone/net-c-management/issues/29) member surfaces (closed) |
 
@@ -14,7 +15,7 @@ This is a verbatim copy of the tracker issue at the time of ticketing. The issue
 
 Depends on #28 (closed) for the design system and on #29 (closed) for the member-side rendering of the Hollow mark. Both have landed; nothing blocks this spec.
 
-Repo copy: `docs/spec-admin-registers-v1.md`. Execution map: see the `run:admin-registers` label.
+Repo copy: `docs/spec-admin-registers-v1.md` (PR #63). Execution map: #74. Tickets: #64–#73, linked below as sub-issues.
 
 Revision 2, 2026-08-28: amended after the grill that preceded ticketing. Stale references fixed, the decisions from that grill folded into the sections they belong to, and a decision record added at the end so none of them is relitigated.
 
