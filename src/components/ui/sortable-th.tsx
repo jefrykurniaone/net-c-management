@@ -2,9 +2,17 @@
 
 import Link from 'next/link';
 import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { RawSearchParams } from '@/lib/table-params';
 
 type SortDir = 'asc' | 'desc';
+type Align = 'left' | 'center' | 'right';
+
+const ALIGN_CLASS: Record<Align, string> = {
+    left: 'text-left',
+    center: 'text-center',
+    right: 'text-right',
+};
 
 function buildSortUrl(sp: RawSearchParams, column: string): string {
     const current = Array.isArray(sp.sortBy) ? sp.sortBy[0] : sp.sortBy;
@@ -21,39 +29,65 @@ function buildSortUrl(sp: RawSearchParams, column: string): string {
     return `?${params.toString()}`;
 }
 
-/** A table <th> that renders a clickable sort link. */
+const ICON_CLASS = 'w-3 h-3 opacity-60';
+
+/** Which chevron the head wears: the current direction, or neither. */
+function SortChevron({
+    isActive,
+    dir,
+}: Readonly<{ isActive: boolean; dir: string | undefined }>) {
+    if (!isActive) {
+        return <ChevronsUpDown className={ICON_CLASS} />;
+    }
+    if (dir === 'asc') {
+        return <ChevronUp className={ICON_CLASS} />;
+    }
+    return <ChevronDown className={ICON_CLASS} />;
+}
+
+interface SortableThProps {
+    column: string;
+    label: string;
+    searchParams: RawSearchParams;
+    /**
+     * Extra classes for the `<th>`. Merged with `cn`, so a caller that owns its
+     * own lattice — the admin register — can set the cell's padding and rules
+     * without fighting the defaults below.
+     */
+    className?: string;
+    align?: Align;
+}
+
+/**
+ * A table `<th>` that renders a clickable sort link.
+ *
+ * The head takes **Label** from the token layer rather than restating a size:
+ * a column head is the board's own furniture (DESIGN.md, *The
+ * Tracked-Caps-Are-Structural Rule*), and a sortable head that letters itself
+ * differently from the plain head beside it is two head appearances in one row.
+ */
 export function SortableTh({
     column,
     label,
     searchParams,
-    className = '',
+    className,
     align = 'left',
-}: {
-    column: string;
-    label: string;
-    searchParams: RawSearchParams;
-    className?: string;
-    align?: 'left' | 'center' | 'right';
-}) {
+}: Readonly<SortableThProps>) {
     const currentCol = Array.isArray(searchParams.sortBy) ? searchParams.sortBy[0] : searchParams.sortBy;
     const currentDir = Array.isArray(searchParams.sortDir) ? searchParams.sortDir[0] : searchParams.sortDir;
     const isActive = currentCol === column;
     const href = buildSortUrl(searchParams, column);
 
-    const alignClass =
-        align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left';
-
-    const Icon = !isActive ? ChevronsUpDown : currentDir === 'asc' ? ChevronUp : ChevronDown;
-
     return (
         <th
-            className={`px-5 py-2.5 ${alignClass} ${className}`}
+            scope='col'
+            className={cn('px-5 py-2.5', ALIGN_CLASS[align], className)}
             data-testid={`sort-th-${column}`}>
             <Link
                 href={href}
-                className='inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors'>
+                className='inline-flex items-center gap-1 type-label text-muted-foreground hover:text-foreground transition-colors'>
                 {label}
-                <Icon className='w-3 h-3 opacity-60' />
+                <SortChevron isActive={isActive} dir={currentDir} />
             </Link>
         </th>
     );

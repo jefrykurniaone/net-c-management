@@ -377,6 +377,24 @@ The third route was the one taken while the lattice stood: the columns carried a
 
 **One arrangement, one DOM.** One grid, `gap-px` over a rule-coloured ground so cells share their rules with their neighbours rather than sitting in gaps, one column at every width. Each day names itself at the head of its own row, so heading order is identical at every viewport and there is no second layout to keep in step. What must not happen is the rules going away: an unruled list of day cards is the arrangement this world exists to refuse, on a phone or a desktop alike.
 
+### The Register
+
+The admin side's counterpart to the Slot Cell, and its seam in the same sense: `src/components/admin/register.tsx` is the only place in the app that draws an admin table. Six hand-rolled tables would drift into six idioms the way two card renderings would, so the surfaces — Payments, Sessions, Members, Applicants, Activities, Settings — compose one component rather than each inventing its own.
+
+A register is a ruled table read at a desk, on a wide screen, by someone deciding about money. One row per thing; shared 1px `Ruled Line` rules between rows and between columns rather than gaps between floating panels; tabular figures down every column of numbers; and a standing column that holds one mark and nothing else, on the register's shared right edge, so every mark on the surface lands on one line. Density is the point: this is desktop work, the inverse of the member side.
+
+**It takes data, never nodes.** A caller passes a `columns` array — each column a `key`, a translated `head`, a `kind`, an optional `sortKey`, and one `render` for the value — and a `rows` array of plain records. There is no `children`, no slot prop, no ordering prop and no per-cell class name. `render` is the one escape, and it is scoped to a **value**: a Proof thumbnail and a Rupiah amount are different kinds of thing and the register cannot know how to draw either. Where the value sits, how it is ruled, and how it collapses are the register's, because a caller that can pass a node can reorder the lattice, and a lattice that reorders is a register whose whole point — the same fact in the same place down forty rows — is gone.
+
+**Five column kinds, and the kind decides the treatment.** `text` reads left at Body. `figure` and `amount` are tabular and sit hard right, `amount` additionally unbreakable, because half an amount is a different number. `standing` holds one mark from the resolver — never a hand-picked mark kind, never a colour chosen at the call site. `actions` holds the row's own controls, on that same right edge. Alignment and type role are derived from the kind and are never passed in, so two registers cannot set the same kind of value two different ways.
+
+**The empty state is a ruled row, not a blank panel.** Nothing to show is still a register: one row spanning the columns, carrying a **Blank** mark — *expected but not yet placed* — and one sentence saying what is missing. A blank area says nothing at all, and on a surface that is empty on most days that is most of what the surface is.
+
+**Sort and pagination are the controls the list pages already use** — `SortableTh` and `DataTablePagination`, composed by the register so no caller reinvents them.
+
+**Below `768px` it collapses by axis, not by flattening.** Each row stays a rule-bounded row and its cells stack inside it, each under the column's own tracked-caps label. It must never become an unruled card list: the stacked-card fallback the admin tables used to share is the arrangement this world exists to refuse, and this component is what replaces it.
+
+**One DOM, two label sources, exactly one live at a time.** At `md` and up the register is a real `<table>` with `<th scope="col">` heads and native header association. Below `md` the table's parts are set to `display: block`, which drops the table role in every browser and takes `scope` association with it. Rather than pretend otherwise, each cell carries its column's label as **real text** immediately before its value: that label is `md:hidden` at full width, where the `<thead>` does the work, and the `<thead>` is `hidden` below it, where the inline label does. Nothing is announced twice, and the DOM order is the reading order at both widths. The alternative — a second `<dl>`-shaped DOM tree for the narrow width — was refused: it duplicates every value in the document, and two trees drift the same way two tables would.
+
 ## Do's and Don'ts
 
 ### Do:
