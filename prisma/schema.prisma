@@ -25,11 +25,21 @@ enum SessionStatus {
   CANCELLED
 }
 
+// What became of one Participant's Seat in one Session, in CONTEXT.md's words.
+// REGISTERED is a Seat held with money behind it; MAYBE is a tentative RSVP that
+// holds no Seat; PRESENT is a Seat held and attended. ABSENT is **Opted Out** —
+// the member held a Seat and withdrew, their own choice — and is deliberately
+// not renamed to match that word (docs/adr/0001-no-show-attendance-value.md).
+// NO_SHOW is **No-Show**: held a Seat, did not withdraw, did not attend. It
+// differs from ABSENT in exactly one way — nobody decided — so only an Admin
+// records it, and no code path derives it from a Session that has ended.
+// Only REGISTERED and PRESENT hold a Seat; NO_SHOW changes no capacity figure.
 enum AttendanceStatus {
   REGISTERED
   MAYBE
   PRESENT
   ABSENT
+  NO_SHOW
 }
 
 enum PaymentStatus {

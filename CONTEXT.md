@@ -107,5 +107,5 @@ A Participant who held a Seat and withdrew, releasing it. The member's own choic
 _Avoid_: absent, no-show, cancelled, dropped out
 
 **No-Show**:
-A Participant who held a Seat, did not withdraw, and did not attend. It differs from Opted Out in exactly one way: nobody decided. Not recorded anywhere yet.
+A Participant who held a Seat, did not withdraw, and did not attend. It differs from Opted Out in exactly one way: nobody decided. Recorded only when an Admin says so, and never derived from a Session that ended with Seats still Registered — untaken attendance is an Admin's omission, not the member's.
 _Avoid_: absent, missed, truant

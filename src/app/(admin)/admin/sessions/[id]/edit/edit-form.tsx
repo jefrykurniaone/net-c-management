@@ -18,16 +18,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Clock, CircleDashed, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import type { ActivitySession, Attendance, User, Activity } from "@prisma/client";
+import type { ActivitySession, Attendance, AttendanceStatus, User, Activity } from "@prisma/client";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { parseIntInput } from "@/lib/form-utils";
 import { FormSection } from "@/components/ui/form-section";
 import { RemindMembersButton } from "@/components/admin/remind-members-button";
 import { ShareSessionCard } from "@/components/sessions/share-session-card";
+
+/**
+ * What an Admin may set by hand, mirroring `ADMIN_SETTABLE_STATUSES` in
+ * `src/app/api/sessions/[id]/attendance/manual/route.ts`. `MAYBE` is the
+ * member's own tentative RSVP and is never an Admin's to set.
+ */
+type AdminSettableStatus = Exclude<AttendanceStatus, "MAYBE">;
 
 type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
 type SessionWithAttendances = ActivitySession & {
@@ -47,10 +54,13 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
     { value: "CANCELLED", label: t.sessionStatus.CANCELLED },
   ];
 
+  // No-Show takes the Hollow mark's label (`t.marks.noShow`), which already
+  // ships in both locales — Opted Out and No-Show must never read the same.
   const ATTENDANCE_STATUS_OPTIONS = [
     { value: "REGISTERED", label: t.attendanceStatus.REGISTERED, icon: Clock, color: "text-muted-foreground" },
     { value: "PRESENT", label: t.attendanceStatus.PRESENT, icon: CheckCircle, color: "text-primary" },
     { value: "ABSENT", label: t.attendanceStatus.ABSENT, icon: XCircle, color: "text-destructive" },
+    { value: "NO_SHOW", label: t.marks.noShow, icon: CircleDashed, color: "text-destructive" },
   ];
   const [loading, setLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<"delete" | "markAll" | null>(null);
@@ -111,7 +121,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
     }
   }
 
-  async function handleAttendanceChange(userId: string, status: "PRESENT" | "ABSENT" | "REGISTERED") {
+  async function handleAttendanceChange(userId: string, status: AdminSettableStatus) {
     setAttendanceLoading(userId);
     try {
       const res = await fetch(`/api/sessions/${session.id}/attendance/manual`, {
@@ -419,6 +429,10 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                       let activeClass = "bg-muted text-muted-foreground ring-1 ring-border";
                       if (opt.value === "PRESENT") activeClass = "bg-primary/15 text-primary ring-1 ring-primary/40";
                       if (opt.value === "ABSENT") activeClass = "bg-destructive/15 text-destructive ring-1 ring-destructive/40";
+                      // No-Show wears the Hollow mark's form: a dashed outline,
+                      // no fill. Opted Out keeps its fill, so the two never read
+                      // as the same state (DESIGN.md, The Six Marks).
+                      if (opt.value === "NO_SHOW") activeClass = "border-dashed border-destructive text-destructive";
                       const isActive = a.status === opt.value;
                       return (
                         <button
@@ -428,10 +442,10 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
                           onClick={() =>
                             handleAttendanceChange(
                               a.userId,
-                              opt.value as "PRESENT" | "ABSENT" | "REGISTERED"
+                              opt.value as AdminSettableStatus
                             )
                           }
-                          className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                          className={`px-2 py-1 rounded border border-transparent text-xs font-medium transition-colors ${
                             isActive ? activeClass : "bg-muted text-muted-foreground hover:bg-muted/70"
                           }`}
                         >

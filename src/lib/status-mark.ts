@@ -42,10 +42,9 @@ export type MarkLabelKey =
     | 'maybe'
     | 'present'
     | 'optedOut'
-    /* The labels for the two marks that ship with no producer. Nothing
-       records a No-Show and nothing posts an empty Slot Cell yet; the admin
-       spec wires both up, and the labels are here so it does not have to
-       reopen the dictionary in two languages to do it. */
+    /* `noShow` labels the Hollow mark, whose producer is the `NO_SHOW`
+       attendance value an Admin records (docs/adr/0001-no-show-attendance-value.md).
+       `unposted` labels the Blank a day with no Session posted draws. */
     | 'noShow'
     | 'unposted';
 
@@ -104,14 +103,19 @@ const PAYMENT_MARKS: Record<PaymentStatus, StatusMark> = {
 /**
  * `ABSENT` is the stored name for what the glossary calls **Opted Out**: the
  * member held a Seat and released it. That is a choice, not a failure, so it
- * is erased — flat and colourless — and never surfaced as "Absent". The
- * failure case is No-Show (hollow), which nothing records yet.
+ * is erased — flat and colourless — and never surfaced as "Absent".
+ *
+ * `NO_SHOW` is the failure case beside it: the member held a Seat, did not
+ * withdraw, and did not attend. Nobody decided, so it is hollow. It is recorded
+ * by an Admin and never derived from a Session that ended with rows still
+ * `REGISTERED` (docs/adr/0001-no-show-attendance-value.md).
  */
 const ATTENDANCE_MARKS: Record<AttendanceStatus, StatusMark> = {
     REGISTERED: { kind: 'ink', labelKey: 'registered' },
     PRESENT: { kind: 'ink', labelKey: 'present' },
     MAYBE: { kind: 'tape', labelKey: 'maybe' },
     ABSENT: { kind: 'erased', labelKey: 'optedOut' },
+    NO_SHOW: { kind: 'hollow', labelKey: 'noShow' },
 };
 
 /**

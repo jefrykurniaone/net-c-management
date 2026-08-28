@@ -12,9 +12,19 @@ import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getActivities } from '@/lib/activity';
 import { isAdminRole } from '@/lib/utils';
+import type { AttendanceStatus } from '@prisma/client';
 
 const UNDER_BOOKED_RATIO = 0.6;
 const MILLION = 1_000_000;
+
+/**
+ * The attendance states that are history — a Session that has been and what
+ * became of each Seat. `PRESENT` and `ABSENT` (Opted Out) were the two; `NO_SHOW`
+ * is the third, and a Seat held that nobody turned up for is as much a fact
+ * about a past Session as the other two. The attendance rate below is `PRESENT`
+ * over all three.
+ */
+const HISTORICAL_ATTENDANCE: AttendanceStatus[] = ['PRESENT', 'ABSENT', 'NO_SHOW'];
 
 function fill(template: string, values: Record<string, string | number>): string {
     return Object.entries(values).reduce(
@@ -119,7 +129,7 @@ export default async function AdminDashboardPage() {
         }),
         prisma.attendance.findMany({
             where: {
-                status: { in: ['PRESENT', 'ABSENT'] },
+                status: { in: HISTORICAL_ATTENDANCE },
                 session: { date: { gte: monthStart, lte: now } },
             },
             select: { status: true, session: { select: { activityId: true } } },
