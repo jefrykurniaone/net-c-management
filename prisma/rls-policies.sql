@@ -96,6 +96,15 @@ CREATE POLICY "deny_direct_api_access" ON "Payment"
   USING (false)
   WITH CHECK (false);
 
+-- DuesRate ─────────────────────────────────────────────────────────────────────
+ALTER TABLE "DuesRate" ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "deny_direct_api_access" ON "DuesRate";
+CREATE POLICY "deny_direct_api_access" ON "DuesRate"
+  FOR ALL
+  TO anon, authenticated
+  USING (false)
+  WITH CHECK (false);
+
 -- Settings ─────────────────────────────────────────────────────────────────────
 ALTER TABLE "Settings" ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "deny_direct_api_access" ON "Settings";
