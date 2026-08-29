@@ -40,6 +40,18 @@ export const WAITING_APPLICANT_WHERE = {
     isActive: true,
 } satisfies Prisma.UserWhereInput;
 
+/**
+ * The roster: everybody an Admin has let in. Selects on `admittedAt` alone,
+ * which is the column that decides whether somebody is in the community at all,
+ * so a revoked member stays on the roster (they were in, and their history is
+ * still the community's) while neither a waiting Applicant nor a declined one
+ * ever reaches it. An Applicant holds Memberships, so a query that selected on
+ * those instead would put the admission queue on the Members register.
+ */
+export const ADMITTED_MEMBER_WHERE = {
+    admittedAt: { not: null },
+} satisfies Prisma.UserWhereInput;
+
 /** The four states, resolved from the two columns. */
 export function resolveAdmissionState(
     user: Readonly<{ admittedAt: Date | null; isActive: boolean }>,

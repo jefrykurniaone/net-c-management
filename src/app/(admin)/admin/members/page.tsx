@@ -1,248 +1,220 @@
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { redirect } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Mark } from "@/components/ui/mark";
-import { ActivityBadge } from "@/components/activity/activity-badge";
-import Link from "next/link";
-import { MemberActions } from "./member-actions";
-import { MemberCards } from "./member-cards";
-import { getLocale } from "@/lib/i18n/locale";
-import { getDictionary } from "@/lib/i18n/dictionaries";
-import { getActivities } from "@/lib/activity";
-import { isAdminRole, roleBadgeVariant } from "@/lib/utils";
-import { DataTablePagination } from "@/components/ui/data-table-pagination";
-import { parsePagination, parseSort, parseSearch } from "@/lib/table-params";
-import { SortableTh } from "@/components/ui/sortable-th";
-import type { Prisma } from "@prisma/client";
+import { redirect } from 'next/navigation';
+import type { Prisma, Role } from '@prisma/client';
+import { Register } from '@/components/admin/register';
+import type { RegisterColumn } from '@/components/admin/register-columns';
+import { getActivities } from '@/lib/activity';
+import { auth } from '@/lib/auth';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
+import { getLocale } from '@/lib/i18n/locale';
+import {
+    parsePagination,
+    parseSearch,
+    parseSort,
+    type RawSearchParams,
+} from '@/lib/table-params';
+import { isAdminRole } from '@/lib/utils';
+import {
+    MemberContact,
+    MemberIdentity,
+    MemberMemberships,
+    MemberRole,
+    MemberRowActions,
+} from './member-cells';
+import { loadMembers, type MemberRow } from './member-rows';
+import { MemberSearch } from './member-search';
 
-const VALID_SORT_COLS = ["name", "role", "createdAt", "isActive"] as const;
+/**
+ * The roster, as a register — one row per member, carrying the three things an
+ * Admin is actually asked about: who they are, how to reach them, and where
+ * each of their Memberships stands this Billing Period. Answering that used to
+ * mean opening four screens.
+ *
+ * Applicants are not here. They hold Memberships picked while completing their
+ * profile and none of them mean anything until an Admin lets them in, so the
+ * admission queue keeps its own surface and this one selects on `admittedAt`.
+ *
+ * The mobile cards this page used to carry below `md` are gone: the register
+ * collapses by axis instead, and each row stays a ruled row.
+ */
+
+const DEFAULT_SORT_COL = 'createdAt';
+
+const VALID_SORT_COLS = ['name', 'role', 'createdAt', 'isActive'] as const;
 type SortCol = (typeof VALID_SORT_COLS)[number];
 
-function buildOrderBy(sortBy: string, dir: "asc" | "desc"): Prisma.UserOrderByWithRelationInput {
-  const col: SortCol = (VALID_SORT_COLS as readonly string[]).includes(sortBy)
-    ? (sortBy as SortCol)
-    : "createdAt";
-  return { [col]: dir };
+function buildOrderBy(
+    sortBy: string,
+    dir: 'asc' | 'desc',
+): Prisma.UserOrderByWithRelationInput {
+    const col: SortCol = (VALID_SORT_COLS as readonly string[]).includes(sortBy)
+        ? (sortBy as SortCol)
+        : DEFAULT_SORT_COL;
+    return { [col]: dir };
+}
+
+/** The whole of what the query string says about this page. */
+type PageQuery = ReturnType<typeof readQuery>;
+
+function readQuery(sp: RawSearchParams) {
+    const raw = sp.activityId;
+    return {
+        search: parseSearch(sp),
+        activityId: (Array.isArray(raw) ? raw[0] : raw) ?? '',
+        ...parseSort(sp, DEFAULT_SORT_COL, 'desc'),
+        ...parsePagination(sp),
+    };
+}
+
+/**
+ * Four columns, in the order the Admin reads them: who, how to reach them, what
+ * they are, and what they belong to with how each of those stands. Position,
+ * rules and collapse are the register's; only the values are described here.
+ */
+function rosterColumns(t: Dictionary): RegisterColumn<MemberRow>[] {
+    return [
+        {
+            key: 'member',
+            head: t.admin.colName,
+            sortKey: 'name',
+            render: (member) => <MemberIdentity member={member} t={t} />,
+        },
+        {
+            key: 'contact',
+            head: t.admin.colContact,
+            render: (member) => <MemberContact member={member} t={t} />,
+        },
+        {
+            key: 'role',
+            head: t.admin.colRole,
+            sortKey: 'role',
+            render: (member) => <MemberRole member={member} t={t} />,
+        },
+        {
+            key: 'memberships',
+            head: t.admin.colMemberships,
+            render: (member) => <MemberMemberships member={member} t={t} />,
+        },
+    ];
+}
+
+/** What can be done to the account — nothing at all on an Owner row. */
+function actionsColumn(
+    t: Dictionary,
+    currentUserId: string,
+): RegisterColumn<MemberRow> {
+    return {
+        key: 'actions',
+        head: t.admin.colActions,
+        kind: 'actions',
+        render: (member) => (
+            <MemberRowActions
+                member={member}
+                currentUserId={currentUserId}
+                t={t}
+            />
+        ),
+    };
+}
+
+function MembersHeading({
+    t,
+    total,
+}: Readonly<{ t: Dictionary; total: number }>) {
+    return (
+        <div>
+            <h1 className='type-display text-foreground'>
+                {t.admin.membersTitle}
+            </h1>
+            <p className='mt-cell type-caption text-muted-foreground'>
+                {t.admin.membersSubtitle.replace('{n}', String(total))}
+            </p>
+        </div>
+    );
+}
+
+function MembersRegister({
+    rows,
+    total,
+    query,
+    searchParams,
+    currentUserId,
+    t,
+}: Readonly<{
+    rows: readonly MemberRow[];
+    total: number;
+    query: PageQuery;
+    searchParams: RawSearchParams;
+    currentUserId: string;
+    t: Dictionary;
+}>) {
+    return (
+        <Register
+            columns={[...rosterColumns(t), actionsColumn(t, currentUserId)]}
+            rows={rows}
+            caption={t.admin.membersCaption}
+            searchParams={searchParams}
+            empty={{
+                mark: t.admin.membersEmptyMark,
+                text: t.admin.noMembers,
+            }}
+            pagination={{
+                total,
+                page: query.page,
+                pageSize: query.pageSize,
+                labels: t.table.pagination,
+            }}
+        />
+    );
+}
+
+function loadPage(query: PageQuery, viewerRole: Role) {
+    return Promise.all([
+        loadMembers(
+            {
+                search: query.search,
+                activityId: query.activityId,
+                orderBy: buildOrderBy(query.sortBy, query.sortDir),
+                skip: query.skip,
+                take: query.take,
+            },
+            viewerRole,
+            new Date(),
+        ),
+        getActivities(),
+    ]);
 }
 
 export default async function AdminMembersPage({
-  searchParams,
-}: Readonly<{
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}>) {
-  const [session, locale] = await Promise.all([auth(), getLocale()]);
-  if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
+    searchParams,
+}: Readonly<{ searchParams: Promise<RawSearchParams> }>) {
+    const [session, locale] = await Promise.all([auth(), getLocale()]);
+    if (!session?.user?.id || !isAdminRole(session.user.role)) {
+        redirect('/dashboard');
+    }
+    const t = getDictionary(locale);
+    const sp = await searchParams;
+    const query = readQuery(sp);
+    const [{ rows, total }, activities] = await loadPage(
+        query,
+        session.user.role,
+    );
 
-  const t = getDictionary(locale);
-
-  const sp = await searchParams;
-  const search = parseSearch(sp);
-  const activityId = (Array.isArray(sp.activityId) ? sp.activityId[0] : sp.activityId) ?? "";
-  const { sortBy, sortDir } = parseSort(sp, "createdAt", "desc");
-  const { page, pageSize, skip, take } = parsePagination(sp);
-
-  const where: Prisma.UserWhereInput = {
-    ...(search
-      ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-    ...(activityId
-      ? { memberships: { some: { activityId, isActive: true } } }
-      : {}),
-  };
-
-  const userSelect = {
-    id: true,
-    name: true,
-    email: true,
-    image: true,
-    role: true,
-    isActive: true,
-    isProfileComplete: true,
-    phone: true,
-    createdAt: true,
-    memberships: {
-      where: { isActive: true, activity: { isActive: true } },
-      select: { activity: { select: { id: true, name: true } } },
-    },
-    _count: { select: { attendances: true, payments: true } },
-  } as const;
-
-  const [users, total, activities] = await Promise.all([
-    prisma.user.findMany({
-      where,
-      orderBy: buildOrderBy(sortBy, sortDir),
-      skip,
-      take,
-      select: userSelect,
-    }),
-    prisma.user.count({ where }),
-    getActivities(),
-  ]);
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {t.admin.membersTitle}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {total} {t.admin.membersRegistered}
-          </p>
+    return (
+        <div className='space-y-bay'>
+            <MembersHeading t={t} total={total} />
+            <MemberSearch
+                filters={query}
+                activities={activities}
+                t={t}
+            />
+            <MembersRegister
+                rows={rows}
+                total={total}
+                query={query}
+                searchParams={sp}
+                currentUserId={session.user.id}
+                t={t}
+            />
         </div>
-      </div>
-
-      {/* Search + activity filter */}
-      <form className="flex flex-wrap gap-2" method="GET">
-        <input
-          name="search"
-          defaultValue={search}
-          placeholder={t.table.search.memberPlaceholder}
-          data-testid="search-input"
-          className="h-9 border border-input rounded-lg px-3 text-sm bg-card w-full max-w-sm placeholder:text-subtle-foreground"
-        />
-        <select
-          name="activityId"
-          defaultValue={activityId}
-          className="h-9 border border-input rounded-lg px-3 text-sm font-medium text-secondary-foreground bg-card w-full sm:w-auto"
-        >
-          <option value="">{t.activity.filterAll}</option>
-          {activities.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name}
-            </option>
-          ))}
-        </select>
-        {/* Preserve sort and page size across search */}
-        {sortBy !== "createdAt" && <input type="hidden" name="sortBy" value={sortBy} />}
-        {sortDir !== "desc" && <input type="hidden" name="sortDir" value={sortDir} />}
-        {pageSize !== 10 && <input type="hidden" name="pageSize" value={String(pageSize)} />}
-        <button
-          type="submit"
-          className="h-9 border border-input rounded-lg px-4 text-sm font-semibold text-secondary-foreground bg-card hover:bg-muted w-full sm:w-auto transition-colors"
-        >
-          {t.admin.searchBtn}
-        </button>
-      </form>
-
-      {/* Mobile: stacked cards */}
-      <div className="md:hidden">
-        <MemberCards users={users} t={t} currentUserId={session.user.id} />
-        <DataTablePagination
-          total={total}
-          page={page}
-          pageSize={pageSize}
-          searchParams={sp}
-          labels={t.table.pagination}
-        />
-      </div>
-
-      {/* Desktop: full table */}
-      <div className="hidden md:block bg-card rounded-xl border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted/50 border-b border-border">
-                <SortableTh column="name" label={t.admin.colName} searchParams={sp} />
-                <th className="text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.activity.label}</th>
-                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colAttendance}</th>
-                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colPayments}</th>
-                <SortableTh column="role" label={t.admin.colMemberStatus} searchParams={sp} align="center" />
-                <th className="text-center px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t.admin.colActions}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr
-                  key={u.id}
-                  className="border-b border-border last:border-b-0 hover:bg-muted/40"
-                >
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      {u.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={u.image}
-                          alt={u.name ?? t.admin.colName}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-primary font-semibold text-xs">
-                          {(u.name ?? u.email ?? "?")[0].toUpperCase()}
-                        </div>
-                      )}
-                      <div>
-                        <Link
-                          href={`/admin/members/${u.id}`}
-                          className="font-semibold text-foreground hover:underline"
-                        >
-                          {u.name ?? `(${t.admin.profileIncomplete})`}
-                        </Link>
-                        <p className="text-xs text-subtle-foreground">{u.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {u.memberships.length === 0 ? (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      ) : (
-                        u.memberships.map((m) => (
-                          <ActivityBadge
-                            key={m.activity.id}
-                            name={m.activity.name}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-center text-muted-foreground tabular-nums">
-                    {u._count.attendances}
-                  </td>
-                  <td className="px-5 py-3 text-center text-muted-foreground tabular-nums">
-                    {u._count.payments}
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <Badge variant={roleBadgeVariant(u.role)} className="text-xs">
-                        {t.roles[u.role]}
-                      </Badge>
-                      {!u.isActive && (
-                        <Mark kind="erased">{t.admin.inactive2}</Mark>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    <MemberActions member={u} currentUserId={session.user.id} />
-                  </td>
-                </tr>
-              ))}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                    {t.admin.noMembers}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-4 border-t border-border">
-          <DataTablePagination
-            total={total}
-            page={page}
-            pageSize={pageSize}
-            searchParams={sp}
-            labels={t.table.pagination}
-          />
-        </div>
-      </div>
-    </div>
-  );
+    );
 }

@@ -1,117 +1,241 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { toast } from "sonner";
-import { UserX, ShieldCheck } from "lucide-react";
-import { useLocale } from "@/components/providers/locale-provider";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, UserX } from 'lucide-react';
+import { toast } from 'sonner';
+import { Role } from '@prisma/client';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useLocale } from '@/components/providers/locale-provider';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 
-interface Member {
-  id: string;
-  name: string | null;
-  role: "ADMIN" | "MEMBER" | "OWNER";
-  isActive: boolean;
+/**
+ * The Admin's acts on one member's account: revoke or restore access, and move
+ * them between the Member and Admin tiers.
+ *
+ * An **Owner** row renders none of this. The server refuses every write to an
+ * Owner account (docs/owner-role-immutability.md, rule 1), so a disabled
+ * control here would only advertise a job that cannot be done; the early return
+ * is what makes the row read as immutable rather than as merely locked.
+ */
+
+type Member = Readonly<{
+    id: string;
+    name: string | null;
+    role: Role;
+    isActive: boolean;
+}>;
+
+type PendingAction = 'toggleActive' | 'toggleRole' | null;
+
+type Patch = Readonly<{ role?: Role; isActive?: boolean }>;
+
+/** The tier this member moves to, and the word for moving them there. */
+type RoleSwitch = Readonly<{ role: Role; label: string }>;
+
+/** Everything the controls and their confirmations both need. */
+type MemberAct = Readonly<{
+    member: Member;
+    isSelf: boolean;
+    loading: boolean;
+    asking: PendingAction;
+    ask: (next: PendingAction) => void;
+    patch: (data: Patch) => void;
+    switchTo: RoleSwitch;
+    t: Dictionary;
+}>;
+
+/** Shown in a confirmation where a member never filled their name in. */
+const EM_DASH = '—';
+
+/** Only two tiers are reachable from here: Owner is not a promotion. */
+function roleSwitch(role: Role, t: Dictionary): RoleSwitch {
+    if (role === Role.ADMIN) {
+        return { role: Role.MEMBER, label: t.admin.makeMember };
+    }
+    return { role: Role.ADMIN, label: t.admin.makeAdmin };
 }
 
-type PendingAction = "toggleActive" | "toggleRole" | null;
+/** The one write both controls make, and the loading state they share. */
+function useMemberPatch(memberId: string, t: Dictionary) {
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
+
+    async function patch(data: Patch) {
+        setLoading(true);
+        try {
+            const res = await fetch('/api/users', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: memberId, ...data }),
+            });
+            if (!res.ok) {
+                const err = (await res.json()) as { error?: string };
+                throw new Error(err.error ?? t.admin.memberUpdateFailed);
+            }
+            toast.success(t.admin.memberUpdated);
+            router.refresh();
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : t.common.error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    return { loading, patch };
+}
+
+/**
+ * Revoking access is high-impact, so it asks first; restoring it is not, so it
+ * acts straight away. Neither is offered on your own row: an Admin who revokes
+ * themselves cannot undo it.
+ */
+function MemberControls({ act }: Readonly<{ act: MemberAct }>) {
+    const { member, loading, isSelf, t } = act;
+    return (
+        <>
+            <Button
+                variant={member.isActive ? 'destructive-outline' : 'outline'}
+                size='sm'
+                onClick={() =>
+                    member.isActive
+                        ? act.ask('toggleActive')
+                        : act.patch({ isActive: true })
+                }
+                loading={loading}
+                disabled={isSelf}>
+                {member.isActive
+                    ? t.admin.deactivateMember
+                    : t.admin.activateMember}
+            </Button>
+            {!isSelf && (
+                <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => act.ask('toggleRole')}
+                    loading={loading}>
+                    {act.switchTo.label}
+                </Button>
+            )}
+        </>
+    );
+}
+
+function DeactivateDialog({
+    open,
+    onOpenChange,
+    memberName,
+    onConfirm,
+    t,
+}: Readonly<{
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    memberName: string;
+    onConfirm: () => void;
+    t: Dictionary;
+}>) {
+    return (
+        <ConfirmDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            icon={UserX}
+            title={t.admin.deactivateConfirmTitle.replace('{name}', memberName)}
+            description={t.admin.deactivateConfirmDesc}
+            confirmLabel={t.admin.deactivateMember}
+            cancelLabel={t.common.cancel}
+            typeToConfirm={t.admin.typeToConfirmWord}
+            typeToConfirmLabel={t.admin.typeToConfirmPrompt.replace(
+                '{word}',
+                t.admin.typeToConfirmWord,
+            )}
+            onConfirm={onConfirm}
+        />
+    );
+}
+
+function RoleDialog({
+    open,
+    onOpenChange,
+    memberName,
+    roleLabel,
+    onConfirm,
+    t,
+}: Readonly<{
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    memberName: string;
+    roleLabel: string;
+    onConfirm: () => void;
+    t: Dictionary;
+}>) {
+    return (
+        <ConfirmDialog
+            open={open}
+            onOpenChange={onOpenChange}
+            tone='primary'
+            icon={ShieldCheck}
+            title={t.admin.roleChangeConfirmTitle.replace('{name}', memberName)}
+            description={t.admin.roleChangeConfirmDesc}
+            confirmLabel={roleLabel}
+            cancelLabel={t.common.cancel}
+            onConfirm={onConfirm}
+        />
+    );
+}
+
+function MemberDialogs({ act }: Readonly<{ act: MemberAct }>) {
+    const close = (open: boolean) => !open && act.ask(null);
+    const memberName = act.member.name ?? EM_DASH;
+    return (
+        <>
+            <DeactivateDialog
+                open={act.asking === 'toggleActive'}
+                onOpenChange={close}
+                memberName={memberName}
+                onConfirm={() => act.patch({ isActive: false })}
+                t={act.t}
+            />
+            <RoleDialog
+                open={act.asking === 'toggleRole'}
+                onOpenChange={close}
+                memberName={memberName}
+                roleLabel={act.switchTo.label}
+                onConfirm={() => act.patch({ role: act.switchTo.role })}
+                t={act.t}
+            />
+        </>
+    );
+}
 
 export function MemberActions({
-  member,
-  currentUserId,
-}: Readonly<{
-  member: Member;
-  currentUserId: string;
-}>) {
-  const router = useRouter();
-  const { locale } = useLocale();
-  const t = getDictionary(locale);
-  const [loading, setLoading] = useState(false);
-  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+    member,
+    currentUserId,
+}: Readonly<{ member: Member; currentUserId: string }>) {
+    const { locale } = useLocale();
+    const t = getDictionary(locale);
+    const { loading, patch } = useMemberPatch(member.id, t);
+    const [asking, setAsking] = useState<PendingAction>(null);
 
-  async function patch(data: { role?: "ADMIN" | "MEMBER"; isActive?: boolean }) {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/users", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: member.id, ...data }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error ?? t.admin.memberUpdateFailed);
-      }
-      toast.success(t.admin.memberUpdated);
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t.common.error);
-    } finally {
-      setLoading(false);
+    if (member.role === Role.OWNER) {
+        return null;
     }
-  }
 
-  const isSelf = member.id === currentUserId;
-  const isOwner = member.role === "OWNER";
-  const memberName = member.name ?? "—";
+    const act: MemberAct = {
+        member,
+        isSelf: member.id === currentUserId,
+        loading,
+        asking,
+        ask: setAsking,
+        patch,
+        switchTo: roleSwitch(member.role, t),
+        t,
+    };
 
-  return (
-    <div className="flex items-center justify-center gap-1 flex-wrap">
-      <Button
-        variant={member.isActive ? "destructive-outline" : "outline"}
-        size="sm"
-        onClick={() =>
-          member.isActive
-            ? setPendingAction("toggleActive")
-            : patch({ isActive: true })
-        }
-        loading={loading}
-        disabled={isSelf || isOwner}
-      >
-        {member.isActive ? t.admin.deactivateMember : t.admin.activateMember}
-      </Button>
-      {!isSelf && !isOwner && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setPendingAction("toggleRole")}
-          loading={loading}
-        >
-          {member.role === "ADMIN" ? t.admin.makeMember : t.admin.makeAdmin}
-        </Button>
-      )}
-      {/* Deactivation is high-impact: type-to-confirm (Club Premium dialogs). */}
-      <ConfirmDialog
-        open={pendingAction === "toggleActive"}
-        onOpenChange={(open) => !open && setPendingAction(null)}
-        icon={UserX}
-        title={t.admin.deactivateConfirmTitle.replace("{name}", memberName)}
-        description={t.admin.deactivateConfirmDesc}
-        confirmLabel={t.admin.deactivateMember}
-        cancelLabel={t.common.cancel}
-        typeToConfirm={t.admin.typeToConfirmWord}
-        typeToConfirmLabel={t.admin.typeToConfirmPrompt.replace(
-          "{word}",
-          t.admin.typeToConfirmWord,
-        )}
-        onConfirm={() => patch({ isActive: false })}
-      />
-      <ConfirmDialog
-        open={pendingAction === "toggleRole"}
-        onOpenChange={(open) => !open && setPendingAction(null)}
-        tone="primary"
-        icon={ShieldCheck}
-        title={t.admin.roleChangeConfirmTitle.replace("{name}", memberName)}
-        description={t.admin.roleChangeConfirmDesc}
-        confirmLabel={
-          member.role === "ADMIN" ? t.admin.makeMember : t.admin.makeAdmin
-        }
-        cancelLabel={t.common.cancel}
-        onConfirm={() =>
-          patch({ role: member.role === "ADMIN" ? "MEMBER" : "ADMIN" })
-        }
-      />
-    </div>
-  );
+    return (
+        <span className='flex flex-wrap items-center gap-cell'>
+            <MemberControls act={act} />
+            <MemberDialogs act={act} />
+        </span>
+    );
 }
