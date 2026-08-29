@@ -2121,6 +2121,50 @@ to by hand, issue them as two `fetch` calls without awaiting the first —
 - Neither write leaves a half-write behind: no Payment row without its
   Attendance, and no capacity written without the count it was decided against.
 
+### TC-AR-011 · P2 · Edge — A Confirm by one Admin cannot duplicate or drop a row on another Admin's page
+
+**Preconditions:** two Admin accounts signed in in two separate browsers, A and
+B. At least 14 Payments match no filter, of which exactly **4** are awaiting a
+decision — so page 1 holds all four awaiting rows followed by six decided ones
+and the boundary between the two groups falls inside the page. A reads
+`/admin/payments` with no filter and no sort applied: the queue's own order is
+what this case is about, and an explicit column sort is a different read.
+
+**Steps:**
+1. On A, load page 1 and record the ten rows in order, by Payment id.
+2. On B, Confirm the Payment sitting **fourth** on that page — the last of the
+   awaiting rows, and so the one on the boundary.
+3. On A, reload page 1 and record the ten ids again.
+4. Repeat steps 2 and 3 with the next awaiting Payment each time, reloading on A
+   **twenty** times across the run, recording the ids of every load, and pressing
+   Confirm on B while A's reload is in flight rather than between reloads.
+5. Compare the recorded lists, and read page 2 once at the end.
+
+**Expected result:**
+
+- Every load returns **exactly ten** rows while at least ten Payments match, and
+  **no id appears twice within one load**.
+- No Payment that matched the filter for the whole run is absent from every
+  load: a row that moves does so by moving *down*, never by vanishing.
+- On every load, awaiting rows are above decided rows and each group reads
+  newest first.
+- A Payment Confirmed mid-run appears on the next load in the decided group, and
+  on exactly one page — never on page 1 and page 2 at once, never on neither.
+- The heading's awaiting count and the pagination total are read by two counts
+  taken beside the page rather than as part of it, so either may be one decision
+  behind for a single load. That is **not** a failure of this case; the row set
+  is what this case tests.
+- **The old boundary is closed.** The page used to be two reads over two bands
+  (`status = PENDING`, then `status <> PENDING`) whose slices were worked out
+  from a count taken before them, so a Confirm arriving between the count and a
+  band read moved a row across the boundary and the page dropped it or drew it
+  twice. It is now one ordered statement returning the page's ids, and a fetch
+  of those ids — which can return fewer rows only if a Payment was deleted
+  outright, and cannot reorder them at all.
+- The Owner's email is still withheld from the Admin throughout, and still not
+  searchable by them: `TC-AR-007` holds unchanged against this read, which now
+  reaches the member through raw SQL rather than through Prisma.
+
 ---
 
 ### 17.8 Adi — the marks in both board materials

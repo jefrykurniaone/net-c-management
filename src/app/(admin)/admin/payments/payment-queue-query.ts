@@ -5,7 +5,7 @@ import {
     searchByNameOrEmail,
 } from '@/lib/owner-visibility';
 import { parseSearch, type RawSearchParams } from '@/lib/table-params';
-import { splitQueuePage, type QueueBand } from '@/lib/payment-queue';
+import { queuePageIdsSql } from '@/lib/payment-queue';
 import type { PaymentQueueRow } from './payment-cells';
 import type { PaymentFilterValues } from './payment-filters';
 
@@ -13,15 +13,30 @@ import type { PaymentFilterValues } from './payment-filters';
  * What the queue reads, and in what order.
  *
  * **Ordering is the feature.** Payments awaiting a decision come first, then
- * everything else by recency — two orderings, so two reads over two disjoint
- * bands of the same filtered set, concatenated in band order. See
- * `src/lib/payment-queue.ts` for why this is not one `orderBy` on the status
- * column: that would rest on the declaration order of the `PaymentStatus` enum,
- * and ordering an Admin's work queue does not get to be a coincidence.
+ * everything else by recency. See `src/lib/payment-queue.ts` for the ordering
+ * itself and for why it is not one `orderBy` on the status column: that would
+ * rest on the declaration order of the `PaymentStatus` enum, where the `CASE`
+ * it uses instead names `PENDING` explicitly, and ordering an Admin's work
+ * queue does not get to be a coincidence.
  *
- * The bands are `status = PENDING` and `status <> PENDING`, composed with the
- * caller's filters under `AND` rather than by spreading a status over them — a
- * spread would silently overwrite the Admin's own standing filter.
+ * **A page is one snapshot.** The queue's own order is read as a single
+ * statement returning the page's ids, and the rows are then fetched by id. It
+ * used to be two reads over two disjoint bands (`status = PENDING` and
+ * `status <> PENDING`) with the page's slice of each worked out between them,
+ * and an Admin Confirming a Payment mid-read moved a row from one band to the
+ * other — so the page dropped a row or drew one twice. Fetching by a fixed list
+ * of ids cannot reorder anything, so the second read cannot reintroduce that.
+ *
+ * The two counts are still two ordinary reads, and deliberately: they size the
+ * pagination control and the heading rather than deciding which rows the page
+ * holds, so a count taken a moment apart from the page costs at worst a
+ * pagination control that is one out of date until the next load.
+ *
+ * The search predicate exists twice — `searchWhere` here for the counts, and
+ * `searchSql` in `src/lib/payment-queue.ts` for the page — and the two must
+ * keep saying the same thing, the Owner email guard included. Both defer to
+ * `searchByNameOrEmail`'s rule: the email arm skips Owner rows for anybody but
+ * an Owner, so no filter can be used as an oracle for an address no cell prints.
  *
  * An explicit column sort wins: the moment the Admin picks one, they have said
  * what order they want, and the page becomes a single ordinary read.
@@ -32,19 +47,6 @@ export const QUEUE_SORT = 'queue';
 
 /** The columns whose heads sort. Anything else means the queue's own order. */
 const SORTABLE_COLS = ['member', 'amount', 'month', 'createdAt'];
-
-/**
- * Recency inside each band, then the id.
- *
- * `createdAt` is a millisecond timestamp, so two Payments can share one. Two
- * `LIMIT`/`OFFSET` reads that straddle such a pair are free to resolve the tie
- * differently, which drops one row from a page and shows another twice — so the
- * ordering ends on a unique column and stops being a tie at all.
- */
-const QUEUE_ORDER: Prisma.PaymentOrderByWithRelationInput[] = [
-    { createdAt: 'desc' },
-    { id: 'desc' },
-];
 
 const STATUS_FILTERS: PaymentStatus[] = [
     PaymentStatus.PENDING,
@@ -174,26 +176,6 @@ function buildOrderBy(
     return [{ createdAt: dir }, { id: 'desc' }];
 }
 
-/**
- * One band's slice. A band contributing nothing to this page is not worth a
- * round trip, so a `take` of zero answers without one.
- */
-async function findBand(
-    where: Prisma.PaymentWhereInput,
-    band: QueueBand,
-): Promise<SelectedPaymentRow[]> {
-    if (band.take === 0) {
-        return [];
-    }
-    return prisma.payment.findMany({
-        where,
-        orderBy: QUEUE_ORDER,
-        skip: band.skip,
-        take: band.take,
-        select: PAYMENT_SELECT,
-    });
-}
-
 export type QueuePage = Readonly<{
     rows: PaymentQueueRow[];
     total: number;
@@ -201,59 +183,90 @@ export type QueuePage = Readonly<{
 }>;
 
 export type PageRequest = Readonly<{
-    where: Prisma.PaymentWhereInput;
+    filters: PaymentFilterValues;
     sortBy: string;
     sortDir: 'asc' | 'desc';
     skip: number | undefined;
     take: number | undefined;
 }>;
 
+/**
+ * The rows back in the order their ids came in.
+ *
+ * An id with no row was deleted between the two reads. The page is then one row
+ * shorter and still whole, which is what a deletion means — it is not the
+ * missing row the two-band read used to produce, where the row still existed
+ * and the page simply failed to name it.
+ */
+function inIdOrder(
+    ids: readonly string[],
+    rows: SelectedPaymentRow[],
+): SelectedPaymentRow[] {
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    const ordered: SelectedPaymentRow[] = [];
+    for (const id of ids) {
+        const row = byId.get(id);
+        if (row !== undefined) {
+            ordered.push(row);
+        }
+    }
+    return ordered;
+}
+
 /** The queue's own order: awaiting first, then the decided by recency. */
 async function loadQueue(
     request: PageRequest,
-    awaitingWhere: Prisma.PaymentWhereInput,
-    awaitingTotal: number,
+    viewerRole: Role,
 ): Promise<SelectedPaymentRow[]> {
-    const split = splitQueuePage(awaitingTotal, request.skip, request.take);
-    const decidedWhere: Prisma.PaymentWhereInput = {
-        AND: [request.where, { status: { not: PaymentStatus.PENDING } }],
-    };
-    const [awaiting, decided] = await Promise.all([
-        findBand(awaitingWhere, split.awaiting),
-        findBand(decidedWhere, split.decided),
-    ]);
-    return [...awaiting, ...decided];
+    const page = await prisma.$queryRaw<{ id: string }[]>(
+        queuePageIdsSql(
+            request.filters,
+            viewerRole,
+            request.skip,
+            request.take,
+        ),
+    );
+    const ids: string[] = page.map((row) => row.id);
+    if (ids.length === 0) {
+        return [];
+    }
+    const rows = await prisma.payment.findMany({
+        where: { id: { in: ids } },
+        select: PAYMENT_SELECT,
+    });
+    return inIdOrder(ids, rows);
+}
+
+/** Whichever order the Admin is on: their chosen column, or the queue's own. */
+async function loadRows(
+    request: PageRequest,
+    where: Prisma.PaymentWhereInput,
+    viewerRole: Role,
+): Promise<SelectedPaymentRow[]> {
+    if (SORTABLE_COLS.includes(request.sortBy)) {
+        return prisma.payment.findMany({
+            where,
+            orderBy: buildOrderBy(request.sortBy, request.sortDir),
+            skip: request.skip,
+            take: request.take,
+            select: PAYMENT_SELECT,
+        });
+    }
+    return loadQueue(request, viewerRole);
 }
 
 export async function loadPayments(
     request: PageRequest,
     viewerRole: Role,
 ): Promise<QueuePage> {
-    const { where, skip, take } = request;
-    const awaitingWhere: Prisma.PaymentWhereInput = {
-        AND: [where, { status: PaymentStatus.PENDING }],
-    };
-    const [total, awaitingTotal] = await Promise.all([
+    const where = buildWhere(request.filters, viewerRole);
+    const [total, awaitingTotal, rows] = await Promise.all([
         prisma.payment.count({ where }),
-        prisma.payment.count({ where: awaitingWhere }),
+        prisma.payment.count({
+            where: { AND: [where, { status: PaymentStatus.PENDING }] },
+        }),
+        loadRows(request, where, viewerRole),
     ]);
-
-    if (SORTABLE_COLS.includes(request.sortBy)) {
-        const rows = await prisma.payment.findMany({
-            where,
-            orderBy: buildOrderBy(request.sortBy, request.sortDir),
-            skip,
-            take,
-            select: PAYMENT_SELECT,
-        });
-        return {
-            rows: rows.map((row) => toVisibleRow(row, viewerRole)),
-            total,
-            awaitingTotal,
-        };
-    }
-
-    const rows = await loadQueue(request, awaitingWhere, awaitingTotal);
     return {
         rows: rows.map((row) => toVisibleRow(row, viewerRole)),
         total,
