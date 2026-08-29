@@ -76,7 +76,7 @@ function evidenceColumns(
             key: 'member',
             head: t.admin.colMember,
             sortKey: 'member',
-            render: (p) => <PaymentMember payment={p} />,
+            render: (p) => <PaymentMember payment={p} t={t} />,
         },
         {
             key: 'activity',

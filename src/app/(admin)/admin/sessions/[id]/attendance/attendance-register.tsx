@@ -134,7 +134,7 @@ function attendanceColumns(
         {
             key: 'participant',
             head: t.admin.colParticipant,
-            render: (row) => <ParticipantIdentity row={row} />,
+            render: (row) => <ParticipantIdentity row={row} t={t} />,
         },
         {
             key: 'mode',

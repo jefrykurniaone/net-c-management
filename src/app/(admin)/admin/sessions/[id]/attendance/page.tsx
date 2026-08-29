@@ -96,7 +96,7 @@ export default async function AdminSessionAttendancePage({
     const [{ id }, sp] = await Promise.all([params, searchParams]);
 
     await releaseExpiredHolds();
-    const data = await readAttendanceRegister(id);
+    const data = await readAttendanceRegister(id, session.user.role);
     if (data === null) {
         notFound();
     }

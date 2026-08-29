@@ -1,6 +1,7 @@
 import 'server-only';
-import type { PaymentMode, PaymentStatus } from '@prisma/client';
+import type { PaymentMode, PaymentStatus, Role } from '@prisma/client';
 import { ADMIN_SETTABLE_STATUSES } from '@/lib/attendance-admin';
+import { resolveOwnerVisibility } from '@/lib/owner-visibility';
 import { currentPeriod, resolvePaymentMode } from '@/lib/payment-mode';
 import { prisma } from '@/lib/prisma';
 import type {
@@ -59,7 +60,7 @@ function loadSession(sessionId: string) {
                     id: true,
                     userId: true,
                     status: true,
-                    user: { select: { name: true, email: true } },
+                    user: { select: { name: true, email: true, role: true } },
                 },
             },
         },
@@ -154,6 +155,7 @@ function buildRows(
     money: MoneyIndex,
     month: number,
     year: number,
+    viewerRole: Role,
 ): AttendanceRegisterRow[] {
     const offered = {
         allowsMonthly: session.activity.allowsMonthly,
@@ -162,11 +164,16 @@ function buildRows(
     return session.attendances.map((row) => {
         const membership = money.byUser.get(row.userId) ?? NO_MEMBERSHIP;
         const mode = resolvePaymentMode(membership, offered, month, year);
+        const { email, isContactWithheld } = resolveOwnerVisibility(
+            { role: row.user.role, email: row.user.email, phone: null },
+            viewerRole,
+        );
         return {
             id: row.id,
             userId: row.userId,
             name: row.user.name,
-            email: row.user.email,
+            email,
+            isContactWithheld,
             status: row.status,
             mode,
             money: moneyStandingOf(paymentStatusFor(row.userId, mode, money)),
@@ -177,6 +184,7 @@ function buildRows(
 /** The whole register for one Session, or `null` where no such Session exists. */
 export async function readAttendanceRegister(
     sessionId: string,
+    viewerRole: Role,
 ): Promise<AttendanceRegisterData | null> {
     const session = await loadSession(sessionId);
     if (session === null) {
@@ -195,7 +203,7 @@ export async function readAttendanceRegister(
             status: session.status,
             activityName: session.activity.name,
         },
-        rows: buildRows(session, money, month, year),
+        rows: buildRows(session, money, month, year, viewerRole),
         hasFee: session.fee > 0,
     };
 }

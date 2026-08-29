@@ -246,7 +246,16 @@ export default async function AdminPaymentsPage({
     const { page, pageSize, skip, take } = parsePagination(sp);
 
     const [queue, activities] = await Promise.all([
-        loadPayments({ where: buildWhere(values), sortBy, sortDir, skip, take }),
+        loadPayments(
+            {
+                where: buildWhere(values, session.user.role),
+                sortBy,
+                sortDir,
+                skip,
+                take,
+            },
+            session.user.role,
+        ),
         getActivities(),
     ]);
 
