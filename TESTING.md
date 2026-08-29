@@ -3405,3 +3405,27 @@ from `probe-owner-seed.ts`. Every one removed, and the state re-compared above.
   `TC-AR-011` now states the one-load standing skew the two-read page design
   permits. `TC-AR-006` lost two bullets pasted from `TC-MS-020` about a bottom
   rail this shell does not render. Each is noted in place.
+
+#### Addendum — 2026-08-29, after the follow-up map (#105)
+
+The three defects the run filed — [#101](https://github.com/jefrykurniaone/net-c-management/issues/101),
+[#102](https://github.com/jefrykurniaone/net-c-management/issues/102) and
+[#103](https://github.com/jefrykurniaone/net-c-management/issues/103) — merged
+into `main` as `17c65af`, `532f0f6` and `e1005bd` (PRs #118, #119, #120). The two
+failing cases were re-run against `main` at **`e1005bd`**, as
+`admin@xclub.local`, at **1440 × 900** and **390 × 844**, in **both locales**,
+through Playwright against the dev server; the `TC-AR-036` sweep was extended to
+the two Session forms and the dashboard, which the original sweep did not cover.
+The seed was left as found: the one fixture (a seeded member's name set to null
+to prove the two Members conditions independent) was restored and re-read.
+
+| Case | Priority | Result |
+|---|---|---|
+| TC-AR-031 | P1 | **Pass** — `?search=zzzznonexistent` on `/admin/payments`, `/admin/members` and `/admin/activities` draws the register's own empty row with the Blank **EMPTY** mark and now says **"No payments match your search."**, **"No members match your search."**, **"No activities match your search."** (`id`: "Tidak ada pembayaran / anggota / aktivitas yang cocok dengan pencarian."); the "found" / "yet" sentence is absent on each. A status-plus-month filter on Payments and an Activity filter on Members also say "match". Sort and page-size parameters alone (`?sort=amount&dir=asc&pageSize=10`, `?sort=name&dir=desc`) render the rows and neither sentence. `/admin/sessions` unchanged; `/admin/applicants` keeps its single sentence, having no filter |
+| TC-AR-028 | P1 | **Pass** — the incomplete-profile clause now holds. `newbie@xclub.local` carries **"Profile Incomplete" / "Profil Belum Lengkap"** beneath the name link as a tracked-caps label (`11px`, `letter-spacing 1.1px`, `uppercase`, weight 700, `rgb(84,97,91)`), with **zero** `[data-mark]` in the cell — a label, not one of the six marks; it is the only row of 30 that carries it. At 390 the label's box lies inside the row, `<thead>` is `display: none`, `scrollWidth === 390`. **Independence proved on a fixture:** with `member6@xclub.local`'s name set to null and `isProfileComplete` true, that row read **"(Not set)"** and **no** label while the `newbie` row read its name **and** the label; restored afterwards. Everything else in the case stands as recorded above |
+| TC-AR-036 (extended) | P0 | **Pass on the surfaces this map named** — `/admin`, `/admin/sessions/new` and `/admin/sessions/{id}/edit` at both widths: every named shell measures `border-radius 2px`, `1px solid rgb(119,131,127)`, `rgb(247,249,248)`, and `padding 16px` on the panels that hold content directly (the three dashboard frames carry none, because their rows pad themselves); `scrollWidth` 390 and 1440; `blue-*` **0** on every one. The Post-a-Session locking notice is two `<p>` at `15px` in `rgb(84,97,91)` with no icon and no colour, each tied by `aria-describedby` to its control (the Activity `combobox` trigger, `input[name=fee]`) and sitting directly beneath it; Tab from the back link lands on the trigger with `:focus-visible`, a Court Green border and a 2px offset ring. The edit form's `session-capacity-note` and `session-fee-note` are unchanged. Source sweep of `src/app/(admin)/` for `rounded-(xl\|lg\|2xl)` and a Tailwind hue on a container: **0** on containers and notices; the one hit is `text-green-600` on a dashboard sub-line inside a shell, listed on #103. **Two shells outside the sweep's path still render the old idiom on admin surfaces:** the stat strip's container (`src/components/ui/stat-card.tsx:71`, excluded by the map) and the share-Session card the edit form composes (`src/components/sessions/share-session-card.tsx:48`), filed as [#121](https://github.com/jefrykurniaone/net-c-management/issues/121). Both render at `2px` today because the token layer remaps `--radius-xl` |
+
+**Summary after the addendum.** 36 cases, **36 Pass, 0 Fail, 0 Not run.**
+Every P0 and P1 case passes. The "Not met" list above is unchanged by this
+addendum except that `TC-AR-036`'s sweep now covers the forms and the dashboard;
+SonarLint has still been consulted on no ticket.
