@@ -32,16 +32,11 @@ export function ReadOnlyField({
                     type='text'
                     readOnly
                     aria-describedby={noteId}
+                    // `Input` now carries the read-only Enamel Ground fill itself
+                    // (`read-only:bg-board`), so only the icon clearance and the
+                    // Figure role for an amount are this field's own to add.
                     className={cn(
-                        // `dark:bg-board` is not redundant beside `bg-board`.
-                        // `Input` ships `dark:bg-input/30`, and the dark variant
-                        // compiles to `&:is(.dark *)` — one class more specific
-                        // than a plain utility, so it out-specifies `bg-board`
-                        // whatever the order here. The field then took a *lighter*
-                        // fill than the tile it sits on, reading as raised where
-                        // the design says recessed, and the one affordance saying
-                        // "the server set this" pointed the wrong way.
-                        'bg-board dark:bg-board pr-8',
+                        'pr-8',
                         isFigure && 'type-figure tabular-nums',
                     )}
                     value={value}

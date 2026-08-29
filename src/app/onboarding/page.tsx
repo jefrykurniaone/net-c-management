@@ -50,16 +50,6 @@ import {
 /** The 40rem single-task column. */
 const COLUMN_CLASS = 'max-w-[40rem]';
 
-/**
- * `Input` ships transparent with a soft focus halo (`src/components/ui/
- * input.tsx`, unmodified here). DESIGN.md's Inputs section calls for an
- * Enamel Tile ground — "a cell you write in" — plus a Court Green border
- * with a 2px *offset* ring on focus, so this composes those two classes onto
- * the primitive rather than rewriting it.
- */
-const FIELD_CLASS =
-    'bg-tile focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
-
 function IdentityRail({
     communityName,
     logoUrl,
@@ -178,7 +168,6 @@ export default function OnboardingPage() {
                                         <FormLabel>{t.onboarding.name}</FormLabel>
                                         <FormControl>
                                             <Input
-                                                className={FIELD_CLASS}
                                                 placeholder={t.onboarding.namePlaceholder}
                                                 {...field}
                                             />
@@ -199,7 +188,6 @@ export default function OnboardingPage() {
                                         <FormLabel>{t.onboarding.phone}</FormLabel>
                                         <FormControl>
                                             <Input
-                                                className={FIELD_CLASS}
                                                 placeholder={t.onboarding.phonePlaceholder}
                                                 type='tel'
                                                 {...field}

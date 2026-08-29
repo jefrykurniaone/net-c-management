@@ -1,4 +1,6 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { DEFAULT_SORT_COL } from './session-rows';
 
@@ -56,26 +58,26 @@ export function SessionFilters({
 }>) {
     return (
         <form className='flex flex-wrap gap-2' method='GET'>
-            <input
+            <Input
                 name='search'
                 defaultValue={filters.search}
                 placeholder={t.table.search.titlePlaceholder}
                 aria-label={t.table.search.titlePlaceholder}
                 data-testid='search-input'
-                className='h-9 w-full rounded-lg border border-input bg-card px-3 text-sm placeholder:text-subtle-foreground sm:w-64'
+                className='w-full sm:w-64'
             />
-            <select
+            <NativeSelect
                 name='activityId'
                 defaultValue={filters.activityId}
                 aria-label={t.admin.filterActivityLabel}
-                className='h-9 w-full rounded-lg border border-input bg-card px-3 text-sm font-medium text-secondary-foreground sm:w-auto'>
+                className='w-full sm:w-auto'>
                 <option value=''>{t.activity.filterAll}</option>
                 {activities.map((activity) => (
                     <option key={activity.id} value={activity.id}>
                         {activity.name}
                     </option>
                 ))}
-            </select>
+            </NativeSelect>
             <CarriedState filters={filters} />
             <Button type='submit' variant='outline' size='sm' className='h-9'>
                 {t.admin.searchBtn}
