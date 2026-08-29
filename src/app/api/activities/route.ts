@@ -3,11 +3,15 @@ import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { buildCreateActivitySchema } from '@/lib/validations/activity';
+import {
+    buildCreateActivitySchema,
+    type CreateActivityFormData,
+} from '@/lib/validations/activity';
 import { getUserActivityIds } from '@/lib/activity';
+import { BEGINNING_OF_TIME } from '@/lib/billing-period';
 import { invalidatePublicLanding } from '@/lib/public-landing';
 import { isAdminRole } from '@/lib/utils';
-import { Prisma } from '@prisma/client';
+import { Prisma, type Activity } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 /**
@@ -71,6 +75,37 @@ export async function GET(req: Request) {
     return NextResponse.json({ activities });
 }
 
+/**
+ * Create the Activity and its beginning-of-time Dues Rate as one write.
+ *
+ * An Activity that existed for even an instant without a rate row is an
+ * Activity whose Billing Periods resolve to no amount, so the two rows are one
+ * transaction rather than two statements. The rate is `monthlyFee` as stored —
+ * the figure the form submitted — and `setById` records the Admin who created
+ * it, which the migration's own seeded rows cannot say because nobody set
+ * those.
+ *
+ * A `P2002` out of here still means the slug: `(activityId, effectiveFrom)` is
+ * written exactly once, for an Activity id that did not exist a moment ago.
+ */
+function createActivityWithDuesRate(
+    data: CreateActivityFormData,
+    setById: string,
+): Promise<Activity> {
+    return prisma.$transaction(async (tx) => {
+        const created = await tx.activity.create({ data });
+        await tx.duesRate.create({
+            data: {
+                activityId: created.id,
+                amount: created.monthlyFee,
+                effectiveFrom: BEGINNING_OF_TIME,
+                setById,
+            },
+        });
+        return created;
+    });
+}
+
 // POST /api/activities — create activity (admin only)
 export async function POST(req: Request) {
     const session = await auth();
@@ -94,7 +129,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const activity = await prisma.activity.create({ data: parsed.data });
+        const activity = await createActivityWithDuesRate(parsed.data, session.user.id);
         // A new active Activity is published on `/`.
         invalidatePublicLanding();
         return NextResponse.json(activity, { status: 201 });

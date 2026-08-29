@@ -1,5 +1,6 @@
 /** Base rows: settings, activities, staff accounts, member accounts. */
 import { Role } from '@prisma/client';
+import { BEGINNING_OF_TIME } from '../../src/lib/billing-period';
 import { prisma } from './client';
 import {
     SETTINGS,
@@ -20,6 +21,14 @@ export async function seedSettings() {
     console.log(`[ok] Settings: ${SETTINGS.communityName}`);
 }
 
+/**
+ * Every Activity carries a beginning-of-time Dues Rate, so a reset database
+ * resolves every Billing Period the way a migrated one does rather than only a
+ * migrated one. Upserted on `(activityId, effectiveFrom)` because this seeder is
+ * re-runnable and upserts the Activity above rather than recreating it.
+ * `setById` stays null for the same reason the migration's rows leave it null:
+ * nobody set this rate, it is the Activity's price from the beginning.
+ */
 export async function seedActivities(): Promise<Map<string, string>> {
     const idBySlug = new Map<string, string>();
     for (const e of ACTIVITY_CONFIGS) {
@@ -29,8 +38,22 @@ export async function seedActivities(): Promise<Map<string, string>> {
             update: data,
             create: { slug, ...data },
         });
+        await prisma.duesRate.upsert({
+            where: {
+                activityId_effectiveFrom: {
+                    activityId: activity.id,
+                    effectiveFrom: BEGINNING_OF_TIME,
+                },
+            },
+            update: { amount: activity.monthlyFee },
+            create: {
+                activityId: activity.id,
+                amount: activity.monthlyFee,
+                effectiveFrom: BEGINNING_OF_TIME,
+            },
+        });
         idBySlug.set(slug, activity.id);
-        console.log(`[ok] Activity: ${activity.name}`);
+        console.log(`[ok] Activity: ${activity.name} (Dues Rate ${activity.monthlyFee})`);
     }
     return idBySlug;
 }

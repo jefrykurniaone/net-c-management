@@ -1,5 +1,6 @@
 import 'server-only';
 import { PaymentMode } from '@prisma/client';
+import { toPeriodKey, type BillingPeriod } from './billing-period';
 
 /**
  * Server-only payment-mode resolution (AD-7, AD-13).
@@ -9,47 +10,21 @@ import { PaymentMode } from '@prisma/client';
  * so a mid-period switch can never rewrite what the current period owes.
  */
 
-/** Radix for encoding a billing period as YYYYMM (year * 100 + month). */
-const PERIOD_YEAR_RADIX = 100;
-
 /**
- * Encode a billing period (calendar month 1–12 + year, AD-13) as a comparable
- * YYYYMM integer — e.g. July 2026 → 202607. Ordering by this key orders periods.
+ * The Billing Period key, the beginning-of-time key and the two Periods every
+ * surface asks for now live in `billing-period.ts`, free of `server-only` so
+ * that the Admin's Period picker and the Proof upload form can read them too.
+ * They are re-exported here unchanged: every existing `from './payment-mode'`
+ * import keeps resolving, and `year * 100 + month` — the encoding a stored
+ * column holds — is still written in exactly one place.
  */
-export function toPeriodKey(month: number, year: number): number {
-  return year * PERIOD_YEAR_RADIX + month;
-}
-
-/** Calendar months in a year — for rolling a December switch into January. */
-const MONTHS_PER_YEAR = 12;
-/** First calendar month (January), 1-indexed per AD-13. */
-const FIRST_MONTH = 1;
-
-/** A billing period as the calendar pair used everywhere (AD-13). */
-export interface BillingPeriod {
-  month: number;
-  year: number;
-}
-
-/**
- * The billing period containing `now` — calendar month 1–12 + full year. `now`
- * is injected (never read from an ambient clock here) so this stays a pure
- * function, matching `resolvePaymentMode`.
- */
-export function currentPeriod(now: Date): BillingPeriod {
-  return { month: now.getMonth() + 1, year: now.getFullYear() };
-}
-
-/**
- * The billing period immediately after the one containing `now`. December rolls
- * into January of the next year. Used to queue a mode switch for the next
- * period so the current period is never rewritten (AD-7).
- */
-export function nextPeriod(now: Date): BillingPeriod {
-  const { month, year } = currentPeriod(now);
-  if (month === MONTHS_PER_YEAR) return { month: FIRST_MONTH, year: year + 1 };
-  return { month: month + 1, year };
-}
+export {
+  BEGINNING_OF_TIME,
+  currentPeriod,
+  nextPeriod,
+  toPeriodKey,
+  type BillingPeriod,
+} from './billing-period';
 
 /** The minimal Membership fields the resolver reads. */
 export interface MembershipMode {
