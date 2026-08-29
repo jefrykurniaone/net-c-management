@@ -4,8 +4,8 @@
 |---|---|
 | Spec | [#30](https://github.com/jefrykurniaone/net-c-management/issues/30) — `spec:admin-registers` |
 | Run | `run:admin-registers` |
-| Execution map | [#74](https://github.com/jefrykurniaone/net-c-management/issues/74) |
-| Tickets | #64–#73, sub-issues of #30 |
+| Execution map | [#74](https://github.com/jefrykurniaone/net-c-management/issues/74) (closed); follow-up [#105](https://github.com/jefrykurniaone/net-c-management/issues/105) for the post-run defects |
+| Tickets | #64–#73, sub-issues of #30; follow-up #101–#103, filed from the recorded run |
 | Version | v1 (spec revision 2, 2026-08-28) |
 | Depends on | [#28](https://github.com/jefrykurniaone/net-c-management/issues/28) design system (closed), [#29](https://github.com/jefrykurniaone/net-c-management/issues/29) member surfaces (closed) |
 
