@@ -1,5 +1,4 @@
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
@@ -19,7 +18,13 @@ import {
 import { parsePagination, parseSort, parseSearch, type RawSearchParams } from '@/lib/table-params';
 import { Register } from '@/components/admin/register';
 import type { RegisterColumn } from '@/components/admin/register-columns';
-import type { Prisma, Activity } from '@prisma/client';
+import { currentPeriod, type BillingPeriod } from '@/lib/billing-period';
+import {
+    ACTIVITY_DUES_SORT_KEY,
+    fetchActivityRegister,
+    type ActivityRegisterRow,
+} from '@/lib/activity-register';
+import type { Prisma } from '@prisma/client';
 
 /**
  * The Activities register (ticket #71) — one row per Activity, an audit in
@@ -31,20 +36,18 @@ import type { Prisma, Activity } from '@prisma/client';
  * its own.
  */
 
-function buildActivityOrderBy(
-    sortBy: string,
-    dir: 'asc' | 'desc',
-): Prisma.ActivityOrderByWithRelationInput[] {
-    if (sortBy === 'monthlyFee') {
-        return [{ monthlyFee: dir }, { name: 'asc' }];
-    }
-    if (sortBy === 'status') {
-        return [{ isActive: dir === 'asc' ? 'desc' : 'asc' }, { name: 'asc' }];
-    }
-    return [{ isActive: 'desc' }, { name: dir }];
-}
-
-function activityColumns(t: Dictionary): readonly RegisterColumn<Activity>[] {
+/**
+ * The register's columns. The Dues column prints and sorts by the Dues Rate of
+ * `period` — the current Billing Period — which is why the ordering for that one
+ * key is resolved in `src/lib/activity-register.ts` rather than by an `orderBy`.
+ * `nowIso` is the server's instant, handed to the edit form so its Period picker
+ * offers exactly the months the route accepts.
+ */
+function activityColumns(
+    t: Dictionary,
+    period: BillingPeriod,
+    nowIso: string,
+): readonly RegisterColumn<ActivityRegisterRow>[] {
     return [
         {
             key: 'activity',
@@ -56,8 +59,8 @@ function activityColumns(t: Dictionary): readonly RegisterColumn<Activity>[] {
             key: 'dues',
             head: t.admin.colDues,
             kind: 'amount',
-            sortKey: 'monthlyFee',
-            render: activityDuesLabel,
+            sortKey: ACTIVITY_DUES_SORT_KEY,
+            render: (a) => activityDuesLabel(a, period, t),
         },
         {
             key: 'fee',
@@ -103,7 +106,7 @@ function activityColumns(t: Dictionary): readonly RegisterColumn<Activity>[] {
             key: 'actions',
             head: t.admin.colActions,
             kind: 'actions',
-            render: (a) => <ActivityActions activity={a} />,
+            render: (a) => <ActivityActions activity={a} nowIso={nowIso} />,
         },
     ];
 }
@@ -209,15 +212,18 @@ export default async function AdminActivityPage({
           }
         : {};
 
-    const [activities, total] = await Promise.all([
-        prisma.activity.findMany({
-            where,
-            orderBy: buildActivityOrderBy(sortBy, sortDir),
-            skip,
-            take,
-        }),
-        prisma.activity.count({ where }),
-    ]);
+    // One instant for the whole render: the Period the Dues column is about and
+    // the Period picker the edit form offers are the same clock, the server's.
+    const now = new Date();
+    const period = currentPeriod(now);
+    const { rows, total } = await fetchActivityRegister({
+        where,
+        sortBy,
+        sortDir,
+        skip,
+        take,
+        period,
+    });
 
     return (
         <div className='space-y-bay'>
@@ -230,8 +236,8 @@ export default async function AdminActivityPage({
                 pageSize={pageSize}
             />
             <Register
-                columns={activityColumns(t)}
-                rows={activities}
+                columns={activityColumns(t, period, now.toISOString())}
+                rows={rows}
                 caption={t.admin.activitiesCaption}
                 searchParams={sp}
                 empty={emptyRow(t, Boolean(search))}

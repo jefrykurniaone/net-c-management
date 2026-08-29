@@ -48,6 +48,22 @@ export function toPeriodKey(month: number, year: number): number {
 }
 
 /**
+ * The inverse: a stored YYYYMM key back to the calendar pair, so a Period read
+ * out of a column can be named in a sentence — "September 2026" — without any
+ * caller re-deriving `year * 100 + month`. It lives here for exactly that
+ * reason: the encoding is written in one place, and so is the decoding.
+ *
+ * `BEGINNING_OF_TIME` has no calendar month, so it decodes to month 0 — not a
+ * Period any surface names. Callers that can hold it check for it first.
+ */
+export function fromPeriodKey(key: number): BillingPeriod {
+  return {
+    month: key % PERIOD_YEAR_RADIX,
+    year: Math.floor(key / PERIOD_YEAR_RADIX),
+  };
+}
+
+/**
  * The billing period containing `now` — calendar month 1–12 + full year. `now`
  * is injected (never read from an ambient clock here) so this stays a pure
  * function, matching `resolvePaymentMode`.

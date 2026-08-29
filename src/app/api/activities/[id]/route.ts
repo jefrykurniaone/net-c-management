@@ -2,8 +2,14 @@ import { auth } from '@/lib/auth';
 import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { getLocale } from '@/lib/i18n/locale';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { buildUpdateActivitySchema } from '@/lib/validations/activity';
+import {
+    duesRateRefusalMessage,
+    duesRateRefusalStatus,
+    updateActivityWithDuesRate,
+    type DuesRateRefusalReason,
+} from '@/lib/dues-rate-writes';
 import { invalidatePublicLanding } from '@/lib/public-landing';
 import { isAdminRole } from '@/lib/utils';
 import { Prisma } from '@prisma/client';
@@ -31,7 +37,45 @@ export async function GET(
     return NextResponse.json(activity);
 }
 
-// PATCH /api/activities/[id] — update activity (admin only)
+/**
+ * A Dues Rate refusal, said the way `session-lock.ts`'s refusals are: the
+ * translated sentence the form shows beneath the field, and the stable code
+ * beside it. 409 when the Period is settled, 400 when it is out of range.
+ */
+function duesRateRefused(reason: DuesRateRefusalReason, t: Dictionary) {
+    return NextResponse.json(
+        { error: duesRateRefusalMessage(reason, t), code: reason },
+        { status: duesRateRefusalStatus(reason) },
+    );
+}
+
+/** The two Prisma failures this write has an answer for; anything else rethrows. */
+function activityWriteError(err: unknown, t: Dictionary) {
+    if (!(err instanceof Prisma.PrismaClientKnownRequestError)) {
+        return null;
+    }
+    if (err.code === 'P2002') {
+        return NextResponse.json(
+            { error: t.validation.activitySlugTaken },
+            { status: 409 },
+        );
+    }
+    if (err.code === 'P2025') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    return null;
+}
+
+/**
+ * PATCH /api/activities/[id] — update activity (admin only).
+ *
+ * The Dues figure arrives as `duesRate: { amount, effectiveFrom }` rather than
+ * as `monthlyFee`: a Dues Rate is a history against a Billing Period, so a save
+ * names the month the new amount starts from. The Activity's fields and that
+ * rate row are written under one Activity row lock in
+ * `src/lib/dues-rate-writes.ts`, so two Admins saving at once cannot both queue
+ * a change, and a refused rate leaves no half-renamed Activity behind.
+ */
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> },
@@ -44,12 +88,9 @@ export async function PATCH(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const locale = await getLocale();
-    const t = getDictionary(locale);
-
+    const t = getDictionary(await getLocale());
     const { id } = await params;
-    const body = await req.json();
-    const parsed = buildUpdateActivitySchema(t).safeParse(body);
+    const parsed = buildUpdateActivitySchema(t).safeParse(await req.json());
     if (!parsed.success) {
         return NextResponse.json(
             { error: t.common.error, details: parsed.error.issues },
@@ -57,28 +98,25 @@ export async function PATCH(
         );
     }
 
+    const { duesRate, ...data } = parsed.data;
     try {
-        const activity = await prisma.activity.update({
-            where: { id },
-            data: parsed.data,
+        const outcome = await updateActivityWithDuesRate({
+            activityId: id,
+            data,
+            duesRate: duesRate ?? null,
+            setById: session.user.id,
+            now: new Date(),
         });
+        if (outcome.kind === 'refused') {
+            return duesRateRefused(outcome.reason, t);
+        }
         // Name, weekly slot, fees and `isActive` all publish.
         invalidatePublicLanding();
-        return NextResponse.json(activity);
+        return NextResponse.json(outcome.activity);
     } catch (err) {
-        if (err instanceof Prisma.PrismaClientKnownRequestError) {
-            if (err.code === 'P2002') {
-                return NextResponse.json(
-                    { error: t.validation.activitySlugTaken },
-                    { status: 409 },
-                );
-            }
-            if (err.code === 'P2025') {
-                return NextResponse.json(
-                    { error: 'Not found' },
-                    { status: 404 },
-                );
-            }
+        const answer = activityWriteError(err, t);
+        if (answer !== null) {
+            return answer;
         }
         throw err;
     }

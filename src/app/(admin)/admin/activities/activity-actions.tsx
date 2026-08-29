@@ -23,17 +23,26 @@ import {
     ScheduleSection,
     ContactSection,
 } from './activity-form-sections';
+import { useDuesRateField } from './use-dues-rate-field';
 import { toast } from 'sonner';
 import { Plus, Pencil } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { buildDuesRateFieldView } from '@/lib/dues-rate-view';
+import type { DuesRateRow } from '@/lib/dues-rate';
 
 export interface ActivityRow {
     id: string;
     name: string;
     slug: string;
     description: string | null;
+    /**
+     * The live column, kept until ticket #114 drops it. The Dues figure this
+     * form edits is a `DuesRate` row, not this — see `duesRates`.
+     */
     monthlyFee: number;
+    /** The Activity's Dues Rate history, which the Dues field resolves through. */
+    duesRates: readonly DuesRateRow[];
     sessionFee: number;
     allowsMonthly: boolean;
     allowsPerSession: boolean;
@@ -52,10 +61,13 @@ export interface ActivityRow {
 
 function ActivityFormDialog({
     activity,
+    nowIso,
     open,
     onOpenChange,
 }: Readonly<{
     activity?: ActivityRow;
+    /** The server's instant, so the Period picker offers what the route accepts. */
+    nowIso?: string;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }>) {
@@ -65,6 +77,11 @@ function ActivityFormDialog({
     const [loading, setLoading] = useState(false);
     const isEdit = !!activity;
 
+    const duesView =
+        activity !== undefined && nowIso !== undefined
+            ? buildDuesRateFieldView(activity.duesRates, new Date(nowIso), t)
+            : null;
+
     const form = useForm<CreateActivityFormData>({
         resolver: zodResolver(buildCreateActivitySchema(t)),
         defaultValues: {
@@ -72,8 +89,10 @@ function ActivityFormDialog({
             slug: activity?.slug ?? '',
             description: activity?.description ?? '',
             // Empty (undefined) on create so the admin must enter a fee
-            // explicitly — a blank submit is rejected, never a silent 0.
-            monthlyFee: activity?.monthlyFee,
+            // explicitly — a blank submit is rejected, never a silent 0. On edit
+            // it is the Dues Rate: the queued figure when one is queued, so an
+            // unrelated save re-states that change instead of replacing it.
+            monthlyFee: duesView?.amount ?? activity?.monthlyFee,
             sessionFee: activity?.sessionFee,
             allowsMonthly: activity?.allowsMonthly ?? true,
             allowsPerSession: activity?.allowsPerSession ?? false,
@@ -88,6 +107,13 @@ function ActivityFormDialog({
             bankAccountNumber: activity?.bankAccountNumber ?? '',
             bankAccountHolder: activity?.bankAccountHolder ?? '',
         },
+    });
+
+    const dues = useDuesRateField({
+        form,
+        t,
+        view: duesView,
+        activityId: activity?.id,
     });
 
     // The ≥1-payment-mode refine attaches its error to a synthetic
@@ -107,7 +133,7 @@ function ActivityFormDialog({
                 {
                     method: isEdit ? 'PATCH' : 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(dues.toRequestBody(data)),
                 },
             );
             if (!res.ok) {
@@ -149,6 +175,7 @@ function ActivityFormDialog({
                             form={form}
                             t={t}
                             modesError={paymentModesError?.message}
+                            duesField={dues.props}
                         />
                         <ScheduleSection form={form} t={t} />
                         <ContactSection form={form} t={t} />
@@ -183,7 +210,10 @@ export function NewActivityButton() {
     );
 }
 
-export function ActivityActions({ activity }: Readonly<{ activity: ActivityRow }>) {
+export function ActivityActions({
+    activity,
+    nowIso,
+}: Readonly<{ activity: ActivityRow; nowIso: string }>) {
     const router = useRouter();
     const { locale } = useLocale();
     const t = getDictionary(locale);
@@ -251,6 +281,7 @@ export function ActivityActions({ activity }: Readonly<{ activity: ActivityRow }
             {editOpen && (
                 <ActivityFormDialog
                     activity={activity}
+                    nowIso={nowIso}
                     open={editOpen}
                     onOpenChange={setEditOpen}
                 />

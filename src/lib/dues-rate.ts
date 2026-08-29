@@ -1,4 +1,9 @@
-import { toPeriodKey, type BillingPeriod } from './billing-period';
+import {
+    currentPeriod,
+    nextPeriod,
+    toPeriodKey,
+    type BillingPeriod,
+} from './billing-period';
 
 /**
  * What an Activity charges for Dues in one Billing Period — the **only** code
@@ -104,4 +109,103 @@ export function findQueuedDuesRate<T extends DuesRateRow>(
         }
     }
     return queued;
+}
+
+/**
+ * The queuing rules (ADR 0002), stated once for the route that enforces them and
+ * the Period picker that offers only what they allow.
+ *
+ * They live beside the resolver rather than in a module of their own for the
+ * reason the file header gives: this is the only code that compares a Period to
+ * a rate row, and a second file doing it is a second answer waiting to disagree.
+ * Like the resolver they read no clock — `now` is a parameter, so a test can put
+ * the caller in December and a route can pass the instant it started at.
+ */
+
+/**
+ * How far ahead a rate change may be set: twelve Periods, which is a year.
+ *
+ * ADR 0002: as far ahead as a committee decides, and near enough that the Period
+ * picker stays finite and a queued row stays meaningful.
+ */
+export const DUES_RATE_HORIZON_PERIODS = 12;
+
+/**
+ * The Period `offset` Periods after the one containing `now` — offset 0 being
+ * the next Period, the earliest a rate may start from.
+ *
+ * The month arithmetic is `Date`'s own: a month index past December rolls the
+ * year, which is the same roll `nextPeriod` performs by hand for its single
+ * step. Doing it this way adds no second copy of the calendar rule.
+ */
+function periodAhead(now: Date, offset: number): BillingPeriod {
+    const first = nextPeriod(now);
+    return currentPeriod(new Date(first.year, first.month - 1 + offset, 1));
+}
+
+/**
+ * Every Period an Admin may start a new rate from, earliest first: the next
+ * Period through twelve Periods ahead. This is what the picker offers, and the
+ * route refuses anything outside it — the control and the rule read one list.
+ */
+export function allowedDuesRatePeriods(now: Date): BillingPeriod[] {
+    const periods: BillingPeriod[] = [];
+    for (let offset = 0; offset < DUES_RATE_HORIZON_PERIODS; offset += 1) {
+        periods.push(periodAhead(now, offset));
+    }
+    return periods;
+}
+
+/** Whether `effectiveFrom` sits inside the allowed window. */
+export function isDuesRateEffectiveFromAllowed(
+    effectiveFrom: number,
+    now: Date,
+): boolean {
+    const earliest = periodAhead(now, 0);
+    const latest = periodAhead(now, DUES_RATE_HORIZON_PERIODS - 1);
+    return (
+        effectiveFrom >= toPeriodKey(earliest.month, earliest.year) &&
+        effectiveFrom <= toPeriodKey(latest.month, latest.year)
+    );
+}
+
+/**
+ * Whether a rate row's Period has arrived — the current Period or any before it.
+ *
+ * An arrived Period is settled: its row is never updated and never deleted, by
+ * anyone, Owner included. `BEGINNING_OF_TIME` is 0 and so always arrived, which
+ * is what makes an Activity's founding rate permanent rather than a special
+ * case somebody has to remember.
+ */
+export function hasDuesRatePeriodArrived(
+    effectiveFrom: number,
+    now: Date,
+): boolean {
+    const period = currentPeriod(now);
+    return effectiveFrom <= toPeriodKey(period.month, period.year);
+}
+
+/**
+ * Whether saving `amount` from `effectiveFrom` would leave the Activity charging
+ * exactly what it charges now — in which case the write is a no-op rather than
+ * an error, and no row is touched.
+ *
+ * Two ways that happens. With nothing queued, an amount equal to what `period`
+ * already charges is the Admin saving the form without meaning to change the
+ * Dues — every save of the Activity's name or bank account carries the Dues
+ * field along with it, and that must not queue a change. With a change queued,
+ * a request identical to it is the same save arriving twice; rewriting the row
+ * would move `setAt` and `setById` and falsify "who raised the Dues in March".
+ */
+export function isDuesRateSaveUnchanged(
+    rates: readonly DuesRateRow[],
+    amount: number,
+    effectiveFrom: number,
+    period: BillingPeriod,
+): boolean {
+    const queued = findQueuedDuesRate(rates, period);
+    if (queued === null) {
+        return resolveDuesRate(rates, period) === amount;
+    }
+    return queued.effectiveFrom === effectiveFrom && queued.amount === amount;
 }
