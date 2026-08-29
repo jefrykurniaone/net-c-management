@@ -1955,6 +1955,42 @@ stored `fee`.
   device or emulator that reports a non-zero inset, if one is available;
   otherwise record that the inset resolved to the 0.375rem floor.
 
+### TC-AR-010 · P0 · Negative — A capacity edit and a reservation cannot cross
+
+**Preconditions:** a **Scheduled** Session with a fee, capacity `max`, and
+**n = max − 1** seat-holding Attendances — exactly one free Seat. Two browsers:
+an admin in one, and in the other a member who holds no Seat on this Session and
+whose Membership on that Activity is billed **Per-Session**, so claiming a Seat
+takes the hold path. The two presses have to overlap; where they cannot be made
+to by hand, issue them as two `fetch` calls without awaiting the first —
+`PATCH /api/sessions/{id}` with `{ "maxPlayers": n }` and
+`POST /api/sessions/{id}/reserve`.
+
+**Steps:**
+1. Admin tab: open `/admin/sessions/{id}/edit` and set Max Participants to **n**,
+   without saving yet.
+2. Member tab: press the control that claims the last Seat, and press Save in the
+   admin tab in the same moment.
+3. Re-read the Session: its stored `maxPlayers`, and its count of seat-holding
+   (`REGISTERED`/`PRESENT`) Attendances.
+4. Repeat the whole case with the two presses in the other order, several times.
+
+**Expected result:**
+
+- **Every run ends with `held ≤ maxPlayers`.** `maxPlayers = n` stored beside
+  `n + 1` held Seats is the failure this case exists to catch — it is the state
+  the old two-statement PATCH could reach, and one this one cannot.
+- **Exactly one of the two writes is refused**, and which one depends only on
+  which committed first; both succeeding is a failure of this case.
+  - Reservation first: capacity ends **unchanged** at `max`, the Seat is held,
+    and the edit is **409** with `reason: "CAPACITY_BELOW_HELD"` naming `n + 1`
+    seats — the figure the Admin has to be told, since it is one higher than the
+    page they were reading said.
+  - Edit first: capacity ends at **n**, held stays at **n**, and the member's
+    claim is refused as full rather than seated over the new capacity.
+- Neither write leaves a half-write behind: no Payment row without its
+  Attendance, and no capacity written without the count it was decided against.
+
 ---
 
 ### 17.8 Adi — the marks in both board materials
