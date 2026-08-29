@@ -46,6 +46,8 @@ export type MemberRow = Readonly<{
     phone: string | null;
     role: Role;
     isActive: boolean;
+    /** Stuck at onboarding — every protected route bounces them there. */
+    isProfileComplete: boolean;
     /** Whether this row's contact details were withheld from this viewer. */
     isContactWithheld: boolean;
     /** An Owner account: refused every modification, by anyone. */
@@ -60,6 +62,7 @@ const MEMBER_SELECT = {
     phone: true,
     role: true,
     isActive: true,
+    isProfileComplete: true,
     memberships: {
         where: { isActive: true, activity: { isActive: true } },
         orderBy: { joinedAt: 'asc' },
@@ -179,6 +182,7 @@ function toRow(
         name: user.name,
         role: user.role,
         isActive: user.isActive,
+        isProfileComplete: user.isProfileComplete,
         ...resolveOwnerVisibility(user, viewerRole),
         memberships: toMembershipCells(user, payments, period),
     };
