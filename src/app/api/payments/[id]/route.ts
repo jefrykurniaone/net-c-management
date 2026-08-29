@@ -2,6 +2,10 @@ import { auth } from '@/lib/auth';
 import { admissionDenied, isAdmittedSession } from '@/lib/admission';
 import { prisma } from '@/lib/prisma';
 import { buildConfirmPaymentSchema } from '@/lib/validations/payment';
+import {
+    isRejectWithoutReason,
+    REJECT_REASON_REQUIRED,
+} from '@/lib/payment-review';
 import { isAdminRole } from '@/lib/utils';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
@@ -64,6 +68,17 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
+    // A Reject carries its reason to the member — it is stored as the Payment's
+    // notes and is the only thing telling them what to do about a released Seat
+    // (UX-DR12). Refused here, before the locale is read and before the
+    // translated schema is built, so the rule cannot be edited out of the
+    // dictionary and the error names the rule rather than a sentence.
+    if (isRejectWithoutReason(body)) {
+        return NextResponse.json(
+            { error: REJECT_REASON_REQUIRED },
+            { status: 400 },
+        );
+    }
     const locale = await getLocale();
     const t = getDictionary(locale);
     const parsed = buildConfirmPaymentSchema(t).safeParse(body);
