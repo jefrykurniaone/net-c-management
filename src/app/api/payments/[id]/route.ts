@@ -17,8 +17,26 @@ import {
     sendPaymentStatus,
     type EmailLocale,
 } from '@/lib/email';
-import { PaymentType } from '@prisma/client';
+import { visibleContact } from '@/lib/owner-visibility';
+import { PaymentType, Role } from '@prisma/client';
 import { after, NextResponse } from 'next/server';
+
+/**
+ * The row's `user`, reshaped so an Owner's withheld email never reaches the
+ * response. Same key set and order the route has always sent — `id`, `name`,
+ * `email` — so an Owner caller (never withheld from) sees byte-identical
+ * output (docs/owner-role-immutability.md).
+ */
+function toVisibleUser(
+    user: Readonly<{ id: string; name: string | null; email: string | null; role: Role }>,
+    viewerRole: Role,
+) {
+    return {
+        id: user.id,
+        name: user.name,
+        email: visibleContact({ ...user, phone: null }, viewerRole).email,
+    };
+}
 
 // GET /api/payments/[id]
 export async function GET(
@@ -34,7 +52,9 @@ export async function GET(
     const payment = await prisma.payment.findUnique({
         where: { id },
         include: {
-            user: { select: { id: true, name: true, email: true } },
+            user: {
+                select: { id: true, name: true, email: true, role: true },
+            },
         },
     });
 
@@ -50,7 +70,10 @@ export async function GET(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    return NextResponse.json(payment);
+    return NextResponse.json({
+        ...payment,
+        user: toVisibleUser(payment.user, session.user.role),
+    });
 }
 
 // PATCH /api/payments/[id] — admin confirms or rejects

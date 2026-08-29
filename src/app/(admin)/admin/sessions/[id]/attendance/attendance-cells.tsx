@@ -35,20 +35,43 @@ export function statusLabel(status: AttendanceStatus, t: Dictionary): string {
     return t.marks[resolveStatusMark(attendanceState(status)).labelKey];
 }
 
+/**
+ * The email under the name, or the word that says why an Admin cannot see it.
+ * Withheld rather than blank, exactly as the Members register draws it
+ * (docs/owner-role-immutability.md).
+ */
+function ParticipantContact({
+    row,
+    t,
+}: Readonly<{ row: AttendanceRegisterRow; t: Dictionary }>) {
+    if (row.isContactWithheld) {
+        return (
+            <span className='type-caption text-muted-foreground'>
+                {t.admin.contactWithheld}
+            </span>
+        );
+    }
+    if (row.name === null || row.email === null) {
+        return null;
+    }
+    return (
+        <span className='type-caption break-all text-muted-foreground'>
+            {row.email}
+        </span>
+    );
+}
+
 /** Who they are, and how to tell two members of the same name apart. */
 export function ParticipantIdentity({
     row,
-}: Readonly<{ row: AttendanceRegisterRow }>) {
+    t,
+}: Readonly<{ row: AttendanceRegisterRow; t: Dictionary }>) {
     return (
         <span className='flex min-w-0 flex-col gap-hair'>
             <span className='type-title text-foreground'>
                 {participantLabel(row)}
             </span>
-            {row.name !== null && row.email !== null && (
-                <span className='type-caption break-all text-muted-foreground'>
-                    {row.email}
-                </span>
-            )}
+            <ParticipantContact row={row} t={t} />
         </span>
     );
 }

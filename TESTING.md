@@ -1955,6 +1955,32 @@ stored `fee`.
   device or emulator that reports a non-zero inset, if one is available;
   otherwise record that the inset resolved to the 0.375rem floor.
 
+### TC-AR-007 · P0 · Negative — An Owner's email stays withheld on the Payments queue, the attendance register and both payments routes
+
+**Preconditions:** the Owner (`owner@xclub.local`) enrolled as a Participant on
+one Session, with a seat-holding Attendance on it, and holding one Payment. An
+admin account from §3.
+
+**Steps:**
+1. As the admin, open `/admin/payments` and find the Owner's row; open the
+   Owner's Session's attendance register.
+2. As the admin, `GET /api/payments?userId=<the Owner's id>` and
+   `GET /api/payments/{the Owner's payment id}`.
+3. As the admin, search the Payments queue by the Owner's email address.
+4. Repeat steps 1 and 2 signed in as the Owner.
+
+**Expected result:**
+
+- The Payments queue's Member cell and the attendance register's Participant
+  cell both draw **Withheld** where the Owner's email would sit, for the admin;
+  neither cell's markup carries the address.
+- Both routes in step 2 return **200** with `email: null` on the Owner's row;
+  every other field on it, and its key set, is unchanged.
+- Step 3 returns no rows: the Owner is not found by an email an Admin cannot
+  see.
+- Signed in as the Owner (step 4), all four surfaces show the Owner's own
+  email intact: the queue, the attendance register, and both routes.
+
 ---
 
 ### 17.8 Adi — the marks in both board materials

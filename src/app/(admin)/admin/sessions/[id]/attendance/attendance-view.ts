@@ -32,7 +32,11 @@ export type AttendanceRegisterRow = Readonly<{
     id: string;
     userId: string;
     name: string | null;
+    /** The visible value only — null where an Owner's email is withheld. */
     email: string | null;
+    /** True where this row's Owner email was withheld from the viewer, set by
+     * `attendance-rows.ts`'s row mapping; never re-decided here. */
+    isContactWithheld: boolean;
     /** What is stored right now. The Admin's uncommitted edit lives elsewhere. */
     status: AttendanceStatus;
     mode: PaymentMode | null;

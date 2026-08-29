@@ -23,7 +23,11 @@ export type PaymentQueueRow = Readonly<{
     proofUrl: string | null;
     createdAt: Date;
     confirmedAt: Date | null;
+    /** The visible value only — null where an Owner's email is withheld. */
     user: Readonly<{ name: string | null; email: string | null }>;
+    /** True where this row's Owner email was withheld from the viewer, set by
+     * `payment-queue-query.ts`'s row mapping; never re-decided here. */
+    isContactWithheld: boolean;
     activity: Readonly<{
         id: string;
         name: string;
@@ -56,18 +60,40 @@ export function currentPriceOf(payment: PaymentQueueRow): number | null {
     return payment.activity.monthlyFee;
 }
 
+/**
+ * The email, or the word that says why an Admin cannot see it. Withheld rather
+ * than blank, exactly as the Members register draws it
+ * (docs/owner-role-immutability.md).
+ */
+function PaymentContact({
+    payment,
+    t,
+}: Readonly<{ payment: PaymentQueueRow; t: Dictionary }>) {
+    if (payment.isContactWithheld) {
+        return (
+            <span className='type-caption text-muted-foreground'>
+                {t.admin.contactWithheld}
+            </span>
+        );
+    }
+    return (
+        <span className='type-caption break-all text-muted-foreground'>
+            {payment.user.email}
+        </span>
+    );
+}
+
 /** Who sent it, and how to place them. */
 export function PaymentMember({
     payment,
-}: Readonly<{ payment: PaymentQueueRow }>) {
+    t,
+}: Readonly<{ payment: PaymentQueueRow; t: Dictionary }>) {
     return (
         <span className='flex min-w-0 flex-col gap-hair'>
             <span className='type-title text-foreground'>
                 {paymentMemberLabel(payment)}
             </span>
-            <span className='type-caption break-all text-muted-foreground'>
-                {payment.user.email}
-            </span>
+            <PaymentContact payment={payment} t={t} />
         </span>
     );
 }

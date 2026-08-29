@@ -77,6 +77,22 @@ The surfaces that read an Owner's contact details and withhold them, and how eac
   column on it is unchanged; only the two contact cells are empty, which is the same cell a member
   who never filled their profile in already produces. The file keeps its columns, their order, its
   header and its row count, so a spreadsheet or script reading the export is unaffected.
+- `GET /api/payments` (`src/app/api/payments/route.ts`) and `GET /api/payments/[id]`
+  (`src/app/api/payments/[id]/route.ts`) — by `visibleContact` over the row's `user` before the JSON
+  is written, the same substitution `GET /api/users` makes. The Owner's row is still returned, with
+  `email` as `null`; every other field, and the key set and order of `user` itself, is unchanged.
+- The Payments queue (`src/app/(admin)/admin/payments/payment-queue-query.ts`) — by
+  `resolveOwnerVisibility` in the query's own row mapping, before a row reaches the page.
+  `payment-cells.tsx` draws **Withheld** in the Member cell where the email would sit, and the
+  queue's own member search is filtered by `searchByNameOrEmail`, for the same oracle reason as the
+  register's.
+- The attendance register
+  (`src/app/(admin)/admin/sessions/[id]/attendance/attendance-rows.ts`) — by
+  `resolveOwnerVisibility` in the row mapping, keyed on the viewer's role. `attendance-cells.tsx`
+  draws **Withheld** in the Participant cell where the email would sit.
+
+`PATCH /api/users` writes `role` and `isActive` and returns neither contact field, so rule 1 is the
+whole of the rule there.
 
 Every one of those but the first reads the decision from the same place, so no surface can make it
 differently: `resolveOwnerVisibility` in `src/lib/owner-visibility.ts` decides, and `visibleContact`
@@ -88,31 +104,6 @@ Two further Admin surfaces read contact details and need no guard, because no Ow
 the Applicants queue (`src/app/(admin)/admin/applicants/page.tsx`) selects on `admittedAt: null`, and
 `prisma/promote-owner.ts` sets `admittedAt` when it sets the role, so an Owner is never an Applicant;
 and the profile routes under `src/app/api/users/profile/` read the caller's own row only.
-
-#### Where the rule is still open
-
-The phone number is now withheld everywhere it is read. The **email address** is not: four
-Admin-reachable surfaces still carry an Owner's stored email to an Admin. They were found while
-closing the three routes above, are outside that change, and are recorded here rather than left to be
-rediscovered:
-
-- `GET /api/payments` (`src/app/api/payments/route.ts`) selects `user.email` on every row, and an
-  Admin may pass any `userId`.
-- `GET /api/payments/[id]` (`src/app/api/payments/[id]/route.ts`) returns `user.email` on any payment
-  to any Admin.
-- The Manage Dues queue (`src/app/(admin)/admin/payments/payment-queue-query.ts`) selects
-  `user.email` and `payment-cells.tsx` draws it in the member column.
-- One session's attendance page
-  (`src/app/(admin)/admin/sessions/[id]/attendance/attendance-rows.ts`) selects `user.email` and
-  hands it to the client, where `attendance-cells.tsx` draws it.
-
-Closing them is the same substitution — `visibleContact` over the row, keyed on the caller's role —
-but the two page surfaces also need the register's **Withheld** word rather than a blank cell, which
-is a copy decision and therefore a dictionary key, so it is a ticket of its own rather than a line in
-this one.
-
-`PATCH /api/users` writes `role` and `isActive` and returns neither contact field, so rule 1 is the
-whole of the rule there.
 
 ### 3. An Owner sees both Admins' numbers and their own
 

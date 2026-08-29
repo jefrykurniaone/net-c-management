@@ -1,5 +1,9 @@
-import { PaymentStatus, type Prisma } from '@prisma/client';
+import { PaymentStatus, type Prisma, type Role } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import {
+    resolveOwnerVisibility,
+    searchByNameOrEmail,
+} from '@/lib/owner-visibility';
 import { parseSearch, type RawSearchParams } from '@/lib/table-params';
 import { splitQueuePage, type QueueBand } from '@/lib/payment-queue';
 import type { PaymentQueueRow } from './payment-cells';
@@ -58,7 +62,7 @@ const PAYMENT_SELECT = {
     proofUrl: true,
     createdAt: true,
     confirmedAt: true,
-    user: { select: { name: true, email: true } },
+    user: { select: { name: true, email: true, role: true } },
     activity: {
         select: {
             id: true,
@@ -71,6 +75,36 @@ const PAYMENT_SELECT = {
     },
     session: { select: { title: true, date: true, fee: true } },
 } as const;
+
+/**
+ * The exact shape one `PAYMENT_SELECT` row comes back as. `role` is read only
+ * to resolve the Owner contact rule below and never leaves this module —
+ * `toVisibleRow` strips it before a row reaches the page.
+ */
+type SelectedPaymentRow = Prisma.PaymentGetPayload<{
+    select: typeof PAYMENT_SELECT;
+}>;
+
+/**
+ * The one place a queue row's Owner contact is decided — never in the cell
+ * that draws it, for the same reason `member-rows.ts` withholds server-side: a
+ * component handed the address and choosing not to draw it would still have
+ * shipped it to the browser.
+ */
+function toVisibleRow(
+    row: SelectedPaymentRow,
+    viewerRole: Role,
+): PaymentQueueRow {
+    const { email, isContactWithheld } = resolveOwnerVisibility(
+        { role: row.user.role, email: row.user.email, phone: null },
+        viewerRole,
+    );
+    return {
+        ...row,
+        user: { name: row.user.name, email },
+        isContactWithheld,
+    };
+}
 
 function first(sp: RawSearchParams, key: string): string | undefined {
     const value = sp[key];
@@ -96,26 +130,25 @@ export function readFilters(sp: RawSearchParams): PaymentFilterValues {
     };
 }
 
-function searchWhere(search: string): Prisma.PaymentWhereInput {
-    return {
-        user: {
-            OR: [
-                { name: { contains: search, mode: 'insensitive' } },
-                { email: { contains: search, mode: 'insensitive' } },
-            ],
-        },
-    };
+/**
+ * Matches on name always, and on email only where that email is not withheld
+ * from this viewer — the same oracle guard `GET /api/users` and the Members
+ * register share, so the Owner cannot be found by an address no cell prints.
+ */
+function searchWhere(search: string, viewerRole: Role): Prisma.PaymentWhereInput {
+    return { user: searchByNameOrEmail(search, viewerRole) };
 }
 
 export function buildWhere(
     values: PaymentFilterValues,
+    viewerRole: Role,
 ): Prisma.PaymentWhereInput {
     return {
         ...(values.month ? { month: values.month } : {}),
         ...(values.year ? { year: values.year } : {}),
         ...(values.status ? { status: values.status as PaymentStatus } : {}),
         ...(values.activityId ? { activityId: values.activityId } : {}),
-        ...(values.search ? searchWhere(values.search) : {}),
+        ...(values.search ? searchWhere(values.search, viewerRole) : {}),
     };
 }
 
@@ -148,7 +181,7 @@ function buildOrderBy(
 async function findBand(
     where: Prisma.PaymentWhereInput,
     band: QueueBand,
-): Promise<PaymentQueueRow[]> {
+): Promise<SelectedPaymentRow[]> {
     if (band.take === 0) {
         return [];
     }
@@ -180,7 +213,7 @@ async function loadQueue(
     request: PageRequest,
     awaitingWhere: Prisma.PaymentWhereInput,
     awaitingTotal: number,
-): Promise<PaymentQueueRow[]> {
+): Promise<SelectedPaymentRow[]> {
     const split = splitQueuePage(awaitingTotal, request.skip, request.take);
     const decidedWhere: Prisma.PaymentWhereInput = {
         AND: [request.where, { status: { not: PaymentStatus.PENDING } }],
@@ -192,7 +225,10 @@ async function loadQueue(
     return [...awaiting, ...decided];
 }
 
-export async function loadPayments(request: PageRequest): Promise<QueuePage> {
+export async function loadPayments(
+    request: PageRequest,
+    viewerRole: Role,
+): Promise<QueuePage> {
     const { where, skip, take } = request;
     const awaitingWhere: Prisma.PaymentWhereInput = {
         AND: [where, { status: PaymentStatus.PENDING }],
@@ -210,9 +246,17 @@ export async function loadPayments(request: PageRequest): Promise<QueuePage> {
             take,
             select: PAYMENT_SELECT,
         });
-        return { rows, total, awaitingTotal };
+        return {
+            rows: rows.map((row) => toVisibleRow(row, viewerRole)),
+            total,
+            awaitingTotal,
+        };
     }
 
     const rows = await loadQueue(request, awaitingWhere, awaitingTotal);
-    return { rows, total, awaitingTotal };
+    return {
+        rows: rows.map((row) => toVisibleRow(row, viewerRole)),
+        total,
+        awaitingTotal,
+    };
 }
