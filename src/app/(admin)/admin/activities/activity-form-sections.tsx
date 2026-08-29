@@ -24,6 +24,7 @@ import { PhonePicker } from '@/components/admin/phone-picker';
 import { parseIntInput } from '@/lib/form-utils';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { CreateActivityFormData } from '@/lib/validations/activity';
+import { DuesRateField, type DuesRateFieldProps } from './dues-rate-field';
 
 type ActivityForm = UseFormReturn<CreateActivityFormData>;
 
@@ -204,14 +205,34 @@ function ModeCheckbox({
     );
 }
 
-/** Fees, offered payment modes, cost-sharing minimum, and bank account. */
-export function PaymentSection({
+/**
+ * Dues and the per-Session Fee.
+ *
+ * On create both are plain amounts side by side: a new Activity's Dues Rate is
+ * its beginning-of-time row, written by the create path, so there is no Billing
+ * Period to choose. On edit the Dues amount is one half of the Dues Rate field —
+ * it carries the Period picker and the disclosure beneath it — so the Fee takes
+ * its own row below rather than being squeezed beside a two-control field.
+ */
+function MoneyFields({
     form,
     t,
-    modesError,
-}: Readonly<{ form: ActivityForm; t: Dictionary; modesError?: string }>) {
-    return (
-        <FormSection title={t.admin.sectionPayment}>
+    duesField,
+}: Readonly<{
+    form: ActivityForm;
+    t: Dictionary;
+    duesField?: DuesRateFieldProps;
+}>) {
+    const fee = (
+        <IntField
+            form={form}
+            name='sessionFee'
+            label={t.admin.activitySessionFee}
+            min={0}
+        />
+    );
+    if (duesField === undefined) {
+        return (
             <div className='grid grid-cols-2 gap-4'>
                 <IntField
                     form={form}
@@ -219,13 +240,33 @@ export function PaymentSection({
                     label={t.admin.activityFee}
                     min={0}
                 />
-                <IntField
-                    form={form}
-                    name='sessionFee'
-                    label={t.admin.activitySessionFee}
-                    min={0}
-                />
+                {fee}
             </div>
+        );
+    }
+    return (
+        <>
+            <DuesRateField {...duesField} />
+            {fee}
+        </>
+    );
+}
+
+/** Fees, offered payment modes, cost-sharing minimum, and bank account. */
+export function PaymentSection({
+    form,
+    t,
+    modesError,
+    duesField,
+}: Readonly<{
+    form: ActivityForm;
+    t: Dictionary;
+    modesError?: string;
+    duesField?: DuesRateFieldProps;
+}>) {
+    return (
+        <FormSection title={t.admin.sectionPayment}>
+            <MoneyFields form={form} t={t} duesField={duesField} />
             <FormItem>
                 <div className='text-sm font-medium leading-none'>
                     {t.admin.activityPaymentModes}

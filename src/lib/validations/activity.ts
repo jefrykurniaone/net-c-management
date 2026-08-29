@@ -102,10 +102,41 @@ export type CreateActivityFormData = z.infer<
     ReturnType<typeof buildCreateActivitySchema>
 >;
 
+/**
+ * The Dues change an Activity update may carry: an amount, and the Billing
+ * Period it starts from.
+ *
+ * `effectiveFrom` is a YYYYMM Period key and is checked only for being a whole
+ * number here. Which Periods are *allowed* — next Period through twelve ahead,
+ * and never one that has arrived — is a rule about the clock, so it lives in
+ * `src/lib/dues-rate.ts` with the resolver and is enforced at the route, where
+ * a refusal can name which of the two rules it broke.
+ */
+function duesRateObjectSchema(t: Dictionary) {
+    return z.object({
+        amount: z
+            .number({ error: t.validation.feeRequired })
+            .int()
+            .min(0, t.validation.sessionFeeMin),
+        effectiveFrom: z.number({ error: t.validation.feeRequired }).int(),
+    });
+}
+
+/**
+ * Updating an Activity no longer writes `monthlyFee`: the Dues figure is a
+ * `DuesRate` row against a Billing Period, so the field is omitted here rather
+ * than rejected. A cached bundle still posting one has it stripped, the way a
+ * stale `color` is — the column itself stays until ticket #114 drops it, and the
+ * create path still writes it as the Activity's beginning-of-time rate.
+ */
 export function buildUpdateActivitySchema(t: Dictionary) {
     return activityObjectSchema(t)
+        .omit({ monthlyFee: true })
         .partial()
-        .extend({ isActive: z.boolean().optional() })
+        .extend({
+            isActive: z.boolean().optional(),
+            duesRate: duesRateObjectSchema(t).optional(),
+        })
         .refine((d) => !bothModesDisabled(d), {
             error: t.validation.paymentModeAtLeastOne,
             path: ['paymentModes'],

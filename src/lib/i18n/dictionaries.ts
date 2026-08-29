@@ -1028,6 +1028,41 @@ const en = {
         noPaymentsMatch: 'No payments match your search.',
         noMembersMatch: 'No members match your search.',
         noActivityMatch: 'No activities match your search.',
+        /**
+         * The Dues Rate — what an Activity charges for Dues in one Billing
+         * Period (spec #107, ADR 0002). "Dues rate" is admin-facing wording;
+         * member-facing copy keeps saying "dues" with a figure and a month.
+         */
+        duesRateStartsFrom: 'Starts from',
+        /**
+         * A Period no rate row covers. Never an em dash, which means the
+         * Activity does not offer Monthly, and never Rp 0, which would read as
+         * a free month rather than a missing row.
+         */
+        duesRateNone: 'No rate set',
+        /** The disclosure beneath the Dues field, nothing queued. */
+        duesRateCurrentNote:
+            'This activity charges {amount} a month. A new rate applies from the month you pick, never from a month that has already arrived.',
+        /** The same disclosure once a change is queued: the figure and its month. */
+        duesRateQueuedNote:
+            'This activity charges {amount} a month, changing to {queued} from {month}.',
+        /** No rate at all — a broken invariant, said plainly rather than hidden. */
+        duesRateMissingNote:
+            'This activity has no dues rate, so no month resolves to an amount. Save a rate to fix it.',
+        duesRateWithdraw: 'Withdraw',
+        duesRateWithdrawn: 'Queued dues change withdrawn.',
+        duesRateWithdrawFailed:
+            'This queued dues change could not be withdrawn.',
+        /**
+         * The three refusals the Dues Rate writes make, each naming the rule and
+         * the fix. The stable code travels beside the sentence in `code`.
+         */
+        duesRateArrivedRefusal:
+            'That month has already arrived, so what it charges is settled and cannot be changed. Pick a later month for the new rate.',
+        duesRateOutOfRangeRefusal:
+            'A new rate starts from next month at the earliest and twelve months ahead at the latest. Pick a month in that range.',
+        duesRateNothingQueuedRefusal:
+            'There is no queued dues change to withdraw. Reload the page to see what this activity charges now.',
     },
     activity: {
         label: 'Activity',
@@ -2003,6 +2038,24 @@ const id: typeof en = {
         noPaymentsMatch: 'Tidak ada pembayaran yang cocok dengan pencarian.',
         noMembersMatch: 'Tidak ada anggota yang cocok dengan pencarian.',
         noActivityMatch: 'Tidak ada aktivitas yang cocok dengan pencarian.',
+        duesRateStartsFrom: 'Mulai dari',
+        duesRateNone: 'Belum ada tarif',
+        duesRateCurrentNote:
+            'Aktivitas ini menagih {amount} per bulan. Tarif baru berlaku mulai bulan yang kamu pilih, tidak pernah dari bulan yang sudah berjalan.',
+        duesRateQueuedNote:
+            'Aktivitas ini menagih {amount} per bulan, berubah menjadi {queued} mulai {month}.',
+        duesRateMissingNote:
+            'Aktivitas ini belum punya tarif iuran, jadi tidak ada bulan yang menghasilkan nominal. Simpan satu tarif untuk memperbaikinya.',
+        duesRateWithdraw: 'Tarik kembali',
+        duesRateWithdrawn: 'Perubahan iuran yang antre ditarik kembali.',
+        duesRateWithdrawFailed:
+            'Perubahan iuran yang antre ini tidak bisa ditarik kembali.',
+        duesRateArrivedRefusal:
+            'Bulan itu sudah berjalan, jadi nominalnya sudah final dan tidak bisa diubah. Pilih bulan setelahnya untuk tarif baru.',
+        duesRateOutOfRangeRefusal:
+            'Tarif baru paling cepat mulai bulan depan dan paling lambat dua belas bulan ke depan. Pilih bulan dalam rentang itu.',
+        duesRateNothingQueuedRefusal:
+            'Tidak ada perubahan iuran yang antre untuk ditarik kembali. Muat ulang halaman untuk melihat tarif aktivitas ini sekarang.',
     },
     activity: {
         label: 'Aktivitas',

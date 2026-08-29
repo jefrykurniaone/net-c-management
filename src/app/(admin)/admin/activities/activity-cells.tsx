@@ -1,6 +1,8 @@
 import { cn } from '@/lib/utils';
 import { ActivityInitial } from '@/components/activity/activity-badge';
 import { Mark } from '@/components/ui/mark';
+import type { BillingPeriod } from '@/lib/billing-period';
+import { resolveDuesRate, type DuesRateRow } from '@/lib/dues-rate';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { Activity } from '@prisma/client';
 
@@ -17,9 +19,35 @@ function formatRupiah(amount: number): string {
     return `Rp ${amount.toLocaleString('id-ID')}`;
 }
 
-/** Dues is per-month; unset when the Activity does not offer Monthly. */
-export function activityDuesLabel(activity: Activity): string {
-    return activity.allowsMonthly ? formatRupiah(activity.monthlyFee) : EM_DASH;
+/** What the register needs to price one Activity's Dues for a Billing Period. */
+type ActivityDuesRow = Readonly<{
+    allowsMonthly: boolean;
+    duesRates: readonly DuesRateRow[];
+}>;
+
+/**
+ * Dues is per-month, resolved through the Dues Rate of the Period the register
+ * is about — never a live field. Unset when the Activity does not offer Monthly.
+ *
+ * A Period no rate row covers is named in words rather than drawn as an em
+ * dash: the dash means "nothing configured", and an Activity with no rate at all
+ * is a broken invariant the beginning-of-time row exists to prevent. Reading the
+ * two as the same thing is how a missing rate goes unnoticed. It is never
+ * printed as Rp 0 for the reason `resolveDuesRate` returns `null` instead of 0.
+ *
+ * The register carries **no** marker for a queued change: a queued change is not
+ * a standing, and the column answers "which Activity charges most" today.
+ */
+export function activityDuesLabel(
+    activity: ActivityDuesRow,
+    period: BillingPeriod,
+    t: Dictionary,
+): string {
+    if (!activity.allowsMonthly) {
+        return EM_DASH;
+    }
+    const amount = resolveDuesRate(activity.duesRates, period);
+    return amount === null ? t.admin.duesRateNone : formatRupiah(amount);
 }
 
 /** Fee is per-Session; unset when the Activity does not offer Per-Session. */
