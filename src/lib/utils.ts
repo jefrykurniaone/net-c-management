@@ -7,9 +7,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Whether a role has admin-level access. ADMIN and OWNER share the same
- * privileges everywhere except Manage Members, where OWNER accounts are
- * immutable (see docs/owner-role-immutability.md).
+ * Whether a role has admin-level access. ADMIN and OWNER carry exactly the same
+ * privileges — OWNER is not a third tier. The two differ only in what may be
+ * done *to* the Owner: an OWNER account is refused every modification, and an
+ * OWNER's contact details are not shown to an ADMIN. Both rules, and the script
+ * that sets the role, are written up in docs/owner-role-immutability.md.
  */
 export function isAdminRole(role: Role | string | null | undefined): boolean {
     return role === 'ADMIN' || role === 'OWNER';
@@ -37,19 +39,4 @@ export function communityAbbr(name: string): string {
         .slice(0, 2)
         .map((w) => w[0].toUpperCase())
         .join('');
-}
-
-/**
- * Badge variant for a user role. A Role is a standing property of a person,
- * not a state of a thing, so it deliberately takes a tracked-caps label rather
- * than one of the six marks — see resolveStatusMark in `status-mark.ts`, which
- * owns every actual state. OWNER carries the identity Court Green, ADMIN a
- * neutral secondary, MEMBER a plain outline.
- */
-export function roleBadgeVariant(
-    role: Role,
-): 'default' | 'secondary' | 'outline' {
-    if (role === 'OWNER') return 'default';
-    if (role === 'ADMIN') return 'secondary';
-    return 'outline';
 }

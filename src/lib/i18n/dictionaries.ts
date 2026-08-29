@@ -656,12 +656,10 @@ const en = {
         admittedToast: '{name} is in.',
         declinedToast: '{name} was declined.',
         membersTitle: 'Manage Members',
-        membersRegistered: 'registered members',
         searchPlaceholder: 'Search name or email...',
         searchBtn: 'Search',
         colName: 'Name',
         colRole: 'Role',
-        colMemberStatus: 'Status',
         active: 'Active',
         inactive2: 'Inactive',
         profileIncomplete: 'Profile Incomplete',
@@ -850,6 +848,43 @@ const en = {
         colMembershipsPicked: 'Memberships picked',
         // Names the register for a screen reader; never drawn on screen.
         applicantsCaption: 'Applicants waiting for a decision',
+        // The Members register (ticket #70). Column heads double as each cell's
+        // own label once the register collapses by axis, so each has to read as
+        // a label on its own line too.
+        colContact: 'Contact',
+        colMemberships: 'Memberships',
+        colMode: 'Payment mode',
+        colStanding: 'Standing',
+        membersCaption: 'Members of this community',
+        membersEmptyMark: 'Empty',
+        membersSubtitle: '{n} members',
+        membersNoMemberships: 'No activities',
+        /**
+         * The Blank mark on a monthly Membership: Dues owed for the current
+         * Billing Period with nothing settled against it — nothing sent, or
+         * only a Rejected Payment, which funds nothing either way. The same
+         * word the member's own surfaces use for this state (`payments.unpaid`,
+         * `profile.markNotPaid`), so the two never disagree. It is deliberately
+         * not `marks.pending`, which means an Admin is holding a Proof.
+         */
+        standingOwed: 'Pending',
+        /**
+         * An Owner's contact details as an Admin sees them. Never a blank cell:
+         * a blank reads as an unfilled profile and sends the Admin looking for
+         * the number elsewhere, where the rule is what they will find.
+         */
+        contactWithheld: 'Withheld',
+        ownerImmutable: 'This account cannot be changed.',
+        memberDetailCaption: 'Activities, payment mode and attendance',
+        memberDuesCaption: 'Dues sent by this member',
+        memberAttendanceCaption: 'Recent sessions this member held a seat for',
+        memberNoActivities: 'This member has joined no activities.',
+        /**
+         * A Membership on an Activity that offers both ways to pay, where the
+         * member has picked neither yet. Not a mode and not a standing: there
+         * is no obligation until they choose.
+         */
+        modeNotChosen: 'Not chosen',
     },
     activity: {
         label: 'Activity',
@@ -1533,12 +1568,10 @@ const id: typeof en = {
         admittedToast: '{name} sudah diterima.',
         declinedToast: '{name} ditolak.',
         membersTitle: 'Kelola Anggota',
-        membersRegistered: 'anggota terdaftar',
         searchPlaceholder: 'Cari nama atau email...',
         searchBtn: 'Cari',
         colName: 'Nama',
         colRole: 'Peran',
-        colMemberStatus: 'Status',
         active: 'Aktif',
         inactive2: 'Nonaktif',
         profileIncomplete: 'Profil Belum Lengkap',
@@ -1722,6 +1755,22 @@ const id: typeof en = {
         colAsked: 'Mengajukan',
         colMembershipsPicked: 'Keanggotaan dipilih',
         applicantsCaption: 'Pendaftar yang menunggu keputusan',
+        colContact: 'Kontak',
+        colMemberships: 'Keanggotaan',
+        colMode: 'Cara pembayaran',
+        colStanding: 'Status iuran',
+        membersCaption: 'Anggota komunitas ini',
+        membersEmptyMark: 'Kosong',
+        membersSubtitle: '{n} anggota',
+        membersNoMemberships: 'Belum ada aktivitas',
+        standingOwed: 'Pending',
+        contactWithheld: 'Dirahasiakan',
+        ownerImmutable: 'Akun ini tidak bisa diubah.',
+        memberDetailCaption: 'Aktivitas, cara pembayaran, dan kehadiran',
+        memberDuesCaption: 'Iuran yang dikirim anggota ini',
+        memberAttendanceCaption: 'Sesi terakhir yang kursinya dipegang anggota ini',
+        memberNoActivities: 'Anggota ini belum mengikuti aktivitas apa pun.',
+        modeNotChosen: 'Belum dipilih',
     },
     activity: {
         label: 'Aktivitas',
