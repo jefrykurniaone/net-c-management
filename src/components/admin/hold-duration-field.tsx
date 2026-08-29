@@ -33,6 +33,9 @@ interface HoldDurationFieldProps {
  * presets, or a custom minute count. Emits minutes as a string — the Settings
  * table stores string values and the server falls back to the 60-minute
  * default when the stored value isn't a positive integer.
+ *
+ * The primary label and hint are the caller's `SettingsRow` — this field
+ * draws only the select and, once "Custom" is picked, its own sub-field.
  */
 export function HoldDurationField({
     value,
@@ -61,7 +64,6 @@ export function HoldDurationField({
 
     return (
         <div className='space-y-1.5'>
-            <Label htmlFor='holdDuration'>{t.admin.holdDurationLabel}</Label>
             <Select
                 value={isCustomSelected ? CUSTOM : value}
                 onValueChange={handleSelect}>
@@ -93,9 +95,6 @@ export function HoldDurationField({
                     />
                 </div>
             )}
-            <p className='text-xs text-muted-foreground'>
-                {t.admin.holdDurationHint}
-            </p>
         </div>
     );
 }
