@@ -26,7 +26,9 @@ import type { UpdateSessionFormData } from '@/lib/validations/session';
  * Every lock carries a sentence at **Body** size tied to the control with
  * `aria-describedby`. A condition disclosed in the fine print is not disclosed,
  * and the courtesy is only ever a courtesy: `PATCH /api/sessions/[id]` refuses
- * the write whatever this form offered.
+ * the write whatever this form offered. The sentence itself is drawn by
+ * `LockNote` in `@/components/ui/lock-note`, which the Post-a-Session form
+ * composes too.
  */
 
 /** Zod's own floors: a Session seats at least two, and a free one costs zero. */
@@ -66,18 +68,6 @@ export function feeLock(locks: SessionEditLocks): FieldLock {
         return { isLocked: true, describedBy: FEE_NOTE_ID };
     }
     return closedLock(locks);
-}
-
-/** The sentence a locked field points at. Body size, never Caption. */
-export function LockNote({
-    id,
-    children,
-}: Readonly<{ id: string; children: string }>) {
-    return (
-        <p id={id} className='type-body text-secondary-foreground'>
-            {children}
-        </p>
-    );
 }
 
 /**

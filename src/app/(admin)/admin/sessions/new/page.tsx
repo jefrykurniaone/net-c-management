@@ -24,13 +24,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Info } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import type { ActivityOption } from "@/types/activity";
 import { parseIntInput } from "@/lib/form-utils";
 import { FormSection } from "@/components/ui/form-section";
+import { LockNote } from "@/components/ui/lock-note";
+
+/**
+ * Each restriction is one sentence beneath the control it is about, tied to it
+ * with `aria-describedby` — the same treatment the edit form gives its locks.
+ * It was a blue panel carrying both sentences and an icon: a hue the palette
+ * does not have, saying "these fields are restricted" by colour rather than by
+ * the sentence, and not tied to either field.
+ */
+const ACTIVITY_NOTE_ID = "new-session-activity-note";
+const FEE_NOTE_ID = "new-session-fee-note";
 
 export default function NewSessionPage() {
   const router = useRouter();
@@ -104,7 +115,7 @@ export default function NewSessionPage() {
         {t.admin.backToSessions}
       </Link>
 
-      <div className="bg-card rounded-xl border border-border p-6">
+      <div className="rounded-sm border border-rule bg-tile p-block">
         <h1 className="text-xl font-bold text-foreground mb-6">
           {t.admin.newSessionTitle}
         </h1>
@@ -120,7 +131,7 @@ export default function NewSessionPage() {
                   <FormLabel>{t.activity.label}</FormLabel>
                   <Select onValueChange={handleActivityChange} value={field.value}>
                     <FormControl>
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full" aria-describedby={ACTIVITY_NOTE_ID}>
                         <SelectValue placeholder={t.activity.selectPlaceholder} />
                       </SelectTrigger>
                     </FormControl>
@@ -132,18 +143,11 @@ export default function NewSessionPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <LockNote id={ACTIVITY_NOTE_ID}>{t.admin.activityLocked}</LockNote>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div className="flex gap-2 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/40 px-3 py-2.5 text-xs text-blue-700 dark:text-blue-300">
-              <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <div className="space-y-0.5">
-                <p>{t.admin.activityLocked}</p>
-                <p>{t.admin.feeLocked}</p>
-              </div>
-            </div>
 
             <FormField
               control={form.control}
@@ -253,6 +257,7 @@ export default function NewSessionPage() {
                         {...field}
                         value={field.value ?? ''}
                         onChange={(e) => field.onChange(parseIntInput(e))}
+                        aria-describedby={FEE_NOTE_ID}
                       />
                     </FormControl>
                     <FormMessage />
@@ -260,6 +265,7 @@ export default function NewSessionPage() {
                 )}
               />
             </div>
+            <LockNote id={FEE_NOTE_ID}>{t.admin.feeLocked}</LockNote>
             </FormSection>
 
             <FormField

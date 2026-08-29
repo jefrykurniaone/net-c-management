@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Form } from '@/components/ui/form';
 import { FormSection } from '@/components/ui/form-section';
+import { LockNote } from '@/components/ui/lock-note';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { isMoneyBehind, type SessionLockFacts } from '@/lib/session-lock';
 import {
@@ -19,7 +20,6 @@ import {
 } from '@/lib/validations/session';
 import {
     CLOSED_NOTE_ID,
-    LockNote,
     type SessionEditForm,
     type SessionEditLocks,
 } from './edit-fields';
@@ -236,7 +236,7 @@ function EditCard({
     children: ReactNode;
 }>) {
     return (
-        <div className='bg-card rounded-xl border border-border p-6'>
+        <div className='rounded-sm border border-rule bg-tile p-block'>
             <h1 className='text-xl font-bold text-foreground'>
                 {t.admin.editSessionTitle}
             </h1>

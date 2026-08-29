@@ -7,6 +7,7 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
+import { LockNote } from '@/components/ui/lock-note';
 import { Textarea } from '@/components/ui/textarea';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import {
@@ -15,7 +16,6 @@ import {
     closedLock,
     FEE_NOTE_ID,
     feeLock,
-    LockNote,
     MIN_CAPACITY,
     MIN_FEE,
     NumberField,
