@@ -4,8 +4,8 @@
 |---|---|
 | Spec | [#107](https://github.com/jefrykurniaone/net-c-management/issues/107) — `spec:dues-rate` |
 | Run | `run:dues-rate` |
-| Execution map | added when Stage 4 creates it |
-| Tickets | added when Stage 3 creates them, as sub-issues of #107 |
+| Execution map | [#116](https://github.com/jefrykurniaone/net-c-management/issues/116) |
+| Tickets | #109–#115, sub-issues of #107 |
 | Version | v1 (2026-08-29) |
 | Grilled from | [#62](https://github.com/jefrykurniaone/net-c-management/issues/62) — Dues are not frozen per Billing Period |
 | Depends on | nothing open; mirrors the payment-mode switch rule (`pendingMode` / `pendingEffectiveFrom`) and reuses the email seam |
@@ -16,7 +16,7 @@ This is a verbatim copy of the tracker issue at the time of ticketing. The issue
 
 Grilled from #62 on 2026-08-29. Depends on nothing open: the payment-mode resolution it mirrors (`pendingMode` / `pendingEffectiveFrom`) and the email seam both exist on `main`.
 
-Repo copy: `docs/spec-dues-rate-v1.md`. Execution map and tickets: added below as they are created.
+Repo copy: `docs/spec-dues-rate-v1.md` (PR #108). Execution map: #116. Tickets: #109–#115, linked below as sub-issues.
 
 ## Problem Statement
 
