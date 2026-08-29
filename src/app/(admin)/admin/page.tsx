@@ -12,6 +12,8 @@ import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getActivities } from '@/lib/activity';
 import { isAdminRole } from '@/lib/utils';
+import { currentPeriod, type BillingPeriod } from '@/lib/billing-period';
+import { resolveDuesRate, type DuesRateRow } from '@/lib/dues-rate';
 import type { AttendanceStatus } from '@prisma/client';
 
 const UNDER_BOOKED_RATIO = 0.6;
@@ -38,6 +40,44 @@ function formatRupiahShort(amount: number): string {
     return `Rp ${amount.toLocaleString('id-ID')}`;
 }
 
+/**
+ * What this month's Dues come to across every Activity: headcount times the
+ * Dues Rate of the Period this dashboard is about — the current one.
+ *
+ * The figure moves on the first day of a new Period and not a day before,
+ * because `period` moves and nothing is written: a rate queued for next month
+ * is not this month's rate, so it cannot inflate the total early
+ * (docs/adr/0002-dues-rate-history.md).
+ *
+ * An Activity that no rate row covers contributes nothing and says so in the
+ * log. That is a broken invariant — the beginning-of-time row exists to make it
+ * impossible — and a stat tile has nowhere to refuse: a total that is short
+ * reads as short against `collected`, where one that invented a figure for the
+ * missing rate would read as correct and be wrong.
+ */
+function sumDuesForPeriod(
+    activities: readonly { id: string }[],
+    memberCounts: ReadonlyMap<string, number>,
+    ratesByActivity: ReadonlyMap<string, readonly DuesRateRow[]>,
+    period: BillingPeriod,
+): number {
+    let total = 0;
+    for (const activity of activities) {
+        const rate = resolveDuesRate(
+            ratesByActivity.get(activity.id) ?? [],
+            period,
+        );
+        if (rate === null) {
+            console.error(
+                `[admin dashboard] no Dues Rate covers ${period.year}-${period.month} for Activity ${activity.id}; left out of total due`,
+            );
+            continue;
+        }
+        total += (memberCounts.get(activity.id) ?? 0) * rate;
+    }
+    return total;
+}
+
 export default async function AdminDashboardPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
     if (!session?.user?.id || !isAdminRole(session.user.role))
@@ -47,8 +87,10 @@ export default async function AdminDashboardPage() {
     const dateLocale = locale === 'id' ? localeId : enUS;
 
     const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
+    // The Period the whole dashboard is about — the money figures below all
+    // resolve against this one, never against a live field.
+    const period = currentPeriod(now);
+    const { month: currentMonth, year: currentYear } = period;
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const monthStart = startOfMonth(now);
     const weekStart = startOfWeek(now, { weekStartsOn: 1 });
@@ -60,6 +102,7 @@ export default async function AdminDashboardPage() {
         pendingPayments,
         collectedAgg,
         activities,
+        activityDuesRates,
         membersByActivity,
         confirmedByActivity,
         sessionsThisWeek,
@@ -74,6 +117,16 @@ export default async function AdminDashboardPage() {
             where: { status: 'CONFIRMED', month: currentMonth, year: currentYear },
         }),
         getActivities(),
+        // The Dues Rate history per Activity. Read as rows rather than as a
+        // figure: which of them prices this Period is `resolveDuesRate`'s to
+        // say, and no order is assumed of them.
+        prisma.activity.findMany({
+            where: { isActive: true },
+            select: {
+                id: true,
+                duesRates: { select: { amount: true, effectiveFrom: true } },
+            },
+        }),
         prisma.membership.groupBy({
             by: ['activityId'],
             where: { isActive: true },
@@ -156,9 +209,14 @@ export default async function AdminDashboardPage() {
     }
 
     const collected = collectedAgg._sum.amount ?? 0;
-    const totalDue = activities.reduce(
-        (sum, a) => sum + (memberCounts.get(a.id) ?? 0) * a.monthlyFee,
-        0,
+    const ratesByActivity = new Map(
+        activityDuesRates.map((a) => [a.id, a.duesRates]),
+    );
+    const totalDue = sumDuesForPeriod(
+        activities,
+        memberCounts,
+        ratesByActivity,
+        period,
     );
     const underBooked = underBookedSession.find(
         (s) => s._count.attendances < s.maxPlayers * UNDER_BOOKED_RATIO,

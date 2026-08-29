@@ -31,27 +31,32 @@ export type PaymentActionsProps = Readonly<{
     month: number;
     year: number;
     amount: number;
-    /** Activity Dues for monthly, the Session's own Fee for per-Session. */
-    currentPrice: number | null;
+    /**
+     * What this Payment's own Billing Period charged: the Activity's Dues Rate
+     * for that Period on a monthly one, the Session's own Fee on a per-Session
+     * one. Never today's figure — `src/lib/payment-price.ts` decides it.
+     */
+    expectedPrice: number | null;
     isMonthly: boolean;
 }>;
 
 /**
- * What the Confirm dialog says when the amount is short. Null where it is not,
- * or where there is no current figure to compare against.
+ * What the Confirm dialog says when the amount is short of what the Payment's
+ * Period charged. Null where it is not, and null where there is no figure to
+ * compare against at all — a note against a guess is worse than no note.
  */
 function shortfallNoteOf(
     t: Dictionary,
     payment: PaymentActionsProps,
 ): string | null {
-    const { currentPrice, amount, isMonthly } = payment;
-    if (currentPrice === null || amount >= currentPrice) {
+    const { expectedPrice, amount, isMonthly } = payment;
+    if (expectedPrice === null || amount >= expectedPrice) {
         return null;
     }
     const template = isMonthly
         ? t.admin.confirmBelowDues
         : t.admin.confirmBelowFee;
-    return template.replace('{amount}', rupiah(currentPrice));
+    return template.replace('{amount}', rupiah(expectedPrice));
 }
 
 /** What Rejecting monthly Dues does to the member's Seats, said beforehand. */

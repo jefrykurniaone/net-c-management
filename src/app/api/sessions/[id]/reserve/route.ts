@@ -10,6 +10,7 @@ import {
   SessionNotRegisterableError,
 } from '@/lib/payments';
 import { currentPeriod, resolvePaymentMode } from '@/lib/payment-mode';
+import { resolveDuesRate } from '@/lib/dues-rate';
 import { releaseExpiredHolds, holdExpiresAt, getHoldDurationMinutes } from '@/lib/holds';
 import { isRsvpClosed } from '@/lib/rsvp';
 import { getLocale } from '@/lib/i18n/locale';
@@ -154,6 +155,15 @@ function queueHoldConfirmationEmail(input: {
         getHoldDurationMinutes(),
         resolveAmountDue(mode, activitySession),
       ]);
+      if (amountDue === null) {
+        // No Dues Rate covers the Session's Period — a broken invariant. The
+        // seat and its hold stand; only the email, which would have to name an
+        // amount, is skipped.
+        console.error(
+          `[reserve] no Dues Rate covers the Period of session ${activitySession.id}; hold-confirmation email skipped`,
+        );
+        return;
+      }
       await sendHoldConfirmation({
         to,
         name,
@@ -173,17 +183,30 @@ function queueHoldConfirmationEmail(input: {
   });
 }
 
-/** The bill behind the hold: monthly dues for MONTHLY mode, session fee otherwise. */
+/**
+ * The bill behind the hold: for MONTHLY mode the Dues Rate of the Billing
+ * Period the Session falls in, so a Session in a Period whose rate differs is
+ * billed that Period's rate (docs/adr/0002-dues-rate-history.md); the Session's
+ * own fee otherwise.
+ *
+ * Falling back to `activitySession.fee` on a missing Activity is the guard it
+ * has always been and keeps that meaning exactly, spelled as its own branch now
+ * that a second null case exists. A rate that will not resolve on an
+ * Activity that does exist is a different case and not a figure to guess at: it
+ * comes back `null` and the caller sends no email, because telling a member to
+ * transfer the Session fee for their Dues would name a price nobody set.
+ */
 async function resolveAmountDue(
   mode: PaymentMode,
   activitySession: ReservedSessionInfo,
-): Promise<number> {
+): Promise<number | null> {
   if (mode !== PaymentMode.MONTHLY) return activitySession.fee;
   const activity = await prisma.activity.findUnique({
     where: { id: activitySession.activityId },
-    select: { monthlyFee: true },
+    select: { duesRates: { select: { amount: true, effectiveFrom: true } } },
   });
-  return activity?.monthlyFee ?? activitySession.fee;
+  if (!activity) return activitySession.fee;
+  return resolveDuesRate(activity.duesRates, currentPeriod(activitySession.date));
 }
 
 /** Resolve the member's effective mode for the session's billing period. */

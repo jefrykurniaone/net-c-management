@@ -3,11 +3,11 @@ import { StateMark } from '@/components/ui/mark';
 import type { RegisterColumn } from '@/components/admin/register-columns';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { paymentState } from '@/lib/status-mark';
+import { expectedPriceOf } from '@/lib/payment-price';
 import { PaymentActions } from './payment-actions';
 import { PaymentProof, type ProofLabels } from './payment-proof';
 import { billingPeriodLabel } from './payment-format';
 import {
-    currentPriceOf,
     paymentMemberLabel,
     PaymentActivity,
     PaymentAmount,
@@ -61,7 +61,7 @@ function PaymentDecision({
             month={payment.month}
             year={payment.year}
             amount={payment.amount}
-            currentPrice={currentPriceOf(payment)}
+            expectedPrice={expectedPriceOf(payment)}
             isMonthly={payment.type === 'MONTHLY'}
         />
     );
