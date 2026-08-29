@@ -132,6 +132,15 @@ function MembersHeading({
     );
 }
 
+/**
+ * An empty roster under an active search or Activity filter is "no matches",
+ * not the cold-start "no members yet" — same distinction the Sessions
+ * register already makes.
+ */
+function isMembersFiltered(query: PageQuery): boolean {
+    return Boolean(query.search || query.activityId);
+}
+
 function MembersRegister({
     rows,
     total,
@@ -155,7 +164,9 @@ function MembersRegister({
             searchParams={searchParams}
             empty={{
                 mark: t.admin.membersEmptyMark,
-                text: t.admin.noMembers,
+                text: isMembersFiltered(query)
+                    ? t.admin.noMembersMatch
+                    : t.admin.noMembers,
             }}
             pagination={{
                 total,

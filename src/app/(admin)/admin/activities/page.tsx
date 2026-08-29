@@ -108,8 +108,19 @@ function activityColumns(t: Dictionary): readonly RegisterColumn<Activity>[] {
     ];
 }
 
-function emptyRow(t: Dictionary): Readonly<{ mark: string; text: string }> {
-    return { mark: t.admin.activitiesEmptyMark, text: t.admin.noActivity };
+/**
+ * An empty register under an active search is "no matches", not the
+ * cold-start "no activities yet" — same distinction the Sessions register
+ * already makes. Activities has no other filter to check.
+ */
+function emptyRow(
+    t: Dictionary,
+    isFiltered: boolean,
+): Readonly<{ mark: string; text: string }> {
+    return {
+        mark: t.admin.activitiesEmptyMark,
+        text: isFiltered ? t.admin.noActivityMatch : t.admin.noActivity,
+    };
 }
 
 function ActivitiesHeading({
@@ -223,7 +234,7 @@ export default async function AdminActivityPage({
                 rows={activities}
                 caption={t.admin.activitiesCaption}
                 searchParams={sp}
-                empty={emptyRow(t)}
+                empty={emptyRow(t, Boolean(search))}
                 pagination={{ total, page, pageSize, labels: t.table.pagination }}
             />
         </div>
