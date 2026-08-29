@@ -5,6 +5,7 @@ import { releaseExpiredHolds } from '@/lib/holds';
 import { prisma } from '@/lib/prisma';
 import {
     LIVE_PAYMENT_STATUSES,
+    resolveDeleteRefusal,
     SEAT_HOLDING_STATUSES,
     toSessionLockFacts,
 } from '@/lib/session-lock';
@@ -19,6 +20,10 @@ import { EditSessionForm } from './edit-form';
  *
  * The hold sweep runs before the counts are taken, so a lapsed hold does not
  * lock the fee of a Session nobody is actually holding a Seat on.
+ *
+ * Whether the Session can be deleted at all is resolved here too, by the same
+ * `resolveDeleteRefusal` the route decides with, so the form draws a Delete
+ * button only where the route would honour one.
  */
 const EDIT_SELECT = {
     id: true,
@@ -63,12 +68,14 @@ export default async function EditSessionPage({
     }
 
     const { _count, activity, ...stored } = row;
+    const lock = toSessionLockFacts(_count, stored.status);
 
     return (
         <div className='max-w-lg mx-auto'>
             <EditSessionForm
                 session={{ ...stored, activityName: activity.name }}
-                lock={toSessionLockFacts(_count, stored.status)}
+                lock={lock}
+                canDelete={resolveDeleteRefusal(stored, lock) === null}
             />
         </div>
     );

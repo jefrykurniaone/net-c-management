@@ -6,6 +6,7 @@ import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import type { SessionRefusal } from '@/lib/session-lock';
 import {
+    deleteSessionLocked,
     updateSessionLocked,
     type SessionWriteRefusal,
 } from '@/lib/session-writes';
@@ -72,6 +73,8 @@ function refusalMessage(t: Dictionary, refusal: SessionRefusal): string {
     switch (refusal.reason) {
         case 'SESSION_CLOSED':
             return t.admin.refusedSessionClosed;
+        case 'SESSION_HAS_MONEY':
+            return t.admin.refusedSessionHasMoney;
         case 'FEE_LOCKED':
             return t.admin.refusedFeeLocked;
         case 'CAPACITY_BELOW_HELD':
@@ -80,6 +83,19 @@ function refusalMessage(t: Dictionary, refusal: SessionRefusal): string {
                 String(refusal.heldSeats),
             );
     }
+}
+
+/**
+ * `SESSION_CLOSED` on a DELETE reads a different sentence from the same code on
+ * a PATCH: the write being refused is destruction, so "only its notes can be
+ * changed" would answer a question nobody asked. The code stays the same because
+ * the fact it names — this Session is Closed — is the same fact.
+ */
+function deleteRefusalMessage(t: Dictionary, refusal: SessionRefusal): string {
+    if (refusal.reason === 'SESSION_CLOSED') {
+        return t.admin.refusedDeleteCompleted;
+    }
+    return refusalMessage(t, refusal);
 }
 
 /** The 404 or the 409 a locked write came back with, and nothing else. */
@@ -170,9 +186,17 @@ export async function DELETE(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const t = getDictionary(await getLocale());
     const { id } = await params;
 
-    await prisma.activitySession.delete({ where: { id } });
+    // Money behind the Session refuses the delete with a 409, rather than
+    // letting `Payment.session`'s `onDelete: Restrict` throw a 500 at a caller
+    // who asked a perfectly well-formed question.
+    await releaseExpiredHolds();
+    const outcome = await deleteSessionLocked(id);
+    if (outcome.kind !== 'deleted') {
+        return notWrittenResponse(t, outcome, deleteRefusalMessage);
+    }
 
     invalidatePublicLanding();
     return NextResponse.json({ success: true });

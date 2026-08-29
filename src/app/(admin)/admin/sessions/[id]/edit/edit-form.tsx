@@ -44,6 +44,13 @@ import { useSessionEditActions } from './use-session-edit-actions';
  * Cancelled everything but its notes is read-only. The facts behind both are
  * read on the server and handed down as booleans and a count; the refusal itself
  * belongs to `PATCH /api/sessions/[id]`, which makes it whatever this form drew.
+ *
+ * Delete follows the same shape and one rule further: where the route would
+ * refuse the destruction — money behind the Session, or a Completed one — the
+ * button is **absent** rather than disabled, the way the register draws no
+ * Cancel control on a Closed Session. A control that only ever produces a
+ * refusal advertises a job that cannot be done. `canDelete` is resolved on the
+ * server by the same helper the route decides with, never worked out here.
  */
 
 /** The Session as this form reads it — no Attendance rows, only the counts. */
@@ -109,12 +116,18 @@ function BackLink({ t }: Readonly<{ t: Dictionary }>) {
     );
 }
 
-/** Save, and the delete that asks first. */
+/** Save, and — where the route would allow it — the delete that asks first. */
 function SubmitRow({
     loading,
+    canDelete,
     onDelete,
     t,
-}: Readonly<{ loading: boolean; onDelete: () => void; t: Dictionary }>) {
+}: Readonly<{
+    loading: boolean;
+    canDelete: boolean;
+    onDelete: () => void;
+    t: Dictionary;
+}>) {
     const [isAsking, setIsAsking] = useState(false);
     return (
         <>
@@ -122,23 +135,27 @@ function SubmitRow({
                 <Button type='submit' className='flex-1' loading={loading}>
                     {t.admin.updateBtn}
                 </Button>
-                <Button
-                    type='button'
-                    variant='destructive-outline'
-                    onClick={() => setIsAsking(true)}
-                    loading={loading}>
-                    {t.admin.deleteBtn}
-                </Button>
+                {canDelete && (
+                    <Button
+                        type='button'
+                        variant='destructive-outline'
+                        onClick={() => setIsAsking(true)}
+                        loading={loading}>
+                        {t.admin.deleteBtn}
+                    </Button>
+                )}
             </div>
-            <ConfirmDialog
-                open={isAsking}
-                onOpenChange={setIsAsking}
-                title={t.admin.deleteBtn}
-                description={t.admin.confirmDelete}
-                confirmLabel={t.admin.deleteBtn}
-                cancelLabel={t.common.cancel}
-                onConfirm={onDelete}
-            />
+            {canDelete && (
+                <ConfirmDialog
+                    open={isAsking}
+                    onOpenChange={setIsAsking}
+                    title={t.admin.deleteBtn}
+                    description={t.admin.confirmDelete}
+                    confirmLabel={t.admin.deleteBtn}
+                    cancelLabel={t.common.cancel}
+                    onConfirm={onDelete}
+                />
+            )}
         </>
     );
 }
@@ -148,6 +165,7 @@ type FormBodyProps = Readonly<{
     session: SessionEditView;
     locks: SessionEditLocks;
     loading: boolean;
+    canDelete: boolean;
     onSubmit: (data: UpdateSessionFormData) => void;
     onDelete: () => void;
     t: Dictionary;
@@ -158,6 +176,7 @@ function SessionFormBody({
     session,
     locks,
     loading,
+    canDelete,
     onSubmit,
     onDelete,
     t,
@@ -182,7 +201,12 @@ function SessionFormBody({
                     <CapacityFields form={form} t={t} locks={locks} />
                 </FormSection>
                 <NotesField form={form} t={t} />
-                <SubmitRow loading={loading} onDelete={onDelete} t={t} />
+                <SubmitRow
+                    loading={loading}
+                    canDelete={canDelete}
+                    onDelete={onDelete}
+                    t={t}
+                />
             </form>
         </Form>
     );
@@ -229,7 +253,12 @@ function EditCard({
 export function EditSessionForm({
     session,
     lock,
-}: Readonly<{ session: SessionEditView; lock: SessionLockFacts }>) {
+    canDelete,
+}: Readonly<{
+    session: SessionEditView;
+    lock: SessionLockFacts;
+    canDelete: boolean;
+}>) {
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const { loading, update, remove } = useSessionEditActions(session.id, t);
@@ -245,6 +274,7 @@ export function EditSessionForm({
                     session={session}
                     locks={locks}
                     loading={loading}
+                    canDelete={canDelete}
                     onSubmit={update}
                     onDelete={remove}
                     t={t}

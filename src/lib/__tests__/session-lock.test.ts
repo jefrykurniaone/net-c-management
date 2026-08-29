@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     isMoneyBehind,
     isSessionClosed,
+    resolveDeleteRefusal,
     resolveSessionRefusal,
     toSessionLockFacts,
     type SessionLockFacts,
@@ -10,11 +11,11 @@ import {
 } from '../session-lock';
 
 /**
- * The rules that stop an Admin editing a Session out from under the money
- * already behind it, and out from under history. Every case here is a refusal
- * the route must make regardless of what the form offered, plus the one that
- * matters most: an unchanged field is not an edit, so a notes-only save on a
- * Completed Session — which posts the whole payload — still succeeds.
+ * The rules that stop an Admin editing or destroying a Session out from under
+ * the money already behind it, and out from under history. Every case here is a
+ * refusal the route must make regardless of what the form offered, plus the one
+ * that matters most: an unchanged field is not an edit, so a notes-only save on
+ * a Completed Session — which posts the whole payload — still succeeds.
  */
 
 const STORED: StoredSession = {
@@ -216,5 +217,49 @@ describe('resolveSessionRefusal, a Closed Session', () => {
             closed,
         );
         expect(refusal?.reason).toBe('SESSION_CLOSED');
+    });
+});
+
+describe('resolveDeleteRefusal', () => {
+    it('refuses a Session with a held Seat', () => {
+        const refusal = resolveDeleteRefusal(STORED, factsOf({ heldSeats: 2 }));
+        expect(refusal).toEqual({ reason: 'SESSION_HAS_MONEY', heldSeats: 2 });
+    });
+
+    it('refuses a Session a live Payment names, with no Seat held', () => {
+        const refusal = resolveDeleteRefusal(
+            STORED,
+            factsOf({ hasLivePayment: true }),
+        );
+        expect(refusal).toEqual({ reason: 'SESSION_HAS_MONEY', heldSeats: 0 });
+    });
+
+    it('refuses a Completed Session with nothing behind it', () => {
+        const refusal = resolveDeleteRefusal(
+            storedAs({ status: 'COMPLETED' }),
+            factsOf({ isClosed: true }),
+        );
+        expect(refusal).toEqual({ reason: 'SESSION_CLOSED', heldSeats: 0 });
+    });
+
+    it('names the money before the Completed Session, so the fix is the one that works', () => {
+        const refusal = resolveDeleteRefusal(
+            storedAs({ status: 'COMPLETED' }),
+            factsOf({ isClosed: true, heldSeats: 3 }),
+        );
+        expect(refusal?.reason).toBe('SESSION_HAS_MONEY');
+    });
+
+    it('allows a Cancelled Session with nothing behind it', () => {
+        expect(
+            resolveDeleteRefusal(
+                storedAs({ status: 'CANCELLED' }),
+                factsOf({ isClosed: true }),
+            ),
+        ).toBeNull();
+    });
+
+    it('allows an open Session nobody has funded', () => {
+        expect(resolveDeleteRefusal(STORED, OPEN_AND_UNFUNDED)).toBeNull();
     });
 });

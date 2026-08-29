@@ -1001,6 +1001,15 @@ const en = {
             'Capacity cannot go below the {n} seats already held on this session.',
         closedFieldsLocked:
             'This session is completed or cancelled, so only its notes can be changed here.',
+        /**
+         * The two refusals `DELETE /api/sessions/[id]` makes. A session with a
+         * payment or a held seat behind it cannot be deleted at all, so the
+         * sentence names cancelling as the move that was meant.
+         */
+        refusedSessionHasMoney:
+            'This session has a payment or a held seat behind it, so it cannot be deleted. Cancel the session instead — the seats already held stay held.',
+        refusedDeleteCompleted:
+            'This session is completed, so it is part of the record and cannot be deleted.',
     },
     activity: {
         label: 'Activity',
@@ -1961,6 +1970,10 @@ const id: typeof en = {
             'Kapasitas tidak bisa kurang dari {n} kursi yang sudah dipegang di sesi ini.',
         closedFieldsLocked:
             'Sesi ini sudah selesai atau dibatalkan, jadi hanya catatannya yang bisa diubah di sini.',
+        refusedSessionHasMoney:
+            'Sesi ini punya pembayaran atau kursi yang dipegang, jadi tidak bisa dihapus. Batalkan sesinya saja — kursi yang sudah dipegang tetap dipegang.',
+        refusedDeleteCompleted:
+            'Sesi ini sudah selesai, jadi sudah menjadi catatan dan tidak bisa dihapus.',
     },
     activity: {
         label: 'Aktivitas',

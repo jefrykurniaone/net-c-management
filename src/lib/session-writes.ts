@@ -3,6 +3,7 @@ import type { ActivitySession, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import {
     LIVE_PAYMENT_STATUSES,
+    resolveDeleteRefusal,
     resolveSessionRefusal,
     SEAT_HOLDING_STATUSES,
     toSessionLockFacts,
@@ -11,8 +12,9 @@ import {
 } from '@/lib/session-lock';
 
 /**
- * The Admin write to a Session that has to serialise against a reservation,
- * inside one short transaction holding the Session's own row lock.
+ * The two Admin writes to a Session that have to serialise against a
+ * reservation, each inside one short transaction holding the Session's own row
+ * lock.
  *
  * `PATCH` used to read the held-Seat count and write the new `maxPlayers` in two
  * separate statements with nothing between them. A reservation committing in
@@ -22,6 +24,10 @@ import {
  * **same** row lock, in the same statement shape, is what makes the two writes
  * queue instead of interleave: whichever arrives second reads the other's
  * committed count.
+ *
+ * `DELETE` takes it for the same reason: its refusal turns on the same counts,
+ * and a Seat claimed between the count and the delete would be destroyed along
+ * with the row it was claimed on.
  *
  * What is deliberately **outside** the transaction, and stays outside:
  * `releaseExpiredHolds()` — its caller sweeps first, so the counts are taken
@@ -68,6 +74,10 @@ export type SessionUpdateOutcome =
     | Readonly<{ kind: 'updated'; session: ActivitySession }>
     | SessionWriteRefusal;
 
+export type SessionDeleteOutcome =
+    | Readonly<{ kind: 'deleted' }>
+    | SessionWriteRefusal;
+
 /**
  * Take the reservation path's own row lock, then read what the rules decide on.
  *
@@ -110,5 +120,21 @@ export function updateSessionLocked(
             data: { ...rest, ...(date ? { date: new Date(date) } : {}) },
         });
         return { kind: 'updated', session };
+    });
+}
+
+/** The destruction, decided and written under the same lock. */
+export function deleteSessionLocked(id: string): Promise<SessionDeleteOutcome> {
+    return prisma.$transaction(async (tx): Promise<SessionDeleteOutcome> => {
+        const row = await lockAndRead(tx, id);
+        if (!row) {
+            return { kind: 'missing' };
+        }
+        const refusal = resolveDeleteRefusal(row.stored, row.facts);
+        if (refusal) {
+            return { kind: 'refused', refusal };
+        }
+        await tx.activitySession.delete({ where: { id } });
+        return { kind: 'deleted' };
     });
 }

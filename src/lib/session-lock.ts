@@ -5,7 +5,7 @@ import type {
 } from '@prisma/client';
 
 /**
- * When a Session stops being the Admin's to edit, and why.
+ * When a Session stops being the Admin's to edit or to destroy, and why.
  *
  * A Session's fee is frozen once money is behind it, and a Completed or
  * Cancelled Session is history rather than a plan. Both rules are enforced in
@@ -13,6 +13,10 @@ import type {
  * read-only control is a courtesy, the refusal is the rule — so the rules
  * themselves live here, free of Prisma, `server-only` and React, and are read by
  * the route and the form alike.
+ *
+ * **Destroying a Session** is the same facts read for a different write, and has
+ * its own resolver, `resolveDeleteRefusal`: money behind it refuses, Completed
+ * refuses, and a Cancelled Session with nothing behind it may go.
  *
  * `AttendanceStatus`, `PaymentStatus` and `SessionStatus` are imported as
  * **types** and the values written as string literals checked against them:
@@ -99,9 +103,16 @@ export type SessionPatch = Readonly<{
     status?: SessionStatus;
 }>;
 
-/** Why a write was refused. Stable codes, beside the translated sentence. */
+/**
+ * Why a write was refused. Stable codes, beside the translated sentence.
+ *
+ * `SESSION_CLOSED` is raised by both writes and names the same fact either way —
+ * this Session is Closed — though the sentence a caller reads differs, because
+ * the write being refused differs.
+ */
 export type SessionLockReason =
     | 'SESSION_CLOSED'
+    | 'SESSION_HAS_MONEY'
     | 'FEE_LOCKED'
     | 'CAPACITY_BELOW_HELD';
 
@@ -188,6 +199,34 @@ export function resolveSessionRefusal(
     }
     if (patch.maxPlayers !== undefined && patch.maxPlayers < heldSeats) {
         return { reason: 'CAPACITY_BELOW_HELD', heldSeats };
+    }
+    return null;
+}
+
+/**
+ * Whether a Session may be destroyed, and why not.
+ *
+ * Money behind it is the first refusal, and the one that was answering with a
+ * 500: a Session a live Payment names cannot be deleted at all, because
+ * `Payment.session` is `onDelete: Restrict` (`prisma/schema.prisma:280`), so
+ * Prisma throws where the route should be saying no. A held Seat counts as money
+ * here for the same reason it freezes the fee. The fix the sentence names is to
+ * **cancel** the Session instead, which keeps both the record and the Seats.
+ *
+ * A **Completed** Session is what happened, and stays. A **Cancelled** one with
+ * nothing behind it may go: it is a plan that was called off rather than a
+ * record of anything.
+ */
+export function resolveDeleteRefusal(
+    stored: StoredSession,
+    facts: SessionLockFacts,
+): SessionRefusal | null {
+    const { heldSeats } = facts;
+    if (isMoneyBehind(facts)) {
+        return { reason: 'SESSION_HAS_MONEY', heldSeats };
+    }
+    if (stored.status === 'COMPLETED') {
+        return { reason: 'SESSION_CLOSED', heldSeats };
     }
     return null;
 }

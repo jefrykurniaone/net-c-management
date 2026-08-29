@@ -1955,6 +1955,43 @@ stored `fee`.
   device or emulator that reports a non-zero inset, if one is available;
   otherwise record that the inset resolved to the 0.375rem floor.
 
+### TC-AR-008 · P0 · Negative — A Session with money behind it, or a Completed one, refuses deletion
+
+**Preconditions:** four Sessions — one **Scheduled** with at least one
+seat-holding Attendance, one **Scheduled** with no held Seat but one live
+(`PENDING`/`CONFIRMED`) Payment naming it, one **`COMPLETED`** with neither, and
+one **`CANCELLED`** with neither.
+
+**Steps:**
+1. `DELETE /api/sessions/{id}` on the Session with the held Seat.
+2. `DELETE` on the Session the live Payment names.
+3. `DELETE` on the Completed Session.
+4. `DELETE` on the Cancelled Session, then re-read it.
+5. Open `/admin/sessions/{id}/edit` for each of the four and read the buttons
+   beneath the form.
+6. In the form for the Session with the held Seat, if a Delete button is drawn at
+   all, press it and read the toast.
+
+**Expected result:**
+
+- Steps 1 and 2 are **409** with `reason: "SESSION_HAS_MONEY"` and a sentence
+  naming both the reason and the fix ("…has a payment or a held seat behind it,
+  so it cannot be deleted. Cancel the session instead…"), in the caller's own
+  locale. A **500** is the failure this case exists to catch: `Payment.session`
+  is `onDelete: Restrict`, so the old route let Prisma throw where it should have
+  been answering.
+- Step 3 is **409** with `reason: "SESSION_CLOSED"` and its own sentence — the
+  Session is part of the record, not "only its notes can be changed", which is
+  the PATCH sentence and answers a question nobody asked here.
+- Step 4 is **200** and the Session is gone. A cancelled Session with nothing
+  behind it is a plan that was called off, not history; where cancelling was what
+  was meant, `TC-AR-009` is the way back rather than this.
+- Step 5: the **Delete session** button is absent on the first three forms and
+  present only on the Cancelled one. Absent, not disabled — the same way the
+  register draws no Cancel control on a Closed Session.
+- Step 6 does not arise where step 5 passed; if it does, the toast carries the
+  route's own sentence, not the generic "Failed to delete session".
+
 ### TC-AR-010 · P0 · Negative — A capacity edit and a reservation cannot cross
 
 **Preconditions:** a **Scheduled** Session with a fee, capacity `max`, and
