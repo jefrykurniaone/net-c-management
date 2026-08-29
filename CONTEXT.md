@@ -65,6 +65,10 @@ _Avoid_: slot, spot, place, booking
 The recurring monthly amount a Participant owes for an Activity, however many Sessions they attend. Paying a month buys availability for that month, not a per-Session credit.
 _Avoid_: subscription, monthly payment, membership fee
 
+**Dues Rate**:
+The amount an Activity charges for Dues in one Billing Period. It has a history: a change is set against a future Period, and the rate of a Period that has arrived is frozen. Distinct from Dues, which is what a Participant owes.
+_Avoid_: monthly fee, price, rate card
+
 **Fee**:
 The per-Session price a Participant owes for the single Session they join.
 _Avoid_: cost, price, charge, ticket
