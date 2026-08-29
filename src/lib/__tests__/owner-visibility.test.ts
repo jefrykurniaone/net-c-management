@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Role } from '@prisma/client';
 import {
     resolveOwnerVisibility,
+    searchByNameOrEmail,
     visibleContact,
     visibleContactCells,
     type ContactSource,
@@ -124,5 +125,42 @@ describe('visibleContactCells', () => {
             email: '',
             phone: '',
         });
+    });
+});
+
+/**
+ * The search half of the same rule. Withholding the value is undone by a filter
+ * that still matches on it, so the two are asserted in one place.
+ */
+describe('searchByNameOrEmail', () => {
+    const LIKE = { contains: 'ow', mode: 'insensitive' as const };
+
+    it.each([Role.ADMIN, Role.OWNER, Role.MEMBER])(
+        'filters on nothing for a %s viewer when the search is empty',
+        (viewer) => {
+            expect(searchByNameOrEmail('', viewer)).toEqual({});
+        },
+    );
+
+    it('keeps the email arm off Owner rows for an Admin', () => {
+        expect(searchByNameOrEmail('ow', Role.ADMIN)).toEqual({
+            OR: [
+                { name: LIKE },
+                { email: LIKE, role: { not: Role.OWNER } },
+            ],
+        });
+    });
+
+    it('lets an Owner search every email', () => {
+        expect(searchByNameOrEmail('ow', Role.OWNER)).toEqual({
+            OR: [{ name: LIKE }, { email: LIKE }],
+        });
+    });
+
+    it('leaves the name arm unrestricted, so an Owner stays findable', () => {
+        for (const viewer of [Role.ADMIN, Role.OWNER]) {
+            const where = searchByNameOrEmail('ow', viewer);
+            expect(where.OR?.[0]).toEqual({ name: LIKE });
+        }
     });
 });

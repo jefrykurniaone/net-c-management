@@ -12,7 +12,10 @@ import {
     resolveMembershipStanding,
     type DuesStanding,
 } from '@/lib/member-standing';
-import { resolveOwnerVisibility } from '@/lib/owner-visibility';
+import {
+    resolveOwnerVisibility,
+    searchByNameOrEmail,
+} from '@/lib/owner-visibility';
 import { currentPeriod, type BillingPeriod } from '@/lib/payment-mode';
 import { prisma } from '@/lib/prisma';
 
@@ -94,28 +97,6 @@ export type MemberQuery = Readonly<{
 }>;
 
 /**
- * Search by name always; by email only where the email is not being withheld
- * from this viewer.
- *
- * A filter that matches on a value the row refuses to show is an oracle for it:
- * an Admin types one character at a time and watches the Owner row appear or
- * vanish, and recovers the address the cell would not print. So the email arm
- * skips Owner rows for anybody but an Owner — the Owner is still findable by
- * name, which is the one identifier this surface does show.
- */
-function searchWhere(search: string, viewerRole: Role): Prisma.UserWhereInput {
-    if (!search) {
-        return {};
-    }
-    const like = { contains: search, mode: 'insensitive' as const };
-    const byEmail: Prisma.UserWhereInput =
-        viewerRole === Role.OWNER
-            ? { email: like }
-            : { email: like, role: { not: Role.OWNER } };
-    return { OR: [{ name: like }, byEmail] };
-}
-
-/**
  * Admitted people only. An Applicant is not a Member — they hold Memberships
  * picked while completing their profile, and none of them mean anything until
  * an Admin lets them in, so the roster selects on `admittedAt` and the
@@ -131,7 +112,7 @@ function buildWhere(query: MemberQuery, viewerRole: Role): Prisma.UserWhereInput
         : {};
     return {
         ...ADMITTED_MEMBER_WHERE,
-        ...searchWhere(query.search, viewerRole),
+        ...searchByNameOrEmail(query.search, viewerRole),
         ...activity,
     };
 }

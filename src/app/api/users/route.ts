@@ -1,9 +1,8 @@
 import { auth } from '@/lib/auth';
 import { admissionDenied, isAdmittedSession } from '@/lib/admission';
-import { visibleContact } from '@/lib/owner-visibility';
+import { searchByNameOrEmail, visibleContact } from '@/lib/owner-visibility';
 import { prisma } from '@/lib/prisma';
 import { isAdminRole } from '@/lib/utils';
-import { Role, type Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 const MAX_USER_LIMIT = 100;
@@ -21,29 +20,6 @@ const USER_SELECT = {
     createdAt: true,
     _count: { select: { attendances: true, payments: true } },
 } as const;
-
-/**
- * Search by name always; by email only where the email is not being withheld
- * from this caller.
- *
- * The same guard, and the same reason, as the Members register
- * (`src/app/(admin)/admin/members/member-rows.ts`): a filter that matches on a
- * value the row refuses to return is an oracle for that value, so an Admin who
- * cannot read the Owner's address could still recover it one character at a time
- * by watching the row appear and vanish. The Owner stays findable by name
- * (docs/owner-role-immutability.md, rule 2).
- */
-function buildWhere(search: string, viewerRole: Role): Prisma.UserWhereInput {
-    if (!search) {
-        return {};
-    }
-    const like = { contains: search, mode: 'insensitive' as const };
-    const byEmail: Prisma.UserWhereInput =
-        viewerRole === Role.OWNER
-            ? { email: like }
-            : { email: like, role: { not: Role.OWNER } };
-    return { OR: [{ name: like }, byEmail] };
-}
 
 /** Page, page size and search term, already clamped. */
 function readQuery(searchParams: URLSearchParams) {
@@ -72,7 +48,9 @@ export async function GET(req: Request) {
 
     const viewerRole = session.user.role;
     const { page, limit, search } = readQuery(new URL(req.url).searchParams);
-    const where = buildWhere(search, viewerRole);
+    // Searching by email would otherwise be an oracle for the address the rows
+    // below refuse to carry (docs/owner-role-immutability.md, rule 2).
+    const where = searchByNameOrEmail(search, viewerRole);
 
     const [users, total] = await Promise.all([
         prisma.user.findMany({

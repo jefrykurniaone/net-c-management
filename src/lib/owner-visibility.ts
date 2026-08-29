@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role, type Prisma } from '@prisma/client';
 
 /**
  * The Owner contact rule, in one place.
@@ -89,4 +89,33 @@ export function visibleContactCells(
 ): ContactCells {
     const { email, phone } = visibleContact(user, viewerRole);
     return { email: email ?? '', phone: phone ?? '' };
+}
+
+/**
+ * Find a person by name always, and by email only where that email is not being
+ * withheld from this viewer.
+ *
+ * A filter that matches on a value the row refuses to return is an oracle for
+ * that value: an Admin types one character at a time and watches the Owner's row
+ * appear and vanish, and recovers the address no surface would print. So the
+ * email arm skips Owner rows for anybody but an Owner. The Owner stays findable
+ * by name, which is the identifier these surfaces do show.
+ *
+ * It lives beside the projections above because it guards the same value: two
+ * copies of this predicate would let one surface be relaxed while the other
+ * still claimed the rule held.
+ */
+export function searchByNameOrEmail(
+    search: string,
+    viewerRole: Role,
+): Prisma.UserWhereInput {
+    if (!search) {
+        return {};
+    }
+    const like = { contains: search, mode: 'insensitive' as const };
+    const byEmail: Prisma.UserWhereInput =
+        viewerRole === Role.OWNER
+            ? { email: like }
+            : { email: like, role: { not: Role.OWNER } };
+    return { OR: [{ name: like }, byEmail] };
 }
