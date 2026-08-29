@@ -1,33 +1,75 @@
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { redirect, notFound } from "next/navigation";
-import { isAdminRole } from "@/lib/utils";
-import { EditSessionForm } from "./edit-form";
+import { notFound, redirect } from 'next/navigation';
+import type { Prisma } from '@prisma/client';
+import { auth } from '@/lib/auth';
+import { releaseExpiredHolds } from '@/lib/holds';
+import { prisma } from '@/lib/prisma';
+import {
+    LIVE_PAYMENT_STATUSES,
+    SEAT_HOLDING_STATUSES,
+    toSessionLockFacts,
+} from '@/lib/session-lock';
+import { isAdminRole } from '@/lib/utils';
+import { EditSessionForm } from './edit-form';
+
+/**
+ * The lock facts are resolved **here**, on the server, and the form receives
+ * booleans and a count rather than rows: a component handed the Attendance and
+ * Payment rows could decide for itself what "money behind it" means, which is
+ * how two surfaces come to disagree about one rule.
+ *
+ * The hold sweep runs before the counts are taken, so a lapsed hold does not
+ * lock the fee of a Session nobody is actually holding a Seat on.
+ */
+const EDIT_SELECT = {
+    id: true,
+    title: true,
+    date: true,
+    startTime: true,
+    endTime: true,
+    location: true,
+    maxPlayers: true,
+    fee: true,
+    notes: true,
+    status: true,
+    lastReminderAt: true,
+    activity: { select: { name: true } },
+    _count: {
+        select: {
+            attendances: { where: { status: { in: SEAT_HOLDING_STATUSES } } },
+            payments: { where: { status: { in: LIVE_PAYMENT_STATUSES } } },
+        },
+    },
+} satisfies Prisma.ActivitySessionSelect;
 
 export default async function EditSessionPage({
-  params,
+    params,
 }: Readonly<{
-  params: Promise<{ id: string }>;
+    params: Promise<{ id: string }>;
 }>) {
-  const session = await auth();
-  if (!session?.user?.id || !isAdminRole(session.user.role)) redirect("/dashboard");
+    const session = await auth();
+    if (!session?.user?.id || !isAdminRole(session.user.role)) {
+        redirect('/dashboard');
+    }
 
-  const { id } = await params;
-  const activitySession = await prisma.activitySession.findUnique({
-    where: { id },
-    include: {
-      activity: { select: { id: true, name: true } },
-      // Only the count is read here, for the fee lock. Attendance itself is
-      // taken on /admin/sessions/[id]/attendance, never in this form.
-      attendances: { select: { id: true } },
-    },
-  });
+    const { id } = await params;
+    await releaseExpiredHolds();
+    const row = await prisma.activitySession.findUnique({
+        where: { id },
+        select: EDIT_SELECT,
+    });
 
-  if (!activitySession) notFound();
+    if (!row) {
+        notFound();
+    }
 
-  return (
-    <div className="max-w-lg mx-auto">
-      <EditSessionForm session={activitySession} />
-    </div>
-  );
+    const { _count, activity, ...stored } = row;
+
+    return (
+        <div className='max-w-lg mx-auto'>
+            <EditSessionForm
+                session={{ ...stored, activityName: activity.name }}
+                lock={toSessionLockFacts(_count, stored.status)}
+            />
+        </div>
+    );
 }
