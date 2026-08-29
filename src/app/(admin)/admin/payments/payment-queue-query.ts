@@ -29,9 +29,17 @@ export const QUEUE_SORT = 'queue';
 /** The columns whose heads sort. Anything else means the queue's own order. */
 const SORTABLE_COLS = ['member', 'amount', 'month', 'createdAt'];
 
-/** Recency inside each band. */
+/**
+ * Recency inside each band, then the id.
+ *
+ * `createdAt` is a millisecond timestamp, so two Payments can share one. Two
+ * `LIMIT`/`OFFSET` reads that straddle such a pair are free to resolve the tie
+ * differently, which drops one row from a page and shows another twice — so the
+ * ordering ends on a unique column and stops being a tie at all.
+ */
 const QUEUE_ORDER: Prisma.PaymentOrderByWithRelationInput[] = [
     { createdAt: 'desc' },
+    { id: 'desc' },
 ];
 
 const STATUS_FILTERS: PaymentStatus[] = [
@@ -111,20 +119,26 @@ export function buildWhere(
     };
 }
 
+/** An explicit sort ends on the id for the same reason the queue's does. */
 function buildOrderBy(
     sortBy: string,
     dir: 'asc' | 'desc',
 ): Prisma.PaymentOrderByWithRelationInput[] {
     if (sortBy === 'month') {
-        return [{ year: dir }, { month: dir }, { createdAt: 'desc' }];
+        return [
+            { year: dir },
+            { month: dir },
+            { createdAt: 'desc' },
+            { id: 'desc' },
+        ];
     }
     if (sortBy === 'member') {
-        return [{ user: { name: dir } }, { createdAt: 'desc' }];
+        return [{ user: { name: dir } }, { createdAt: 'desc' }, { id: 'desc' }];
     }
     if (sortBy === 'amount') {
-        return [{ amount: dir }, { createdAt: 'desc' }];
+        return [{ amount: dir }, { createdAt: 'desc' }, { id: 'desc' }];
     }
-    return [{ createdAt: dir }];
+    return [{ createdAt: dir }, { id: 'desc' }];
 }
 
 /**

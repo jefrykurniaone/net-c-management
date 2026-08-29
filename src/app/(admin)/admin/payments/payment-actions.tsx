@@ -9,6 +9,7 @@ import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { ConfirmPaymentDialog } from './payment-confirm-dialog';
 import { RejectPaymentDialog } from './payment-reject-dialog';
 import type { PaymentFacts } from './payment-facts';
+import { billingPeriodLabel, rupiah } from './payment-format';
 
 /**
  * The Admin's decision on one Payment, taken from its own row. Both acts go
@@ -35,14 +36,6 @@ export type PaymentActionsProps = Readonly<{
     isMonthly: boolean;
 }>;
 
-function rupiah(amount: number): string {
-    return `Rp ${amount.toLocaleString('id-ID')}`;
-}
-
-function periodLabel(t: Dictionary, month: number, year: number): string {
-    return `${t.months[month]} ${year}`;
-}
-
 /**
  * What the Confirm dialog says when the amount is short. Null where it is not,
  * or where there is no current figure to compare against.
@@ -68,14 +61,14 @@ function seatNoteOf(t: Dictionary, payment: PaymentActionsProps): string | null 
     }
     return t.admin.rejectSeatConsequence
         .replace('{activity}', payment.activityName)
-        .replace('{period}', periodLabel(t, payment.month, payment.year));
+        .replace('{period}', billingPeriodLabel(t, payment.month, payment.year));
 }
 
 function factsOf(t: Dictionary, payment: PaymentActionsProps): PaymentFacts {
     return {
         memberName: payment.memberName,
         activityName: payment.activityName,
-        periodLabel: periodLabel(t, payment.month, payment.year),
+        periodLabel: billingPeriodLabel(t, payment.month, payment.year),
         amountLabel: rupiah(payment.amount),
     };
 }
@@ -108,6 +101,12 @@ function usePaymentDecision(paymentId: string, t: Dictionary) {
             );
             router.refresh();
             return true;
+        } catch {
+            // Offline, DNS, an aborted request: the dialog stays open with the
+            // Admin's typed reason in it, and says so. Silence here would read
+            // as a decision that went through.
+            toast.error(t.admin.paymentUpdateFailed);
+            return false;
         } finally {
             setIsSubmitting(false);
         }
@@ -136,6 +135,60 @@ function DecisionButtons({
     );
 }
 
+type DecisionDialogsProps = Readonly<{
+    asking: Decision | null;
+    t: Dictionary;
+    payment: PaymentActionsProps;
+    facts: PaymentFacts;
+    isSubmitting: boolean;
+    onClose: () => void;
+    onRun: (status: Decision, notes?: string) => void;
+}>;
+
+/**
+ * Mounted only while open, so a dialog's own state — the Reject reason and its
+ * refusal — lives exactly as long as the dialog does. A decision closes the
+ * dialog by dropping it rather than through `onOpenChange`, and state that
+ * outlived it would come back pre-filled the next time the Admin opened Reject.
+ */
+function DecisionDialogs({
+    asking,
+    t,
+    payment,
+    facts,
+    isSubmitting,
+    onClose,
+    onRun,
+}: DecisionDialogsProps) {
+    if (asking === 'CONFIRMED') {
+        return (
+            <ConfirmPaymentDialog
+                open
+                onOpenChange={onClose}
+                t={t}
+                facts={facts}
+                shortfallNote={shortfallNoteOf(t, payment)}
+                isSubmitting={isSubmitting}
+                onConfirm={() => onRun('CONFIRMED')}
+            />
+        );
+    }
+    if (asking === 'REJECTED') {
+        return (
+            <RejectPaymentDialog
+                open
+                onOpenChange={onClose}
+                t={t}
+                facts={facts}
+                seatNote={seatNoteOf(t, payment)}
+                isSubmitting={isSubmitting}
+                onReject={(reason) => onRun('REJECTED', reason)}
+            />
+        );
+    }
+    return null;
+}
+
 export function PaymentActions(payment: PaymentActionsProps) {
     const { locale } = useLocale();
     const t = getDictionary(locale);
@@ -148,27 +201,17 @@ export function PaymentActions(payment: PaymentActionsProps) {
         }
     }
 
-    const facts = factsOf(t, payment);
     return (
         <>
             <DecisionButtons t={t} onAsk={setAsking} />
-            <ConfirmPaymentDialog
-                open={asking === 'CONFIRMED'}
-                onOpenChange={(open) => setAsking(open ? 'CONFIRMED' : null)}
+            <DecisionDialogs
+                asking={asking}
                 t={t}
-                facts={facts}
-                shortfallNote={shortfallNoteOf(t, payment)}
+                payment={payment}
+                facts={factsOf(t, payment)}
                 isSubmitting={isSubmitting}
-                onConfirm={() => run('CONFIRMED')}
-            />
-            <RejectPaymentDialog
-                open={asking === 'REJECTED'}
-                onOpenChange={(open) => setAsking(open ? 'REJECTED' : null)}
-                t={t}
-                facts={facts}
-                seatNote={seatNoteOf(t, payment)}
-                isSubmitting={isSubmitting}
-                onReject={(reason) => run('REJECTED', reason)}
+                onClose={() => setAsking(null)}
+                onRun={run}
             />
         </>
     );

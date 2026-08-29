@@ -5,6 +5,7 @@ import { ActivityInitial } from '@/components/activity/activity-badge';
 import { MarkedValue } from '@/components/ui/mark';
 import { paymentState } from '@/lib/status-mark';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
+import { billingPeriodLabel, rupiah } from './payment-format';
 
 /**
  * The values one Payment row holds. The register owns where each of these lands
@@ -41,19 +42,6 @@ const DATE_FORMAT = 'd MMM yyyy';
 /** What to call this member in a column, a dialog and a toast. */
 export function paymentMemberLabel(payment: PaymentQueueRow): string {
     return payment.user.name ?? payment.user.email ?? EM_DASH;
-}
-
-/** Rupiah as the rest of the app writes it. Tabular figures come from the kind. */
-export function rupiah(amount: number): string {
-    return `Rp ${amount.toLocaleString('id-ID')}`;
-}
-
-/** The Billing Period this Payment belongs to, named in the reader's locale. */
-export function billingPeriodLabel(
-    payment: PaymentQueueRow,
-    t: Dictionary,
-): string {
-    return `${t.months[payment.month]} ${payment.year}`;
 }
 
 /**
@@ -166,7 +154,7 @@ export function PaymentPeriod({
     return (
         <span className='flex flex-col gap-hair'>
             <span className='type-body text-foreground'>
-                {billingPeriodLabel(payment, t)}
+                {billingPeriodLabel(t, payment.month, payment.year)}
             </span>
             {payment.session && (
                 <span className='type-caption text-muted-foreground'>
@@ -208,7 +196,12 @@ export function PaymentDecided({
     dateLocale: DateFnsLocale;
 }>) {
     if (payment.confirmedAt === null) {
-        return null;
+        // Never nothing: below `768px` the register still draws this column's
+        // own label above the cell, and a label with nothing under it reads as
+        // a control that failed to render.
+        return (
+            <span className='type-caption text-muted-foreground'>{EM_DASH}</span>
+        );
     }
     return (
         <span className='type-caption text-muted-foreground'>

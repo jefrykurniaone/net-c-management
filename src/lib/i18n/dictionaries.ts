@@ -888,6 +888,9 @@ const en = {
         filterYearLabel: 'Filter by year',
         filterStatusLabel: 'Filter by status',
         filterActivityLabel: 'Filter by activity',
+        // Nothing ever unsets a sort, so the default view — the whole point of
+        // the surface — needs a way back that is not leaving and returning.
+        paymentsQueueOrder: 'Back to the queue order',
     },
     activity: {
         label: 'Activity',
@@ -1789,6 +1792,7 @@ const id: typeof en = {
         filterYearLabel: 'Saring menurut tahun',
         filterStatusLabel: 'Saring menurut status',
         filterActivityLabel: 'Saring menurut aktivitas',
+        paymentsQueueOrder: 'Kembali ke urutan antrean',
     },
     activity: {
         label: 'Aktivitas',

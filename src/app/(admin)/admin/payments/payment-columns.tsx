@@ -5,8 +5,8 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { paymentState } from '@/lib/status-mark';
 import { PaymentActions } from './payment-actions';
 import { PaymentProof, type ProofLabels } from './payment-proof';
+import { billingPeriodLabel } from './payment-format';
 import {
-    billingPeriodLabel,
     currentPriceOf,
     paymentMemberLabel,
     PaymentActivity,
@@ -33,7 +33,7 @@ function proofLabelsFor(payment: PaymentQueueRow, t: Dictionary): ProofLabels {
         failed: t.admin.proofFailed,
         open: t.admin.proofOpen.replace('{name}', name),
         title: t.admin.proofDialogTitle.replace('{name}', name),
-        caption: `${payment.activity.name} · ${billingPeriodLabel(payment, t)}`,
+        caption: `${payment.activity.name} · ${billingPeriodLabel(t, payment.month, payment.year)}`,
     };
 }
 

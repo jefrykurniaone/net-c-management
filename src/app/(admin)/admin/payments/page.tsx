@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Download } from 'lucide-react';
 import type { Locale as DateFnsLocale } from 'date-fns';
@@ -46,6 +47,11 @@ import {
  * surface and nothing else.
  */
 
+const PAYMENTS_PATH = '/admin/payments';
+
+/** Returning to queue order drops the sort and starts again at page one. */
+const DROPPED_ON_RESET = ['sortBy', 'sortDir', 'page'];
+
 type TableState = Readonly<{
     sortBy: string;
     sortDir: 'asc' | 'desc';
@@ -77,19 +83,53 @@ function ExportLink({ t, href }: Readonly<{ t: Dictionary; href: string }>) {
 }
 
 /**
- * The heading says how many are waiting, because that is the number the Admin
- * came for. When nothing is, it says so in a plain sentence rather than leaving
- * a screen of decided rows to be read as work outstanding.
+ * How many are waiting, which is the number the Admin came for. Null while the
+ * Admin has filtered the standing to something other than awaiting: the count
+ * is then structurally zero, and "nothing is waiting for a decision" would be a
+ * false sentence about a queue the filter is merely hiding.
  */
+function waitingLine(
+    t: Dictionary,
+    awaitingTotal: number,
+    status: string | undefined,
+): string | null {
+    if (status !== undefined && status !== 'PENDING') {
+        return null;
+    }
+    if (awaitingTotal > 0) {
+        return t.admin.paymentsAwaiting.replace('{n}', String(awaitingTotal));
+    }
+    return t.admin.paymentsNoneAwaiting;
+}
+
+/**
+ * A sort head is the only way out of queue order, and nothing ever unsets it —
+ * so the default view, which is the whole point of the surface, needs a way
+ * back that is not "leave and come in again".
+ */
+function queueOrderHref(sp: RawSearchParams): string {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(sp)) {
+        const single = Array.isArray(value) ? value[0] : value;
+        if (single && !DROPPED_ON_RESET.includes(key)) {
+            params.set(key, single);
+        }
+    }
+    const query = params.toString();
+    return query === '' ? PAYMENTS_PATH : `${PAYMENTS_PATH}?${query}`;
+}
+
 function PaymentsHeading({
     t,
-    awaitingTotal,
+    waiting,
+    resetHref,
     href,
-}: Readonly<{ t: Dictionary; awaitingTotal: number; href: string }>) {
-    const waiting =
-        awaitingTotal > 0
-            ? t.admin.paymentsAwaiting.replace('{n}', String(awaitingTotal))
-            : t.admin.paymentsNoneAwaiting;
+}: Readonly<{
+    t: Dictionary;
+    waiting: string | null;
+    resetHref: string | null;
+    href: string;
+}>) {
     return (
         <div className='flex flex-wrap items-start justify-between gap-cell'>
             <div>
@@ -97,8 +137,16 @@ function PaymentsHeading({
                     {t.admin.paymentsTitle}
                 </h1>
                 <p className='mt-cell type-caption text-muted-foreground'>
-                    {t.admin.paymentsSubtitle} · {waiting}
+                    {t.admin.paymentsSubtitle}
+                    {waiting !== null && ` · ${waiting}`}
                 </p>
+                {resetHref !== null && (
+                    <Link
+                        href={resetHref}
+                        className='mt-cell inline-flex min-h-11 items-center type-label text-primary underline underline-offset-4'>
+                        {t.admin.paymentsQueueOrder}
+                    </Link>
+                )}
             </div>
             <ExportLink t={t} href={href} />
         </div>
@@ -161,7 +209,10 @@ function PaymentsQueue({
         <div className='space-y-bay'>
             <PaymentsHeading
                 t={t}
-                awaitingTotal={queue.awaitingTotal}
+                waiting={waitingLine(t, queue.awaitingTotal, values.status)}
+                resetHref={
+                    table.sortBy === QUEUE_SORT ? null : queueOrderHref(sp)
+                }
                 href={exportHref(values, now)}
             />
             <PaymentFilters
