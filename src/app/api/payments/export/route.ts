@@ -1,11 +1,55 @@
 import { auth } from '@/lib/auth';
 import { admissionDenied, isAdmittedSession } from '@/lib/admission';
+import { visibleContactCells } from '@/lib/owner-visibility';
 import { prisma } from '@/lib/prisma';
 import { isAdminRole } from '@/lib/utils';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { NextResponse } from 'next/server';
 import { format } from 'date-fns';
+import type { Prisma, Role } from '@prisma/client';
+
+const PAYMENT_INCLUDE = {
+    user: { select: { name: true, email: true, phone: true, role: true } },
+    activity: { select: { name: true } },
+} as const;
+
+type PaymentRecord = Prisma.PaymentGetPayload<{
+    include: typeof PAYMENT_INCLUDE;
+}>;
+
+const TIMESTAMP_FORMAT = 'dd/MM/yyyy HH:mm';
+
+/**
+ * One CSV row, in the file's column order.
+ *
+ * The Owner's email and WhatsApp cells are empty for an Admin exporting the file
+ * and carry their stored values for an Owner exporting it — the Owner's row is
+ * still written, and every other column on it is unchanged
+ * (docs/owner-role-immutability.md, rule 2).
+ */
+function toPaymentRow(
+    payment: PaymentRecord,
+    index: number,
+    viewerRole: Role,
+): string[] {
+    const { email, phone } = visibleContactCells(payment.user, viewerRole);
+    return [
+        String(index + 1),
+        payment.user.name ?? '',
+        email,
+        phone,
+        payment.activity.name,
+        String(payment.month),
+        String(payment.year),
+        String(payment.amount),
+        payment.status,
+        format(new Date(payment.createdAt), TIMESTAMP_FORMAT),
+        payment.confirmedAt
+            ? format(new Date(payment.confirmedAt), TIMESTAMP_FORMAT)
+            : '',
+    ];
+}
 
 // GET /api/payments/export?month=&year= — CSV export (admin only)
 export async function GET(req: Request) {
@@ -34,10 +78,7 @@ export async function GET(req: Request) {
             ...(activityId ? { activityId } : {}),
         },
         orderBy: [{ year: 'desc' }, { month: 'desc' }, { createdAt: 'asc' }],
-        include: {
-            user: { select: { name: true, email: true, phone: true } },
-            activity: { select: { name: true } },
-        },
+        include: PAYMENT_INCLUDE,
     });
 
     const rows = [
@@ -54,21 +95,9 @@ export async function GET(req: Request) {
             h.uploadedAt,
             h.confirmedAt,
         ],
-        ...payments.map((p, i) => [
-            String(i + 1),
-            p.user.name ?? '',
-            p.user.email ?? '',
-            p.user.phone ?? '',
-            p.activity.name,
-            String(p.month),
-            String(p.year),
-            String(p.amount),
-            p.status,
-            format(new Date(p.createdAt), 'dd/MM/yyyy HH:mm'),
-            p.confirmedAt
-                ? format(new Date(p.confirmedAt), 'dd/MM/yyyy HH:mm')
-                : '',
-        ]),
+        ...payments.map((payment, i) =>
+            toPaymentRow(payment, i, session.user.role),
+        ),
     ];
 
     const csv = rows

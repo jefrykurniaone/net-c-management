@@ -1,11 +1,40 @@
 import { auth } from '@/lib/auth';
 import { admissionDenied, isAdmittedSession } from '@/lib/admission';
+import { searchByNameOrEmail, visibleContact } from '@/lib/owner-visibility';
 import { prisma } from '@/lib/prisma';
 import { isAdminRole } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
 const MAX_USER_LIMIT = 100;
 const DEFAULT_USER_LIMIT = 50;
+
+const USER_SELECT = {
+    id: true,
+    name: true,
+    email: true,
+    image: true,
+    phone: true,
+    role: true,
+    isActive: true,
+    isProfileComplete: true,
+    createdAt: true,
+    _count: { select: { attendances: true, payments: true } },
+} as const;
+
+/** Page, page size and search term, already clamped. */
+function readQuery(searchParams: URLSearchParams) {
+    const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1'));
+    const limit = Math.min(
+        MAX_USER_LIMIT,
+        Math.max(
+            1,
+            Number.parseInt(
+                searchParams.get('limit') ?? String(DEFAULT_USER_LIMIT),
+            ),
+        ),
+    );
+    return { page, limit, search: searchParams.get('search') ?? '' };
+}
 
 // GET /api/users — list all members (admin only)
 export async function GET(req: Request) {
@@ -17,47 +46,33 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const page = Math.max(1, Number.parseInt(searchParams.get('page') ?? '1'));
-    const limit = Math.min(
-        MAX_USER_LIMIT,
-        Math.max(1, Number.parseInt(searchParams.get('limit') ?? String(DEFAULT_USER_LIMIT))),
-    );
-    const search = searchParams.get('search') ?? '';
-    const skip = (page - 1) * limit;
-
-    const where = search
-        ? {
-              OR: [
-                  { name: { contains: search, mode: 'insensitive' as const } },
-                  { email: { contains: search, mode: 'insensitive' as const } },
-              ],
-          }
-        : {};
+    const viewerRole = session.user.role;
+    const { page, limit, search } = readQuery(new URL(req.url).searchParams);
+    // Searching by email would otherwise be an oracle for the address the rows
+    // below refuse to carry (docs/owner-role-immutability.md, rule 2).
+    const where = searchByNameOrEmail(search, viewerRole);
 
     const [users, total] = await Promise.all([
         prisma.user.findMany({
             where,
             orderBy: { createdAt: 'desc' },
-            skip,
+            skip: (page - 1) * limit,
             take: limit,
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-                phone: true,
-                role: true,
-                isActive: true,
-                isProfileComplete: true,
-                createdAt: true,
-                _count: { select: { attendances: true, payments: true } },
-            },
+            select: USER_SELECT,
         }),
         prisma.user.count({ where }),
     ]);
 
-    return NextResponse.json({ users, total, page, limit });
+    // The Owner's row stays; its two contact values do not travel to an Admin.
+    return NextResponse.json({
+        users: users.map((user) => ({
+            ...user,
+            ...visibleContact(user, viewerRole),
+        })),
+        total,
+        page,
+        limit,
+    });
 }
 
 // PATCH /api/users — update role or isActive for a user (admin only)

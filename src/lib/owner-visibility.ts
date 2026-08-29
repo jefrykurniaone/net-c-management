@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role, type Prisma } from '@prisma/client';
 
 /**
  * The Owner contact rule, in one place.
@@ -48,4 +48,74 @@ export function resolveOwnerVisibility(
         isContactWithheld,
         isImmutable,
     };
+}
+
+/** Just the pair, in the two shapes a serialised row needs them. */
+export type ContactPair = Readonly<{
+    email: string | null;
+    phone: string | null;
+}>;
+
+/** The same pair as CSV cells, where a missing value is an empty cell. */
+export type ContactCells = Readonly<{ email: string; phone: string }>;
+
+/**
+ * The contact pair alone, for a row that already has its own shape and must
+ * keep it.
+ *
+ * `resolveOwnerVisibility` answers with the two flags as well, and a caller that
+ * spread its whole result over an existing row would add `isContactWithheld` and
+ * `isImmutable` to that row's published shape. A JSON API row is a contract with
+ * whoever reads it, so the two projections below take the decision and leave the
+ * shape alone. Neither re-decides anything: the rule stays in the one function
+ * above.
+ */
+export function visibleContact(
+    user: ContactSource,
+    viewerRole: Role,
+): ContactPair {
+    const { email, phone } = resolveOwnerVisibility(user, viewerRole);
+    return { email, phone };
+}
+
+/**
+ * The pair as a CSV writes it. A withheld value becomes an empty cell — the same
+ * cell a member who never filled their profile in already produces, so the file
+ * keeps its columns, its column order and its row count whoever exports it.
+ */
+export function visibleContactCells(
+    user: ContactSource,
+    viewerRole: Role,
+): ContactCells {
+    const { email, phone } = visibleContact(user, viewerRole);
+    return { email: email ?? '', phone: phone ?? '' };
+}
+
+/**
+ * Find a person by name always, and by email only where that email is not being
+ * withheld from this viewer.
+ *
+ * A filter that matches on a value the row refuses to return is an oracle for
+ * that value: an Admin types one character at a time and watches the Owner's row
+ * appear and vanish, and recovers the address no surface would print. So the
+ * email arm skips Owner rows for anybody but an Owner. The Owner stays findable
+ * by name, which is the identifier these surfaces do show.
+ *
+ * It lives beside the projections above because it guards the same value: two
+ * copies of this predicate would let one surface be relaxed while the other
+ * still claimed the rule held.
+ */
+export function searchByNameOrEmail(
+    search: string,
+    viewerRole: Role,
+): Prisma.UserWhereInput {
+    if (!search) {
+        return {};
+    }
+    const like = { contains: search, mode: 'insensitive' as const };
+    const byEmail: Prisma.UserWhereInput =
+        viewerRole === Role.OWNER
+            ? { email: like }
+            : { email: like, role: { not: Role.OWNER } };
+    return { OR: [{ name: like }, byEmail] };
 }
