@@ -4,6 +4,7 @@ import type { PaymentStatus, PaymentType } from '@prisma/client';
 import { ActivityInitial } from '@/components/activity/activity-badge';
 import { MarkedValue } from '@/components/ui/mark';
 import { paymentState } from '@/lib/status-mark';
+import type { DuesRateRow } from '@/lib/dues-rate';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { billingPeriodLabel, rupiah } from './payment-format';
 
@@ -31,7 +32,10 @@ export type PaymentQueueRow = Readonly<{
     activity: Readonly<{
         id: string;
         name: string;
-        monthlyFee: number;
+        /** The Activity's whole Dues Rate history — this row's Period is priced
+         * from it by `expectedPriceOf` (`src/lib/payment-price.ts`), never by a
+         * live figure, so a January Proof is judged by January's Dues. */
+        duesRates: readonly DuesRateRow[];
         bankName: string;
         bankAccountNumber: string;
         bankAccountHolder: string;
@@ -46,18 +50,6 @@ const DATE_FORMAT = 'd MMM yyyy';
 /** What to call this member in a column, a dialog and a toast. */
 export function paymentMemberLabel(payment: PaymentQueueRow): string {
     return payment.user.name ?? payment.user.email ?? EM_DASH;
-}
-
-/**
- * The current price for this Payment's mode: the Activity's Dues for a monthly
- * one, that Session's own Fee for a per-Session one. Null where the Session is
- * gone, which is the one case with no figure to compare against.
- */
-export function currentPriceOf(payment: PaymentQueueRow): number | null {
-    if (payment.type === 'SESSION') {
-        return payment.session?.fee ?? null;
-    }
-    return payment.activity.monthlyFee;
 }
 
 /**

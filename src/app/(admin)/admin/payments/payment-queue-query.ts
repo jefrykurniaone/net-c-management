@@ -69,7 +69,10 @@ const PAYMENT_SELECT = {
         select: {
             id: true,
             name: true,
-            monthlyFee: true,
+            // The Dues Rate history, not one figure: the shortfall note is
+            // judged against the rate of each row's own Billing Period, so the
+            // rows travel with the row and `expectedPriceOf` picks from them.
+            duesRates: { select: { amount: true, effectiveFrom: true } },
             bankName: true,
             bankAccountNumber: true,
             bankAccountHolder: true,

@@ -9,6 +9,7 @@ import {
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { resolvePaymentMode, currentPeriod, toPeriodKey } from '@/lib/payment-mode';
+import { resolveDuesRate } from '@/lib/dues-rate';
 
 /**
  * Server-only payment writes (Story 3.2, AD-5).
@@ -24,8 +25,8 @@ import { resolvePaymentMode, currentPeriod, toPeriodKey } from '@/lib/payment-mo
 
 const UNIQUE_VIOLATION = 'P2002';
 
-/** A zero fee means there are no monthly dues to raise for the Activity. */
-const MIN_MONTHLY_FEE = 1;
+/** A Period whose Dues Rate is below this raises no Dues that can be paid. */
+const MIN_DUES_RATE = 1;
 
 /** Identity + billing period a monthly charge is resolved for. */
 export interface MonthlyOwedInput {
@@ -39,7 +40,8 @@ export interface MonthlyOwedInput {
  * Result of resolving the owed monthly amount for a member/Activity/period.
  * `notMonthly` — the effective mode for the period is not MONTHLY (per-session,
  * or unselected on a both-offered Activity), so no monthly charge is raised.
- * `noFee` — the Activity bills monthly but has no fee set: nothing to charge.
+ * `noFee` — the Period raises no Dues that can be paid: its Dues Rate is below
+ * the minimum, or no rate row covers the Period at all.
  */
 export type MonthlyOwed =
   | { ok: true; amount: number }
@@ -47,9 +49,20 @@ export type MonthlyOwed =
 
 /**
  * Resolve the owed monthly amount, gating on the member's effective payment
- * mode for the period (AD-7) and sourcing the amount from the Activity's current
- * `monthlyFee` (AD-8) — the amount is server-authoritative and never trusted
- * from the client (AD-2). A per-session/unselected period raises no charge.
+ * mode for the period (AD-7) and pricing it at the **Dues Rate of that same
+ * Period** (`src/lib/dues-rate.ts`; docs/adr/0002-dues-rate-history.md) rather
+ * than at any live figure: a Period that has arrived keeps the rate it had, so
+ * a Proof uploaded today for January records January's rate and one for a
+ * Period with a queued rate records the queued one. The amount is
+ * server-authoritative and never trusted from the client (AD-2). A
+ * per-session/unselected period raises no charge.
+ *
+ * A `null` from the resolver means no rate row covers the Period — the
+ * beginning-of-time row exists to make that impossible, so it is a broken
+ * invariant and never a free month. It is refused as `noFee`, which the upload
+ * route answers 400, and never charged as 0: a Payment of 0 would settle a
+ * month whose price is merely missing, which is the failure a stored rate
+ * table exists to prevent.
  */
 export async function resolveMonthlyOwed(input: MonthlyOwedInput): Promise<MonthlyOwed> {
   const { userId, activityId, month, year } = input;
@@ -67,7 +80,13 @@ export async function resolveMonthlyOwed(input: MonthlyOwedInput): Promise<Month
     }),
     prisma.activity.findUnique({
       where: { id: activityId, isActive: true },
-      select: { allowsMonthly: true, allowsPerSession: true, monthlyFee: true },
+      select: {
+        allowsMonthly: true,
+        allowsPerSession: true,
+        // The whole history, never one row: which row prices this Period is
+        // `resolveDuesRate`'s to decide, and no order is assumed of it.
+        duesRates: { select: { amount: true, effectiveFrom: true } },
+      },
     }),
   ]);
 
@@ -81,9 +100,11 @@ export async function resolveMonthlyOwed(input: MonthlyOwedInput): Promise<Month
   };
   const effective = resolvePaymentMode(membership, offered, month, year);
   if (effective !== PaymentMode.MONTHLY) return { ok: false, reason: 'notMonthly' };
-  if (activity.monthlyFee < MIN_MONTHLY_FEE) return { ok: false, reason: 'noFee' };
 
-  return { ok: true, amount: activity.monthlyFee };
+  const rate = resolveDuesRate(activity.duesRates, { month, year });
+  if (rate === null || rate < MIN_DUES_RATE) return { ok: false, reason: 'noFee' };
+
+  return { ok: true, amount: rate };
 }
 
 /** The fields a monthly proof-upload writes. `amount` snapshots the fee. */
