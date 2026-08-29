@@ -9,6 +9,7 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import { parseIntInput } from '@/lib/form-utils';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { UpdateSessionFormData } from '@/lib/validations/session';
@@ -19,18 +20,14 @@ import type { UpdateSessionFormData } from '@/lib/validations/session';
  * A locked field is **read-only**, never disabled: its value still posts, it is
  * still focusable and copyable, and a screen reader announces it as read-only
  * rather than skipping it. It takes the design system's read-only treatment —
- * Enamel Ground fill, `bg-board`, so it visibly is not the Admin's to edit
- * (DESIGN.md, Inputs / Fields) — applied here rather than to the shared input,
- * which is not this ticket's to restyle.
+ * Enamel Ground fill (DESIGN.md, Inputs / Fields) — from the shared `Input`
+ * itself, which carries `read-only:bg-board`, so no caller class is needed.
  *
  * Every lock carries a sentence at **Body** size tied to the control with
  * `aria-describedby`. A condition disclosed in the fine print is not disclosed,
  * and the courtesy is only ever a courtesy: `PATCH /api/sessions/[id]` refuses
  * the write whatever this form offered.
  */
-
-/** Enamel Ground fill: the read-only treatment, on the field itself. */
-const READ_ONLY_CLASS = 'bg-board';
 
 /** Zod's own floors: a Session seats at least two, and a free one costs zero. */
 export const MIN_CAPACITY = 2;
@@ -39,9 +36,6 @@ export const MIN_FEE = 0;
 export const CLOSED_NOTE_ID = 'session-closed-note';
 export const FEE_NOTE_ID = 'session-fee-note';
 export const CAPACITY_NOTE_ID = 'session-capacity-note';
-
-const SELECT_CLASS =
-    'w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring';
 
 export type SessionEditForm = UseFormReturn<UpdateSessionFormData>;
 
@@ -122,9 +116,6 @@ export function TextField({
                             value={field.value ?? ''}
                             readOnly={lock.isLocked}
                             aria-describedby={lock.describedBy}
-                            className={
-                                lock.isLocked ? READ_ONLY_CLASS : undefined
-                            }
                         />
                     </FormControl>
                     <FormMessage />
@@ -158,18 +149,17 @@ function StatusControl({ field, t, lock }: StatusControlProps) {
                 readOnly
                 value={field.value ? t.sessionStatus[field.value] : ''}
                 aria-describedby={lock.describedBy}
-                className={READ_ONLY_CLASS}
             />
         );
     }
     return (
-        <select {...field} className={SELECT_CLASS}>
+        <NativeSelect {...field}>
             {Object.entries(t.sessionStatus).map(([value, label]) => (
                 <option key={value} value={value}>
                     {label}
                 </option>
             ))}
-        </select>
+        </NativeSelect>
     );
 }
 
@@ -225,9 +215,6 @@ export function NumberField({
                             onChange={(e) => field.onChange(parseIntInput(e))}
                             readOnly={lock.isLocked}
                             aria-describedby={lock.describedBy}
-                            className={
-                                lock.isLocked ? READ_ONLY_CLASS : undefined
-                            }
                         />
                     </FormControl>
                     <FormMessage />

@@ -277,7 +277,7 @@ The system's most important component family. Each mark is distinguished by **fo
 |---|---|---|---|
 | **Ink** | Filled rectangle, full-weight label | Court Green wash + ink | Settled and true — a Confirmed Payment, a Present Participant |
 | **Tape** | Filled rectangle with a visible torn edge | Tape Ochre wash + ink | Provisional and held — a Pending Payment, a Seat on unverified money |
-| **Strike** | Rectangle **plus a real line-through** on the value it marks | Struck Red wash + ink | Void — a Rejected Payment, a cancelled Session |
+| **Strike** | Rectangle whose **own label carries a real line-through**; the value beside it recedes to Secondary Ink and is **not** struck | Struck Red wash + ink | Void — a Rejected Payment, a cancelled Session |
 | **Erased** | Flat, no wash, ground-coloured, label in Secondary Ink | Neutral only | Withdrawn by the member — **Opted Out**. Deliberately colourless: it is a choice, not a failure |
 | **Blank** | Dashed outline, no fill | Rule colour only | Expected but not yet placed — an unposted Session, an empty day |
 | **Hollow** | Dashed outline in Struck Red, no fill | Struck Red edge only | Expected and failed to happen — a **No-Show**. The shape of a tile that should have been filled |

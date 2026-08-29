@@ -18,9 +18,13 @@ member can see and do on the board, the dashboard, a Session, the dues surfaces
 and the mobile rail.
 
 **Admin-register verification (§18, `TC-AR-*`)** is the third, written to the same
-conventions and inheriting §16.0 by reference. It covers the ruled registers the
-admin surfaces are built on and the rules they reflect — starting with the
-Sessions register and the locks a Session takes on once money is behind it.
+conventions and inheriting §16.0 by reference. It covers every admin surface —
+the Payments queue, the Sessions register and its locks, the attendance register
+and the fourth attendance value, Members and the Owner rules, Activities,
+Applicants and Settings — together with the exports, both locales, the keyboard
+and both widths. **§7–§11 below are retired into it**: their steps are the raw
+material `TC-AR-*` was folded out of, and each section now points at the cases
+that replaced it rather than restating them.
 
 > The full test-case report (with screenshots) is generated as a DOCX under
 > `docs/` — that folder is **git-ignored**, so it is a local artifact only.
@@ -125,66 +129,72 @@ Each maps to one or more test cases. Find them in the sessions list or by title.
    numerator is **≤** its member count (e.g. Badminton `14/21`, never `22/21`);
    only MONTHLY confirmed payments count.
 
-## 7. Session management (admin)
+## 7. Session management (admin) — retired into §18
 
-1. **List** — `/admin/sessions` → table with pagination, sortable columns.
-2. **Search / filter** — search "Rally" → 1 result; filter activity = Tennis.
-3. **Edge — filtered empty state (OBS-02)** — search `zzzznonexistent` → **"No
-   sessions match your search."** (not "No sessions yet.").
-4. **Create — empty form** → inline required-field errors, nothing created.
-5. **Edge — end before start (BUG-01)** — `/admin/sessions/new`, valid fields but
-   Start `20:00` / End `18:00` → inline **"End time must be after start time"**;
-   equal times are rejected too; nothing created.
-6. **Create — valid** → appears as Scheduled, 0/max.
-7. **Edge — locked fields on edit** — open a session's edit page → Activity is
-   read-only; **Fee** is read-only once the session has a payment or a held seat.
-   The rules themselves, and the refusals behind them, are §18's `TC-AR-003`
-   through `TC-AR-005`.
-8. **Update** — change title/times → persists in the list.
-9. **Manual attendance** — mark a player Present → persists (verify via CSV).
-10. **Edge — CSV headers localized (OBS-03)** — `GET /api/sessions/{id}/export`
-    → EN headers (`No,Name,Email,…`); switch language to Indonesian (profile) then
-    re-export → `No,Nama,Email,…`.
-11. **Delete** — confirm dialog warns attendance is deleted; row disappears.
+**Retired.** These were plain numbered steps without case ids, written before
+spec #30 rebuilt the admin side. Every one of them that still applies was folded
+into a `TC-AR-*` case, which states its preconditions, its steps and its expected
+result with an HTTP status where a route is involved. The section numbers stay so
+that references from elsewhere in this file keep resolving; the steps themselves
+are not re-run here.
 
-## 8. Payment review (admin — Manage Dues)
+| Was | Now |
+|---|---|
+| 1–2 list, search and filter | `TC-AR-001`, `TC-AR-036` |
+| 3 filtered empty state (OBS-02) | `TC-AR-031` |
+| 4–6 create: empty form, end before start (BUG-01), valid | `TC-AR-030` |
+| 7 locked fields on edit | `TC-AR-003`, `TC-AR-004`, `TC-AR-005` |
+| 8 update | `TC-AR-005` step 4, `TC-AR-003` step 4 |
+| 9 manual attendance | `TC-AR-017`, `TC-AR-019` — attendance moved to its own register (`/admin/sessions/{id}/attendance`) and out of the edit form |
+| 10 CSV headers localized (OBS-03) | `TC-AR-033` |
+| 11 delete | `TC-AR-008` |
 
-1. `/admin/payments` → list, filters, Export CSV.
-2. Filter Status = Pending → count matches the sidebar badge.
-3. **Confirm** a pending payment (dialog) → leaves the queue as Confirmed.
-4. **Edge — reject requires a reason** — Reject button disabled until a reason is
-   typed.
-5. **Reject** with a reason → status REJECTED; appears under the Rejected filter.
-6. CSV export → `GET /api/payments/export?month=7&year=2026` (headers localized,
-   OBS-03).
+## 8. Payment review (admin — Manage Dues) — retired into §18
 
-## 9. Activity management (admin)
+**Retired**, on the same terms as §7. The surface is a queue now, not a list, and
+its ordering is the feature the cases test.
 
-1. `/admin/activities` → list with member counts / fees / status.
-2. Create — empty form → validation errors.
-3. Create — valid (e.g. `Yoga QA`, slug `yoga-qa`) → appears Active, 0 members.
-4. **Edge — duplicate slug** — `POST /api/activities` with an existing slug →
-   `409 "That slug is already in use"`.
-5. **Edge — missing fields** — `POST /api/activities` without `minMembers` /
-   `maxPlayers` → `400` with field-level details.
-6. Deactivate (confirm) → status Inactive; button flips to Activate.
+| Was | Now |
+|---|---|
+| 1–2 list, filters, awaiting count | `TC-AR-020`, `TC-AR-021` |
+| 3 confirm a pending payment | `TC-AR-024` |
+| 4 reject requires a reason | `TC-AR-025` — the reason is refused **in the dialog with a message**, not by a disabled button, and by the route |
+| 5 reject with a reason | `TC-AR-025`, `TC-AR-026` |
+| 6 CSV export (OBS-03) | `TC-AR-033` |
 
-## 10. Member management (admin)
+## 9. Activity management (admin) — retired into §18
 
-1. `/admin/members` → directory with search + activity filter + pagination.
-2. Promote a member to ADMIN (confirm) → role badge Admin.
-3. Demote back to Member (confirm) → role Member.
-4. **Edge — incomplete profile badge** — `newbie@xclub.local` shows the "Profile
-   Incomplete" badge.
-5. Member detail `/admin/members/{id}` → memberships, attendance & dues history.
+**Retired**, on the same terms as §7.
 
-## 11. Community settings (admin)
+| Was | Now |
+|---|---|
+| 1 list with counts, fees, status | `TC-AR-029`, `TC-AR-036` |
+| 2–3 create: empty form, valid | `TC-AR-029` |
+| 4 duplicate slug → `409` | `TC-AR-029` step 3 |
+| 5 missing fields → `400` | `TC-AR-029` step 4 |
+| 6 deactivate / activate | `TC-AR-029` step 5 |
 
-1. `/admin/settings` → current values.
-2. Save a new Community Name → app rebrands (title + sidebar).
-3. **Edge — empty name (BUG-02)** — clear Community Name → **Save** is blocked
-   with "Community name is required"; the stored value is unchanged. Server also
-   rejects: `PATCH /api/settings {"communityName":"   "}` → `400`.
+## 10. Member management (admin) — retired into §18
+
+**Retired**, on the same terms as §7.
+
+| Was | Now |
+|---|---|
+| 1 directory, search, filter, pagination | `TC-AR-028`, `TC-AR-031` |
+| 2–3 promote and demote | `TC-AR-028` step 3 |
+| 4 incomplete profile badge | `TC-AR-028` |
+| 5 member detail | `TC-AR-028` steps 4–5 |
+| (new) Owner immutability and contact privacy | `TC-AR-007`, `TC-AR-027` |
+
+## 11. Community settings (admin) — retired into §18
+
+**Retired**, on the same terms as §7.
+
+| Was | Now |
+|---|---|
+| 1 current values | `TC-AR-032` |
+| 2 save a new Community Name | `TC-AR-032` step 4 |
+| 3 empty name (BUG-02), and `PATCH /api/settings` → `400` | `TC-AR-032` steps 2–3 |
 
 ## 12. Member — dashboard & sessions
 
@@ -1621,9 +1631,11 @@ Payment. Sign in as `owner@xclub.local` for steps 1–2, then back as Adi.
 
 Adi also holds three *historical* Attendance rows on Badminton Sessions dated
 inside that same calendar month — one `PRESENT`, one `ABSENT` (Opted Out) and
-one `NO_SHOW`, the last recorded by an Admin from the Session edit form's
-attendance control. Record their `Attendance.id` values before step 2; the case
-asserts on them in step 7.
+one `NO_SHOW`, the last recorded by an Admin from that Session's own attendance
+register (`/admin/sessions/{id}/attendance`, saved through
+`POST /api/sessions/{id}/attendance/bulk`) — the Session edit form has carried no
+attendance control since #67. Record their `Attendance.id` values before step 2;
+the case asserts on them in step 7.
 
 **Steps:**
 1. As owner, open `/admin/payments`, filter Status = Pending, find Adi's
@@ -1641,8 +1653,8 @@ asserts on them in step 7.
 **Expected result:**
 
 - `PATCH /api/payments/{id}` returns **200**. Rejecting an already-reviewed
-  Payment would return **409**; rejecting with an empty reason is blocked
-  client-side before it is sent (§8.4).
+  Payment would return **409**; rejecting with an empty reason is refused in the
+  dialog with a message, and by the route with a **400** (`TC-AR-025`).
 - The member's history row carries a **Strike** mark reading `Rejected` /
   `Ditolak` — a bordered rectangle with a real line through the label — and the
   **amount beside it is dimmed to Secondary Ink, not struck**: the mark carries
@@ -1658,8 +1670,11 @@ asserts on them in step 7.
 - **Capacity, from the database.** Rejecting the Dues releases every Seat that
   Payment was holding this period: every `REGISTERED` row of Adi's across
   Badminton's Sessions in that calendar month is deleted, so each of those
-  Sessions' `seatsHeld` falls by exactly one and returns to its TC-MS-016
-  "before" figure. `PRESENT`, `ABSENT` and `NO_SHOW` rows are untouched — a
+  Sessions' `seatsHeld` **falls by exactly one**. It does not necessarily return
+  to its TC-MS-016 "before" figure: where Adi already held an unfunded row on a
+  Session before the upload, the upload added nothing there and the Reject still
+  takes one away. *Falls by exactly one* is the rule that holds everywhere.
+  `PRESENT`, `ABSENT` and `NO_SHOW` rows are untouched — a
   completed Session's history is never rewritten, and a No-Show is history in
   exactly the way the other two are. Assert this on **Hold Lab** and on
   **Weekly Rally Night**: `mySeat` is `null` on both afterwards.
@@ -1798,372 +1813,6 @@ short one.
   `padding-bottom` of **96px** (`pb-24`) below 768px and **24px** (`md:pb-6`)
   above it, so no surface has to remember. A page that reserves its own
   clearance instead is a second answer to one question and should be reported.
-
----
-
-## 18. Admin registers (`TC-AR-*`)
-
-The admin surfaces are ruled registers: one row per thing, shared rules, tabular
-figures, a mark in its own standing column, no cards. This section verifies the
-Sessions register (`/admin/sessions`) and the two locking rules a Session takes
-on once money is behind it — the rules are enforced on `PATCH
-/api/sessions/[id]` and only *reflected* in the form, so every refusal case here
-is run against the route, not against whichever control the form happened to
-draw.
-
-### 18.0 Conventions and shared preconditions
-
-§16.0's conventions apply unchanged: an owner or admin account from §3, the §2
-seed, both locales, and the two board materials. Two additions:
-
-- **Fixtures.** The §4 seeded sessions are the fixtures. Three states are needed
-  and can be reached from the seed: a Session **nobody has claimed a Seat on and
-  no Payment names**, a Session with **at least one seat-holding Attendance**
-  (`REGISTERED` or `PRESENT`), and a Session whose status is **`COMPLETED`**.
-- **The route is exercised directly.** `PATCH /api/sessions/{id}` with a signed-in
-  admin cookie, `Content-Type: application/json`. Every refusal is a **409** whose
-  body carries both a translated `error` sentence and a stable `reason` code; the
-  case fails on a 200, on a different status, or on a body missing either field.
-
-### TC-AR-001 · P0 · Positive — Every Session row carries its eight facts, ruled, at both widths
-
-**Preconditions:** admin on `/admin/sessions`, at least three Sessions listed.
-
-**Steps:**
-1. At 1440 × 900, read the `<thead>` and one row.
-2. Read the computed `border` between two neighbouring rows and two neighbouring
-   cells.
-3. Resize to 390 × 844 and read the same row.
-4. Read the capacity and floor cells with a screen reader.
-
-**Expected result:**
-
-- Eight columns, in this order: **Date** (date over the time range, tabular),
-  **Session** (the title), **Activity** (initial tile plus name), **Location**,
-  **Capacity** (`held/max`), **Floor** (`committed/needed`), **Status** (one mark),
-  **Actions**.
-- Rows are separated by a shared **1px** rule and the register is bounded by one
-  frame. There are no cards and no coloured accent line at any width.
-- At 390px the register **collapses by axis**: each row is still a ruled row, and
-  each cell carries its column's own label above its value. The `<thead>` is
-  hidden there and the inline labels are hidden at full width — nothing is
-  announced twice.
-- The capacity cell announces "*n* of *max* seats held" and the floor cell
-  "*n* of *needed* members committed"; neither leaves a bare `6/16` to be
-  interpreted.
-- A Session whose Activity sets `minMembers = 0` draws **"No floor"**, never
-  `0/0`. A Session below its floor carries the words **"Below floor"** beside the
-  figure — the fact is never carried by colour alone.
-
-### TC-AR-002 · P0 · Positive — A cancelled Session reads as struck, and its figures still hold
-
-**Preconditions:** one Session cancelled from its row (see `TC-AR-006`).
-
-**Steps:**
-1. Find the cancelled Session's row and read the standing column.
-2. Read the title cell's colour and text decoration.
-3. Repeat with colour removed (grayscale), per §16.0.
-
-**Expected result:**
-
-- The standing column carries the **Strike** mark, whose own label is struck
-  through, and the title recedes to Quiet Ink beside it. The strike is on the
-  mark, not on the title: one line through two words reads as a stamp, a second
-  through the value reads as damage to the row.
-- With all colour removed the row is still identifiable as cancelled, by the
-  struck label alone.
-- The row offers no **Cancel session** control — the Session is already closed —
-  while its attendance, edit, detail and CSV controls remain.
-
-### TC-AR-003 · P0 · Negative — The fee of a Session with money behind it is refused
-
-**Preconditions:** a **Scheduled** Session with at least one seat-holding
-Attendance, or one live (`PENDING`/`CONFIRMED`) Payment naming it. Note its
-stored `fee`.
-
-**Steps:**
-1. `PATCH /api/sessions/{id}` with `{ "fee": <stored fee + 1000> }`.
-2. Re-read the Session and compare its `fee`.
-3. Open `/admin/sessions/{id}/edit` and read the Fee field.
-4. Repeat step 1 on a Session with **no** held Seat and **no** live Payment.
-
-**Expected result:**
-
-- **409**, with `reason: "FEE_LOCKED"` and a sentence naming both the reason and
-  the fix ("…already has a payment or a held seat, so its fee cannot be changed.
-  Post a new session at the new fee instead."), in the caller's own locale.
-- The stored `fee` is **unchanged**. The old behaviour — the field silently
-  dropped and a 200 returned — is a failure of this case.
-- In the form the Fee input is **`readonly`**, not `disabled`: it is focusable,
-  its value posts, it carries the Enamel Ground fill (`bg-board`), and a Body-size
-  sentence beneath it is tied to it with `aria-describedby`.
-- Step 4 returns **200** and the fee changes: a Session with no money behind it
-  stays fully editable.
-
-### TC-AR-004 · P0 · Negative — Capacity cannot go below the Seats already held
-
-**Preconditions:** a Scheduled Session with **n ≥ 2** seat-holding Attendances.
-
-**Steps:**
-1. `PATCH` with `{ "maxPlayers": n - 1 }`.
-2. `PATCH` with `{ "maxPlayers": n }`.
-3. Let a reservation hold lapse (§14.3's hold, or set `holdExpiresAt` into the
-   past) and repeat step 1 counting only the Seats that survive the sweep.
-
-**Expected result:**
-
-- Step 1 is **409** with `reason: "CAPACITY_BELOW_HELD"`, and the sentence names
-  the figure: "Capacity cannot go below the *n* seats already held. Set it to *n*
-  or higher, or release a seat first."
-- Step 2 is **200**: capacity *equal* to the held Seats fits everyone who holds
-  one and only refuses new claims.
-- Step 3 succeeds against the lower count — the lazy hold sweep runs at the top
-  of the write, so an expired hold neither floors capacity nor locks a fee.
-- In the form the capacity input carries `min` equal to the held Seats and the
-  same Body-size sentence, tied to it with `aria-describedby`. It is **not**
-  read-only: raising capacity is still the Admin's to do.
-
-### TC-AR-005 · P0 · Negative — A Completed or Cancelled Session accepts notes and nothing else
-
-**Preconditions:** one Session stored as `COMPLETED` and one as `CANCELLED`.
-
-**Steps:**
-1. `PATCH` the Completed Session with `{ "title": "<a different title>" }`.
-2. `PATCH` it with `{ "status": "SCHEDULED" }`.
-3. `PATCH` it with `{ "notes": "Rain stopped play." }`.
-4. Open its edit form, change **only** the notes, and Save — the form posts every
-   field, each at its stored value.
-5. Repeat steps 1 and 3 against the Cancelled Session.
-
-**Expected result:**
-
-- Steps 1 and 2 are **409** with `reason: "SESSION_CLOSED"`. `status` is locked
-  like every other field: a closed Session is not reopened from here.
-- Step 3 is **200** and the notes are stored. What happened is exactly what an
-  Admin writes down afterwards.
-- Step 4 **succeeds**: an unchanged field is not an edit, so a whole-payload save
-  that changes only the notes is not refused.
-- The form shows every field but the notes in the read-only treatment, with one
-  Body-size sentence — "This session is completed or cancelled, so only its notes
-  can be changed here." — that each of them points at with `aria-describedby`.
-  The status control is drawn as its own label in that treatment rather than as a
-  disabled `<select>`.
-
-### TC-AR-006 · P1 · Positive — The register's jobs act from the row, and it is traversable by keyboard
-
-**Preconditions:** admin on `/admin/sessions`, at least one Scheduled Session.
-
-**Steps:**
-1. Tab from the page heading through one row's controls and read the focus
-   indicator on each.
-2. Press Enter on **Take attendance**, then go back.
-3. Press Enter on **Cancel session** and read the dialog, then confirm.
-4. Read the register's head for the way to post a new Session.
-5. Read `<tr>` for a `tabindex` attribute.
-
-**Expected result:**
-
-- Tab reaches each row's controls in DOM order — attendance, edit, detail, CSV,
-  cancel — each with a visible focus ring, and Enter presses them.
-- **Take attendance** lands on `/admin/sessions/{id}/attendance`; **Edit** on
-  `/admin/sessions/{id}/edit`; **Detail** on `/sessions/{id}`; **CSV** downloads
-  the export.
-- Cancel asks first, names the Session in its title, and states what cancelling
-  does before it is confirmed. Confirmed, the row's standing column becomes
-  Strike without leaving the page.
-- **New Session** sits in the register's head and lands on
-  `/admin/sessions/new`.
-- No `<tr>` carries a `tabindex`: the row's own controls are what focus travels
-  through.
-- Scrolled fully to the bottom, the last element of the page is still fully
-  visible above the rail, and a tap on it activates it rather than a rail cell.
-- The rail carries `pb-[max(env(safe-area-inset-bottom),0.375rem)]`, so on a
-  device with a home indicator the labels are not under it. **(measure)** on a
-  device or emulator that reports a non-zero inset, if one is available;
-  otherwise record that the inset resolved to the 0.375rem floor.
-
-### TC-AR-007 · P0 · Negative — An Owner's email stays withheld on the Payments queue, the attendance register and both payments routes
-
-**Preconditions:** the Owner (`owner@xclub.local`) enrolled as a Participant on
-one Session, with a seat-holding Attendance on it, and holding one Payment. An
-admin account from §3.
-
-**Steps:**
-1. As the admin, open `/admin/payments` and find the Owner's row; open the
-   Owner's Session's attendance register.
-2. As the admin, `GET /api/payments?userId=<the Owner's id>` and
-   `GET /api/payments/{the Owner's payment id}`.
-3. As the admin, search the Payments queue by the Owner's email address.
-4. Repeat steps 1 and 2 signed in as the Owner.
-
-**Expected result:**
-
-- The Payments queue's Member cell and the attendance register's Participant
-  cell both draw **Withheld** where the Owner's email would sit, for the admin;
-  neither cell's markup carries the address.
-- Both routes in step 2 return **200** with `email: null` on the Owner's row;
-  every other field on it, and its key set, is unchanged.
-- Step 3 returns no rows: the Owner is not found by an email an Admin cannot
-  see.
-- Signed in as the Owner (step 4), all four surfaces show the Owner's own
-  email intact: the queue, the attendance register, and both routes.
-
-### TC-AR-008 · P0 · Negative — A Session with money behind it, or a Completed one, refuses deletion
-
-**Preconditions:** four Sessions — one **Scheduled** with at least one
-seat-holding Attendance, one **Scheduled** with no held Seat but one live
-(`PENDING`/`CONFIRMED`) Payment naming it, one **`COMPLETED`** with neither, and
-one **`CANCELLED`** with neither.
-
-**Steps:**
-1. `DELETE /api/sessions/{id}` on the Session with the held Seat.
-2. `DELETE` on the Session the live Payment names.
-3. `DELETE` on the Completed Session.
-4. `DELETE` on the Cancelled Session, then re-read it.
-5. Open `/admin/sessions/{id}/edit` for each of the four and read the buttons
-   beneath the form.
-6. In the form for the Session with the held Seat, if a Delete button is drawn at
-   all, press it and read the toast.
-
-**Expected result:**
-
-- Steps 1 and 2 are **409** with `reason: "SESSION_HAS_MONEY"` and a sentence
-  naming both the reason and the fix ("…has a payment or a held seat behind it,
-  so it cannot be deleted. Cancel the session instead…"), in the caller's own
-  locale. A **500** is the failure this case exists to catch: `Payment.session`
-  is `onDelete: Restrict`, so the old route let Prisma throw where it should have
-  been answering.
-- Step 3 is **409** with `reason: "SESSION_CLOSED"` and its own sentence — the
-  Session is part of the record, not "only its notes can be changed", which is
-  the PATCH sentence and answers a question nobody asked here.
-- Step 4 is **200** and the Session is gone. A cancelled Session with nothing
-  behind it is a plan that was called off, not history; where cancelling was what
-  was meant, `TC-AR-009` is the way back rather than this.
-- Step 5: the **Delete session** button is absent on the first three forms and
-  present only on the Cancelled one. Absent, not disabled — the same way the
-  register draws no Cancel control on a Closed Session.
-- Step 6 does not arise where step 5 passed; if it does, the toast carries the
-  route's own sentence, not the generic "Failed to delete session".
-
-### TC-AR-009 · P0 · Positive — A Cancelled Session is reopened while its day has not passed
-
-**Preconditions:** three Sessions — one **`CANCELLED`** dated **today or later**
-in WIB, one **`CANCELLED`** dated **before today** in WIB, and one
-**`COMPLETED`**. Note that "today" is the **WIB** day: between 00:00 and 07:00
-WIB the UTC date is still yesterday's, and a Session dated for the WIB today is
-not past.
-
-**Steps:**
-1. On `/admin/sessions`, read the controls on each of the three rows.
-2. Press **Reopen session** on the not-yet-past Cancelled Session, read the
-   dialog, and confirm. Read the row's standing column afterwards.
-3. `PATCH /api/sessions/{id}` with `{ "status": "SCHEDULED" }` on the past
-   Cancelled Session.
-4. The same `PATCH` on the Completed Session.
-5. `PATCH` the reopened Session's twin — a Cancelled, not-yet-past Session — with
-   `{ "status": "SCHEDULED", "title": "<a different title>" }`.
-6. Open `/admin/sessions/{id}/edit` for a Cancelled Session and read the Status
-   control.
-
-**Expected result:**
-
-- Step 1: only the not-yet-past Cancelled row offers **Reopen session**. The past
-  Cancelled row and the Completed row offer neither Reopen nor Cancel — a Session
-  the server will refuse gets no control rather than a disabled one.
-- Step 2: the dialog names the Session, says the Session goes back to Scheduled
-  and that Seats held when it was cancelled are still held, and confirming turns
-  the standing column from **Strike** to Scheduled without leaving the page.
-- Step 3 is **409** with `reason: "SESSION_PAST"` and a sentence saying the day
-  has passed and to post a new session for the next date.
-- Step 4 is **409** with `reason: "SESSION_CLOSED"`: a completed Session is never
-  reopened.
-- Step 5 is **409** with `reason: "SESSION_CLOSED"`. Reopening is a status-only
-  write: a body that renames the Session in the same request is the edit the
-  Closed rule refuses, not a reopening. The stored `title` and `status` are both
-  **unchanged**.
-- Step 6: the Status control is still drawn read-only, as its own label. The
-  reopening lives on the register only — the form's job is the Session's facts,
-  and one way to do a thing is what keeps two surfaces agreeing.
-
-### TC-AR-010 · P0 · Negative — A capacity edit and a reservation cannot cross
-
-**Preconditions:** a **Scheduled** Session with a fee, capacity `max`, and
-**n = max − 1** seat-holding Attendances — exactly one free Seat. Two browsers:
-an admin in one, and in the other a member who holds no Seat on this Session and
-whose Membership on that Activity is billed **Per-Session**, so claiming a Seat
-takes the hold path. The two presses have to overlap; where they cannot be made
-to by hand, issue them as two `fetch` calls without awaiting the first —
-`PATCH /api/sessions/{id}` with `{ "maxPlayers": n }` and
-`POST /api/sessions/{id}/reserve`.
-
-**Steps:**
-1. Admin tab: open `/admin/sessions/{id}/edit` and set Max Participants to **n**,
-   without saving yet.
-2. Member tab: press the control that claims the last Seat, and press Save in the
-   admin tab in the same moment.
-3. Re-read the Session: its stored `maxPlayers`, and its count of seat-holding
-   (`REGISTERED`/`PRESENT`) Attendances.
-4. Repeat the whole case with the two presses in the other order, several times.
-
-**Expected result:**
-
-- **Every run ends with `held ≤ maxPlayers`.** `maxPlayers = n` stored beside
-  `n + 1` held Seats is the failure this case exists to catch — it is the state
-  the old two-statement PATCH could reach, and one this one cannot.
-- **Exactly one of the two writes is refused**, and which one depends only on
-  which committed first; both succeeding is a failure of this case.
-  - Reservation first: capacity ends **unchanged** at `max`, the Seat is held,
-    and the edit is **409** with `reason: "CAPACITY_BELOW_HELD"` naming `n + 1`
-    seats — the figure the Admin has to be told, since it is one higher than the
-    page they were reading said.
-  - Edit first: capacity ends at **n**, held stays at **n**, and the member's
-    claim is refused as full rather than seated over the new capacity.
-- Neither write leaves a half-write behind: no Payment row without its
-  Attendance, and no capacity written without the count it was decided against.
-
-### TC-AR-011 · P2 · Edge — A Confirm by one Admin cannot duplicate or drop a row on another Admin's page
-
-**Preconditions:** two Admin accounts signed in in two separate browsers, A and
-B. At least 14 Payments match no filter, of which exactly **4** are awaiting a
-decision — so page 1 holds all four awaiting rows followed by six decided ones
-and the boundary between the two groups falls inside the page. A reads
-`/admin/payments` with no filter and no sort applied: the queue's own order is
-what this case is about, and an explicit column sort is a different read.
-
-**Steps:**
-1. On A, load page 1 and record the ten rows in order, by Payment id.
-2. On B, Confirm the Payment sitting **fourth** on that page — the last of the
-   awaiting rows, and so the one on the boundary.
-3. On A, reload page 1 and record the ten ids again.
-4. Repeat steps 2 and 3 with the next awaiting Payment each time, reloading on A
-   **twenty** times across the run, recording the ids of every load, and pressing
-   Confirm on B while A's reload is in flight rather than between reloads.
-5. Compare the recorded lists, and read page 2 once at the end.
-
-**Expected result:**
-
-- Every load returns **exactly ten** rows while at least ten Payments match, and
-  **no id appears twice within one load**.
-- No Payment that matched the filter for the whole run is absent from every
-  load: a row that moves does so by moving *down*, never by vanishing.
-- On every load, awaiting rows are above decided rows and each group reads
-  newest first.
-- A Payment Confirmed mid-run appears on the next load in the decided group, and
-  on exactly one page — never on page 1 and page 2 at once, never on neither.
-- The heading's awaiting count and the pagination total are read by two counts
-  taken beside the page rather than as part of it, so either may be one decision
-  behind for a single load. That is **not** a failure of this case; the row set
-  is what this case tests.
-- **The old boundary is closed.** The page used to be two reads over two bands
-  (`status = PENDING`, then `status <> PENDING`) whose slices were worked out
-  from a count taken before them, so a Confirm arriving between the count and a
-  band read moved a row across the boundary and the page dropped it or drew it
-  twice. It is now one ordered statement returning the page's ids, and a fetch
-  of those ids — which can return fewer rows only if a Payment was deleted
-  outright, and cannot reorder them at all.
-- The Owner's email is still withheld from the Admin throughout, and still not
-  searchable by them: `TC-AR-007` holds unchanged against this read, which now
-  reaches the member through raw SQL rather than through Prisma.
 
 ---
 
@@ -2497,3 +2146,1262 @@ proved out is worth more on the record than one quietly deleted. The rest stand.
     through tool search — so the gate's editor-diagnostics clause remains
     unverified for the whole spec. One pass with the extension live is worth
     doing before #29 is called done. No case here can substitute for it.
+
+---
+
+## 18. Admin registers (`TC-AR-*`)
+
+Spec #30 rebuilt the admin side: the Payments queue became a queue, No-Show
+became a value an Admin can record, attendance got a register of its own, and
+every admin surface became a ruled register composed from one shared component.
+This area tests **what the Admin can see and decide** on those surfaces, and the
+rules the surfaces only reflect.
+
+That is the line every case here is written to. "Payments awaiting a decision
+appear above decided ones" is a test. "The query orders by status" is an
+implementation detail that passes while the queue is still unusable.
+
+Two kinds of claim in this area are asserted **from the database**, never from
+the screen, because they are the two the redesign could break silently: money,
+and the fourth attendance value. Every case that records a No-Show, saves an
+attendance list, or decides a Payment reads the affected rows before and after
+and quotes the figures.
+
+### 18.0 Conventions and shared preconditions
+
+This area inherits **§16.0 in full** and restates none of it: the same id /
+priority / type / preconditions / numbered steps / expected-result shape, the
+same P0-P1-P2 meanings, the same two board materials (enamel = `:root`, painted
+board = `.dark`), the same theme toggle and `NEXT_LOCALE` switches, and the same
+two viewports (**390 × 844** and **1440 × 900**).
+
+**Surfaces in scope.** `/admin`, `/admin/sessions`, `/admin/sessions/new`,
+`/admin/sessions/{id}/edit`, `/admin/sessions/{id}/attendance`,
+`/admin/payments`, `/admin/members`, `/admin/members/{id}`,
+`/admin/activities`, `/admin/applicants`, `/admin/settings`, and the routes
+those surfaces write through.
+
+**Out of scope**, deliberately: every member surface (§17 owns those, and this
+area reaches one only to check that a decision made here shows up there), the
+design system's own tokens and marks (§16), and the public route.
+
+**Shared preconditions for every case in this area**, on top of §16.0's:
+
+1. §1 prerequisites done, `npm run dev` running on `http://localhost:3000`, and
+   the §2 seed loaded.
+2. The accounts are §3's: `admin@xclub.local` (**Admin Satu**) unless a case says
+   otherwise, `owner@xclub.local` where the Owner's own view is what is being
+   read, and `member@xclub.local` (**Adi Pratama**) where a member has to see the
+   consequence of a decision.
+3. The Sessions and Payments are §4's and §2's. **No case invents a fixture it
+   does not also remove.** Where a case needs a state the seed has not got — a
+   `NO_SHOW` row, a fortieth Proof, an Owner with money behind them — it says so
+   in its preconditions, and the recorded run names the probe that added the
+   rows and the probe that took them away again.
+4. **The route is exercised directly** wherever a rule lives on the server:
+   `PATCH`/`DELETE /api/sessions/{id}`, `POST /api/sessions/{id}/attendance/bulk`
+   and `PATCH /api/payments/{id}`, each with a signed-in cookie and
+   `Content-Type: application/json`. A control the form did or did not draw is a
+   courtesy; the refusal is the rule, and a case that only reads the form passes
+   while the server is wide open.
+5. **Vocabulary**, from `CONTEXT.md`. **Opted Out** is stored `ABSENT` and
+   renders **Erased**; **No-Show** is stored `NO_SHOW` and renders **Hollow**.
+   The stored name `ABSENT` never surfaces to a user as "Absent". Confirm /
+   Reject is what an Admin does to a Payment; Admit / Decline is what they do to
+   an Applicant; the two vocabularies never cross.
+6. **The refusal shape.** Every locking refusal on the Sessions routes is a
+   **409** whose body carries both a translated `error` sentence and a stable
+   `reason` code; the case fails on a 200, on a different status, or on a body
+   missing either field. Every bulk-attendance refusal is a **400** carrying
+   `error: "Invalid payload"` and a `reason` naming the fault.
+
+### TC-AR-001 · P0 · Positive — Every Session row carries its eight facts, ruled, at both widths
+
+**Preconditions:** admin on `/admin/sessions`, at least three Sessions listed.
+
+**Steps:**
+1. At 1440 × 900, read the `<thead>` and one row.
+2. Read the computed `border` between two neighbouring rows and two neighbouring
+   cells.
+3. Resize to 390 × 844 and read the same row.
+4. Read the capacity and floor cells with a screen reader.
+
+**Expected result:**
+
+- Eight columns, in this order: **Date** (date over the time range, tabular),
+  **Session** (the title), **Activity** (initial tile plus name), **Location**,
+  **Capacity** (`held/max`), **Floor** (`committed/needed`), **Status** (one mark),
+  **Actions**.
+- Rows are separated by a shared **1px** rule and the register is bounded by one
+  frame. There are no cards and no coloured accent line at any width.
+- At 390px the register **collapses by axis**: each row is still a ruled row, and
+  each cell carries its column's own label above its value. The `<thead>` is
+  hidden there and the inline labels are hidden at full width — nothing is
+  announced twice.
+- The capacity cell announces "*n* of *max* seats held" and the floor cell
+  "*n* of *needed* members committed"; neither leaves a bare `6/16` to be
+  interpreted.
+- A Session whose Activity sets `minMembers = 0` draws **"No floor"**, never
+  `0/0`. A Session below its floor carries the words **"Below floor"** beside the
+  figure — the fact is never carried by colour alone.
+
+### TC-AR-002 · P0 · Positive — A cancelled Session reads as struck, and its figures still hold
+
+**Preconditions:** one Session cancelled from its row (see `TC-AR-006`).
+
+**Steps:**
+1. Find the cancelled Session's row and read the standing column.
+2. Read the title cell's colour and text decoration.
+3. Repeat with colour removed (grayscale), per §16.0.
+
+**Expected result:**
+
+- The standing column carries the **Strike** mark, whose own label is struck
+  through, and the title recedes to Quiet Ink beside it. The strike is on the
+  mark, not on the title: one line through two words reads as a stamp, a second
+  through the value reads as damage to the row.
+- With all colour removed the row is still identifiable as cancelled, by the
+  struck label alone.
+- The row offers no **Cancel session** control — the Session is already closed —
+  while its attendance, edit, detail and CSV controls remain.
+
+### TC-AR-003 · P0 · Negative — The fee of a Session with money behind it is refused
+
+**Preconditions:** a **Scheduled** Session with at least one seat-holding
+Attendance, or one live (`PENDING`/`CONFIRMED`) Payment naming it. Note its
+stored `fee`.
+
+**Steps:**
+1. `PATCH /api/sessions/{id}` with `{ "fee": <stored fee + 1000> }`.
+2. Re-read the Session and compare its `fee`.
+3. Open `/admin/sessions/{id}/edit` and read the Fee field.
+4. Repeat step 1 on a Session with **no** held Seat and **no** live Payment.
+
+**Expected result:**
+
+- **409**, with `reason: "FEE_LOCKED"` and a sentence naming both the reason and
+  the fix ("…already has a payment or a held seat, so its fee cannot be changed.
+  Post a new session at the new fee instead."), in the caller's own locale.
+- The stored `fee` is **unchanged**. The old behaviour — the field silently
+  dropped and a 200 returned — is a failure of this case.
+- In the form the Fee input is **`readonly`**, not `disabled`: it is focusable,
+  its value posts, it carries the Enamel Ground fill (`bg-board`, from the shared
+  `Input`'s own `read-only:` variant), and a Body-size sentence beneath it is
+  tied to it with `aria-describedby`.
+- Step 4 returns **200** and the fee changes: a Session with no money behind it
+  stays fully editable.
+
+### TC-AR-004 · P0 · Negative — Capacity cannot go below the Seats already held
+
+**Preconditions:** a Scheduled Session with **n ≥ 2** seat-holding Attendances.
+
+**Steps:**
+1. `PATCH` with `{ "maxPlayers": n - 1 }`.
+2. `PATCH` with `{ "maxPlayers": n }`.
+3. Let a reservation hold lapse (§14.3's hold, or set `holdExpiresAt` into the
+   past) and repeat step 1 counting only the Seats that survive the sweep.
+
+**Expected result:**
+
+- Step 1 is **409** with `reason: "CAPACITY_BELOW_HELD"`, and the sentence names
+  the figure: "Capacity cannot go below the *n* seats already held. Set it to *n*
+  or higher, or release a seat first."
+- Step 2 is **200**: capacity *equal* to the held Seats fits everyone who holds
+  one and only refuses new claims.
+- Step 3 succeeds against the lower count — the lazy hold sweep runs at the top
+  of the write, so an expired hold neither floors capacity nor locks a fee.
+- In the form the capacity input carries `min` equal to the held Seats and the
+  same Body-size sentence, tied to it with `aria-describedby`. It is **not**
+  read-only: raising capacity is still the Admin's to do.
+
+### TC-AR-005 · P0 · Negative — A Completed or Cancelled Session accepts notes and nothing else
+
+**Preconditions:** one Session stored as `COMPLETED` and one as `CANCELLED`.
+
+**Steps:**
+1. `PATCH` the Completed Session with `{ "title": "<a different title>" }`.
+2. `PATCH` it with `{ "status": "SCHEDULED" }`.
+3. `PATCH` it with `{ "notes": "Rain stopped play." }`.
+4. Open its edit form, change **only** the notes, and Save — the form posts every
+   field, each at its stored value.
+5. Repeat steps 1 and 3 against the Cancelled Session.
+
+**Expected result:**
+
+- Steps 1 and 2 are **409** with `reason: "SESSION_CLOSED"`. `status` is locked
+  like every other field: a closed Session is not reopened from here.
+- Step 3 is **200** and the notes are stored. What happened is exactly what an
+  Admin writes down afterwards.
+- Step 4 **succeeds**: an unchanged field is not an edit, so a whole-payload save
+  that changes only the notes is not refused.
+- The form shows every field but the notes in the read-only treatment, with one
+  Body-size sentence — "This session is completed or cancelled, so only its notes
+  can be changed here." — that each of them points at with `aria-describedby`.
+  The status control is drawn as its own label in that treatment rather than as a
+  disabled `<select>`.
+
+### TC-AR-006 · P1 · Positive — The register's jobs act from the row, and it is traversable by keyboard
+
+**Preconditions:** admin on `/admin/sessions`, at least one Scheduled Session.
+
+**Steps:**
+1. Tab from the page heading through one row's controls and read the focus
+   indicator on each.
+2. Press Enter on **Take attendance**, then go back.
+3. Press Enter on **Cancel session** and read the dialog, then confirm.
+4. Read the register's head for the way to post a new Session.
+5. Read `<tr>` for a `tabindex` attribute.
+
+**Expected result:**
+
+- Tab reaches each row's controls in DOM order — attendance, edit, detail, CSV,
+  cancel — each with a visible focus ring, and Enter presses them.
+- **Take attendance** lands on `/admin/sessions/{id}/attendance`; **Edit** on
+  `/admin/sessions/{id}/edit`; **Detail** on `/sessions/{id}`; **CSV** downloads
+  the export.
+- Cancel asks first, names the Session in its title, and states what cancelling
+  does before it is confirmed. Confirmed, the row's standing column becomes
+  Strike without leaving the page.
+- **New Session** sits in the register's head and lands on
+  `/admin/sessions/new`.
+- No `<tr>` carries a `tabindex`: the row's own controls are what focus travels
+  through.
+- At 390 × 844 the last row's controls are still reachable and pressable, and
+  nothing overlays them. The admin shell carries **no fixed bottom rail** — that
+  is the member shell's, and `TC-MS-019`/`TC-MS-020` own it. Two bullets about
+  the rail's safe-area inset stood here until the run of 2026-08-29; they were
+  pasted from `TC-MS-020` and asserted about a component this surface does not
+  render.
+
+### TC-AR-007 · P0 · Negative — An Owner's email stays withheld on the Payments queue, the attendance register and both payments routes
+
+**Preconditions:** the Owner (`owner@xclub.local`) enrolled as a Participant on
+one Session, with a seat-holding Attendance on it, and holding one Payment. An
+admin account from §3.
+
+**Steps:**
+1. As the admin, open `/admin/payments` and find the Owner's row; open the
+   Owner's Session's attendance register.
+2. As the admin, `GET /api/payments?userId=<the Owner's id>` and
+   `GET /api/payments/{the Owner's payment id}`.
+3. As the admin, search the Payments queue by the Owner's email address.
+4. Repeat steps 1 and 2 signed in as the Owner.
+
+**Expected result:**
+
+- The Payments queue's Member cell and the attendance register's Participant
+  cell both draw **Withheld** where the Owner's email would sit, for the admin;
+  neither cell's markup carries the address.
+- Both routes in step 2 return **200** with `email: null` on the Owner's row;
+  every other field on it, and its key set, is unchanged.
+- Step 3 returns no rows: the Owner is not found by an email an Admin cannot
+  see.
+- Signed in as the Owner (step 4), all four surfaces show the Owner's own
+  email intact: the queue, the attendance register, and both routes.
+
+### TC-AR-008 · P0 · Negative — A Session with money behind it, or a Completed one, refuses deletion
+
+**Preconditions:** four Sessions — one **Scheduled** with at least one
+seat-holding Attendance, one **Scheduled** with no held Seat but one live
+(`PENDING`/`CONFIRMED`) Payment naming it, one **`COMPLETED`** with neither, and
+one **`CANCELLED`** with neither.
+
+**Steps:**
+1. `DELETE /api/sessions/{id}` on the Session with the held Seat.
+2. `DELETE` on the Session the live Payment names.
+3. `DELETE` on the Completed Session.
+4. `DELETE` on the Cancelled Session, then re-read it.
+5. Open `/admin/sessions/{id}/edit` for each of the four and read the buttons
+   beneath the form.
+6. In the form for the Session with the held Seat, if a Delete button is drawn at
+   all, press it and read the toast.
+
+**Expected result:**
+
+- Steps 1 and 2 are **409** with `reason: "SESSION_HAS_MONEY"` and a sentence
+  naming both the reason and the fix ("…has a payment or a held seat behind it,
+  so it cannot be deleted. Cancel the session instead…"), in the caller's own
+  locale. A **500** is the failure this case exists to catch: `Payment.session`
+  is `onDelete: Restrict`, so the old route let Prisma throw where it should have
+  been answering.
+- Step 3 is **409** with `reason: "SESSION_CLOSED"` and its own sentence — the
+  Session is part of the record, not "only its notes can be changed", which is
+  the PATCH sentence and answers a question nobody asked here.
+- Step 4 is **200** and the Session is gone. A cancelled Session with nothing
+  behind it is a plan that was called off, not history; where cancelling was what
+  was meant, `TC-AR-009` is the way back rather than this.
+- Step 5: the **Delete session** button is absent on the first three forms and
+  present only on the Cancelled one. Absent, not disabled — the same way the
+  register draws no Cancel control on a Closed Session.
+- Step 6 does not arise where step 5 passed; if it does, the toast carries the
+  route's own sentence, not the generic "Failed to delete session".
+
+### TC-AR-009 · P0 · Positive — A Cancelled Session is reopened while its day has not passed
+
+**Preconditions:** three Sessions — one **`CANCELLED`** dated **today or later**
+in WIB, one **`CANCELLED`** dated **before today** in WIB, and one
+**`COMPLETED`**. Note that "today" is the **WIB** day: between 00:00 and 07:00
+WIB the UTC date is still yesterday's, and a Session dated for the WIB today is
+not past.
+
+**Steps:**
+1. On `/admin/sessions`, read the controls on each of the three rows.
+2. Press **Reopen session** on the not-yet-past Cancelled Session, read the
+   dialog, and confirm. Read the row's standing column afterwards.
+3. `PATCH /api/sessions/{id}` with `{ "status": "SCHEDULED" }` on the past
+   Cancelled Session.
+4. The same `PATCH` on the Completed Session.
+5. `PATCH` the reopened Session's twin — a Cancelled, not-yet-past Session — with
+   `{ "status": "SCHEDULED", "title": "<a different title>" }`.
+6. Open `/admin/sessions/{id}/edit` for a Cancelled Session and read the Status
+   control.
+
+**Expected result:**
+
+- Step 1: only the not-yet-past Cancelled row offers **Reopen session**. The past
+  Cancelled row and the Completed row offer neither Reopen nor Cancel — a Session
+  the server will refuse gets no control rather than a disabled one.
+- Step 2: the dialog names the Session, says the Session goes back to Scheduled
+  and that Seats held when it was cancelled are still held, and confirming turns
+  the standing column from **Strike** to Scheduled without leaving the page.
+- Step 3 is **409** with `reason: "SESSION_PAST"` and a sentence saying the day
+  has passed and to post a new session for the next date.
+- Step 4 is **409** with `reason: "SESSION_CLOSED"`: a completed Session is never
+  reopened.
+- Step 5 is **409** with `reason: "SESSION_CLOSED"`. Reopening is a status-only
+  write: a body that renames the Session in the same request is the edit the
+  Closed rule refuses, not a reopening. The stored `title` and `status` are both
+  **unchanged**.
+- Step 6: the Status control is still drawn read-only, as its own label. The
+  reopening lives on the register only — the form's job is the Session's facts,
+  and one way to do a thing is what keeps two surfaces agreeing.
+
+### TC-AR-010 · P0 · Negative — A capacity edit and a reservation cannot cross
+
+**Preconditions:** a **Scheduled** Session with a fee, capacity `max`, and
+**n = max − 1** seat-holding Attendances — exactly one free Seat. Two browsers:
+an admin in one, and in the other a member who holds no Seat on this Session and
+whose Membership on that Activity is billed **Per-Session**, so claiming a Seat
+takes the hold path. The two presses have to overlap; where they cannot be made
+to by hand, issue them as two `fetch` calls without awaiting the first —
+`PATCH /api/sessions/{id}` with `{ "maxPlayers": n }` and
+`POST /api/sessions/{id}/reserve`.
+
+**Steps:**
+1. Admin tab: open `/admin/sessions/{id}/edit` and set Max Participants to **n**,
+   without saving yet.
+2. Member tab: press the control that claims the last Seat, and press Save in the
+   admin tab in the same moment.
+3. Re-read the Session: its stored `maxPlayers`, and its count of seat-holding
+   (`REGISTERED`/`PRESENT`) Attendances.
+4. Repeat the whole case with the two presses in the other order, several times.
+
+**Expected result:**
+
+- **Every run ends with `held ≤ maxPlayers`.** `maxPlayers = n` stored beside
+  `n + 1` held Seats is the failure this case exists to catch — it is the state
+  the old two-statement PATCH could reach, and one this one cannot.
+- **Exactly one of the two writes is refused**, and which one depends only on
+  which committed first; both succeeding is a failure of this case.
+  - Reservation first: capacity ends **unchanged** at `max`, the Seat is held,
+    and the edit is **409** with `reason: "CAPACITY_BELOW_HELD"` naming `n + 1`
+    seats — the figure the Admin has to be told, since it is one higher than the
+    page they were reading said.
+  - Edit first: capacity ends at **n**, held stays at **n**, and the member's
+    claim is refused as full rather than seated over the new capacity.
+- Neither write leaves a half-write behind: no Payment row without its
+  Attendance, and no capacity written without the count it was decided against.
+
+### TC-AR-011 · P2 · Edge — A Confirm by one Admin cannot duplicate or drop a row on another Admin's page
+
+**Preconditions:** two Admin accounts signed in in two separate browsers, A and
+B. At least 14 Payments match no filter, of which exactly **4** are awaiting a
+decision — so page 1 holds all four awaiting rows followed by six decided ones
+and the boundary between the two groups falls inside the page. A reads
+`/admin/payments` with no filter and no sort applied: the queue's own order is
+what this case is about, and an explicit column sort is a different read.
+
+**Steps:**
+1. On A, load page 1 and record the ten rows in order, by Payment id.
+2. On B, Confirm the Payment sitting **fourth** on that page — the last of the
+   awaiting rows, and so the one on the boundary.
+3. On A, reload page 1 and record the ten ids again.
+4. Repeat steps 2 and 3 with the next awaiting Payment each time, reloading on A
+   **twenty** times across the run, recording the ids of every load, and pressing
+   Confirm on B while A's reload is in flight rather than between reloads.
+5. Compare the recorded lists, and read page 2 once at the end.
+
+**Expected result:**
+
+- Every load returns **exactly ten** rows while at least ten Payments match, and
+  **no id appears twice within one load**.
+- No Payment that matched the filter for the whole run is absent from every
+  load: a row that moves does so by moving *down*, never by vanishing.
+- On every load the **queue order** is awaiting first, then the decided newest
+  first. What a row *draws* can be one decision newer than the position it was
+  given: the page is an ordered read of the ids followed by a fetch of those
+  ids, so a Confirm landing between the two renders a decided row in the
+  position its awaiting standing earned it, for exactly one load. That is the
+  same tolerance the counts get below, and it is **not** a failure of this case —
+  the row set is. A load where a decided row sits above an awaiting one **and**
+  the awaiting row is missing, duplicated, or on two pages at once is.
+- A Payment Confirmed mid-run appears on the next load in the decided group, and
+  on exactly one page — never on page 1 and page 2 at once, never on neither.
+- The heading's awaiting count and the pagination total are read by two counts
+  taken beside the page rather than as part of it, so either may be one decision
+  behind for a single load. That is **not** a failure of this case; the row set
+  is what this case tests.
+- **The old boundary is closed.** The page used to be two reads over two bands
+  (`status = PENDING`, then `status <> PENDING`) whose slices were worked out
+  from a count taken before them, so a Confirm arriving between the count and a
+  band read moved a row across the boundary and the page dropped it or drew it
+  twice. It is now one ordered statement returning the page's ids, and a fetch
+  of those ids — which can return fewer rows only if a Payment was deleted
+  outright, and cannot reorder them at all.
+- The Owner's email is still withheld from the Admin throughout, and still not
+  searchable by them: `TC-AR-007` holds unchanged against this read, which now
+  reaches the member through raw SQL rather than through Prisma.
+
+### 18.1 The fourth attendance value
+
+The four cases here are the ones the spec calls out as the only part of the
+redesign that can lose data. Each reads the rows it is about from the database,
+before and after.
+
+### TC-AR-012 · P0 · Positive — Recording a No-Show leaves every capacity figure where it was
+
+**Preconditions:** a census of every Session's `maxPlayers` and its count of
+seat-holding (`REGISTERED`/`PRESENT`) Attendances, taken from the database
+first. One **`COMPLETED`** Session carrying at least one `PRESENT` row and one
+`ABSENT` (Opted Out) row, and one ended Session carrying `REGISTERED` rows.
+
+**Steps:**
+1. Take the census.
+2. On the Completed Session, `POST /api/sessions/{id}/attendance/bulk` with
+   `{ "rows": [{ "userId": "<the ABSENT member>", "status": "NO_SHOW" }] }`.
+3. Retake the census and compare it, Session by Session.
+4. On the ended Session, move one `REGISTERED` row to `NO_SHOW` the same way, and
+   retake the census.
+5. Read the Capacity cell of both Sessions on `/admin/sessions`.
+6. Put both rows back to what they were.
+
+**Expected result:**
+
+- Step 2 is **200** with `{ "updated": 1 }`.
+- After step 3 **every** Session's `maxPlayers` is unchanged and **every**
+  Session's held count is unchanged, the edited one included. Opted Out and
+  No-Show both sit outside the seat-holding pair, so moving a row between them
+  moves no figure at all. This is the clause that proves capacity is unchanged
+  *by definition* rather than by an adjustment somebody has to remember.
+- After step 4 the edited Session's held count falls by **exactly one** and every
+  other figure in the census — every `maxPlayers`, every other Session's held
+  count — is unchanged. That fall is the same one a withdrawal produces, because
+  `REGISTERED` holds a Seat and neither `ABSENT` nor `NO_SHOW` does; a No-Show
+  that left the Seat held, or that moved a figure on any other Session, is the
+  failure this case exists to catch.
+- Step 5: the Capacity cell reads the new `held/max` with `max` unchanged, and
+  the announced sentence is still "*n* of *max* seats held".
+
+### TC-AR-013 · P0 · Negative — A No-Show record changes no amount, no Payment and no Seat
+
+**Preconditions:** a Session that charges a Fee, with a Participant who holds a
+seat-holding Attendance **and** a Payment against that Session. Note the Payment
+row in full and the member's own dues state.
+
+**Steps:**
+1. Record the member's row as `NO_SHOW` through the bulk route.
+2. Re-read that member's Payments: every field, `status` and `amount` included.
+3. Re-read the Session's `fee`, and the member's `/payments` page as the member.
+4. Re-read the Attendance rows of every other member on that Session.
+5. Put the row back.
+
+**Expected result:**
+
+- The Payment is **byte-for-byte unchanged** — `status`, `amount`, `notes`,
+  `confirmedBy`, `confirmedAt`, `updatedAt`. Recording that somebody did not turn
+  up is not a billing decision, and there is no refund, credit or penalty
+  anywhere in this path.
+- The Session's `fee` is unchanged, and the member's dues state on `/payments`
+  is the one it was before.
+- No other member's Attendance row is touched — status or `updatedAt`.
+- The member's own history shows the Session at the **Hollow** mark, not a money
+  mark: what changed is the record of the day, and nothing else.
+
+### TC-AR-014 · P0 · Negative — Rejecting a monthly Payment removes only Registered rows; No-Show, Present and Opted Out survive
+
+**Preconditions:** one member with a **`PENDING`** `MONTHLY` Payment for an
+Activity and Billing Period, and four Attendance rows of theirs on four Sessions
+of **that Activity in that month**, one at each of `REGISTERED`, `NO_SHOW`,
+`PRESENT` and `ABSENT`. Record all four row ids, their statuses and their
+`updatedAt`. This is the fixture `TC-MS-017` documents from the member's side;
+here it is read from the Admin's.
+
+**Steps:**
+1. As an admin, Reject the Payment from its row on `/admin/payments`, with a
+   reason typed into the dialog.
+2. Re-read all four Attendance rows from the database.
+3. Re-read the member's Attendance rows on that Activity's Sessions **outside**
+   that month, and on other Activities' Sessions inside it.
+4. Re-read the Payment.
+5. Reject the same Payment a second time.
+6. Restore the fixture.
+
+**Expected result:**
+
+- Step 1 is **200**.
+- Step 2: the `REGISTERED` row is **gone**. The `NO_SHOW`, `PRESENT` and `ABSENT`
+  rows are all **present**, at their original statuses and their original
+  `updatedAt` — untouched, not rewritten. The No-Show surviving is the one this
+  case exists for: the cleanup filters on `status: 'REGISTERED'`, so the fourth
+  value falls outside it by construction, and a change that "helpfully" widened
+  that filter would delete history.
+- Step 3: nothing outside the Activity-and-month window is touched.
+- Step 4: the Payment is `REJECTED`, its `notes` carry the typed reason verbatim,
+  and `confirmedBy` names the deciding admin.
+- Step 5 is **409** — "This payment has already been reviewed." A decision is
+  made once.
+
+### TC-AR-015 · P0 · Positive — The dashboard's attendance aggregate counts three historical states
+
+**Preconditions:** `/admin` as an admin. A count, from the database, of
+Attendance rows at each of `PRESENT`, `ABSENT` and `NO_SHOW`.
+
+**Steps:**
+1. Read the dashboard's attendance figure and note it.
+2. Record one more `NO_SHOW` through the bulk route.
+3. Reload `/admin` and read the figure again.
+4. Move that row to `ABSENT` and reload again.
+5. Put the row back.
+
+**Expected result:**
+
+- The figure equals `PRESENT + ABSENT + NO_SHOW` — three states, not two. An
+  aggregate still on the old pair is short by exactly the No-Show count, which is
+  zero on a fresh seed and is why this case adds a row rather than trusting it.
+- Step 3's figure is **one higher** than step 1's.
+- Step 4's figure is the **same** as step 3's: all three are history, and moving
+  a row between two of them moves no total.
+
+### TC-AR-016 · P0 · Negative — No-Show is never derived; an ended Session with Registered rows stays Registered
+
+**Preconditions:** a Session whose end time in WIB has **passed**, whose status is
+not `CANCELLED`, carrying at least one Attendance row and **every** listed row
+still `REGISTERED`.
+
+**Steps:**
+1. Read every Attendance row on that Session from the database.
+2. Open `/admin/sessions/{id}/attendance` and read the notice above the register
+   and the Recorded column on every row.
+3. Leave the page without pressing Save, reload it, and re-read the rows from the
+   database.
+4. Press **Save attendance** with nothing changed and read what is sent.
+5. Read the same Session's row in the member's own history.
+
+**Expected result:**
+
+- Step 1 and step 3 return the **same rows, at the same statuses, with the same
+  `updatedAt`**. Nothing about opening the register writes anything.
+- Step 2: every Recorded cell reads the **Ink Registered** mark, none reads
+  Hollow, and the register carries the notice: *"This session has ended and no
+  attendance has been recorded. Everyone here is still Registered — nobody
+  becomes a No-Show until you record one."* The form points at it with
+  `aria-describedby`.
+- Step 4 sends nothing at all: the Save control is **disabled** while nothing has
+  changed and the counter beside it reads "Nothing changed yet". A route call
+  with `{ "rows": [] }` is **400** with `reason: "ROWS_EMPTY"`.
+- Step 5: the member's own surfaces show the Session as Registered. Nobody has
+  been branded a No-Show for an Admin's omission, which is the whole point of the
+  state having a producer rather than an inference.
+
+### 18.2 The attendance register
+
+### TC-AR-017 · P0 · Positive — A bulk save writes only the rows the Admin touched
+
+**Preconditions:** a Session with at least four Participants. Record every row's
+`status` and `updatedAt` from the database.
+
+**Steps:**
+1. Open the attendance register, change **two** rows, and read the counter beside
+   Save.
+2. Press **Save attendance** and read the response.
+3. Re-read every row from the database.
+4. Press **Mark All Present**, then Save, then re-read.
+5. Reopen the register and press Save without touching anything.
+6. Restore every row.
+
+**Expected result:**
+
+- Step 1: the counter reads "2 changed"; Save is enabled only once something has.
+- Step 2 is **200** with `{ "updated": 2 }` — the payload carried two rows and
+  two rows only.
+- Step 3: exactly those two rows carry the new statuses and a moved `updatedAt`.
+  **Every other row's `status` and `updatedAt` are identical to step 0's.** A
+  save that rewrote untouched rows would move their timestamps even where the
+  status happened to match, and this is the assertion that catches it.
+- Step 4: **Mark All Present** is a prefill — it moves only rows currently
+  reading Registered, leaves rows already recorded as Opted Out or No-Show alone,
+  and writes **nothing** until Save is pressed.
+- Step 5 is refused by the disabled control, and `{ "rows": [] }` against the
+  route is **400** `ROWS_EMPTY`. A save that changes nothing is not a save.
+
+### TC-AR-018 · P0 · Negative — A payload with one invalid row writes nothing
+
+**Preconditions:** a Session with at least two Participants. Record every row's
+`status` and `updatedAt`.
+
+**Steps:**
+1. `POST /api/sessions/{id}/attendance/bulk` with two rows, the first a valid
+   change and the second carrying `"status": "MAYBE"`.
+2. Re-read every row.
+3. Repeat with the second row naming a `userId` who holds no Seat on this
+   Session; then with the same `userId` twice; then with `{ "rows": [] }`; then
+   with no `rows` key at all.
+4. Repeat step 1 against a Session id that does not exist, and again signed in as
+   a member.
+
+**Expected result:**
+
+- Step 1 is **400** with `error: "Invalid payload"` and `reason: "ROW_INVALID"`.
+  `MAYBE` is the member's own tentative RSVP and is never an Admin's judgement,
+  so it is refused here exactly as it is on the single-row route.
+- Step 2: **no row is written** — the valid first row included. The whole payload
+  is validated before the transaction opens, so one bad row is all of nothing;
+  a half-save is the failure this case exists to catch.
+- Step 3 returns **400** with, in order, `reason: "USER_NOT_ON_SESSION"`,
+  `"DUPLICATE_USER"`, `"ROWS_EMPTY"` and `"ROWS_MISSING"`, and nothing is written
+  by any of them.
+- Step 4 is **404** for the unknown Session and **403** for the member. Neither
+  writes anything.
+
+### TC-AR-019 · P0 · Positive — Opted Out and No-Show are distinct records and distinct marks, reached through real flows
+
+**Preconditions:** two Participants on the same Session, one who will withdraw
+themselves and one an Admin will record as a No-Show.
+
+**Steps:**
+1. As the first member, withdraw from the Session through the member surface.
+2. As the admin, open the attendance register and record the second member as
+   **No-Show**, then Save.
+3. Read both rows from the database.
+4. Read both rows' Recorded cells, in both materials and with colour removed.
+5. Read the same two Sessions on each member's own history.
+6. Restore both rows.
+
+**Expected result:**
+
+- Step 3: the withdrawal stored **`ABSENT`**, the Admin's record stored
+  **`NO_SHOW`**. Two rows, two values — the distinction the glossary draws is in
+  the data, not only in the copy.
+- Step 4: `ABSENT` renders **Erased** and reads **"Opted Out"** / **"Batal
+  Ikut"**; `NO_SHOW` renders **Hollow** and reads **"No-Show"** / **"Tidak
+  Hadir"**. The two forms differ with hue discarded — Erased is a transparent
+  border over the ground fill, Hollow is a dashed outline with no fill — so
+  neither state is carried by colour. The word **"Absent"** appears on no
+  surface: the stored name never becomes user-facing copy.
+- Step 5: the member who withdrew sees their own decision; the member who did not
+  turn up sees the Hollow record. Neither is told the other's word.
+
+### 18.3 The Payments queue
+
+### TC-AR-020 · P0 · Positive — Awaiting Payments are the top of the page, and the decided follow by recency
+
+**Preconditions:** a set of Payments with mixed standings — at least three
+`PENDING`, several `CONFIRMED` and at least one `REJECTED` — and no filter and no
+column sort applied.
+
+**Steps:**
+1. Open `/admin/payments` and read the standing column down page 1, then page 2.
+2. Read the heading above the register.
+3. Read the whole set on one page (`?pageSize=all`) and check the order end to
+   end.
+4. Apply a status filter, then a column sort, and read the order again.
+5. Press **Back to the queue order** and read it once more.
+
+**Expected result:**
+
+- Every `PENDING` row is **above** every decided row, on page 1 and across the
+  whole set. Within each group the order is newest first, and the tie-break is
+  stable, so two loads of the same data give the same list.
+- The heading reads "*n* waiting for a decision" with *n* equal to the count of
+  `PENDING` rows matching the current filter.
+- A `REJECTED` row is decided, not awaiting: it sits with the Confirmed ones and
+  carries the **Strike** mark with its amount struck through.
+- Step 4: an explicit column sort **wins** — the Admin has said what order they
+  want, and the queue's own order is not silently reimposed on top of it. No
+  column head ever renders as "sorted by" the queue order, because the queue
+  order is not a column.
+- Step 5 returns to the queue's own order.
+
+### TC-AR-021 · P1 · Edge — A queue with nothing awaiting a decision still reads as a queue
+
+**Preconditions:** a filter that is **not** a standing filter and under which no
+Payment is `PENDING` — an Activity whose Payments are all decided is the cheapest
+— then the Confirmed **standing** filter, and then a filter matching no Payment
+at all.
+
+**Steps:**
+1. Open `/admin/payments?activityId={an Activity with nothing awaiting}` and read
+   the heading and the rows.
+2. Read the standing column: nothing should be Tape.
+3. Open `/admin/payments?status=CONFIRMED` and read the heading.
+4. Open a filter that matches nothing at all and read the register's body.
+5. Clear the filters and confirm the awaiting count comes back.
+
+**Expected result:**
+
+- Step 1: the heading says **"nothing is waiting for a decision"** — a sentence,
+  not "0 waiting", and not a hidden heading. An empty queue is a fact worth
+  stating, and the surface does not pretend the boundary is somewhere it is not.
+- Step 2: every row is decided; the ordering rule is vacuously satisfied and the
+  page is still the register, not a different layout.
+- Step 3: the sentence is **absent**. Under an explicit standing filter the
+  awaiting count is structurally zero — the filter is hiding the queue, not
+  emptying it — and "nothing is waiting for a decision" would be a false sentence
+  about Payments that are still waiting. A heading that says it there fails this
+  case as surely as one that omits it in step 1.
+- Step 4: the register draws its **empty row** — the register's own empty state,
+  inside the same frame and the same rules, with its mark and its sentence. It is
+  not a card, and it is not a bare table with no rows.
+
+### TC-AR-022 · P0 · Positive — The Proof column's three cells: an image, no Proof, and a Proof that will not load
+
+**Preconditions:** three Payments in the queue — one whose `proofUrl` is a real
+image on the storage host, one with `proofUrl` null, and one whose `proofUrl` is
+on a host the image optimiser is not configured for, or is a dead URL.
+
+**Steps:**
+1. Read all three cells at 1440 × 900.
+2. Tab to the first cell's control and press Enter; read the dialog; close it and
+   read where focus went.
+3. Read the accessible name of the thumbnail control.
+4. Read the second and third cells' text, and check neither draws a mark.
+5. Reload the whole page and confirm it still renders.
+
+**Expected result:**
+
+- The first cell is a real `<button>` holding the thumbnail, reached by Tab in
+  the row's own order, opened with **Enter** — no single-key shortcut anywhere
+  near a money decision. Its accessible name names the member: "Open the Proof
+  from {name}".
+- The dialog shows the Proof full size with the Activity and Billing Period in
+  its description, so an opened Proof still says which row it came from. Closing
+  it returns focus to the same button.
+- The second cell draws a **dashed box** the same size as the ones holding an
+  image, captioned **"No Proof"** / **"Tidak ada bukti"**. It is not a broken
+  image glyph and it is not empty.
+- The third cell draws a **ruled** box — something is there — with the caption
+  **"Failed to load"** / **"Gagal dimuat"**.
+- Neither of those two cells uses a **mark**: every mark on this surface lands on
+  the standing column's shared edge, and a second mark in this column would break
+  that line.
+- Step 5: the page renders. A single Payment carrying a Proof URL on an unlisted
+  host must not blank the queue — that failure is issue #88, and this clause is
+  its regression net.
+
+### TC-AR-023 · P1 · Positive — A forty-row queue's image weight is the thumbnails, not the originals
+
+**Preconditions:** a queue page showing **40 rows**, each with a Proof on the
+storage host. Where the seed has fewer, add sentinel Payments carrying the same
+Proof and remove them afterwards.
+
+**Steps:**
+1. Load `/admin/payments?pageSize=40` at 1440 × 900.
+2. In the console, read `performance.getEntriesByType('resource')` and sum
+   `transferSize` over the entries whose name contains `/_next/image`.
+3. Read one entry's URL and note its `w=` parameter.
+4. Note the size of the original Proof object for comparison.
+5. Open one Proof full size and re-read the resource list.
+
+**Expected result:**
+
+- Every thumbnail is requested through the framework's optimiser at the fixed
+  box — `/_next/image?url=…&w=96&q=75` on a 2× device, `w=48` at 1× — never as
+  the original object.
+- The summed thumbnail weight is a small fraction of forty originals. **(measure)**
+  — record the sum, the per-thumbnail size and the original's size, and the ratio
+  between them. The case fails if the page fetches originals at all, not on a
+  particular number.
+- Step 5: the full-size render is fetched **only when the dialog mounts**, so it
+  is absent from the list until then — which is why the queue's own weight is
+  unaffected by it.
+
+### TC-AR-024 · P0 · Positive — Confirm goes through a dialog, and a low amount is pointed out without being blocked
+
+**Preconditions:** two `PENDING` Payments: one whose `amount` equals the current
+price for its mode, and one whose `amount` is **below** it — below the Activity's
+Dues for a monthly Payment, or below the Session's Fee for a per-Session one.
+
+**Steps:**
+1. Press **Confirm** on the first and read the dialog before deciding.
+2. Cancel, and confirm the Payment's stored status has not moved.
+3. Press **Confirm** on the low one and read the dialog.
+4. Read the `aria-describedby` on the dialog's Confirm button.
+5. Confirm it, and re-read the Payment.
+6. Restore both.
+
+**Expected result:**
+
+- A dialog opens on **every** Confirm. A money decision is never one mis-click
+  away — "Confirm this payment?" with the amount, the Billing Period, the
+  Activity and the bank account restated, so the Admin is comparing the row
+  against the screenshot rather than against memory.
+- Cancelling writes nothing.
+- Step 3: the dialog carries the sentence **"This is less than the current Dues
+  of {amount}. You can still Confirm."** (or the Fee wording for a per-Session
+  Payment), at **Body** size in Secondary Ink — a disclosure, not fine print.
+- Step 4: the Confirm button points at that sentence with `aria-describedby`, so
+  it reaches a screen reader as part of the decision rather than as decoration.
+- Step 5: the Confirm **succeeds** — **200**, status `CONFIRMED`. It warns; it
+  never blocks. A dialog that refused a short amount would not stop an Admin
+  accepting a partial transfer, it would teach them to type a figure that never
+  arrived.
+
+### TC-AR-025 · P0 · Negative — Reject refuses an empty reason and names the Seat consequence first
+
+**Preconditions:** one `PENDING` **`MONTHLY`** Payment and one `PENDING`
+**`SESSION`** Payment.
+
+**Steps:**
+1. Press **Reject** on the monthly one and press Reject in the dialog with the
+   reason box empty.
+2. Type only spaces and press Reject again.
+3. Read the sentence above the dialog's Reject button, and its
+   `aria-describedby`.
+4. `PATCH /api/payments/{id}` with `{ "status": "REJECTED" }` and no `notes`, and
+   again with `{ "notes": "   " }`.
+5. Type a real reason and Reject. Re-read the Payment.
+6. Open the Reject dialog on the per-Session Payment and read whether the Seat
+   sentence is there.
+7. Restore both.
+
+**Expected result:**
+
+- Steps 1 and 2 are refused **in the dialog**, with the message *"No reason
+  given. Write why you are rejecting this payment — the member sees it."* carried
+  by a live region. The control is **not** disabled: a dead button explains
+  nothing, and the Admin is told what is missing.
+- Step 3: for the monthly Payment the dialog states the consequence before the
+  Admin commits — *"Every seat this member is Registered for in {activity}
+  sessions in {period} is released. Seats they attended or opted out of are
+  untouched."* — at Body size, with the Reject button pointing at it with
+  `aria-describedby`.
+- Step 4 is **400** both times, with `error: "REJECT_REASON_REQUIRED"`. The rule
+  is the route's, not the dialog's; the dialog is the courtesy.
+- Step 5 is **200**, `status` `REJECTED`, and `notes` carry the typed reason
+  verbatim — it is what the member reads.
+- Step 6: the Seat sentence is **absent** on a per-Session Payment. Rejecting one
+  releases that Session's Seat only, and a sentence about a month of Seats would
+  be false there. The rest of the dialog is unchanged.
+
+### TC-AR-026 · P0 · Positive — The member's own view reflects the Admin's decision
+
+**Preconditions:** one `PENDING` Payment belonging to a member who can be signed
+in as.
+
+**Steps:**
+1. As the member, read `/payments` and note the Payment's mark and the dues card.
+2. As the admin, Reject it with a reason.
+3. As the member, reload `/payments` and read the row, the reason and the way
+   back.
+4. As the admin, restore and then Confirm a Payment for the same member.
+5. As the member, reload and read the row again.
+6. Restore.
+
+**Expected result:**
+
+- After the Reject the member's row carries the **Strike** mark, the Admin's
+  reason verbatim, refund guidance and a route back to sending new Proof. The
+  amount is dimmed, not struck: the money is a fact, the decision is what was
+  struck.
+- After the Confirm the row carries the **Ink** mark and the dues card for that
+  period settles.
+- Neither state is carried by colour alone, and the member is never shown the
+  Admin's machine words — no `REJECTED`, no `PENDING` enum leaking through.
+
+### 18.4 The Owner, the Activities form, and the exports
+
+### TC-AR-027 · P0 · Negative — An Owner account is visibly immutable, as an Admin and as the Owner
+
+**Preconditions:** the Owner (`owner@xclub.local`) and an admin from §3.
+
+**Steps:**
+1. As the admin, open `/admin/members` and find the Owner's row. Read the role
+   treatment, the Contact cell, and every control on the row.
+2. Read the sentence the row carries where other rows carry a promote or demote
+   control.
+3. Attempt the role change through the route the register would have used.
+4. Open `/admin/members/{the Owner's id}` and read the same.
+5. Repeat steps 1 and 4 signed in as the Owner.
+
+**Expected result:**
+
+- The Owner's row carries **no** promote, demote or edit control — absent, not
+  disabled — and the sentence **"This account cannot be changed."** / **"Akun ini
+  tidak bisa diubah."** in its place. The rule is visible in the product rather
+  than discovered by a refused edit.
+- The role is drawn as the tracked-caps **label**, not as a mark: a role is a
+  standing property of a person, not a state of a thing. It reads as an
+  immutability and privacy marker, and the register implies **no hierarchy of
+  power** — the Owner carries no capability an Admin lacks.
+- The Contact cell reads **Withheld** / **Dirahasiakan**, never a blank: a blank
+  reads as an unfilled profile and sends the Admin looking for the number
+  somewhere else.
+- Step 3 is refused by the server, whatever the register drew.
+- Step 5: the Owner sees their own contact details intact, and their own account
+  still immutable — the rule is about the account, not about who is looking.
+
+### TC-AR-028 · P1 · Positive — The Members register and a member's detail page answer a member's question in one read
+
+**Preconditions:** admin on `/admin/members`. One member with a monthly
+Membership whose Dues are Confirmed this period, one with nothing sent, one with
+a Proof awaiting a decision, one on a per-Session Membership, and
+`newbie@xclub.local` with an incomplete profile.
+
+**Steps:**
+1. Read the register's columns and one row of each of the five kinds.
+2. Read the Standing column on the per-Session Membership.
+3. Promote a member to Admin from the row, confirm the dialog, and read the row;
+   then demote them back.
+4. Open one member's detail page and read their Memberships, their attendance and
+   their dues history.
+5. Read the No-Show figure on the detail page, and look for one on the register.
+
+**Expected result:**
+
+- The register carries each member's Activities, payment mode and standing, so
+  the common question is answered without opening four screens.
+- **Standing is the current Billing Period's Dues state per monthly Membership**:
+  **Ink** Confirmed, **Tape** awaiting a decision, **Blank** "Pending" where
+  nothing has been sent or only a Rejected Payment stands. A **per-Session**
+  Membership carries **no standing mark at all**, only its mode label — there is
+  no monthly obligation for it to be in good or bad standing on.
+- `newbie@xclub.local` carries the incomplete-profile marker.
+- Step 3 asks first, and the role label flips both ways.
+- Step 5: the **No-Show count is on the detail page** and **not** a register
+  column. The register is already dense; the count serves a conversation, and the
+  detail page is where that conversation is prepared.
+
+### TC-AR-029 · P1 · Negative — The Activity form offers no colour and no icon, and nothing is drawn in their place
+
+**Preconditions:** admin on `/admin/activities` and on the Activity create and
+edit forms.
+
+**Steps:**
+1. Read every control on the create form and on the edit form.
+2. Read one Activity's cell in the register, and the Activity cell on the
+   Sessions register.
+3. `POST /api/activities` with a slug an Activity already uses.
+4. `POST /api/activities` without `minMembers` and without `maxPlayers`.
+5. Deactivate an Activity from its row, then activate it again.
+
+**Expected result:**
+
+- There is **no colour control and no icon control** on either form — not
+  disabled, not hidden behind a toggle: gone.
+- Nothing is rendered in their place: **no swatch, no default colour chip, no
+  accent line, no broken icon**. Each Activity is identified by its **initial on
+  a tile**, so the register is scannable without colour.
+- The register carries price, weekly slot, capacity and destination bank account
+  together, so an Activity's setup is auditable in one read.
+- Step 3 is **409** — "That slug is already in use".
+- Step 4 is **400** with field-level details.
+- Step 5 asks first, and the standing flips both ways.
+
+### TC-AR-030 · P1 · Negative — Posting a Session refuses an empty form and an end before its start
+
+**Preconditions:** admin on `/admin/sessions/new`.
+
+**Steps:**
+1. Submit the empty form.
+2. Fill it validly but set Start `20:00` and End `18:00`; submit.
+3. Set them equal; submit.
+4. Fill it validly and submit.
+5. Re-read the Sessions register after each of steps 1–3.
+
+**Expected result:**
+
+- Step 1 shows inline required-field errors and creates nothing.
+- Steps 2 and 3 show the inline message **"End time must be after start time"**
+  and create nothing — equal times are refused too.
+- Step 4 creates the Session, which appears in the register as **Scheduled** at
+  `0/max`.
+- The register's row count is unchanged after each refusal. A refused post that
+  wrote a row anyway is the failure this case exists to catch.
+
+### TC-AR-031 · P1 · Edge — A search that matches nothing says so in the register's own words
+
+**Preconditions:** admin on `/admin/sessions`, and on `/admin/payments` and
+`/admin/members`.
+
+**Steps:**
+1. Search `zzzznonexistent` on each register.
+2. Read the register's body and the sentence in it.
+3. Clear the search and read the body again.
+
+**Expected result:**
+
+- Each register draws its **empty row** inside the same frame and the same rules
+  — the register's own empty state, with its mark and its sentence, never a card
+  and never a bare table.
+- The sentence distinguishes **"nothing matches your search"** from **"there is
+  nothing here yet"**: two different facts, and telling an Admin the wrong one
+  sends them to create a row that already exists.
+- Clearing the search restores the rows.
+
+### TC-AR-032 · P1 · Negative — Community settings save, and an empty community name is refused
+
+**Preconditions:** admin on `/admin/settings`. Note the stored community name
+first, and restore it at the end.
+
+**Steps:**
+1. Read the page: the frame, the fieldsets, and the field treatment on each
+   control.
+2. Clear the Community Name and press Save.
+3. `PATCH /api/settings` with `{ "communityName": "   " }`.
+4. Save a new name and read the header and the browser title.
+5. Restore the original name.
+
+**Expected result:**
+
+- The page is on the board's own treatment — one frame, ruled rows inside
+  fieldsets, the shared field treatment on every control. It is not the one page
+  left from the old product, and it renders **no card shell** at any width.
+- Step 2 is blocked with **"Community name is required"** and the stored value is
+  unchanged.
+- Step 3 is **400**: the rule is the server's, and the form is the courtesy.
+- Step 4 rebrands the app — header and title both.
+
+### TC-AR-033 · P1 · Positive — The export routes are unchanged, localised, and carry all four attendance values
+
+**Preconditions:** a Session carrying an Attendance row at **each** of
+`REGISTERED`, `PRESENT`, `ABSENT` and `NO_SHOW`. An admin and the Owner.
+
+**Steps:**
+1. `GET /api/sessions/{id}/export` as the admin in `en`; read the header row and
+   every status cell.
+2. Switch the locale to `id` and re-export; read the header row.
+3. `GET /api/payments/export?month=8&year=2026`; read the header row and the row
+   count.
+4. Repeat steps 1 and 3 signed in as the Owner, with the Owner holding a row on
+   that Session.
+5. Restore the fixture.
+
+**Expected result:**
+
+- The session export's header is
+  `"No","Name","Email","WhatsApp","Status","Registered At"` in `en` and its
+  Indonesian equivalent in `id` — the headers are localised, the data is not.
+- Every status cell carries the **stored** value: `REGISTERED`, `PRESENT`,
+  `ABSENT` and `NO_SHOW`, all four, spelled as the database spells them. The
+  glossary rule that the stored `ABSENT` never surfaces as "Absent" is a rule
+  about **user-facing copy**, not about a machine-readable export, and an export
+  that translated its values would break whatever reads the file.
+- The payments export's header and its row count are unchanged from before this
+  spec.
+- Step 4: for an **Admin**, the Owner's Email and WhatsApp cells are **empty**
+  while the Owner's row is still written, with its status and timestamp
+  unchanged. For the **Owner**, both cells carry their stored values.
+
+### 18.5 Both locales, the keyboard, and both widths
+
+### TC-AR-034 · P1 · Positive — No English leaks into any admin surface
+
+**Preconditions:** `NEXT_LOCALE` set to `id`; every surface in §18.0's scope.
+
+**Steps:**
+1. Visit each surface in `id` and read every heading, column head, control,
+   dialog, empty state, mark label and toast.
+2. Read the accessible names of the controls, not only their visible text.
+3. Compare each string against the `en` build and list every one that matches.
+4. Read the four attendance marks and the Proof cells' captions in `id`.
+
+**Expected result:**
+
+- No English string anywhere. Column heads, the register captions, the empty
+  rows, both payment dialogs, the untaken notice, the Owner's withheld cell, the
+  reopen and cancel dialogs and every toast all switch.
+- The marks switch: `No-Show` → **Tidak Hadir**, Opted Out → **Batal Ikut**,
+  `Withheld` → **Dirahasiakan**, `No Proof` → **Tidak ada bukti**, `Failed to
+  load` → **Gagal dimuat**.
+- The only strings matching across locales are the community name, proper nouns,
+  numerals, currency and the documented loanwords.
+- No **metaphor word** from `CONTEXT.md` — board, tile, rail, lattice, register —
+  appears in user-facing copy in either locale.
+
+### TC-AR-035 · P1 · Positive — The queue is traversed and decided from the keyboard alone
+
+**Preconditions:** admin on `/admin/payments`, at least three awaiting rows.
+
+**Steps:**
+1. Tab from the page heading into the register and record the order focus
+   travels: filters, then each row's controls.
+2. Read the focus indicator on each stop.
+3. Open a Proof with Enter, close it with Escape, and read where focus went.
+4. Reach a row's Confirm with Tab and press Enter; move through the dialog with
+   Tab; cancel with Escape.
+5. Press every single letter key over a focused row and read what happens.
+6. Read `<tr>` for a `tabindex`.
+
+**Expected result:**
+
+- Focus travels in **plain DOM order**: the filter controls, then row by row, and
+  within a row the Proof button, then Confirm, then Reject.
+- Every stop carries a visible focus ring.
+- Escape closes both the Proof dialog and a decision dialog, returning focus to
+  the control that opened it.
+- **No single-key shortcut does anything.** A one-key Confirm on a money row is a
+  mis-press waiting to happen, and plain tab order already satisfies "no mouse".
+- No `<tr>` carries a `tabindex`.
+
+### TC-AR-036 · P0 · Positive — Every register is ruled at 1440 and collapses by axis at 390
+
+**Preconditions:** each of `/admin/sessions`, `/admin/payments`,
+`/admin/members`, `/admin/activities`, `/admin/applicants`,
+`/admin/sessions/{id}/attendance` and `/admin/settings`.
+
+**Steps:**
+1. At **1440 × 900**, read each surface's frame, its row rules and its cell
+   rules, and — on every register that carries a **standing column** — confirm
+   its marks land on one shared edge. The Members register is the exception by
+   design: its standing is one mark per monthly Membership inside the
+   Memberships cell, so its marks are aligned to their own rows, not to a
+   column edge.
+2. Search each surface's markup for a card shell, a coloured swatch, an accent
+   line and a `rounded-xl` container.
+3. Resize to **390 × 844** and read the same surfaces: the `<thead>`, the inline
+   cell labels, and `document.documentElement.scrollWidth`.
+4. Read one row's controls at 390 and press one.
+5. Read the Applicants surface's action vocabulary.
+
+**Expected result:**
+
+- At 1440 every register is one bounded frame of ruled rows — **1px** rules,
+  tabular figures down the money columns, the standing mark in its own column on
+  a shared edge, density rather than whitespace. Forty rows are readable without
+  scrolling past furniture.
+- **No admin surface renders a card shell, a coloured swatch or an accent line at
+  any width.** The old mobile card shell and its field and empty-state companions
+  are gone from the repository, not merely unused.
+- At 390 each register **collapses by axis**: still ruled rows, each cell
+  carrying its own column label above its value, the `<thead>` hidden, and
+  `scrollWidth === 390` — the page never scrolls sideways.
+- Every row control is reachable and pressable at 390.
+- The Applicants surface says **Admit** and **Decline**, never Confirm or Reject.
+
+### 18.6 Recorded run — 2026-08-29
+
+Executed once against `main` at **`3370853`** (the merge of #98, the last register
+ticket), on the §2 seed, on Next.js 16, at **1440 × 900** and **390 × 844**, in
+**both locales**, and on **both board materials**. Every figure below is measured
+— from the route's own response, from `getComputedStyle`, from
+`performance.getEntriesByType('resource')`, or from the database — never from
+what a screenshot looked like.
+
+**The seed was left exactly as it was found.** Every fixture this run created was
+removed and the state re-compared afterwards: 25 Sessions with **zero** diffs in
+`maxPlayers`, seat-holding count or per-status breakdown; `Attendance` at
+`REGISTERED 69 / PRESENT 38 / ABSENT 13 / MAYBE 3 / NO_SHOW 0`; `Payment` at
+`PENDING 3 / CONFIRMED 40 / REJECTED 1`; the Owner holding no Attendance and no
+Payment. The only residue is that rows the run touched carry a moved
+`updatedAt` — a timestamp cannot be put back, and no case depends on one.
+
+| Case | Priority | Result |
+|---|---|---|
+| TC-AR-001 | P0 | **Pass** — eight heads in order (`DATE, SESSION, ACTIVITY, LOCATION, CAPACITY, FLOOR, STATUS, ACTIONS`); cell rule **1px solid `rgb(119,131,127)`**; `scrollWidth === 1440`; capacity announced "7 of 24 seats held", floor "2 of 4 members committed · **Below floor**" and "**No floor**" where `minMembers = 0`; at 390 `<thead>` is `display: none`, every cell carries its own label, `scrollWidth === clientWidth === 390`; no `<tr>` carries `tabindex` |
+| TC-AR-002 | P0 | **Pass** — Strike mark, `text-decoration: line-through` on the **mark's own label**; the title span recedes to `rgb(84,97,91)` against `rgb(21,30,27)` on a Scheduled row and carries **no** line-through; the cancelled row offers `Take attendance, Edit, Detail, CSV` and **no Cancel** |
+| TC-AR-003 | P0 | **Pass** — Morning Drills `{ "fee": 26000 }` → **409** `FEE_LOCKED`, "This session already has a payment or a held seat, so its fee cannot be changed. Post a new session at the new fee instead."; stored `fee` unchanged at 25 000; the form's Fee input is `readOnly: true`, `disabled: false`, `bg rgb(232,235,234)` against the open fields' `rgb(247,249,248)`, `aria-describedby="session-fee-note"`; a clean sentinel Session took `{ "fee": 11000 }` at **200** |
+| TC-AR-004 | P0 | **Pass** — `{ "maxPlayers": 6 }` against 7 held → **409** `CAPACITY_BELOW_HELD`, "Capacity cannot go below the 7 seats already held. Set it to 7 or higher, or release a seat first."; `{ "maxPlayers": 7 }` → **200**; the form's capacity input carries `min="7"`, `aria-describedby="session-capacity-note"` and is **not** read-only. **Step 3 (a lapsed hold lowering the floor) was not re-run** — carried from #69 and #94 |
+| TC-AR-005 | P0 | **Pass** — on the Completed Friendly Match `{ "title" }` and `{ "status": "SCHEDULED" }` → **409** `SESSION_CLOSED`; `{ "notes" }` → **200**; a whole payload with every field at its stored value and only the notes changed → **200**; the form draws all eight fields `readOnly` with `aria-describedby="session-closed-note"` and the **status as an `<input readonly>` reading "Completed"**, never a disabled `<select>`; notes stays open |
+| TC-AR-006 | P1 | **Pass** — Tab order `New Session → search → activity filter → Search → DATE/SESSION/LOCATION/STATUS heads → Take attendance, Edit, Detail, CSV, Cancel/Reopen`, each with a visible indicator; the Cancel dialog reads "Cancel Underbooked Friendly?" and states the consequence before it is confirmed; no `<tr>` `tabindex`. The two safe-area-inset bullets that stood here were a paste from `TC-MS-020` — the admin shell renders **no** fixed bottom rail (`0` elements at `position: fixed; bottom: 0`) — and were replaced |
+| TC-AR-007 | P0 | **Pass** — Members register, Payments queue and attendance register all draw **Withheld** / **Dirahasiakan** to the Admin, and `row.innerHTML` carries the address on **none** of them; `GET /api/payments?userId=<owner>` and `GET /api/payments/{id}` both **200** with `email: null` and an unchanged key set; `?search=owner%40xclub.local` on the queue returns no row; as the Owner all four surfaces carry `owner@xclub.local` |
+| TC-AR-008 | P0 | **Pass** — held Seat → **409** `SESSION_HAS_MONEY`; a live `PENDING` Payment on a Session with **no** held Seat → **409** `SESSION_HAS_MONEY`; a `COMPLETED` Session with nothing behind it → **409** `SESSION_CLOSED` with its **own** sentence, "This session is completed, so it is part of the record and cannot be deleted." (`id`: "Sesi ini sudah selesai, jadi sudah menjadi catatan dan tidak bisa dihapus.") — distinct from the PATCH sentence, as the case demands; a Cancelled Session with nothing behind it → **200** then **404**. No **500** anywhere. The **Delete Session** button is absent on the money-behind and Completed forms and present only on the Cancelled one |
+| TC-AR-009 | P0 | **Pass** — a Cancelled Session dated 2026-08-31 offers **Reopen session**; Rained Out (Cancelled, 2026-08-24, past) and Friendly Match (Completed) offer neither Reopen nor Cancel; `{ "status": "SCHEDULED" }` on Rained Out → **409** `SESSION_PAST`; on the Completed Session → **409** `SESSION_CLOSED`; `{ "status": "SCHEDULED", "title": … }` → **409** `SESSION_CLOSED` and `{ "status": "SCHEDULED", "notes": "x" }` → **409** too; plain `{ "status": "SCHEDULED" }` → **200**; the Status control on a Cancelled Session's form is read-only, reading "Cancelled" |
+| TC-AR-010 | P0 | **Pass** — **8 runs**, the two writes issued without awaiting the first, capacity reset to `n + 1 = 3` before each. `held ≤ maxPlayers` on **8 / 8**. Both orders were reached: runs 1–2 the reservation committed first → reserve **201**, capacity **unchanged at 3**, edit **409** `CAPACITY_BELOW_HELD`; runs 3–8 the edit committed first → edit **200**, capacity **2**, held **2**, the claim refused **409 "Session Full"** rather than seated over the new capacity. Exactly one write refused every run. No half-write: the reserving member ended the run with his three seeded Payments and no fourth — a hold creates no Payment row |
+| TC-AR-011 | P2 | **Pass, with one assertion carried** — 20 loads of page 1 as Admin A with a Confirm by Admin B in flight on four Payments this run created. **Every load returned exactly 10 rows**; none short. The queue order held on 19 loads; on the one load where a Confirm committed between the id read and the row fetch, a row drew as decided in the position its awaiting standing had earned it — the tolerance the case now states, not a dropped or duplicated row. **The id-level "no id twice in one load" assertion could not be read from the page**: the register renders no row-identity attribute, so the only DOM key available (member + amount + standing) collides across the 40 identical seeded Payments. That assertion stands on #87's query-level verification |
+| TC-AR-012 | P0 | **Pass** — census of all **25** Sessions before and after. `ABSENT → NO_SHOW` on a Completed Session: **200** `{"updated":1}` and **zero** change to any `maxPlayers` or any held count, anywhere. `REGISTERED → NO_SHOW` on Singles Ladder: that Session's held falls **5 → 4**, `max` unchanged at **8**, and **every other figure in the census is unchanged**. `NO_SHOW → ABSENT` back again: **zero** change — the two behave identically, which is the proof that `NO_SHOW` simply is not in the seat-holding pair rather than being adjusted out of it |
+| TC-AR-013 | P0 | **Pass** — Yoga's Hold Lab row `REGISTERED → NO_SHOW`; his `SESSION` Payment `cmt1vyis4006m2kdfhvgin70f` came back **byte-identical**, `updatedAt` still `2026-08-20T19:00:42.772Z`, `status CONFIRMED`, `amount 25000`, `confirmedBy`/`confirmedAt` untouched; the Session's `fee` 25 000 and its own `updatedAt` unmoved; the other two rows on the Session unmoved; his own `/sessions` board draws **Hollow `NO-SHOW`** on Hold Lab and no money mark changed |
+| TC-AR-014 | P0 | **Pass** — a `PENDING` `MONTHLY` Badminton August Payment for a member with four rows on four Badminton August Sessions, one at each value. Reject with no `notes` → **400** `REJECT_REASON_REQUIRED`; with `"   "` → **400**; the fixture unchanged after both. Reject with a reason → **200**. The `REGISTERED` row `cmte9njqm0000acdfyrqysll2` is **gone**; `NO_SHOW cmte9njr20001acdfumkml5u9`, `PRESENT cmte9njr50002acdfp3d9a6k1` and `ABSENT cmte9njr80003acdf1yzfzbf8` all survive at their original statuses **and their original `updatedAt`** (`…19.550 / .553 / .556`) — untouched, not rewritten. Payment `REJECTED`, `notes` verbatim, `confirmedBy` the deciding admin. A second Reject → **409** "This payment has already been reviewed." This is also the re-run of `TC-MS-017`'s database assertion, on a fixture this run owned |
+| TC-AR-015 | P0 | **Pass** — the Tennis card's attendance rate, watched across four states. One `NO_SHOW` + one `ABSENT` in the month → **69 %** (9/13). The `ABSENT` row moved to `NO_SHOW` → **69 %**, unchanged. The other row moved back from `NO_SHOW` to `ABSENT` → **69 %**, unchanged. One row taken out of history altogether (back to `REGISTERED`) → **75 %** (9/12). A denominator on two states would have read 75 % throughout and moved on every flip; it read 69 % with a No-Show present and never moved between the three |
+| TC-AR-016 | P0 | **Pass** — Singles Ladder, ended 2026-08-27, five rows all `REGISTERED`. Every Recorded cell reads Ink `REGISTERED`, none Hollow. The notice renders verbatim — "This session has ended and no attendance has been recorded. Everyone here is still Registered — nobody becomes a No-Show until you record one." — and the form points at it with `aria-describedby="attendance-untaken"`. Save is `disabled`, the counter reads "Nothing changed yet", and `{ "rows": [] }` against the route is **400** `ROWS_EMPTY`. Opening and reloading the register left all five rows at the same status **and the same `updatedAt`** |
+| TC-AR-017 | P0 | **Pass** — two rows changed → **200** `{"updated":2}`; exactly those two moved status and `updatedAt`, and the other three kept theirs to the millisecond (`2026-08-20T19:00:42.685Z`, `.688Z`, and `2026-08-29T10:54:22.366Z`). All five rows resent at their stored values → **200** `{"updated":0}` and **no** timestamp moved. **Mark All Present** on a register holding 2 × `REGISTERED`, 1 × `PRESENT`, 1 × `NO_SHOW`, 1 × `ABSENT` moved **only the two Registered rows** — counter "2 changed" — and left the No-Show and Opted Out rows alone; on a register with no Registered row it moved nothing and Save stayed disabled. Neither prefill wrote anything |
+| TC-AR-018 | P0 | **Pass** — a valid row followed by `"status": "MAYBE"` → **400** `{"error":"Invalid payload","reason":"ROW_INVALID"}` and **the valid row was not written either**. Then `USER_NOT_ON_SESSION`, `DUPLICATE_USER`, `ROWS_EMPTY`, `ROWS_MISSING`, each **400**; an unknown Session id **404**; the same payload as a member **403**. All five rows on the Session came back with their statuses **and `updatedAt` identical** after every one |
+| TC-AR-019 | P0 | **Pass** — reached through real flows on one Session: a member claimed a Seat and withdrew (`DELETE /api/sessions/{id}/attendance` → **200** `{"isForfeited":true}`) storing **`ABSENT`**; an Admin recorded another member as **`NO_SHOW`** through the bulk route. Erased measured `border 1px solid rgba(0,0,0,0)` over `bg rgb(232,235,234)`, label **OPTED OUT / BATAL IKUT**; Hollow measured `border 2px dashed rgb(166,47,38)` over `bg rgba(0,0,0,0)`, label **NO-SHOW / TIDAK HADIR** — fill versus no fill, so the two differ with hue discarded. The word **"Absent" appears nowhere** on the surface in either locale |
+| TC-AR-020 | P0 | **Pass** — page 1: three Tape `IN REVIEW` rows, then a Strike `REJECTED` row, then six Ink `CONFIRMED`; page 2 all decided. Heading "Confirm or reject payment proofs · **3 waiting for a decision**". A Rejected Payment sits with the decided group and carries Strike, not Tape. An explicit column sort wins and the register offers **Back to the queue order** to get out of it |
+| TC-AR-021 | P1 | **Pass** — `?activityId=<Basket>`, 6 rows all Ink and none awaiting → heading "…· **nothing is waiting for a decision**". `?status=CONFIRMED` → the sentence is **absent**, which is correct and is now what the case asks for: under a standing filter the count is structurally zero and the sentence would be a lie about Payments that are still waiting. A filter matching nothing → the register's own empty row, Blank mark **EMPTY** |
+| TC-AR-022 | P0 | **Pass** — three cells measured at 48 × 64px each. Image: a real `<button>`, `border 1px solid rgb(119,131,127)`, `bg rgb(232,235,234)`, `aria-label` "Open the Proof from Adi Pratama". No Proof: `border 1px **dashed**`, `bg rgba(0,0,0,0)` — no fill — caption "No Proof" in Secondary Ink. Failed to load: `border 1px **solid**`, `bg rgb(232,235,234)`, caption "Failed to load" in `rgb(166,47,38)`. **Zero `[data-mark]` in the Proof column** on all three. The page rendered with a Payment carrying an unlisted-host Proof URL present — #88's regression net holds |
+| TC-AR-023 | P1 | **Pass on the mechanism; the ratio carried** — 40 rows each carrying a storage-hosted Proof. The browser requested **`/_next/image?url=…&w=48&q=75`**, `currentSrc` at `devicePixelRatio 1`, **transferSize 444 B / encodedBodySize 144 B**, and **not one request for the original object**. The 40 identical URLs deduplicate to a single request, so the queue's whole image weight at 40 rows was **444 B**. The `srcset` offers 32w…3840w and the browser picked 48w, which is the box. **The ratio against a realistic Proof was not re-measured**: the seed's only storage-hosted Proof is itself **144 B**, so there is nothing to shrink. Wave 2's purpose-uploaded **1,083,388 B** object measured **1,392 B at `w=48`** and **5,787 B at `w=96`** — 0.13 % and 0.53 % — and that is the figure this clause still rests on |
+| TC-AR-024 | P0 | **Pass** — a `MONTHLY` Payment of Rp 60.000 against Badminton Dues of Rp 75.000. The dialog restates member, Activity, Billing Period and amount, and carries "**This is less than the current Dues of Rp 75.000. You can still Confirm.**" with the Confirm button pointing at it through `aria-describedby`. Confirm is **not** disabled. Escape closed the dialog and wrote nothing. Confirming anyway → **200**, `status CONFIRMED`: it warns, it never blocks |
+| TC-AR-025 | P0 | **Pass** — Reject on the monthly Payment with an empty reason and then with `"   "` was refused **in the dialog**, with `role="alert"` carrying "No reason given. Write why you are rejecting this payment — the member sees it." and `aria-invalid="true"` on the textarea; the button stayed enabled both times. The Seat sentence reads "Every seat this member is Registered for in **Badminton** sessions in **August 2026** is released. Seats they attended or opted out of are untouched." and the Reject button points at it. On a **per-Session** Payment that sentence is **absent** and `aria-describedby` is null. At the route, `{ "status": "REJECTED" }` and `{ "notes": "   " }` are both **400** `REJECT_REASON_REQUIRED`; with a reason, **200** and `notes` stored verbatim |
+| TC-AR-026 | P0 | **Pass** — after the Admin's Confirm the member's `/payments` reads Ink **PAID** on the dues card and Ink **CONFIRMED** on the history row. After the Reject it reads Blank **PENDING** with a **Pay now** route back, and the history row carries Strike **REJECTED**, "Rejection reason: amount short of the August dues", the refund guidance and the WhatsApp link |
+| TC-AR-027 | P0 | **Pass** — the Owner's row carries **no** promote, demote or edit control (only the name link), the sentence "**This account cannot be changed.**", the role as the tracked-caps label `OWNER`, and Contact **Withheld**. `PATCH /api/users { role: "MEMBER" }` on the Owner as an Admin → **403** "Cannot modify an OWNER account"; `{ isActive: false }` → **403** likewise. As the Owner themselves the self-demotion guard answers first — **400** "Cannot demote yourself" — and the account is still not modified. As the Owner the same row shows `owner@xclub.local` and `6281200000000`, and is still immutable |
+| TC-AR-028 | **P1** | **Fail — see [#102](https://github.com/jefrykurniaone/net-c-management/issues/102)**. Everything else held: columns `NAME, CONTACT, ROLE, MEMBERSHIPS, ACTIONS`; standing per monthly Membership as Ink `CONFIRMED`, Tape `IN REVIEW` and Blank `PENDING` (all three observed); a **per-Session** Membership carries **no standing mark at all**, only "Per session"; a Membership with no mode reads "Not chosen"; promote → **200** `ADMIN`, demote → **200** `MEMBER`; the detail page carries **PRESENT / OPTED OUT / NO-SHOW** count columns (Yoga 0 / 0 / **1**) and an attendance history row at the Hollow mark, and the register carries **no** No-Show column. **The failing clause is the incomplete profile**: `newbie@xclub.local` carries no marker, because `admin.profileIncomplete` stands in for a *missing name* rather than reporting `isProfileComplete` |
+| TC-AR-029 | P1 | **Pass** — the New Activity and Edit Activity dialogs carry **0** `input[type=color]`, **0** fields named for a colour or an icon, **0** inline `background` styles and no mention of either word; the register draws the initial tile and no swatch. `POST /api/activities` with an existing slug → **409** "That slug is already in use"; without `minMembers` / `maxPlayers` → **400** with field-level details. The register carries Dues, Fee, Modes, Weekly slot, Capacity, Floor and Bank together |
+| TC-AR-030 | P1 | **Pass** — empty body → **400** listing all eight missing fields; `20:00`→`18:00` → **400** "End time must be after start time"; equal times → the same **400**; a valid post → **201**, Scheduled at `0/8`. The register's row count was unchanged after each refusal |
+| TC-AR-031 | **P1** | **Fail — see [#101](https://github.com/jefrykurniaone/net-c-management/issues/101)**. All three registers draw the register's own empty row with the Blank **EMPTY** mark inside the same frame, and clearing the search restores the rows. `/admin/sessions` distinguishes the two facts — "**No sessions match your search.**" — and `/admin/payments` ("No payments found.") and `/admin/members` ("No members found.") do not |
+| TC-AR-032 | P1 | **Pass** — three `<fieldset>`s (BASIC INFO / ADMIN CONTACT / PAYMENT & FEES) on the shared field treatment: `border-radius 2px`, `border 1px solid rgb(119,131,127)`, `padding 10px`, `bg rgb(247,249,248)`. **Zero** `.rounded-xl` or `.bg-card` inside `<main>`, at 1440 and at 390, `scrollWidth === 390`. `PATCH /api/settings { "communityName": "" }` and `{ "   " }` → **400** "Community name is required". A rename took **200** and the sidebar rebranded to "T73 Rename Probe" with its own initials tile; restored to "XClub Community". The browser `<title>` on this route is the section name, "Community", not the community's — the header is what rebrands |
+| TC-AR-033 | P1 | **Pass** — the session export carries `"No","Name","Email","WhatsApp","Status","Registered At"` in `en` and `"No","Nama","Email","WhatsApp","Status","Waktu Daftar"` in `id`, with the **data unchanged** between them; the five status cells read `REGISTERED`, `REGISTERED`, `NO_SHOW`, `PRESENT`, `ABSENT` — all four stored values, spelled as the database spells them. The payments export header is unchanged. On a Session the Owner holds a Seat on, the Admin's export writes the Owner's row with **empty** Email and WhatsApp cells and an unchanged status and timestamp; the Owner's own export carries both values |
+| TC-AR-034 | P1 | **Pass** — all seven surfaces in `id`. Column heads (`TANGGAL, SESI, AKTIVITAS, LOKASI, KAPASITAS, BATAS MINIMUM, STATUS, AKSI`; `ANGGOTA, AKTIVITAS, BUKTI, JUMLAH, PERIODE TAGIHAN, STATUS, DIKIRIM, AKSI`; …), controls (`Buat Sesi, Catat kehadiran, Buka kembali sesi, Batalkan sesi, Konfirmasi, Tolak, Terima, Non-aktifkan, Jadikan Admin, Simpan Pengaturan`), marks (`DIBATALKAN, DITINJAU, LUNAS, TIDAK HADIR, BATAL IKUT, TERDAFTAR, HADIR`), the withheld cell (`Dirahasiakan`), the Proof cells (`Tidak ada bukti`, `Gagal dimuat`), the accessible names (`Buka bukti dari Adi Pratama`) and the routes' own refusal sentences all switch. The only cross-locale matches are the community name, seeded proper nouns, numerals, currency and three documented loanwords that are dictionary values in both blocks — `edit`, `filterBtn` and `status`. No metaphor word — board, tile, rail, lattice, register — appears in either locale. One vocabulary note, not a failure: Decline and Reject both render **Tolak**, where English keeps Decline and Reject apart |
+| TC-AR-035 | P1 | **Pass** — focus travels `EXPORT CSV → search → month → year → status → activity → Filter → the four sortable heads → row 1's Confirm, Reject → row 2's Proof button`, i.e. plain DOM order with the Proof button first on any row that has one. Every stop carries an indicator (a `box-shadow` ring on the controls, the ring-coloured `outline` on the sort heads). Escape closes both the Proof dialog and a decision dialog. Pressing `c`, `r`, `y` and `n` over a focused row opened nothing and changed nothing. No `<tr>` `tabindex` |
+| TC-AR-036 | P0 | **Pass** — swept at **1440 × 900** and **390 × 844**, in both locales and on both materials, across `/admin/sessions`, `/admin/payments`, `/admin/members`, `/admin/activities`, `/admin/applicants`, an attendance register and `/admin/settings`: **`rounded-xl` 0, `rounded-2xl` 0, `border-l-4` 0, `input[type=color]` 0** on every one. Cell rule 1px solid `rgb(119,131,127)` on enamel and `rgb(122,137,129)` on the painted board (`body` at `rgb(27,38,33)`). Standing marks share one edge where there is a standing column (Sessions 1059–1060, Payments 1048–1054). At 390 every `<thead>` is `display: none`, every cell carries its own label, `scrollWidth === 390`, and every row control is pressable. Applicants says **Terima / Tolak** — Admit / Decline, never Confirm / Reject. The `bg-card` matches inside `<main>` are the shared `Badge` and `Button` token variants, not shells |
+
+**Summary.** 36 cases — 11 carried from waves 3 and 4, **25 written by this
+ticket**. **36 executed, 34 Pass, 2 Fail, 0 Not run.** Both failures are **P1**
+and both are filed: [#101](https://github.com/jefrykurniaone/net-c-management/issues/101)
+and [#102](https://github.com/jefrykurniaone/net-c-management/issues/102).
+**Every P0 case passes.** A third defect found by the sweep rather than by a case
+is filed as [#103](https://github.com/jefrykurniaone/net-c-management/issues/103).
+
+**The database assertions, and what proved them.**
+
+| Claim | Proof |
+|---|---|
+| A No-Show leaves capacity alone | A census of all 25 Sessions' `maxPlayers` and seat-holding counts, taken before and after each write and diffed field by field. `ABSENT → NO_SHOW`: **0 diffs**. `NO_SHOW → ABSENT`: **0 diffs**. `REGISTERED → NO_SHOW`: exactly one Session, held **5 → 4**, `max` unchanged, every other row identical |
+| A monthly Reject removes only Registered rows | Four rows on four Badminton August Sessions for one member, one at each value, read by id before and after. `REGISTERED` deleted; `NO_SHOW`, `PRESENT` and `ABSENT` present at their original statuses **and their original `updatedAt`** |
+| A No-Show touches no money | The paired `SESSION` Payment re-read in full: every field including `updatedAt` identical. The Session's `fee` and `updatedAt` identical |
+| A bulk save writes only touched rows | Every row's `status` and `updatedAt` before and after. Two changed rows moved; three did not, to the millisecond. A five-row payload at stored values returned `{"updated":0}` and moved nothing |
+| Admin aggregates count three historical states | The Tennis attendance rate held at **69 %** across an `ABSENT ↔ NO_SHOW` flip and moved to **75 %** only when a row left history altogether |
+| The queue's page is one snapshot | 20 loads, each exactly 10 rows, with a Confirm in flight on four of them |
+| The seed is unchanged | 25 Sessions, 0 census diffs; `Attendance` 69 / 38 / 13 / 3 / **0 NO_SHOW**; `Payment` 3 / 40 / 1; Owner holds no Attendance and no Payment |
+
+**Fixtures created and removed.** All of them, through
+`.claude/scratch/t73-probe.ts` (git-ignored, alongside the harness the earlier
+waves left): four sentinel Sessions (`T73 Sentinel A…E`), the Attendance rows on
+them, one monthly Payment with four paired Attendance rows for the reject case,
+four awaiting Payments for the snapshot case, forty Payments carrying one Proof
+for the weight case, one Payment with a dead Proof URL, and the Owner fixture
+from `probe-owner-seed.ts`. Every one removed, and the state re-compared above.
+
+**Regression net — the existing suites, re-run.**
+
+| Area | Result |
+|---|---|
+| §7 Session management (admin) — 1–11 | **Retired into `TC-AR-*` and re-run there in full.** Every item is executed above: list and filter (`TC-AR-001`, `TC-AR-036`), filtered empty state (`TC-AR-031`, which is where it failed), create validation (`TC-AR-030`), locked fields (`TC-AR-003`…`005`), attendance (`TC-AR-017`, `TC-AR-019` — now on its own register), localised CSV (`TC-AR-033`), delete (`TC-AR-008`) |
+| §8 Payment review (admin) — 1–6 | **Retired into `TC-AR-*` and re-run there in full**: `TC-AR-020`, `TC-AR-021`, `TC-AR-024`, `TC-AR-025`, `TC-AR-026`, `TC-AR-033`. §8.4's "Reject button disabled until a reason is typed" is superseded: the reason is now refused **with a message** and the button stays enabled, which is the better answer and is what `TC-AR-025` asserts |
+| §9–§11 Activities, Members, Settings | **Retired into `TC-AR-029`, `TC-AR-028` and `TC-AR-032`**, all executed above |
+| §12 Member — dashboard & sessions | **Spot re-run, pass.** The guards are exact: attendance on the ONGOING Session → **403** "RSVP closed"; on the CANCELLED Session → **400** "Session is cancelled"; a member calling `POST /api/activities` → **403**. §12.5's full-Session refusal now answers **403 "RSVP closed"** rather than **409 "Session Full"**, because the seeded full Session's day has passed relative to real today and the window guard runs first — the capacity refusal itself was exercised live in `TC-AR-010` |
+| §13 Member — payments & profile | **Spot re-run, pass.** `/payments` reads Tape `IN REVIEW` on Badminton, Ink `PAID` on Basket / Futsal / Tennis, Ink `CONFIRMED` and Strike `REJECTED` in the history, and no unpaid banner while a Proof is in review |
+| §16 Design system — `TC-DS-*` | **Not re-executed as a suite.** `TC-AR-019`, `TC-AR-022` and `TC-AR-036` re-measured the mark forms and the field treatment on both materials and matched; a full re-run is still owed |
+| §17 Member surfaces — `TC-MS-*` | **Not re-executed as a suite.** `TC-MS-017`'s database assertion was re-run as `TC-AR-014` on a fixture this ticket owned, and `TC-MS-021`'s Hollow producer was re-observed on the member board in `TC-AR-013` |
+
+**Not met.**
+
+- **`TC-AR-011`'s id-level assertion.** The register renders no row-identity
+  attribute, so "no id appears twice within one load" cannot be read from the
+  page. Row count, order and standing were all checked; the id assertion rests on
+  #87's query-level verification. Worth an attribute on the row.
+- **`TC-AR-023`'s weight ratio.** Re-measured as a mechanism and as an absolute
+  (444 B for a 40-row queue, `w=48`), but not as a ratio: the seed's only
+  storage-hosted Proof is a 144-byte placeholder. Wave 2's figure stands.
+- **`TC-AR-004` step 3.** A capacity floor lowered by a lapsed hold was not
+  re-run; #69 and #94 hold it.
+- **SonarLint has still been consulted on no ticket in this spec.**
+  `mcp__ide__getDiagnostics` is not resolvable in this environment, for this
+  executor either. `tsc --noEmit` through `next build`, plus ESLint at zero
+  warnings, stood in — as they did in every earlier wave. This remains the one
+  acceptance criterion of the map that no wave has satisfied.
+- **Two case texts were corrected during the run, not softened.** `TC-AR-021`
+  now asks for the sentence to be **absent** under an explicit standing filter,
+  because suppressing it there is right and the original precondition was wrong.
+  `TC-AR-011` now states the one-load standing skew the two-read page design
+  permits. `TC-AR-006` lost two bullets pasted from `TC-MS-020` about a bottom
+  rail this shell does not render. Each is noted in place.
