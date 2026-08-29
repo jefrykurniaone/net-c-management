@@ -759,7 +759,6 @@ const en = {
         paymentRejected: 'Payment rejected',
         paymentUpdateFailed: 'Failed to update payment status',
         paymentAlreadyReviewed: 'This payment has already been reviewed.',
-        confirmConfirm: 'Are you sure you want to confirm this payment?',
         confirmReject: 'Are you sure you want to reject this payment?',
         deactivateMember: 'Deactivate',
         activateMember: 'Activate',
@@ -780,7 +779,6 @@ const en = {
         rejectBtn: 'Reject',
         colMember: 'Member',
         colAmount: 'Amount',
-        colMonth: 'Month / Year',
         noPayments: 'No payments found.',
         activityTitle: 'Manage Activities',
         activitySubtitle: 'Create and manage activities',
@@ -850,6 +848,46 @@ const en = {
         colMembershipsPicked: 'Memberships picked',
         // Names the register for a screen reader; never drawn on screen.
         applicantsCaption: 'Applicants waiting for a decision',
+        // The Payments queue (ticket #68). Column heads double as each cell's
+        // own label once the register collapses by axis, so each has to read as
+        // a label on its own line as well as across a head row.
+        paymentsCaption: 'Payments waiting for a decision',
+        paymentsEmptyMark: 'Empty',
+        paymentsAwaiting: '{n} waiting for a decision',
+        paymentsNoneAwaiting: 'nothing is waiting for a decision',
+        colPeriod: 'Billing Period',
+        colSent: 'Sent',
+        // The two Proof cells that are not an image. Neither is ever a broken
+        // image glyph, and neither is a mark: the register keeps every mark on
+        // the standing column's shared edge.
+        proofNone: 'No Proof',
+        proofFailed: 'Failed to load',
+        proofOpen: 'Open the Proof from {name}',
+        proofDialogTitle: 'Proof from {name}',
+        bankNotSet: 'No bank account set',
+        paymentDecidedOn: 'Decided {date}',
+        confirmPaymentTitle: 'Confirm this payment?',
+        confirmPaymentDesc:
+            'The member is told straight away, and the payment counts as settled.',
+        // The shortfall warns and never blocks: admins take partial transfers
+        // and cash top-ups today, and blocking would teach them to type a
+        // figure that matches instead of the one that was sent.
+        confirmBelowDues:
+            'This is less than the current Dues of {amount}. You can still Confirm.',
+        confirmBelowFee:
+            'This is less than the current Fee of {amount}. You can still Confirm.',
+        rejectPaymentTitle: 'Reject this payment?',
+        rejectPaymentDesc:
+            'The member sees your reason and can send new proof.',
+        rejectSeatConsequence:
+            'Every seat this member is Registered for in {activity} sessions in {period} is released. Seats they attended or opted out of are untouched.',
+        rejectReasonMissing:
+            'No reason given. Write why you are rejecting this payment — the member sees it.',
+        filterSearchLabel: 'Search by member name or email',
+        filterMonthLabel: 'Filter by month',
+        filterYearLabel: 'Filter by year',
+        filterStatusLabel: 'Filter by status',
+        filterActivityLabel: 'Filter by activity',
     },
     activity: {
         label: 'Activity',
@@ -1636,7 +1674,6 @@ const id: typeof en = {
         paymentRejected: 'Pembayaran ditolak',
         paymentUpdateFailed: 'Gagal memperbarui status',
         paymentAlreadyReviewed: 'Pembayaran ini sudah ditinjau.',
-        confirmConfirm: 'Yakin ingin mengkonfirmasi pembayaran ini?',
         confirmReject: 'Yakin ingin menolak pembayaran ini?',
         deactivateMember: 'Non-aktifkan',
         activateMember: 'Aktifkan',
@@ -1657,7 +1694,6 @@ const id: typeof en = {
         rejectBtn: 'Tolak',
         colMember: 'Anggota',
         colAmount: 'Jumlah',
-        colMonth: 'Bulan / Tahun',
         noPayments: 'Tidak ada pembayaran ditemukan.',
         activityTitle: 'Kelola Aktivitas',
         activitySubtitle: 'Buat dan kelola aktivitas',
@@ -1722,6 +1758,37 @@ const id: typeof en = {
         colAsked: 'Mengajukan',
         colMembershipsPicked: 'Keanggotaan dipilih',
         applicantsCaption: 'Pendaftar yang menunggu keputusan',
+        paymentsCaption: 'Pembayaran yang menunggu keputusan',
+        paymentsEmptyMark: 'Kosong',
+        paymentsAwaiting: '{n} menunggu keputusan',
+        paymentsNoneAwaiting: 'tidak ada yang menunggu keputusan',
+        colPeriod: 'Periode Tagihan',
+        colSent: 'Dikirim',
+        proofNone: 'Tidak ada bukti',
+        proofFailed: 'Gagal dimuat',
+        proofOpen: 'Buka bukti dari {name}',
+        proofDialogTitle: 'Bukti dari {name}',
+        bankNotSet: 'Rekening bank belum diatur',
+        paymentDecidedOn: 'Diputuskan {date}',
+        confirmPaymentTitle: 'Konfirmasi pembayaran ini?',
+        confirmPaymentDesc:
+            'Anggota langsung diberi tahu, dan pembayaran dihitung lunas.',
+        confirmBelowDues:
+            'Jumlah ini kurang dari Iuran saat ini sebesar {amount}. Kamu tetap bisa Konfirmasi.',
+        confirmBelowFee:
+            'Jumlah ini kurang dari Biaya Sesi saat ini sebesar {amount}. Kamu tetap bisa Konfirmasi.',
+        rejectPaymentTitle: 'Tolak pembayaran ini?',
+        rejectPaymentDesc:
+            'Anggota melihat alasanmu dan bisa mengirim bukti baru.',
+        rejectSeatConsequence:
+            'Semua kursi yang Terdaftar atas nama anggota ini di sesi {activity} pada {period} akan dilepas. Kursi yang sudah dihadiri atau dibatalkan tidak terpengaruh.',
+        rejectReasonMissing:
+            'Alasan belum diisi. Tulis alasan kamu menolak pembayaran ini — anggota akan membacanya.',
+        filterSearchLabel: 'Cari nama atau email anggota',
+        filterMonthLabel: 'Saring menurut bulan',
+        filterYearLabel: 'Saring menurut tahun',
+        filterStatusLabel: 'Saring menurut status',
+        filterActivityLabel: 'Saring menurut aktivitas',
     },
     activity: {
         label: 'Aktivitas',
