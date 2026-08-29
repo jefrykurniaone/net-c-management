@@ -3,9 +3,12 @@ import type { Activity, Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { currentPeriod, toPeriodKey } from '@/lib/billing-period';
 import {
+    findQueuedDuesRate,
     hasDuesRatePeriodArrived,
     isDuesRateEffectiveFromAllowed,
     isDuesRateSaveUnchanged,
+    resolveDuesRate,
+    type DuesRateChangeOutcome,
 } from '@/lib/dues-rate';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
@@ -80,7 +83,11 @@ export type DuesRatePatch = Readonly<{
 }>;
 
 export type ActivityUpdateOutcome =
-    | Readonly<{ kind: 'updated'; activity: Activity }>
+    | Readonly<{
+          kind: 'updated';
+          activity: Activity;
+          duesRateChange: DuesRateChangeOutcome;
+      }>
     | Readonly<{ kind: 'refused'; reason: DuesRateRefusalReason }>;
 
 export type DuesRateWithdrawOutcome =
@@ -136,23 +143,30 @@ async function lockActivity(
  * Period key, so no arrived row is ever in range: the freeze is a property of
  * the filter here, not only of the check above it.
  *
- * A save that changes nothing then stops, leaving `setAt` and `setById` as they
- * were — rewriting them would falsify "who raised the Dues in March".
+ * A request whose amount equals what the current Period charges
+ * (`resolveDuesRate`) means "charge what we charge now" — no queued row may
+ * survive it, so the row at `effectiveFrom` that the `deleteMany` above spared
+ * (it is "the row being written", not a stray) is deleted too, and nothing is
+ * written. That row is never an arrived one: the `gt` bound above still
+ * protects those. Anything else that changes nothing then just stops, leaving
+ * `setAt` and `setById` as they were — rewriting them would falsify "who raised
+ * the Dues in March".
  *
- * The row itself is an upsert on `(activityId, effectiveFrom)`: replacing a
+ * Otherwise the row is an upsert on `(activityId, effectiveFrom)`: replacing a
  * queued change at the same month is one write on a known key rather than a
  * delete and an insert with a window in between (ADR 0002).
  */
 async function writeQueuedDuesRate(
     tx: Prisma.TransactionClient,
     input: DuesRatePatch & { activityId: string; setById: string; now: Date },
-): Promise<void> {
+): Promise<DuesRateChangeOutcome> {
     const { activityId, amount, effectiveFrom, setById, now } = input;
     const period = currentPeriod(now);
     const rates = await tx.duesRate.findMany({
         where: { activityId },
         select: DUES_RATE_SELECT,
     });
+    const previousQueued = findQueuedDuesRate(rates, period);
     await tx.duesRate.deleteMany({
         where: {
             activityId,
@@ -162,14 +176,27 @@ async function writeQueuedDuesRate(
             },
         },
     });
+    if (resolveDuesRate(rates, period) === amount) {
+        await tx.duesRate.deleteMany({ where: { activityId, effectiveFrom } });
+        return {
+            kind: previousQueued === null ? 'none' : 'withdrawn',
+            previousQueued,
+            queued: null,
+        };
+    }
     if (isDuesRateSaveUnchanged(rates, amount, effectiveFrom, period)) {
-        return;
+        return { kind: 'none', previousQueued, queued: previousQueued };
     }
     await tx.duesRate.upsert({
         where: { activityId_effectiveFrom: { activityId, effectiveFrom } },
         create: { activityId, amount, effectiveFrom, setById },
         update: { amount, setById, setAt: new Date() },
     });
+    return {
+        kind: previousQueued === null ? 'queued' : 'replaced',
+        previousQueued,
+        queued: { amount, effectiveFrom },
+    };
 }
 
 /**
@@ -214,15 +241,16 @@ export async function updateActivityWithDuesRate(input: {
             where: { id: activityId },
             data,
         });
-        if (duesRate !== null) {
-            await writeQueuedDuesRate(tx, {
-                ...duesRate,
-                activityId,
-                setById,
-                now,
-            });
-        }
-        return { kind: 'updated', activity };
+        const duesRateChange: DuesRateChangeOutcome =
+            duesRate === null
+                ? { kind: 'none', previousQueued: null, queued: null }
+                : await writeQueuedDuesRate(tx, {
+                      ...duesRate,
+                      activityId,
+                      setById,
+                      now,
+                  });
+        return { kind: 'updated', activity, duesRateChange };
     });
 }
 
