@@ -50,8 +50,11 @@ export function activityWeeklySlotLabel(activity: Activity, t: Dictionary): stri
 
 /**
  * Who they are: the initial tile, the name, and the slug beneath it. An
- * inactive Activity's name is struck through in its own cell, the way a
- * cancelled Session's title is void (DESIGN.md, The Six Marks).
+ * inactive Activity's name is dimmed, not struck, the way `MarkedValue`
+ * treats a void value; the Strike mark in the standing column carries the
+ * line. `MarkedValue` itself takes a `DomainState`, and Activity active/
+ * inactive isn't one (see `ActivityStanding`), so this applies the same
+ * `text-muted-foreground` class directly rather than routing through it.
  */
 export function ActivityIdentity({ activity }: Readonly<{ activity: Activity }>) {
     return (
@@ -61,7 +64,7 @@ export function ActivityIdentity({ activity }: Readonly<{ activity: Activity }>)
                 <span
                     className={cn(
                         'type-title text-foreground',
-                        !activity.isActive && 'line-through',
+                        !activity.isActive && 'text-muted-foreground',
                     )}>
                     {activity.name}
                 </span>
