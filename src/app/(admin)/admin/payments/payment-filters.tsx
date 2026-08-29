@@ -1,4 +1,6 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
@@ -19,8 +21,8 @@ const YEAR_SPAN = [-1, 0, 1];
 /** What `parsePagination` falls back to; only a different size is carried. */
 const DEFAULT_PAGE_SIZE = 10;
 
-const FIELD_CLASS =
-    'h-11 w-full border border-rule bg-tile px-cell type-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto';
+/** The row's own sizing, layered onto `Input`/`NativeSelect`'s field treatment. */
+const FIELD_SIZE_CLASS = 'h-11 sm:w-auto';
 
 export type PaymentFilterValues = Readonly<{
     month: number | undefined;
@@ -48,18 +50,18 @@ function FilterSelect({
     options: readonly FilterOption[];
 }>) {
     return (
-        <select
+        <NativeSelect
             name={name}
             aria-label={label}
             defaultValue={defaultValue}
-            className={FIELD_CLASS}>
+            className={FIELD_SIZE_CLASS}>
             <option value=''>{allLabel}</option>
             {options.map((option) => (
                 <option key={option.value} value={option.value}>
                     {option.label}
                 </option>
             ))}
-        </select>
+        </NativeSelect>
     );
 }
 
@@ -196,13 +198,13 @@ export function PaymentFilters({
 }>) {
     return (
         <form className='flex flex-wrap gap-cell' method='GET'>
-            <input
+            <Input
                 name='search'
                 defaultValue={values.search}
                 aria-label={t.admin.filterSearchLabel}
                 placeholder={t.table.search.memberPlaceholder}
                 data-testid='search-input'
-                className={`${FIELD_CLASS} sm:w-64`}
+                className='h-11 sm:w-64'
             />
             <PeriodSelects t={t} values={values} thisYear={thisYear} />
             <ScopeSelects t={t} values={values} activities={activities} />

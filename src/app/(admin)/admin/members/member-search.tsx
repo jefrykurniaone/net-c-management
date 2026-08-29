@@ -1,4 +1,6 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { NativeSelect } from '@/components/ui/native-select';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
@@ -16,9 +18,8 @@ const DEFAULT_SORT_BY = 'createdAt';
 const DEFAULT_SORT_DIR = 'desc';
 const DEFAULT_PAGE_SIZE = 10;
 
-/** A cell you write in: tile ground, one rule, square corner. */
-const FIELD_CLASS =
-    'h-9 w-full rounded-[2px] border border-rule bg-tile px-cell type-body text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+/** The row's own sizing, layered onto `Input`/`NativeSelect`'s field treatment. */
+const FIELD_SIZE_CLASS = 'h-9 w-full';
 
 const LABEL_CLASS = 'type-label text-muted-foreground';
 
@@ -41,12 +42,12 @@ function SearchField({
             {/* Named for what is being searched, not for the act: the submit
                 control beside it is already called Search. */}
             <span className={LABEL_CLASS}>{t.admin.colMember}</span>
-            <input
+            <Input
                 name='search'
                 defaultValue={value}
                 placeholder={t.table.search.memberPlaceholder}
                 data-testid='search-input'
-                className={FIELD_CLASS}
+                className={FIELD_SIZE_CLASS}
             />
         </label>
     );
@@ -64,14 +65,17 @@ function ActivityField({
     return (
         <label className='flex w-full flex-col gap-hair sm:w-auto'>
             <span className={LABEL_CLASS}>{t.activity.label}</span>
-            <select name='activityId' defaultValue={value} className={FIELD_CLASS}>
+            <NativeSelect
+                name='activityId'
+                defaultValue={value}
+                className={FIELD_SIZE_CLASS}>
                 <option value=''>{t.activity.filterAll}</option>
                 {activities.map((activity) => (
                     <option key={activity.id} value={activity.id}>
                         {activity.name}
                     </option>
                 ))}
-            </select>
+            </NativeSelect>
         </label>
     );
 }
