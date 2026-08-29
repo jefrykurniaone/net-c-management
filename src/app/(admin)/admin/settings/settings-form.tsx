@@ -16,6 +16,27 @@ import type { SettingsMap } from './use-settings-form';
  * from `useSettingsForm`, unchanged from before this ticket.
  */
 
+interface LogoControlProps {
+    t: Dictionary;
+    logoSrc: string | null;
+    uploadingLogo: boolean;
+    logoButtonLabel: string;
+    logoInputRef: RefObject<HTMLInputElement | null>;
+    onUploadClick: () => void;
+    onLogoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+/** Props `LogoControl` takes minus `t`, which every section already has. */
+type LogoProps = Omit<LogoControlProps, 't'>;
+
+function LogoPlaceholder() {
+    return (
+        <div className='flex h-16 w-16 items-center justify-center rounded-full border border-rule bg-board'>
+            <Upload className='h-6 w-6 text-muted-foreground' />
+        </div>
+    );
+}
+
 function LogoControl({
     t,
     logoSrc,
@@ -24,15 +45,7 @@ function LogoControl({
     logoInputRef,
     onUploadClick,
     onLogoChange,
-}: Readonly<{
-    t: Dictionary;
-    logoSrc: string | null;
-    uploadingLogo: boolean;
-    logoButtonLabel: string;
-    logoInputRef: RefObject<HTMLInputElement | null>;
-    onUploadClick: () => void;
-    onLogoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}>) {
+}: Readonly<LogoControlProps>) {
     return (
         <div className='flex items-center gap-block'>
             {logoSrc ? (
@@ -44,9 +57,7 @@ function LogoControl({
                     className='h-16 w-16 rounded-full border border-rule object-cover'
                 />
             ) : (
-                <div className='flex h-16 w-16 items-center justify-center rounded-full border border-rule bg-board'>
-                    <Upload className='h-6 w-6 text-muted-foreground' />
-                </div>
+                <LogoPlaceholder />
             )}
             <Button
                 type='button'
@@ -76,10 +87,7 @@ function BasicInfoSection({
     t: Dictionary;
     settings: SettingsMap;
     update: (key: keyof SettingsMap, value: string) => void;
-    logoProps: Omit<
-        Parameters<typeof LogoControl>[0],
-        't' | 'logoSrc' | 'logoButtonLabel'
-    > & { logoSrc: string | null; logoButtonLabel: string };
+    logoProps: LogoProps;
 }>) {
     return (
         <SettingsSection title={t.admin.sectionBasicInfo}>
@@ -179,27 +187,17 @@ export function SettingsForm({
     saving: boolean;
     update: (key: keyof SettingsMap, value: string) => void;
     onSubmit: (e: React.SyntheticEvent) => void;
-    logoProps: Omit<
-        Parameters<typeof LogoControl>[0],
-        't' | 'logoSrc' | 'logoButtonLabel'
-    > & { logoSrc: string | null; logoButtonLabel: string };
+    logoProps: LogoProps;
     defaultHoldDurationMinutes: string;
 }>) {
     return (
         <form onSubmit={onSubmit}>
             <div className='border border-rule bg-tile'>
-                <BasicInfoSection
-                    t={t}
-                    settings={settings}
-                    update={update}
-                    logoProps={logoProps}
-                />
+                <BasicInfoSection t={t} settings={settings} update={update} logoProps={logoProps} />
                 <ContactSection t={t} settings={settings} update={update} />
                 <PaymentSection
                     t={t}
-                    holdDurationMinutes={
-                        settings.holdDurationMinutes ?? defaultHoldDurationMinutes
-                    }
+                    holdDurationMinutes={settings.holdDurationMinutes ?? defaultHoldDurationMinutes}
                     update={update}
                 />
             </div>

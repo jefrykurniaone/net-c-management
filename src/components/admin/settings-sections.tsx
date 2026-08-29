@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 
 /**
  * One named group of Settings rows. Composed from the register's own
@@ -17,7 +16,7 @@ export function SettingsSection({
 }: Readonly<{ title: string; children: ReactNode }>) {
     return (
         <fieldset className='m-0 min-w-0 border-0 p-0'>
-            <legend className={cn(SECTION_HEAD_CLASS)}>{title}</legend>
+            <legend className={SECTION_HEAD_CLASS}>{title}</legend>
             {children}
         </fieldset>
     );

@@ -21,25 +21,49 @@ function SettingsHeading({
     );
 }
 
-export default function AdminSettingsPage() {
-    const {
-        t,
-        loading,
-        saving,
-        uploadingLogo,
-        logoPreview,
-        logoInputRef,
-        settings,
-        handleLogoUpload,
-        handleSubmit,
-        update,
-        logoButtonLabel,
-    } = useSettingsForm();
+type LogoDeps = Pick<
+    ReturnType<typeof useSettingsForm>,
+    | 'logoPreview'
+    | 'uploadingLogo'
+    | 'logoButtonLabel'
+    | 'logoInputRef'
+    | 'handleLogoUpload'
+> & { logoUrl?: string };
 
-    if (loading) {
+/** Assembles `SettingsForm`'s `logoProps` from the hook's return values. */
+function buildLogoProps({
+    logoPreview,
+    logoUrl,
+    uploadingLogo,
+    logoButtonLabel,
+    logoInputRef,
+    handleLogoUpload,
+}: Readonly<LogoDeps>) {
+    return {
+        logoSrc: logoPreview ?? logoUrl ?? null,
+        uploadingLogo,
+        logoButtonLabel: logoButtonLabel(),
+        logoInputRef,
+        onUploadClick: () => logoInputRef.current?.click(),
+        onLogoChange: handleLogoUpload,
+    };
+}
+
+export default function AdminSettingsPage() {
+    const form = useSettingsForm();
+
+    if (form.loading) {
         return <FormSkeleton fields={5} />;
     }
 
+    return <SettingsPageBody form={form} />;
+}
+
+/** The loaded page body, split out to keep `AdminSettingsPage` short. */
+function SettingsPageBody({
+    form,
+}: Readonly<{ form: ReturnType<typeof useSettingsForm> }>) {
+    const { t, settings, saving, update, handleSubmit } = form;
     return (
         <div className='space-y-bay'>
             <SettingsHeading
@@ -55,14 +79,14 @@ export default function AdminSettingsPage() {
                 update={update}
                 onSubmit={handleSubmit}
                 defaultHoldDurationMinutes={DEFAULT_HOLD_DURATION_MINUTES}
-                logoProps={{
-                    logoSrc: logoPreview ?? settings.logoUrl ?? null,
-                    uploadingLogo,
-                    logoButtonLabel: logoButtonLabel(),
-                    logoInputRef,
-                    onUploadClick: () => logoInputRef.current?.click(),
-                    onLogoChange: handleLogoUpload,
-                }}
+                logoProps={buildLogoProps({
+                    logoPreview: form.logoPreview,
+                    logoUrl: settings.logoUrl,
+                    uploadingLogo: form.uploadingLogo,
+                    logoButtonLabel: form.logoButtonLabel,
+                    logoInputRef: form.logoInputRef,
+                    handleLogoUpload: form.handleLogoUpload,
+                })}
             />
         </div>
     );
