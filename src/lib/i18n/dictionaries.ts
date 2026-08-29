@@ -1020,6 +1020,14 @@ const en = {
             'The session goes back to Scheduled and members can claim a seat again. Seats held when it was cancelled were never released, so they are still held.',
         sessionReopened: 'Session reopened.',
         sessionReopenFailed: 'This session could not be reopened.',
+        /**
+         * The Payments, Members and Activities registers each say which of two
+         * facts an empty result reports, the same distinction the Sessions
+         * register already makes (`noSessions` / `noSessionsMatch`).
+         */
+        noPaymentsMatch: 'No payments match your search.',
+        noMembersMatch: 'No members match your search.',
+        noActivityMatch: 'No activities match your search.',
     },
     activity: {
         label: 'Activity',
@@ -1992,6 +2000,9 @@ const id: typeof en = {
             'Sesi kembali menjadi Terjadwal dan anggota bisa mengambil kursi lagi. Kursi yang dipegang saat sesi dibatalkan tidak pernah dilepas, jadi masih dipegang.',
         sessionReopened: 'Sesi dibuka kembali.',
         sessionReopenFailed: 'Sesi ini tidak bisa dibuka kembali.',
+        noPaymentsMatch: 'Tidak ada pembayaran yang cocok dengan pencarian.',
+        noMembersMatch: 'Tidak ada anggota yang cocok dengan pencarian.',
+        noActivityMatch: 'Tidak ada aktivitas yang cocok dengan pencarian.',
     },
     activity: {
         label: 'Aktivitas',

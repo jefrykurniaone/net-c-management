@@ -152,16 +152,33 @@ function PaymentsHeading({
     );
 }
 
+/**
+ * "Filtered" on Payments is any narrowing the register offers: a search term,
+ * an Activity, a status, or a month/year. Sort order and page size are not
+ * filters, so a reordered or paged empty page still reads as genuinely empty.
+ */
+function isPaymentsFiltered(values: PaymentFilterValues): boolean {
+    return Boolean(
+        values.search ||
+            values.activityId ||
+            values.status ||
+            values.month ||
+            values.year,
+    );
+}
+
 function PaymentsRegister({
     t,
     dateLocale,
     sp,
+    values,
     queue,
     table,
 }: Readonly<{
     t: Dictionary;
     dateLocale: DateFnsLocale;
     sp: RawSearchParams;
+    values: PaymentFilterValues;
     queue: QueuePage;
     table: TableState;
 }>) {
@@ -173,7 +190,9 @@ function PaymentsRegister({
             searchParams={sp}
             empty={{
                 mark: t.admin.paymentsEmptyMark,
-                text: t.admin.noPayments,
+                text: isPaymentsFiltered(values)
+                    ? t.admin.noPaymentsMatch
+                    : t.admin.noPayments,
             }}
             pagination={{
                 total: queue.total,
@@ -225,6 +244,7 @@ function PaymentsQueue({
                 t={t}
                 dateLocale={getDateFnsLocale(locale)}
                 sp={sp}
+                values={values}
                 queue={queue}
                 table={table}
             />
