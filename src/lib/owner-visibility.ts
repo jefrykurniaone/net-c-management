@@ -49,3 +49,44 @@ export function resolveOwnerVisibility(
         isImmutable,
     };
 }
+
+/** Just the pair, in the two shapes a serialised row needs them. */
+export type ContactPair = Readonly<{
+    email: string | null;
+    phone: string | null;
+}>;
+
+/** The same pair as CSV cells, where a missing value is an empty cell. */
+export type ContactCells = Readonly<{ email: string; phone: string }>;
+
+/**
+ * The contact pair alone, for a row that already has its own shape and must
+ * keep it.
+ *
+ * `resolveOwnerVisibility` answers with the two flags as well, and a caller that
+ * spread its whole result over an existing row would add `isContactWithheld` and
+ * `isImmutable` to that row's published shape. A JSON API row is a contract with
+ * whoever reads it, so the two projections below take the decision and leave the
+ * shape alone. Neither re-decides anything: the rule stays in the one function
+ * above.
+ */
+export function visibleContact(
+    user: ContactSource,
+    viewerRole: Role,
+): ContactPair {
+    const { email, phone } = resolveOwnerVisibility(user, viewerRole);
+    return { email, phone };
+}
+
+/**
+ * The pair as a CSV writes it. A withheld value becomes an empty cell — the same
+ * cell a member who never filled their profile in already produces, so the file
+ * keeps its columns, its column order and its row count whoever exports it.
+ */
+export function visibleContactCells(
+    user: ContactSource,
+    viewerRole: Role,
+): ContactCells {
+    const { email, phone } = visibleContact(user, viewerRole);
+    return { email: email ?? '', phone: phone ?? '' };
+}

@@ -55,21 +55,40 @@ refuses to print is an oracle for that value: an Admin types one character at a 
 Owner's row appear or vanish. So the email arm of the search skips Owner rows for anybody but an
 Owner; the Owner stays findable by name, which is the identifier the surface does show.
 
-#### Where this rule is not yet enforced
+#### Where this rule is enforced
 
-Three Admin-reachable routes still return an Owner's stored `email` and `phone`, so as of this
-writing the rule holds on the Members register and in the contact picker but not across the whole
-product. Recorded here rather than left to be rediscovered:
+Every Admin-reachable surface that can read an Owner's contact details, and how each one holds the
+rule:
 
-- `GET /api/users` (`src/app/api/users/route.ts`) gates on `isAdminRole` and selects `email` and
-  `phone` for every row, Owner included.
+- `GET /api/users/admin-contacts` (`src/app/api/users/admin-contacts/route.ts`) — by the database
+  query, as described above: the Owner's row is not selected for an Admin, so the number is never in
+  the response body.
+- The Members register (`src/app/(admin)/admin/members/member-rows.ts`) and one member's page
+  (`src/app/(admin)/admin/members/[id]/member-detail.ts`) — by `resolveOwnerVisibility` over the row
+  before it is handed to the client, plus the search filter described above.
+- `GET /api/users` (`src/app/api/users/route.ts`) — by `visibleContact` over each row before the JSON
+  is written. The Owner's row is still returned, with `email` and `phone` as `null`; the route's
+  email search skips Owner rows for anybody but an Owner, for the oracle reason above.
 - `GET /api/payments/export` (`src/app/api/payments/export/route.ts`) and
-  `GET /api/sessions/[id]/export` (`src/app/api/sessions/[id]/export/route.ts`) write both fields
-  into a downloadable CSV with no role filter.
+  `GET /api/sessions/[id]/export` (`src/app/api/sessions/[id]/export/route.ts`) — by
+  `visibleContactCells` as each CSV row is built. An Owner's row is still written and every other
+  column on it is unchanged; only the two contact cells are empty, which is the same cell a member
+  who never filled their profile in already produces. The file keeps its columns, their order, its
+  header and its row count, so a spreadsheet or script reading the export is unaffected.
 
-Closing them means running `resolveOwnerVisibility` over the rows in each handler before they are
-serialised. It is deliberately not done in the change that recreated this document, which was a
-display-only ticket, and is tracked on issue #86.
+Every one of those but the first reads the decision from the same place, so no surface can make it
+differently: `resolveOwnerVisibility` in `src/lib/owner-visibility.ts` decides, and `visibleContact`
+and `visibleContactCells` only reshape its answer for a JSON row and for a CSV cell. The contact
+picker is the exception because it never loads the row at all, which is stronger rather than
+different.
+
+Two Admin surfaces read contact details and are not on the list because no Owner row reaches them:
+the Applicants queue (`src/app/(admin)/admin/applicants/page.tsx`) selects on `admittedAt: null`, and
+`prisma/promote-owner.ts` sets `admittedAt` when it sets the role, so an Owner is never an Applicant;
+and the profile routes under `src/app/api/users/profile/` read the caller's own row only.
+
+`PATCH /api/users` writes `role` and `isActive` and returns neither contact field, so rule 1 is the
+whole of the rule there.
 
 ### 3. An Owner sees both Admins' numbers and their own
 
