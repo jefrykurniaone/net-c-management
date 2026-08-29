@@ -44,6 +44,27 @@ export type DuesRateRow = Readonly<{
 }>;
 
 /**
+ * What a Dues Rate write did, for a later caller (#113's member-notice email)
+ * to classify without re-deriving it from the rows.
+ *
+ * `'queued'` — nothing was queued before, and now something is. `'replaced'`
+ * — something was queued before, and it now differs (a different month and/or
+ * a different amount). `'withdrawn'` — something was queued before, and now
+ * nothing is, because the request's amount equals what the current Period
+ * charges. `'none'` — nothing changed, including a `duesRate` of `null` (the
+ * update carried no Dues change at all).
+ */
+export type DuesRateChangeKind = 'none' | 'queued' | 'replaced' | 'withdrawn';
+
+export type DuesRateChangeOutcome = Readonly<{
+    kind: DuesRateChangeKind;
+    /** The row that was queued before this write, or `null` if none was. */
+    previousQueued: DuesRateRow | null;
+    /** The row queued after this write, or `null` if none remains. */
+    queued: DuesRateRow | null;
+}>;
+
+/**
  * The row in force for `period`: the greatest `effectiveFrom` that is not after
  * it. `null` only when the Activity has no row at or before the Period, which
  * the beginning-of-time row exists to make impossible.
@@ -195,16 +216,27 @@ export function hasDuesRatePeriodArrived(
 }
 
 /**
- * Whether saving `amount` from `effectiveFrom` would leave the Activity charging
- * exactly what it charges now — in which case the write is a no-op rather than
- * an error, and no row is touched.
+ * Whether saving `amount` from `effectiveFrom` leaves nothing for the write to
+ * upsert — the write's job, that save, is only ever to clear whatever is
+ * queued, never to write a fresh row.
  *
- * Two ways that happens. With nothing queued, an amount equal to what `period`
- * already charges is the Admin saving the form without meaning to change the
- * Dues — every save of the Activity's name or bank account carries the Dues
- * field along with it, and that must not queue a change. With a change queued,
- * a request identical to it is the same save arriving twice; rewriting the row
- * would move `setAt` and `setById` and falsify "who raised the Dues in March".
+ * True two ways. The request's amount equals what `period` charges right now
+ * (`resolveDuesRate`), read on its own rather than against the queued row —
+ * an Admin saving the Dues field with the current figure means "charge what we
+ * charge now" whether or not a change happens to be queued, so a queued change
+ * must not survive it. (Before #127 this compared against the queued row's own
+ * amount instead, which matched only when nothing was queued; with a change
+ * queued, resaving the current figure under a different month left that queued
+ * row in place, replacing it with a "change" to nothing.) Or the request
+ * exactly repeats the row already queued — the same save arriving twice;
+ * rewriting the row would move `setAt` and `setById` and falsify "who raised
+ * the Dues in March".
+ *
+ * A caller that needs to tell these two apart — the first also has to delete
+ * whatever row sits at `effectiveFrom`, since `writeQueuedDuesRate`'s own
+ * `deleteMany` spares "the row being written"; the second must not touch it —
+ * asks `resolveDuesRate(rates, period) === amount` directly rather than a
+ * second export, since that expression is the first branch verbatim.
  */
 export function isDuesRateSaveUnchanged(
     rates: readonly DuesRateRow[],
@@ -212,9 +244,13 @@ export function isDuesRateSaveUnchanged(
     effectiveFrom: number,
     period: BillingPeriod,
 ): boolean {
-    const queued = findQueuedDuesRate(rates, period);
-    if (queued === null) {
-        return resolveDuesRate(rates, period) === amount;
+    if (resolveDuesRate(rates, period) === amount) {
+        return true;
     }
-    return queued.effectiveFrom === effectiveFrom && queued.amount === amount;
+    const queued = findQueuedDuesRate(rates, period);
+    return (
+        queued !== null &&
+        queued.effectiveFrom === effectiveFrom &&
+        queued.amount === amount
+    );
 }

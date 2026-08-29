@@ -140,7 +140,7 @@ describe('hasDuesRatePeriodArrived, the freeze', () => {
     });
 });
 
-describe('isDuesRateSaveUnchanged, the save that writes nothing', () => {
+describe('isDuesRateSaveUnchanged, the save that leaves nothing to upsert', () => {
     const period = { month: 8, year: 2026 };
     const nothingQueued = [SINCE_FOREVER];
     const changeQueued = [SINCE_FOREVER, FROM_SEPTEMBER];
@@ -160,6 +160,9 @@ describe('isDuesRateSaveUnchanged, the save that writes nothing', () => {
             SEPTEMBER_2026,
             false,
         ],
+        // The identical-request no-op: must keep holding after #127 — a
+        // resubmit of the exact queued row still skips the upsert so `setAt`
+        // and `setById` are not falsely bumped.
         [
             'a request identical to the queued change',
             changeQueued,
@@ -181,12 +184,27 @@ describe('isDuesRateSaveUnchanged, the save that writes nothing', () => {
             toPeriodKey(10, 2026),
             false,
         ],
+        // #127: the current rate saved from a month that differs from the one
+        // queued — a change is queued, but the request is the current figure,
+        // so nothing is left queued afterwards.
         [
-            'the current rate while a change is queued, which withdraws nothing',
+            'the current rate saved from a different month than the one queued',
+            changeQueued,
+            75_000,
+            toPeriodKey(10, 2026),
+            true,
+        ],
+        // #127's defect: this used to read `false` — compared against the
+        // queued row's own amount (90_000) rather than the current rate
+        // (75_000) — so resaving the current figure over the queued month
+        // left the queued row in place, a "change" to nothing. It now reads
+        // `true`, and the queued row is withdrawn rather than replaced.
+        [
+            'the current rate while a change is queued, which withdraws it',
             changeQueued,
             75_000,
             SEPTEMBER_2026,
-            false,
+            true,
         ],
     ];
 
