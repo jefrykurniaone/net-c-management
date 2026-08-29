@@ -62,7 +62,9 @@ export function activityColumns(
         },
         {
             key: 'mode',
-            head: t.admin.colMode,
+            // The attendance register's own head for this column (#67). One
+            // key, so two registers cannot name the same fact two ways.
+            head: t.admin.colPaymentMode,
             render: (row) => (
                 <span className='type-caption text-muted-foreground'>
                     {modeLabel(row.mode, t)}

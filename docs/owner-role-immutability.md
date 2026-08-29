@@ -69,7 +69,7 @@ product. Recorded here rather than left to be rediscovered:
 
 Closing them means running `resolveOwnerVisibility` over the rows in each handler before they are
 serialised. It is deliberately not done in the change that recreated this document, which was a
-display-only ticket, and is tracked on issue #70.
+display-only ticket, and is tracked on issue #86.
 
 ### 3. An Owner sees both Admins' numbers and their own
 
