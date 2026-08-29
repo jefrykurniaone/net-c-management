@@ -2008,6 +2008,119 @@ admin account from §3.
 - Signed in as the Owner (step 4), all four surfaces show the Owner's own
   email intact: the queue, the attendance register, and both routes.
 
+### TC-AR-008 · P0 · Negative — A Session with money behind it, or a Completed one, refuses deletion
+
+**Preconditions:** four Sessions — one **Scheduled** with at least one
+seat-holding Attendance, one **Scheduled** with no held Seat but one live
+(`PENDING`/`CONFIRMED`) Payment naming it, one **`COMPLETED`** with neither, and
+one **`CANCELLED`** with neither.
+
+**Steps:**
+1. `DELETE /api/sessions/{id}` on the Session with the held Seat.
+2. `DELETE` on the Session the live Payment names.
+3. `DELETE` on the Completed Session.
+4. `DELETE` on the Cancelled Session, then re-read it.
+5. Open `/admin/sessions/{id}/edit` for each of the four and read the buttons
+   beneath the form.
+6. In the form for the Session with the held Seat, if a Delete button is drawn at
+   all, press it and read the toast.
+
+**Expected result:**
+
+- Steps 1 and 2 are **409** with `reason: "SESSION_HAS_MONEY"` and a sentence
+  naming both the reason and the fix ("…has a payment or a held seat behind it,
+  so it cannot be deleted. Cancel the session instead…"), in the caller's own
+  locale. A **500** is the failure this case exists to catch: `Payment.session`
+  is `onDelete: Restrict`, so the old route let Prisma throw where it should have
+  been answering.
+- Step 3 is **409** with `reason: "SESSION_CLOSED"` and its own sentence — the
+  Session is part of the record, not "only its notes can be changed", which is
+  the PATCH sentence and answers a question nobody asked here.
+- Step 4 is **200** and the Session is gone. A cancelled Session with nothing
+  behind it is a plan that was called off, not history; where cancelling was what
+  was meant, `TC-AR-009` is the way back rather than this.
+- Step 5: the **Delete session** button is absent on the first three forms and
+  present only on the Cancelled one. Absent, not disabled — the same way the
+  register draws no Cancel control on a Closed Session.
+- Step 6 does not arise where step 5 passed; if it does, the toast carries the
+  route's own sentence, not the generic "Failed to delete session".
+
+### TC-AR-009 · P0 · Positive — A Cancelled Session is reopened while its day has not passed
+
+**Preconditions:** three Sessions — one **`CANCELLED`** dated **today or later**
+in WIB, one **`CANCELLED`** dated **before today** in WIB, and one
+**`COMPLETED`**. Note that "today" is the **WIB** day: between 00:00 and 07:00
+WIB the UTC date is still yesterday's, and a Session dated for the WIB today is
+not past.
+
+**Steps:**
+1. On `/admin/sessions`, read the controls on each of the three rows.
+2. Press **Reopen session** on the not-yet-past Cancelled Session, read the
+   dialog, and confirm. Read the row's standing column afterwards.
+3. `PATCH /api/sessions/{id}` with `{ "status": "SCHEDULED" }` on the past
+   Cancelled Session.
+4. The same `PATCH` on the Completed Session.
+5. `PATCH` the reopened Session's twin — a Cancelled, not-yet-past Session — with
+   `{ "status": "SCHEDULED", "title": "<a different title>" }`.
+6. Open `/admin/sessions/{id}/edit` for a Cancelled Session and read the Status
+   control.
+
+**Expected result:**
+
+- Step 1: only the not-yet-past Cancelled row offers **Reopen session**. The past
+  Cancelled row and the Completed row offer neither Reopen nor Cancel — a Session
+  the server will refuse gets no control rather than a disabled one.
+- Step 2: the dialog names the Session, says the Session goes back to Scheduled
+  and that Seats held when it was cancelled are still held, and confirming turns
+  the standing column from **Strike** to Scheduled without leaving the page.
+- Step 3 is **409** with `reason: "SESSION_PAST"` and a sentence saying the day
+  has passed and to post a new session for the next date.
+- Step 4 is **409** with `reason: "SESSION_CLOSED"`: a completed Session is never
+  reopened.
+- Step 5 is **409** with `reason: "SESSION_CLOSED"`. Reopening is a status-only
+  write: a body that renames the Session in the same request is the edit the
+  Closed rule refuses, not a reopening. The stored `title` and `status` are both
+  **unchanged**.
+- Step 6: the Status control is still drawn read-only, as its own label. The
+  reopening lives on the register only — the form's job is the Session's facts,
+  and one way to do a thing is what keeps two surfaces agreeing.
+
+### TC-AR-010 · P0 · Negative — A capacity edit and a reservation cannot cross
+
+**Preconditions:** a **Scheduled** Session with a fee, capacity `max`, and
+**n = max − 1** seat-holding Attendances — exactly one free Seat. Two browsers:
+an admin in one, and in the other a member who holds no Seat on this Session and
+whose Membership on that Activity is billed **Per-Session**, so claiming a Seat
+takes the hold path. The two presses have to overlap; where they cannot be made
+to by hand, issue them as two `fetch` calls without awaiting the first —
+`PATCH /api/sessions/{id}` with `{ "maxPlayers": n }` and
+`POST /api/sessions/{id}/reserve`.
+
+**Steps:**
+1. Admin tab: open `/admin/sessions/{id}/edit` and set Max Participants to **n**,
+   without saving yet.
+2. Member tab: press the control that claims the last Seat, and press Save in the
+   admin tab in the same moment.
+3. Re-read the Session: its stored `maxPlayers`, and its count of seat-holding
+   (`REGISTERED`/`PRESENT`) Attendances.
+4. Repeat the whole case with the two presses in the other order, several times.
+
+**Expected result:**
+
+- **Every run ends with `held ≤ maxPlayers`.** `maxPlayers = n` stored beside
+  `n + 1` held Seats is the failure this case exists to catch — it is the state
+  the old two-statement PATCH could reach, and one this one cannot.
+- **Exactly one of the two writes is refused**, and which one depends only on
+  which committed first; both succeeding is a failure of this case.
+  - Reservation first: capacity ends **unchanged** at `max`, the Seat is held,
+    and the edit is **409** with `reason: "CAPACITY_BELOW_HELD"` naming `n + 1`
+    seats — the figure the Admin has to be told, since it is one higher than the
+    page they were reading said.
+  - Edit first: capacity ends at **n**, held stays at **n**, and the member's
+    claim is refused as full rather than seated over the new capacity.
+- Neither write leaves a half-write behind: no Payment row without its
+  Attendance, and no capacity written without the count it was decided against.
+
 ---
 
 ### 17.8 Adi — the marks in both board materials

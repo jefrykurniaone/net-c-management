@@ -137,8 +137,12 @@ export function TextField({
 /**
  * Where a Session is in its life. Closed, it is drawn as its own label in the
  * read-only treatment rather than as a disabled `<select>`: the value still
- * posts from the form's own state, and a Closed Session cannot be reopened from
- * here — the route refuses a changed `status` like any other locked field.
+ * posts from the form's own state, unchanged, so this form never asks for a
+ * standing the route would refuse.
+ *
+ * A Cancelled Session *can* be reopened, but not from here — that move lives on
+ * the register, as one control with one question, beside the Cancel it undoes.
+ * Two places to change a Session's standing is how they come to disagree.
  */
 type StatusControlProps = Readonly<{
     field: ControllerRenderProps<UpdateSessionFormData, 'status'>;

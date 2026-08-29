@@ -103,6 +103,7 @@ function standingColumns(
                         id: session.id,
                         title: session.title,
                         isClosed: session.isClosed,
+                        canReopen: session.canReopen,
                     }}
                 />
             ),

@@ -11,6 +11,10 @@ import type { UpdateSessionFormData } from "@/lib/validations/session";
  * Both land on `/api/sessions/[id]`, both share one busy flag, and neither has
  * anything to do with attendance — that is written from the Session's own
  * attendance surface, through the bulk route.
+ *
+ * Both read the route's own `error` sentence off a refusal. The route answers a
+ * 409 naming the reason and the fix; a toast that said "Failed to delete
+ * session" instead would drop exactly the part the Admin needs.
  */
 export function useSessionEditActions(sessionId: string, t: Dictionary) {
   const router = useRouter();
@@ -48,7 +52,10 @@ export function useSessionEditActions(sessionId: string, t: Dictionary) {
       const res = await fetch(`/api/sessions/${sessionId}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error(t.admin.sessionDeleteFailed);
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        throw new Error(err.error ?? t.admin.sessionDeleteFailed);
+      }
       toast.success(t.admin.sessionDeleted);
       leaveToList();
     } catch (err) {

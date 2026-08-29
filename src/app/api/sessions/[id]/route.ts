@@ -4,20 +4,15 @@ import { prisma } from '@/lib/prisma';
 import { releaseExpiredHolds } from '@/lib/holds';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
+import type { SessionRefusal } from '@/lib/session-lock';
 import {
-    LIVE_PAYMENT_STATUSES,
-    resolveSessionRefusal,
-    SEAT_HOLDING_STATUSES,
-    toSessionLockFacts,
-    type SessionLockFacts,
-    type SessionPatch,
-    type SessionRefusal,
-    type StoredSession,
-} from '@/lib/session-lock';
+    deleteSessionLocked,
+    updateSessionLocked,
+    type SessionWriteRefusal,
+} from '@/lib/session-writes';
 import { buildUpdateSessionSchema } from '@/lib/validations/session';
 import { invalidatePublicLanding } from '@/lib/public-landing';
 import { isAdminRole } from '@/lib/utils';
-import type { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
 // GET /api/sessions/[id]
@@ -73,34 +68,15 @@ export async function GET(
 /** HTTP for "the request is well-formed, and this Session refuses it". */
 const REFUSED_STATUS = 409;
 
-/**
- * The stored row the locking rules read, and the two counts they turn on. The
- * counts are taken **after** the hold sweep, so a lapsed hold neither locks a
- * fee nor floors capacity.
- */
-const LOCK_SELECT = {
-    title: true,
-    date: true,
-    startTime: true,
-    endTime: true,
-    location: true,
-    maxPlayers: true,
-    fee: true,
-    notes: true,
-    status: true,
-    _count: {
-        select: {
-            attendances: { where: { status: { in: SEAT_HOLDING_STATUSES } } },
-            payments: { where: { status: { in: LIVE_PAYMENT_STATUSES } } },
-        },
-    },
-} satisfies Prisma.ActivitySessionSelect;
-
 /** The refusal in the caller's own language, naming the reason and the fix. */
 function refusalMessage(t: Dictionary, refusal: SessionRefusal): string {
     switch (refusal.reason) {
         case 'SESSION_CLOSED':
             return t.admin.refusedSessionClosed;
+        case 'SESSION_PAST':
+            return t.admin.refusedSessionPast;
+        case 'SESSION_HAS_MONEY':
+            return t.admin.refusedSessionHasMoney;
         case 'FEE_LOCKED':
             return t.admin.refusedFeeLocked;
         case 'CAPACITY_BELOW_HELD':
@@ -111,12 +87,38 @@ function refusalMessage(t: Dictionary, refusal: SessionRefusal): string {
     }
 }
 
-function writeSession(id: string, patch: SessionPatch) {
-    const { date, ...rest } = patch;
-    return prisma.activitySession.update({
-        where: { id },
-        data: { ...rest, ...(date ? { date: new Date(date) } : {}) },
-    });
+/**
+ * `SESSION_CLOSED` on a DELETE reads a different sentence from the same code on
+ * a PATCH: the write being refused is destruction, so "only its notes can be
+ * changed" would answer a question nobody asked. The code stays the same because
+ * the fact it names — this Session is Closed — is the same fact.
+ */
+function deleteRefusalMessage(t: Dictionary, refusal: SessionRefusal): string {
+    if (refusal.reason === 'SESSION_CLOSED') {
+        return t.admin.refusedDeleteCompleted;
+    }
+    return refusalMessage(t, refusal);
+}
+
+/** The 404 or the 409 a locked write came back with, and nothing else. */
+function notWrittenResponse(
+    t: Dictionary,
+    outcome: SessionWriteRefusal,
+    toMessage: (t: Dictionary, refusal: SessionRefusal) => string,
+): NextResponse {
+    if (outcome.kind === 'missing') {
+        return NextResponse.json(
+            { error: 'Session not found' },
+            { status: 404 },
+        );
+    }
+    return NextResponse.json(
+        {
+            error: toMessage(t, outcome.refusal),
+            reason: outcome.refusal.reason,
+        },
+        { status: REFUSED_STATUS },
+    );
 }
 
 /**
@@ -130,47 +132,6 @@ async function readJsonBody(req: Request): Promise<unknown> {
     } catch {
         return null;
     }
-}
-
-/** The stored row and the body, or the response that says why neither is here. */
-type PatchInput = Readonly<{
-    stored: StoredSession;
-    facts: SessionLockFacts;
-    patch: SessionPatch;
-}>;
-
-/**
- * Everything the locking rules are decided against. The hold sweep runs before
- * the counts are taken, never after, so an expired hold is not still holding a
- * Seat when the fee and capacity rules read one.
- */
-async function readPatchInput(
-    req: Request,
-    id: string,
-    t: Dictionary,
-): Promise<PatchInput | NextResponse> {
-    await releaseExpiredHolds();
-    const existing = await prisma.activitySession.findUnique({
-        where: { id },
-        select: LOCK_SELECT,
-    });
-    if (!existing) {
-        return NextResponse.json({ error: 'Session not found' }, { status: 404 });
-    }
-    const body = await readJsonBody(req);
-    const parsed = buildUpdateSessionSchema(t).safeParse(body);
-    if (!parsed.success) {
-        return NextResponse.json(
-            { error: t.common.error, details: parsed.error.issues },
-            { status: 400 },
-        );
-    }
-    const { _count, ...stored } = existing;
-    return {
-        stored,
-        patch: parsed.data,
-        facts: toSessionLockFacts(_count, stored.status),
-    };
 }
 
 // PATCH /api/sessions/[id] — admin only
@@ -189,27 +150,29 @@ export async function PATCH(
     const t = getDictionary(await getLocale());
     const { id } = await params;
 
-    const input = await readPatchInput(req, id, t);
-    if (input instanceof NextResponse) {
-        return input;
-    }
-
-    // The locks are the stored row's business, never zod's: what they turn on is
-    // the money behind this Session and where it stands, not the body's shape.
-    const refusal = resolveSessionRefusal(input.stored, input.patch, input.facts);
-    if (refusal) {
+    const parsed = buildUpdateSessionSchema(t).safeParse(await readJsonBody(req));
+    if (!parsed.success) {
         return NextResponse.json(
-            { error: refusalMessage(t, refusal), reason: refusal.reason },
-            { status: REFUSED_STATUS },
+            { error: t.common.error, details: parsed.error.issues },
+            { status: 400 },
         );
     }
 
-    const updated = await writeSession(id, input.patch);
+    // The sweep runs before the lock, never inside it: releasing a lapsed hold
+    // is its own write with emails queued behind it, and the counts the locking
+    // rules read are taken after it. The locks themselves are the stored row's
+    // business, never zod's — what they turn on is the money behind this Session
+    // and where it stands, not the body's shape.
+    await releaseExpiredHolds();
+    const outcome = await updateSessionLocked(id, parsed.data, new Date());
+    if (outcome.kind !== 'updated') {
+        return notWrittenResponse(t, outcome, refusalMessage);
+    }
 
     // The correctness case: a cached `/` cannot re-filter, so a cancel or a
     // reschedule has to expire the page that still advertises the old date.
     invalidatePublicLanding();
-    return NextResponse.json(updated);
+    return NextResponse.json(outcome.session);
 }
 
 // DELETE /api/sessions/[id] — admin only
@@ -225,9 +188,17 @@ export async function DELETE(
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
+    const t = getDictionary(await getLocale());
     const { id } = await params;
 
-    await prisma.activitySession.delete({ where: { id } });
+    // Money behind the Session refuses the delete with a 409, rather than
+    // letting `Payment.session`'s `onDelete: Restrict` throw a 500 at a caller
+    // who asked a perfectly well-formed question.
+    await releaseExpiredHolds();
+    const outcome = await deleteSessionLocked(id);
+    if (outcome.kind !== 'deleted') {
+        return notWrittenResponse(t, outcome, deleteRefusalMessage);
+    }
 
     invalidatePublicLanding();
     return NextResponse.json({ success: true });
