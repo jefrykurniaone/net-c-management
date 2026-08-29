@@ -824,7 +824,6 @@ const en = {
         phonePickerPlaceholder: 'Fill from an admin number…',
         phonePickerSelf: 'My number',
         colActivity: 'Activity',
-        colMembers: 'Members',
         createActivityBtn: 'Create Activity',
         updateActivityBtn: 'Save Changes',
         activityCreated: 'Activity created!',
@@ -850,6 +849,18 @@ const en = {
         colMembershipsPicked: 'Memberships picked',
         // Names the register for a screen reader; never drawn on screen.
         applicantsCaption: 'Applicants waiting for a decision',
+        // The Activities register (ticket #71): Dues, Fee, Modes, Weekly
+        // slot, Capacity, Floor and Bank, per the spec's audit-in-one-read
+        // column set. `colMembers` is dropped with the member-count column.
+        colDues: 'Dues',
+        colFee: 'Fee',
+        colModes: 'Modes',
+        colWeeklySlot: 'Weekly slot',
+        colCapacity: 'Capacity',
+        colFloor: 'Floor',
+        colBank: 'Bank',
+        activitiesEmptyMark: 'Empty',
+        activitiesCaption: 'Activities and how each is set up',
     },
     activity: {
         label: 'Activity',
@@ -1701,7 +1712,6 @@ const id: typeof en = {
         phonePickerPlaceholder: 'Isi dari nomor admin…',
         phonePickerSelf: 'Nomor saya',
         colActivity: 'Aktivitas',
-        colMembers: 'Anggota',
         createActivityBtn: 'Buat Aktivitas',
         updateActivityBtn: 'Simpan Perubahan',
         activityCreated: 'Aktivitas berhasil dibuat!',
@@ -1722,6 +1732,15 @@ const id: typeof en = {
         colAsked: 'Mengajukan',
         colMembershipsPicked: 'Keanggotaan dipilih',
         applicantsCaption: 'Pendaftar yang menunggu keputusan',
+        colDues: 'Iuran',
+        colFee: 'Biaya',
+        colModes: 'Metode',
+        colWeeklySlot: 'Jadwal Mingguan',
+        colCapacity: 'Kapasitas',
+        colFloor: 'Batas Minimum',
+        colBank: 'Bank',
+        activitiesEmptyMark: 'Kosong',
+        activitiesCaption: 'Aktivitas dan cara masing-masing diatur',
     },
     activity: {
         label: 'Aktivitas',
