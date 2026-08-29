@@ -24,7 +24,6 @@ import {
     type PaymentFilterValues,
 } from './payment-filters';
 import {
-    buildWhere,
     loadPayments,
     readFilters,
     QUEUE_SORT,
@@ -247,13 +246,7 @@ export default async function AdminPaymentsPage({
 
     const [queue, activities] = await Promise.all([
         loadPayments(
-            {
-                where: buildWhere(values, session.user.role),
-                sortBy,
-                sortDir,
-                skip,
-                take,
-            },
+            { filters: values, sortBy, sortDir, skip, take },
             session.user.role,
         ),
         getActivities(),
