@@ -97,8 +97,9 @@ export function RecordedMark({
     return <StateMark state={attendanceState(status)} labels={t.marks} />;
 }
 
+/** `2px` corner, like every other cell on the board — the marks' own radius. */
 const OPTION_BASE_CLASS =
-    'inline-flex min-h-11 cursor-pointer items-center gap-hair rounded-sm border px-cell py-hair type-label focus-within:border-ring focus-within:ring-2 focus-within:ring-ring';
+    'inline-flex min-h-11 cursor-pointer items-center gap-hair rounded-[2px] border px-cell py-hair type-label focus-within:border-ring focus-within:ring-2 focus-within:ring-ring';
 
 const OPTION_SELECTED_CLASS = 'border-rule bg-accent text-foreground';
 
