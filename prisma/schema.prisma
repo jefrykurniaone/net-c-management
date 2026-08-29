@@ -129,6 +129,8 @@ model User {
   attendances Attendance[]
   payments    Payment[]
   memberships Membership[]
+  // Dues Rates this user set. Never a cascade: see the DuesRate model.
+  duesRatesSet DuesRate[]
 
   // The admission queue reads on both columns and is the admin nav badge's
   // count, so it runs on every admin page render.
@@ -173,6 +175,42 @@ model Activity {
   memberships Membership[]
   sessions    ActivitySession[]
   payments    Payment[]
+  duesRates   DuesRate[]
+}
+
+// The amount an Activity charges for Dues in one Billing Period, kept as a
+// history rather than as one live field so that a Period which has arrived
+// keeps the rate it had (CONTEXT.md "Dues Rate"; docs/adr/0002-dues-rate-history.md).
+//
+// One row per (Activity, effective-from Period). The rate for any Period is the
+// row with the greatest effectiveFrom that is not after that Period, which
+// `src/lib/dues-rate.ts` is the only code to work out. effectiveFrom is the
+// YYYYMM key `Membership.effectiveFrom` already uses, and 0 is the same
+// beginning-of-time key: every Activity has a row at 0 — written by the
+// migration that created this table, by the Activity create path since, and by
+// both seeders — so every Period, however far back, resolves to an amount.
+//
+// setById is nullable and is null on a beginning-of-time row written by the
+// migration or a seeder: that amount is the Activity's standing price carried
+// forward, not an Admin's decision, and naming somebody there would invent a
+// decision nobody made. `onDelete: SetNull` for the same reason — a rate row
+// outlives the Admin who set it, because deleting a User must never delete what
+// a Period charged.
+model DuesRate {
+  id            String   @id @default(cuid())
+  activityId    String
+  amount        Int
+  effectiveFrom Int
+  setById       String?
+  setAt         DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  setBy    User?    @relation(fields: [setById], references: [id], onDelete: SetNull)
+
+  // Two rows of one Activity never share an effective-from Period. This is also
+  // the index every read uses: rows are fetched by activityId and ranked by
+  // effectiveFrom.
+  @@unique([activityId, effectiveFrom])
 }
 
 // Many-to-many join between User and Activity. A member can join several

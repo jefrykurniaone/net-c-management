@@ -20,6 +20,7 @@ config({ path: '.env.prod' });
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { BEGINNING_OF_TIME } from '../src/lib/billing-period';
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -83,6 +84,13 @@ async function seedSettings() {
     console.log(`[ok] Settings: ${SETTINGS.communityName} (WA ${ADMIN_WHATSAPP})`);
 }
 
+/**
+ * Each Activity also gets its beginning-of-time Dues Rate, so a Billing Period
+ * resolves to an amount on a database this seeder built as surely as on one the
+ * migration seeded. Upserted on `(activityId, effectiveFrom)` to stay
+ * re-runnable; `setById` stays null because nobody set this rate — it is the
+ * Activity's price from the beginning.
+ */
 async function seedActivities() {
     for (const e of ACTIVITIES) {
         const { slug, ...data } = e;
@@ -91,8 +99,22 @@ async function seedActivities() {
             update: data,
             create: { slug, ...data },
         });
+        await prisma.duesRate.upsert({
+            where: {
+                activityId_effectiveFrom: {
+                    activityId: activity.id,
+                    effectiveFrom: BEGINNING_OF_TIME,
+                },
+            },
+            update: { amount: activity.monthlyFee },
+            create: {
+                activityId: activity.id,
+                amount: activity.monthlyFee,
+                effectiveFrom: BEGINNING_OF_TIME,
+            },
+        });
         console.log(
-            `[ok] Activity: ${activity.name} (${activity.recurringStartTime}–${activity.recurringEndTime}, monthly + per-session)`,
+            `[ok] Activity: ${activity.name} (${activity.recurringStartTime}–${activity.recurringEndTime}, monthly + per-session, Dues Rate ${activity.monthlyFee})`,
         );
     }
 }
