@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getUserActivityIds } from '@/lib/activity';
-import { resolvePaymentMode } from '@/lib/payment-mode';
+import { currentPeriod, resolvePaymentMode } from '@/lib/payment-mode';
+import { resolveDuesRate } from '@/lib/dues-rate';
 import { getOutstandingSessionBills } from '@/lib/payments';
 import { releaseExpiredHolds } from '@/lib/holds';
 import { getDashboardSessionsBoard } from '@/lib/dashboard-sessions';
@@ -59,7 +60,7 @@ export default async function DashboardPage() {
                     select: {
                         id: true,
                         name: true,
-                        monthlyFee: true,
+                        duesRates: { select: { amount: true, effectiveFrom: true } },
                         allowsMonthly: true,
                         allowsPerSession: true,
                     },
@@ -114,6 +115,15 @@ export default async function DashboardPage() {
     const myActivities = memberships
         .map((m) => m.activity)
         .sort((a, b) => a.name.localeCompare(b.name));
+    const period = currentPeriod(now);
+    // No rate covering the Period is a broken invariant (dues-rate.ts) — read
+    // like the "no fee set" branch below, never a free Period.
+    const duesAmountByActivity = new Map(
+        memberships.map((m) => [
+            m.activity.id,
+            resolveDuesRate(m.activity.duesRates, period) ?? 0,
+        ]),
+    );
     // Activities the member owes MONTHLY dues on this period (mode-resolved, fee
     // set). PER_SESSION / unselected memberships are billed elsewhere / not yet.
     const monthlyActivityIds = new Set(
@@ -128,7 +138,7 @@ export default async function DashboardPage() {
                         },
                         currentMonth,
                         currentYear,
-                    ) === 'MONTHLY' && m.activity.monthlyFee > 0,
+                    ) === 'MONTHLY' && (duesAmountByActivity.get(m.activity.id) ?? 0) > 0,
             )
             .map((m) => m.activity.id),
     );
@@ -145,7 +155,13 @@ export default async function DashboardPage() {
         const status = paymentByActivity.get(a.id)?.status;
         return status !== 'CONFIRMED' && status !== 'PENDING';
     });
-    const firstUnpaid = unpaidMonthly[0];
+    const firstUnpaidActivity = unpaidMonthly[0];
+    const firstUnpaid = firstUnpaidActivity
+        ? {
+              name: firstUnpaidActivity.name,
+              duesAmount: duesAmountByActivity.get(firstUnpaidActivity.id) ?? 0,
+          }
+        : undefined;
     const duesCount = unpaidMonthly.length + outstandingBills.length;
 
     const boardsByActivity = new Map(

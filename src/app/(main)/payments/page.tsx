@@ -18,6 +18,7 @@ import { CreditCard } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { currentPeriod, resolvePaymentMode } from "@/lib/payment-mode";
+import { resolveDuesRate } from "@/lib/dues-rate";
 import { getOutstandingSessionBills } from "@/lib/payments";
 import { releaseExpiredHolds } from "@/lib/holds";
 import type { Prisma } from "@prisma/client";
@@ -82,7 +83,7 @@ export default async function PaymentsPage({
             select: {
               id: true,
               name: true,
-              monthlyFee: true,
+              duesRates: { select: { amount: true, effectiveFrom: true } },
               allowsMonthly: true,
               allowsPerSession: true,
             },
@@ -123,6 +124,16 @@ export default async function PaymentsPage({
   // filter can check whether a payment record already exists this period.
   const statusByActivity = new Map(monthPayments.map((p) => [p.activityId, p.status]));
 
+  // No rate covering the Period is a broken invariant (dues-rate.ts) — read
+  // like the "no fee set" branch below, never a free Period.
+  const period = { month: currentMonth, year: currentYear };
+  const duesAmountByActivity = new Map(
+    memberships.map((m) => [
+      m.activity.id,
+      resolveDuesRate(m.activity.duesRates, period) ?? 0,
+    ]),
+  );
+
   // Bill only for the mode the member actually chose: a MONTHLY membership owes
   // this month's dues; a PER_SESSION membership owes per reserved session (the
   // outstandingBills below); an unselected (null) mode owes nothing yet. Every
@@ -138,9 +149,13 @@ export default async function PaymentsPage({
           currentMonth,
           currentYear,
         ) === "MONTHLY" &&
-        m.activity.monthlyFee > 0,
+        (duesAmountByActivity.get(m.activity.id) ?? 0) > 0,
     )
-    .map((m) => m.activity)
+    .map((m) => ({
+      id: m.activity.id,
+      name: m.activity.name,
+      duesAmount: duesAmountByActivity.get(m.activity.id) ?? 0,
+    }))
     .sort((a, b) => a.name.localeCompare(b.name));
   const isPaid = (activityId: string) => statusByActivity.get(activityId) === "CONFIRMED";
   // A submitted-but-unconfirmed proof is "in review": the member has acted, so
@@ -163,7 +178,7 @@ export default async function PaymentsPage({
           title={t.payments.unpaidDuesTitle
             .replace("{count}", String(unpaidActivities.length))
             .replace("{month}", t.months[currentMonth])}
-          description={`${firstUnpaid.name} · Rp ${firstUnpaid.monthlyFee.toLocaleString("id-ID")}`}
+          description={`${firstUnpaid.name} · Rp ${firstUnpaid.duesAmount.toLocaleString("id-ID")}`}
           ctaLabel={t.payments.payNow}
           href="/payments/upload"
         />
@@ -226,7 +241,7 @@ export default async function PaymentsPage({
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-foreground truncate">{activity.name}</p>
                     <p className="text-xs text-muted-foreground tabular-nums">
-                      Rp {activity.monthlyFee.toLocaleString("id-ID")} {t.payments.perMonth}
+                      Rp {activity.duesAmount.toLocaleString("id-ID")} {t.payments.perMonth}
                     </p>
                   </div>
                   {paid ? (

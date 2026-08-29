@@ -4,6 +4,8 @@ import { SessionStatus, type Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { getDictionary, type Locale } from './i18n/dictionaries';
 import { wibDayKey, wibDayStartFromKey } from './wib';
+import { resolveDuesRate } from './dues-rate';
+import type { BillingPeriod } from './billing-period';
 
 /**
  * The public read — the *sole* module an unauthenticated route may query
@@ -97,7 +99,7 @@ export const PUBLIC_ACTIVITY_SELECT = {
     recurringStartTime: true,
     recurringEndTime: true,
     defaultLocation: true,
-    monthlyFee: true,
+    duesRates: { select: { amount: true, effectiveFrom: true } },
     sessionFee: true,
     allowsMonthly: true,
     allowsPerSession: true,
@@ -118,9 +120,16 @@ export const PUBLIC_SESSION_SELECT = {
     endTime: true,
 } as const satisfies Prisma.ActivitySessionSelect;
 
-export type PublicActivity = Prisma.ActivityGetPayload<{
+type RawPublicActivity = Prisma.ActivityGetPayload<{
     select: typeof PUBLIC_ACTIVITY_SELECT;
 }>;
+
+/** The published shape: the raw `duesRates` history resolved down to the one
+ *  figure the board publishes — the current Billing Period's Dues Rate
+ *  (ADR 0002). The row set itself never crosses this boundary. */
+export type PublicActivity = Omit<RawPublicActivity, 'duesRates'> & {
+    readonly duesAmount: number;
+};
 
 export type PublicSession = Prisma.ActivitySessionGetPayload<{
     select: typeof PUBLIC_SESSION_SELECT;
@@ -137,9 +146,14 @@ export interface PublicLandingData {
  * Active Activities only, ordered by their standing weekly slot. An Activity
  * with no recurring day has no slot to sort by and sorts last; name breaks the
  * tie so the board's order is stable between renders.
+ *
+ * `referenceDate` is the WIB-day carrier from `wibDayStart*` — its UTC fields
+ * *are* the WIB calendar day, not a real instant — so the Billing Period is
+ * read off it with `getUTC*` directly rather than through `currentPeriod`,
+ * which deliberately reads local-time fields off a real "now" (`billing-period.ts`).
  */
-async function readActivities(): Promise<PublicActivity[]> {
-    return prisma.activity.findMany({
+async function readActivities(referenceDate: Date): Promise<PublicActivity[]> {
+    const rows = await prisma.activity.findMany({
         where: { isActive: true },
         orderBy: [
             { recurringDay: { sort: 'asc', nulls: 'last' } },
@@ -147,6 +161,16 @@ async function readActivities(): Promise<PublicActivity[]> {
         ],
         select: PUBLIC_ACTIVITY_SELECT,
     });
+    const period: BillingPeriod = {
+        month: referenceDate.getUTCMonth() + 1,
+        year: referenceDate.getUTCFullYear(),
+    };
+    return rows.map(({ duesRates, ...activity }) => ({
+        ...activity,
+        // No rate covering the Period is a broken invariant (dues-rate.ts) —
+        // read like the "no fee set" branch elsewhere, never a free Period.
+        duesAmount: resolveDuesRate(duesRates, period) ?? 0,
+    }));
 }
 
 /**
@@ -201,9 +225,10 @@ interface CachedLanding {
  */
 const readCachedLanding = unstable_cache(
     async (dayKey: string): Promise<CachedLanding> => {
+        const referenceDate = wibDayStartFromKey(dayKey);
         const [activities, sessions] = await Promise.all([
-            readActivities(),
-            readNextSessions(wibDayStartFromKey(dayKey)),
+            readActivities(referenceDate),
+            readNextSessions(referenceDate),
         ]);
         return {
             activities,

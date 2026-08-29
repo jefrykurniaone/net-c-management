@@ -101,7 +101,9 @@ export interface MembershipRowView {
 export interface MembershipModeInput {
     readonly membership: MembershipMode;
     readonly offered: OfferedModes;
-    readonly monthlyFee: number;
+    /** This Activity's Dues Rate for the current Billing Period (ADR 0002),
+     *  already resolved by the caller — never re-resolved here. */
+    readonly duesAmount: number;
     readonly sessionFee: number;
     /** Whether a live Payment stands against the current Billing Period. */
     readonly hasLivePaymentThisPeriod: boolean;
@@ -122,7 +124,7 @@ function summarise(
         return {
             modeLabel: t.paymentMode.monthly,
             billsLabel: t.profile.modeDuesLabel,
-            amount: `${rupiah(input.monthlyFee)}${t.paymentMode.perMonthSuffix}`,
+            amount: `${rupiah(input.duesAmount)}${t.paymentMode.perMonthSuffix}`,
         };
     }
     return {

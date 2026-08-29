@@ -17,7 +17,8 @@ function money(n: number): string {
 interface JoinModeDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    monthlyFee: number;
+    /** This Activity's Dues Rate for the Period this Session belongs to (ADR 0002). */
+    duesAmount: number;
     sessionFee: number;
     loading: boolean;
     onMonthly: () => void;
@@ -32,7 +33,7 @@ interface JoinModeDialogProps {
 export function JoinModeDialog({
     open,
     onOpenChange,
-    monthlyFee,
+    duesAmount,
     sessionFee,
     loading,
     onMonthly,
@@ -54,7 +55,7 @@ export function JoinModeDialog({
                     <ModeOption
                         label={t.paymentMode.monthly}
                         desc={t.sessions.joinMonthlyDesc}
-                        fee={`${money(monthlyFee)}${t.paymentMode.perMonthSuffix}`}
+                        fee={`${money(duesAmount)}${t.paymentMode.perMonthSuffix}`}
                         disabled={loading}
                         onSelect={onMonthly}
                     />

@@ -5,15 +5,17 @@ import { ensureMembership, leaveActivity } from '@/lib/activity';
 import {
     currentPeriod,
     resolvePaymentMode,
+    toPeriodKey,
     type MembershipMode,
 } from '@/lib/payment-mode';
+import { resolveDuesRate, type DuesRateRow } from '@/lib/dues-rate';
 import { NextResponse } from 'next/server';
 
 type ActivityRow = {
     id: string;
     name: string;
     slug: string;
-    monthlyFee: number;
+    duesRates: DuesRateRow[];
     sessionFee: number;
     allowsMonthly: boolean;
     allowsPerSession: boolean;
@@ -22,6 +24,34 @@ type ActivityRow = {
     bankAccountNumber: string;
     bankAccountHolder: string;
 };
+
+/** The Proof upload form's month picker range: 2020 through one year ahead —
+ *  mirrors `MIN_PAYMENT_YEAR`/`MAX_FUTURE_YEARS` in
+ *  `src/app/api/payments/upload/route.ts`, which validates the same bound. */
+const MIN_DUES_RATE_YEAR = 2020;
+const MAX_FUTURE_YEARS = 1;
+const MONTHS_PER_YEAR = 12;
+
+/**
+ * This Activity's Dues Rate for every Period the upload form's month range can
+ * select, keyed by `toPeriodKey` — resolved once per Activity so a picker only
+ * ever looks a key up, never resolves one itself (ADR 0002). `null` (no rate
+ * covering a Period, a broken invariant) reads as `0` here, matching the
+ * "no fee set" branch every other member surface uses.
+ */
+function buildDuesAmountByPeriod(
+    rates: readonly DuesRateRow[],
+    currentYear: number,
+): Record<number, number> {
+    const maxYear = currentYear + MAX_FUTURE_YEARS;
+    const byPeriod: Record<number, number> = {};
+    for (let year = MIN_DUES_RATE_YEAR; year <= maxYear; year += 1) {
+        for (let month = 1; month <= MONTHS_PER_YEAR; month += 1) {
+            byPeriod[toPeriodKey(month, year)] = resolveDuesRate(rates, { month, year }) ?? 0;
+        }
+    }
+    return byPeriod;
+}
 
 // Shape each Activity for the profile "Your activities" card: identity + fees +
 // offered modes, plus this member's mode fields and the server-resolved
@@ -37,8 +67,11 @@ function toActivityView(
         allowsMonthly: activity.allowsMonthly,
         allowsPerSession: activity.allowsPerSession,
     };
+    const { duesRates, ...rest } = activity;
     return {
-        ...activity,
+        ...rest,
+        duesAmount: resolveDuesRate(duesRates, { month, year }) ?? 0,
+        duesAmountByPeriod: buildDuesAmountByPeriod(duesRates, year),
         joined: membership !== undefined,
         paymentMode: membership?.paymentMode ?? null,
         effectiveFrom: membership?.effectiveFrom ?? null,
@@ -67,7 +100,7 @@ export async function GET() {
                 id: true,
                 name: true,
                 slug: true,
-                monthlyFee: true,
+                duesRates: { select: { amount: true, effectiveFrom: true } },
                 sessionFee: true,
                 allowsMonthly: true,
                 allowsPerSession: true,

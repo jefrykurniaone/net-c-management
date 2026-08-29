@@ -9,7 +9,8 @@ function row(overrides: Partial<MembershipRow> = {}): MembershipRow {
     return {
         id: 'badminton',
         name: 'Badminton',
-        monthlyFee: 150000,
+        duesAmount: 150000,
+        duesAmountByPeriod: { 202608: 150000 },
         joined: true,
         allowsMonthly: true,
         effectiveMode: null,
@@ -31,7 +32,8 @@ describe('resolveProofUploadCase — something to bill for', () => {
                 {
                     id: 'badminton',
                     name: 'Badminton',
-                    monthlyFee: 150000,
+                    duesAmount: 150000,
+                    duesAmountByPeriod: { 202608: 150000 },
                     bankName: 'BCA',
                     bankAccountNumber: '1234567890',
                     bankAccountHolder: 'Community',
