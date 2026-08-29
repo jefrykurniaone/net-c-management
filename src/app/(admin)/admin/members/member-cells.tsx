@@ -82,17 +82,34 @@ export function StandingMark({
     return <StateMark state={paymentState(status)} labels={t.marks} />;
 }
 
-/** Who they are, and the way through to their detail page. */
+/**
+ * Who they are, and the way through to their detail page.
+ *
+ * The missing-name placeholder and the incomplete-profile label are two
+ * independent facts, not one fallback wearing two hats: a member can lack a
+ * name and hold a complete profile, or carry a name and still be stuck at
+ * onboarding. `isProfileComplete` is a state of the account's setup, so it is
+ * lettered as a tracked-caps label — the same treatment the role already
+ * uses below — never one of the six marks, which are reserved for a
+ * standing.
+ */
 export function MemberIdentity({
     member,
     t,
 }: Readonly<{ member: MemberRow; t: Dictionary }>) {
     return (
-        <Link
-            href={`/admin/members/${member.id}`}
-            className='type-title text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-            {member.name ?? `(${t.admin.profileIncomplete})`}
-        </Link>
+        <span className='flex min-w-0 flex-col gap-hair'>
+            <Link
+                href={`/admin/members/${member.id}`}
+                className='type-title text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                {member.name ?? t.admin.memberNameEmpty}
+            </Link>
+            {!member.isProfileComplete && (
+                <span className='type-label text-muted-foreground'>
+                    {t.admin.profileIncomplete}
+                </span>
+            )}
+        </span>
     );
 }
 
