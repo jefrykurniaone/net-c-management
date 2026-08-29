@@ -11,6 +11,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { isOptimisableProofUrl } from '@/lib/proof-host';
 import { cn } from '@/lib/utils';
 
 /**
@@ -23,12 +24,28 @@ import { cn } from '@/lib/utils';
  * thumbnail is requested at a fixed 48×64 box, so what crosses the wire is a
  * 48px-wide render (96px on a 2x screen), not the original.
  *
+ * **The optimiser is offered only the host it is configured for.** Its loader
+ * throws on an unlisted host, at render time rather than through `onError`, so
+ * a single Payment carrying a strange Proof URL used to blank the entire queue
+ * (#88). Anything `isOptimisableProofUrl` cannot vouch for renders `unoptimized`
+ * instead: same box, same button, same dialog, no loader and therefore no host
+ * check — and a genuine load failure reaches `onError` again, where the designed
+ * failure cell is waiting. Every Proof written by the upload route is on the
+ * storage host, so real data is unaffected and the weight criterion holds; this
+ * is the anomaly path, and it degrades rather than crashing.
+ *
  * Two cells here are not images at all and are designed as cells rather than
  * left to the browser's broken-image glyph: a Payment with no Proof, and a
  * Proof whose URL will not load. Neither uses a mark — the register keeps every
  * mark on the standing column's shared edge, so a second mark in this column
  * would break the one line every mark on the surface lands on.
  */
+
+/**
+ * Read as a whole static expression so the bundler inlines it: a `NEXT_PUBLIC_`
+ * value reaches the browser only when it is written out literally.
+ */
+const STORAGE_BASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
 /** The box, in CSS pixels. `next/image` asks the optimiser for exactly this. */
 const THUMB_WIDTH = 48;
@@ -96,7 +113,8 @@ function FailedProofCell({ label }: Readonly<{ label: string }>) {
 function FullProof({
     src,
     labels,
-}: Readonly<{ src: string; labels: ProofLabels }>) {
+    isOptimisable,
+}: Readonly<{ src: string; labels: ProofLabels; isOptimisable: boolean }>) {
     return (
         <DialogContent className='sm:max-w-xl'>
             <DialogHeader>
@@ -109,30 +127,34 @@ function FullProof({
                 width={FULL_WIDTH}
                 height={FULL_HEIGHT}
                 sizes={FULL_SIZES}
+                unoptimized={!isOptimisable}
                 className='h-auto max-h-[70vh] w-full border border-rule bg-board object-contain'
             />
         </DialogContent>
     );
 }
 
-/**
- * The row's Proof. The thumbnail is a real `<button>`, so it is reached by Tab
- * in the row's own order and opens with Enter — no single-key shortcut anywhere
- * near a money decision. Radix hands focus back to that same button when the
- * dialog closes, which is what returns the Admin to the row they left.
- */
-export function PaymentProof({
-    proofUrl,
-    labels,
-}: Readonly<{ proofUrl: string | null; labels: ProofLabels }>) {
-    const [hasFailed, setHasFailed] = useState(false);
+type OpenableProofProps = Readonly<{
+    src: string;
+    labels: ProofLabels;
+    /** False for anything the optimiser's host allow-list would reject. */
+    isOptimisable: boolean;
+    onFailed: () => void;
+}>;
 
-    if (proofUrl === null || proofUrl.trim() === '') {
-        return <NoProofCell label={labels.none} />;
-    }
-    if (hasFailed) {
-        return <FailedProofCell label={labels.failed} />;
-    }
+/**
+ * A Proof that loaded: the thumbnail, and the way into the full-size dialog.
+ *
+ * The `<button>` stays a real element directly under `DialogTrigger asChild` —
+ * that is how Radix merges its own handlers and ref onto the row's control, and
+ * a component in its place would swallow them.
+ */
+function OpenableProof({
+    src,
+    labels,
+    isOptimisable,
+    onFailed,
+}: OpenableProofProps) {
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -145,17 +167,52 @@ export function PaymentProof({
                         FOCUS_CLASS,
                     )}>
                     <Image
-                        src={proofUrl}
+                        src={src}
                         alt=''
                         width={THUMB_WIDTH}
                         height={THUMB_HEIGHT}
                         sizes={THUMB_SIZES}
-                        onError={() => setHasFailed(true)}
+                        unoptimized={!isOptimisable}
+                        onError={onFailed}
                         className='h-16 w-12 object-cover'
                     />
                 </button>
             </DialogTrigger>
-            <FullProof src={proofUrl} labels={labels} />
+            <FullProof
+                src={src}
+                labels={labels}
+                isOptimisable={isOptimisable}
+            />
         </Dialog>
+    );
+}
+
+/**
+ * The row's Proof, in one of three states. The thumbnail is a real `<button>`,
+ * so it is reached by Tab in the row's own order and opens with Enter — no
+ * single-key shortcut anywhere near a money decision. Radix hands focus back to
+ * that same button when the dialog closes, which is what returns the Admin to
+ * the row they left.
+ */
+export function PaymentProof({
+    proofUrl,
+    labels,
+}: Readonly<{ proofUrl: string | null; labels: ProofLabels }>) {
+    const [hasFailed, setHasFailed] = useState(false);
+
+    const src = proofUrl?.trim() ?? '';
+    if (src === '') {
+        return <NoProofCell label={labels.none} />;
+    }
+    if (hasFailed) {
+        return <FailedProofCell label={labels.failed} />;
+    }
+    return (
+        <OpenableProof
+            src={src}
+            labels={labels}
+            isOptimisable={isOptimisableProofUrl(src, STORAGE_BASE_URL)}
+            onFailed={() => setHasFailed(true)}
+        />
     );
 }
