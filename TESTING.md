@@ -774,6 +774,33 @@ TC-DS-015.
 carries `tabular-nums`. A phone number is none of those four and is out of scope
 for this case.
 
+### TC-DS-017 · P1 · Positive — The Inputs / Fields treatment on every shared field
+
+**Preconditions:** both materials, both locales, 1440 × 900 and 390 × 844. Visit
+a surface composing `Input` (`/onboarding`), `Textarea` (an admin Reject
+dialog's reason field), and `Select` (`/admin/sessions/new`'s Activity
+picker), plus a read-only field (`/payments/upload`'s server-set amount).
+
+**Steps:**
+1. At rest, read the computed background, border colour and border-radius of
+   an `Input`, a `Textarea` and a `Select` trigger.
+2. Tab to each field and read the computed border colour and outline/box-shadow
+   ring, with its offset.
+3. Submit a form with an invalid value on a field carrying `aria-invalid` and
+   read its border and helper-text colour.
+4. Load `ReadOnlyField` (`/payments/upload`'s amount) and read its background,
+   with the field neither focused nor disabled.
+5. Repeat steps 1–4 at 390 × 844.
+
+**Expected result:** at rest, every field resolves Enamel Tile background
+(`bg-tile`), a 1px Ruled Line border (`border-rule`) and a `2px` corner
+(`DESIGN.md`, *Inputs / Fields*) — no rounded-pill corner, no transparent
+ground, at either width or material. On focus, the border resolves Court Green
+(`border-ring`) with a 2px ring offset 2px from the field edge. An
+`aria-invalid` field resolves a Struck Red border, and its helper text names
+the problem and the fix. `ReadOnlyField` resolves the Enamel Ground fill
+(`bg-board`) with no caller class supplying it.
+
 ### 16.17 Recorded run — 2026-08-20
 
 Executed once against the §2 seed on Next.js 16.2.6, 1440 × 900 and 390 × 844,

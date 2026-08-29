@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { isAdminRole } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { NewActivityButton, ActivityActions } from './activity-actions';
 import {
     ActivityIdentity,
@@ -145,12 +147,12 @@ function ActivitySearchForm({
 }>) {
     return (
         <form className='flex flex-wrap gap-2' method='GET'>
-            <input
+            <Input
                 name='search'
                 defaultValue={search}
                 placeholder={t.table.search.activityPlaceholder}
                 data-testid='search-input'
-                className='h-9 w-full rounded-lg border border-input bg-card px-3 text-sm placeholder:text-subtle-foreground sm:w-72'
+                className='w-full sm:w-72'
             />
             {sortBy !== 'name' && (
                 <input type='hidden' name='sortBy' value={sortBy} />
@@ -165,11 +167,9 @@ function ActivitySearchForm({
                     value={String(pageSize)}
                 />
             )}
-            <button
-                type='submit'
-                className='h-9 rounded-lg border border-input bg-card px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-muted'>
+            <Button type='submit' variant='outline'>
                 {t.table.search.btn}
-            </button>
+            </Button>
         </form>
     );
 }
