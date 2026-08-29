@@ -1,34 +1,186 @@
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
-import { Mark } from '@/components/ui/mark';
-import { ActivityInitial } from '@/components/activity/activity-badge';
 import { getLocale } from '@/lib/i18n/locale';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { isAdminRole } from '@/lib/utils';
 import { NewActivityButton, ActivityActions } from './activity-actions';
-import { ActivityCards } from './activity-cards';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
-import { parsePagination, parseSort, parseSearch } from '@/lib/table-params';
-import { SortableTh } from '@/components/ui/sortable-th';
-import type { Prisma } from '@prisma/client';
+import {
+    ActivityIdentity,
+    ActivityBank,
+    ActivityStanding,
+    activityDuesLabel,
+    activityFeeLabel,
+    activityModesLabel,
+    activityWeeklySlotLabel,
+} from './activity-cells';
+import { parsePagination, parseSort, parseSearch, type RawSearchParams } from '@/lib/table-params';
+import { Register } from '@/components/admin/register';
+import type { RegisterColumn } from '@/components/admin/register-columns';
+import type { Prisma, Activity } from '@prisma/client';
+
+/**
+ * The Activities register (ticket #71) — one row per Activity, an audit in
+ * one read: who it is, what it costs, how it's paid for, when it runs, how
+ * big it is, its cost-sharing floor, its destination bank account, whether
+ * it's live, then the row's own controls. Composes the shared register the
+ * way the Applicants surface does; the mobile cards this page used to fall
+ * back to below `md` are gone with it — the register collapses by axis on
+ * its own.
+ */
 
 function buildActivityOrderBy(
     sortBy: string,
     dir: 'asc' | 'desc',
 ): Prisma.ActivityOrderByWithRelationInput[] {
-    if (sortBy === 'monthlyFee') return [{ monthlyFee: dir }, { name: 'asc' }];
-    if (sortBy === 'status') return [{ isActive: dir === 'asc' ? 'desc' : 'asc' }, { name: 'asc' }];
-    if (sortBy === 'members') return [{ memberships: { _count: dir } }, { name: 'asc' }];
+    if (sortBy === 'monthlyFee') {
+        return [{ monthlyFee: dir }, { name: 'asc' }];
+    }
+    if (sortBy === 'status') {
+        return [{ isActive: dir === 'asc' ? 'desc' : 'asc' }, { name: 'asc' }];
+    }
     return [{ isActive: 'desc' }, { name: dir }];
+}
+
+function activityColumns(t: Dictionary): readonly RegisterColumn<Activity>[] {
+    return [
+        {
+            key: 'activity',
+            head: t.admin.colActivity,
+            sortKey: 'name',
+            render: (a) => <ActivityIdentity activity={a} />,
+        },
+        {
+            key: 'dues',
+            head: t.admin.colDues,
+            kind: 'amount',
+            sortKey: 'monthlyFee',
+            render: activityDuesLabel,
+        },
+        {
+            key: 'fee',
+            head: t.admin.colFee,
+            kind: 'amount',
+            render: activityFeeLabel,
+        },
+        {
+            key: 'modes',
+            head: t.admin.colModes,
+            render: (a) => activityModesLabel(a, t),
+        },
+        {
+            key: 'slot',
+            head: t.admin.colWeeklySlot,
+            render: (a) => activityWeeklySlotLabel(a, t),
+        },
+        {
+            key: 'capacity',
+            head: t.admin.colCapacity,
+            kind: 'figure',
+            render: (a) => a.maxPlayers,
+        },
+        {
+            key: 'floor',
+            head: t.admin.colFloor,
+            kind: 'figure',
+            render: (a) => a.minMembers,
+        },
+        {
+            key: 'bank',
+            head: t.admin.colBank,
+            render: (a) => <ActivityBank activity={a} />,
+        },
+        {
+            key: 'standing',
+            head: t.admin.colStatus,
+            kind: 'standing',
+            sortKey: 'status',
+            render: (a) => <ActivityStanding activity={a} t={t} />,
+        },
+        {
+            key: 'actions',
+            head: t.admin.colActions,
+            kind: 'actions',
+            render: (a) => <ActivityActions activity={a} />,
+        },
+    ];
+}
+
+function emptyRow(t: Dictionary): Readonly<{ mark: string; text: string }> {
+    return { mark: t.admin.activitiesEmptyMark, text: t.admin.noActivity };
+}
+
+function ActivitiesHeading({
+    t,
+    total,
+}: Readonly<{ t: Dictionary; total: number }>) {
+    return (
+        <div className='flex flex-wrap items-start justify-between gap-cell'>
+            <div>
+                <h1 className='type-display text-foreground'>
+                    {t.admin.activityTitle}
+                </h1>
+                <p className='mt-cell type-caption text-muted-foreground'>
+                    {total} {t.admin.activityRegistered} ·{' '}
+                    {t.admin.activitySubtitle}
+                </p>
+            </div>
+            <NewActivityButton />
+        </div>
+    );
+}
+
+function ActivitySearchForm({
+    t,
+    search,
+    sortBy,
+    sortDir,
+    pageSize,
+}: Readonly<{
+    t: Dictionary;
+    search: string;
+    sortBy: string;
+    sortDir: 'asc' | 'desc';
+    pageSize: number | 'all';
+}>) {
+    return (
+        <form className='flex flex-wrap gap-2' method='GET'>
+            <input
+                name='search'
+                defaultValue={search}
+                placeholder={t.table.search.activityPlaceholder}
+                data-testid='search-input'
+                className='h-9 w-full rounded-lg border border-input bg-card px-3 text-sm placeholder:text-subtle-foreground sm:w-72'
+            />
+            {sortBy !== 'name' && (
+                <input type='hidden' name='sortBy' value={sortBy} />
+            )}
+            {sortDir !== 'asc' && (
+                <input type='hidden' name='sortDir' value={sortDir} />
+            )}
+            {pageSize !== 10 && (
+                <input
+                    type='hidden'
+                    name='pageSize'
+                    value={String(pageSize)}
+                />
+            )}
+            <button
+                type='submit'
+                className='h-9 rounded-lg border border-input bg-card px-4 text-sm font-semibold text-secondary-foreground transition-colors hover:bg-muted'>
+                {t.table.search.btn}
+            </button>
+        </form>
+    );
 }
 
 export default async function AdminActivityPage({
     searchParams,
-}: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
+}: Readonly<{ searchParams: Promise<RawSearchParams> }>) {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
-    if (!session?.user?.id || !isAdminRole(session.user.role))
+    if (!session?.user?.id || !isAdminRole(session.user.role)) {
         redirect('/dashboard');
+    }
 
     const t = getDictionary(locale);
 
@@ -52,148 +204,28 @@ export default async function AdminActivityPage({
             orderBy: buildActivityOrderBy(sortBy, sortDir),
             skip,
             take,
-            include: {
-                _count: { select: { memberships: true, sessions: true } },
-            },
         }),
         prisma.activity.count({ where }),
     ]);
 
     return (
-        <div className='space-y-6'>
-            <div className='flex items-center justify-between flex-wrap gap-3'>
-                <div>
-                    <h1 className='text-2xl font-bold text-foreground'>
-                        {t.admin.activityTitle}
-                    </h1>
-                    <p className='text-sm text-muted-foreground mt-1'>
-                        {total} {t.admin.activityRegistered} ·{' '}
-                        {t.admin.activitySubtitle}
-                    </p>
-                </div>
-                <NewActivityButton />
-            </div>
-
-            {/* Search */}
-            <form className='flex flex-wrap gap-2' method='GET'>
-                <input
-                    name='search'
-                    defaultValue={search}
-                    placeholder={t.table.search.activityPlaceholder}
-                    data-testid='search-input'
-                    className='h-9 border border-input rounded-lg px-3 text-sm bg-card w-full sm:w-72 placeholder:text-subtle-foreground'
-                />
-                {sortBy !== 'name' && <input type='hidden' name='sortBy' value={sortBy} />}
-                {sortDir !== 'asc' && <input type='hidden' name='sortDir' value={sortDir} />}
-                {pageSize !== 10 && <input type='hidden' name='pageSize' value={String(pageSize)} />}
-                <button
-                    type='submit'
-                    className='h-9 border border-input rounded-lg px-4 text-sm font-semibold text-secondary-foreground bg-card hover:bg-muted transition-colors'>
-                    {t.table.search.btn}
-                </button>
-            </form>
-
-            {/* Mobile: stacked cards */}
-            <div className='md:hidden'>
-                <ActivityCards activities={activities} t={t} />
-                <DataTablePagination total={total} page={page} pageSize={pageSize} searchParams={sp} labels={t.table.pagination} />
-            </div>
-
-            {/* Desktop: full table */}
-            <div className='hidden md:block bg-card rounded-xl border border-border overflow-hidden'>
-                <div className='overflow-x-auto'>
-                    <table className='w-full text-sm'>
-                        <thead>
-                            <tr className='bg-muted/50 border-b border-border'>
-                                <SortableTh column='name' label={t.admin.colActivity} searchParams={sp} />
-                                <th className='text-left px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
-                                    {t.admin.activitySlug}
-                                </th>
-                                <SortableTh column='members' label={t.admin.colMembers} searchParams={sp} align='center' />
-                                <SortableTh column='monthlyFee' label={t.admin.activityFee} searchParams={sp} align='right' />
-                                <SortableTh column='status' label={t.admin.colStatus} searchParams={sp} align='center' />
-                                <th className='text-right px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground'>
-                                    {t.admin.colActions}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {activities.map((e) => (
-                                <tr
-                                    key={e.id}
-                                    className='border-b border-border last:border-b-0 hover:bg-muted/40'>
-                                    <td className='px-5 py-3'>
-                                        <div className='flex items-center gap-2.5'>
-                                            <ActivityInitial name={e.name} />
-                                            <div className='min-w-0'>
-                                                <p className='font-semibold text-foreground'>
-                                                    {e.name}
-                                                </p>
-                                                {e.description && (
-                                                    <p className='text-xs text-subtle-foreground max-w-xs truncate'>
-                                                        {e.description}
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className='px-5 py-3 text-muted-foreground text-xs'>
-                                        {e.slug}
-                                    </td>
-                                    <td className='px-5 py-3 text-center text-secondary-foreground tabular-nums'>
-                                        {e._count.memberships}
-                                    </td>
-                                    <td className='px-5 py-3 text-right text-foreground font-semibold whitespace-nowrap tabular-nums'>
-                                        Rp {e.monthlyFee.toLocaleString('id-ID')}
-                                    </td>
-                                    <td className='px-5 py-3 text-center'>
-                                        <Mark kind={e.isActive ? 'ink' : 'erased'}>
-                                            {e.isActive ? t.admin.active : t.admin.inactive2}
-                                        </Mark>
-                                    </td>
-                                    <td className='px-5 py-3'>
-                                        <ActivityActions
-                                            activity={{
-                                                id: e.id,
-                                                name: e.name,
-                                                slug: e.slug,
-                                                description: e.description,
-                                                monthlyFee: e.monthlyFee,
-                                                sessionFee: e.sessionFee,
-                                                allowsMonthly: e.allowsMonthly,
-                                                allowsPerSession: e.allowsPerSession,
-                                                minMembers: e.minMembers,
-                                                recurringDay: e.recurringDay,
-                                                recurringStartTime: e.recurringStartTime,
-                                                recurringEndTime: e.recurringEndTime,
-                                                defaultLocation: e.defaultLocation,
-                                                maxPlayers: e.maxPlayers,
-                                                adminWhatsapp: e.adminWhatsapp,
-                                                bankName: e.bankName,
-                                                bankAccountNumber: e.bankAccountNumber,
-                                                bankAccountHolder: e.bankAccountHolder,
-                                                isActive: e.isActive,
-                                            }}
-                                        />
-                                    </td>
-                                </tr>
-                            ))}
-                            {activities.length === 0 && (
-                                <tr>
-                                    <td
-                                        colSpan={6}
-                                        className='px-4 py-8 text-center text-muted-foreground'>
-                                        {t.admin.noActivity}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <div className='px-4 border-t border-border'>
-                    <DataTablePagination total={total} page={page} pageSize={pageSize} searchParams={sp} labels={t.table.pagination} />
-                </div>
-            </div>
+        <div className='space-y-bay'>
+            <ActivitiesHeading t={t} total={total} />
+            <ActivitySearchForm
+                t={t}
+                search={search}
+                sortBy={sortBy}
+                sortDir={sortDir}
+                pageSize={pageSize}
+            />
+            <Register
+                columns={activityColumns(t)}
+                rows={activities}
+                caption={t.admin.activitiesCaption}
+                searchParams={sp}
+                empty={emptyRow(t)}
+                pagination={{ total, page, pageSize, labels: t.table.pagination }}
+            />
         </div>
     );
 }
