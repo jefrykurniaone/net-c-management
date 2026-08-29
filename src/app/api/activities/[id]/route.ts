@@ -105,7 +105,6 @@ export async function PATCH(
             data,
             duesRate: duesRate ?? null,
             setById: session.user.id,
-            now: new Date(),
         });
         if (outcome.kind === 'refused') {
             return duesRateRefused(outcome.reason, t);

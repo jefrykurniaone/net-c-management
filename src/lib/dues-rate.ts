@@ -156,16 +156,25 @@ export function allowedDuesRatePeriods(now: Date): BillingPeriod[] {
     return periods;
 }
 
-/** Whether `effectiveFrom` sits inside the allowed window. */
+/**
+ * Whether `effectiveFrom` is one of the Periods a change may start from.
+ *
+ * **Membership in that list, never a numeric interval between its ends.** A
+ * YYYYMM key is not dense: between December 2026 (`202612`) and January 2027
+ * (`202701`) lie eighty-eight integers that encode no calendar month at all.
+ * A range check of `earliest <= key <= latest` accepts every one of them, and
+ * `202613` would then be stored, named as "undefined 2026" by any sentence that
+ * decodes it, offered by no picker — and, once the clock passes it, would
+ * *arrive*, become the rate from January 2027 onward, and be frozen there
+ * forever by the very rule that protects a settled Period. The picker and the
+ * route read one list precisely so that cannot happen.
+ */
 export function isDuesRateEffectiveFromAllowed(
     effectiveFrom: number,
     now: Date,
 ): boolean {
-    const earliest = periodAhead(now, 0);
-    const latest = periodAhead(now, DUES_RATE_HORIZON_PERIODS - 1);
-    return (
-        effectiveFrom >= toPeriodKey(earliest.month, earliest.year) &&
-        effectiveFrom <= toPeriodKey(latest.month, latest.year)
+    return allowedDuesRatePeriods(now).some(
+        (period) => toPeriodKey(period.month, period.year) === effectiveFrom,
     );
 }
 

@@ -128,9 +128,16 @@ async function lockActivity(
  *
  * The `deleteMany` clears every not-yet-arrived row **except** the one being
  * written, which is what leaves exactly one queued row however many a previous
- * defect or a hand-written row left behind. Its `gt` bound is the current Period
- * key, so no arrived row is ever in range — the freeze is a property of the
- * filter here, not only of the check above it.
+ * defect or a hand-written row left behind. It runs **before** the unchanged
+ * test and unconditionally: on a healthy Activity there is nothing but the
+ * queued row to match, so it deletes nothing, and skipping it on the no-op path
+ * would be exactly the case where a stray second queued row — invisible to the
+ * disclosure, unreachable by Withdraw — survives. Its `gt` bound is the current
+ * Period key, so no arrived row is ever in range: the freeze is a property of
+ * the filter here, not only of the check above it.
+ *
+ * A save that changes nothing then stops, leaving `setAt` and `setById` as they
+ * were — rewriting them would falsify "who raised the Dues in March".
  *
  * The row itself is an upsert on `(activityId, effectiveFrom)`: replacing a
  * queued change at the same month is one write on a known key rather than a
@@ -146,9 +153,6 @@ async function writeQueuedDuesRate(
         where: { activityId },
         select: DUES_RATE_SELECT,
     });
-    if (isDuesRateSaveUnchanged(rates, amount, effectiveFrom, period)) {
-        return;
-    }
     await tx.duesRate.deleteMany({
         where: {
             activityId,
@@ -158,6 +162,9 @@ async function writeQueuedDuesRate(
             },
         },
     });
+    if (isDuesRateSaveUnchanged(rates, amount, effectiveFrom, period)) {
+        return;
+    }
     await tx.duesRate.upsert({
         where: { activityId_effectiveFrom: { activityId, effectiveFrom } },
         create: { activityId, amount, effectiveFrom, setById },
@@ -173,6 +180,14 @@ async function writeQueuedDuesRate(
  * `null` is a save that says nothing about Dues — the standing-toggle on the
  * register, for one — and leaves every rate row untouched.
  *
+ * The clock is read **after the row lock is held**, not when the request
+ * arrived, and the refusal is decided there. A save can wait on another Admin's
+ * lock for as long as that Admin's transaction takes, and a request that began
+ * at 23:59 on the last day of a month must not be judged by the month it
+ * started in: the Period it is really writing against is the one current when
+ * the write actually happens. That is also why the refusal sits before
+ * `tx.activity.update` — a refused rate leaves no renamed Activity behind.
+ *
  * Prisma's own errors travel out of the transaction unhandled and roll it back:
  * `P2025` for an Activity that is not there, `P2002` for a slug already taken.
  * The route already turns both into an answer, and rolling back is what keeps a
@@ -183,18 +198,18 @@ export async function updateActivityWithDuesRate(input: {
     data: Prisma.ActivityUpdateInput;
     duesRate: DuesRatePatch | null;
     setById: string;
-    now: Date;
 }): Promise<ActivityUpdateOutcome> {
-    const { activityId, data, duesRate, setById, now } = input;
-    if (duesRate !== null) {
-        const refusal = refuseEffectiveFrom(duesRate.effectiveFrom, now);
-        if (refusal !== null) {
-            return { kind: 'refused', reason: refusal };
-        }
-    }
+    const { activityId, data, duesRate, setById } = input;
 
     return prisma.$transaction(async (tx) => {
         await lockActivity(tx, activityId);
+        const now = new Date();
+        if (duesRate !== null) {
+            const refusal = refuseEffectiveFrom(duesRate.effectiveFrom, now);
+            if (refusal !== null) {
+                return { kind: 'refused', reason: refusal };
+            }
+        }
         const activity = await tx.activity.update({
             where: { id: activityId },
             data,
@@ -222,19 +237,23 @@ export async function updateActivityWithDuesRate(input: {
  * makes the freeze answerable through this route for **any** Period, including
  * the beginning-of-time row, rather than only for whatever happened to be
  * queued.
+ *
+ * The clock is read under the lock, for the reason the update path gives, and
+ * the delete carries the `gt` bound as well as the check above it: an arrived
+ * row is out of the filter's range, so the freeze does not rest on one `if`.
  */
 export async function withdrawQueuedDuesRate(input: {
     activityId: string;
     effectiveFrom: number;
-    now: Date;
 }): Promise<DuesRateWithdrawOutcome> {
-    const { activityId, effectiveFrom, now } = input;
-    if (hasDuesRatePeriodArrived(effectiveFrom, now)) {
-        return { kind: 'refused', reason: 'DUES_RATE_PERIOD_ARRIVED' };
-    }
+    const { activityId, effectiveFrom } = input;
 
     return prisma.$transaction(async (tx) => {
         await lockActivity(tx, activityId);
+        const now = new Date();
+        if (hasDuesRatePeriodArrived(effectiveFrom, now)) {
+            return { kind: 'refused', reason: 'DUES_RATE_PERIOD_ARRIVED' };
+        }
         const activity = await tx.activity.findUnique({
             where: { id: activityId },
             select: { id: true },
@@ -242,8 +261,15 @@ export async function withdrawQueuedDuesRate(input: {
         if (activity === null) {
             return { kind: 'missing' };
         }
+        const period = currentPeriod(now);
         const { count } = await tx.duesRate.deleteMany({
-            where: { activityId, effectiveFrom },
+            where: {
+                activityId,
+                effectiveFrom: {
+                    equals: effectiveFrom,
+                    gt: toPeriodKey(period.month, period.year),
+                },
+            },
         });
         if (count === 0) {
             return { kind: 'refused', reason: 'DUES_RATE_NOTHING_QUEUED' };

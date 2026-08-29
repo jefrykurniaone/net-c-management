@@ -13,6 +13,13 @@ import { NextResponse } from 'next/server';
 const DECIMAL_RADIX = 10;
 
 /**
+ * A whole run of digits and nothing else. `Number.parseInt` stops at the first
+ * character it cannot read, so `202610xyz` would otherwise parse to `202610` and
+ * the 400 below would never fire on a request that plainly means nothing.
+ */
+const PERIOD_KEY_PATTERN = /^\d+$/;
+
+/**
  * DELETE /api/activities/[id]/dues-rate?effectiveFrom=YYYYMM — withdraw the
  * queued Dues change (admin and owner only).
  *
@@ -44,15 +51,13 @@ export async function DELETE(
     const t = getDictionary(await getLocale());
     const { id } = await params;
     const raw = new URL(req.url).searchParams.get('effectiveFrom');
-    const effectiveFrom = Number.parseInt(raw ?? '', DECIMAL_RADIX);
-    if (!Number.isInteger(effectiveFrom)) {
+    if (raw === null || !PERIOD_KEY_PATTERN.test(raw)) {
         return NextResponse.json({ error: t.common.error }, { status: 400 });
     }
 
     const outcome = await withdrawQueuedDuesRate({
         activityId: id,
-        effectiveFrom,
-        now: new Date(),
+        effectiveFrom: Number.parseInt(raw, DECIMAL_RADIX),
     });
     if (outcome.kind === 'missing') {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });

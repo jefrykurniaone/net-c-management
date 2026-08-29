@@ -85,6 +85,36 @@ describe('isDuesRateEffectiveFromAllowed, the window the route enforces', () => 
             expected,
         );
     });
+
+    /**
+     * A YYYYMM key is not dense. These sit numerically between the window's ends
+     * and encode no calendar month, so a range check would accept every one of
+     * them — and each would later *arrive*, become the rate, and be frozen there
+     * by the freeze itself. The rule is membership, not an interval.
+     */
+    const nonCalendar: readonly [string, number][] = [
+        ['month 13', 202613],
+        ['month 20', 202620],
+        ['month 99', 202699],
+        ['month 0 of the next year', 202700],
+    ];
+
+    it.each(nonCalendar)('refuses %s (%i), which is no month at all', (_name, key) => {
+        expect(isDuesRateEffectiveFromAllowed(key, AUGUST_2026)).toBe(false);
+    });
+
+    it('accepts exactly the keys the picker offers, and nothing between them', () => {
+        const offered = new Set(
+            allowedDuesRatePeriods(AUGUST_2026).map((period) =>
+                toPeriodKey(period.month, period.year),
+            ),
+        );
+        for (let key = AUGUST_KEY; key <= toPeriodKey(9, 2027); key += 1) {
+            expect(isDuesRateEffectiveFromAllowed(key, AUGUST_2026)).toBe(
+                offered.has(key),
+            );
+        }
+    });
 });
 
 describe('hasDuesRatePeriodArrived, the freeze', () => {
