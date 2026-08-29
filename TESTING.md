@@ -1992,6 +1992,46 @@ one **`CANCELLED`** with neither.
 - Step 6 does not arise where step 5 passed; if it does, the toast carries the
   route's own sentence, not the generic "Failed to delete session".
 
+### TC-AR-009 · P0 · Positive — A Cancelled Session is reopened while its day has not passed
+
+**Preconditions:** three Sessions — one **`CANCELLED`** dated **today or later**
+in WIB, one **`CANCELLED`** dated **before today** in WIB, and one
+**`COMPLETED`**. Note that "today" is the **WIB** day: between 00:00 and 07:00
+WIB the UTC date is still yesterday's, and a Session dated for the WIB today is
+not past.
+
+**Steps:**
+1. On `/admin/sessions`, read the controls on each of the three rows.
+2. Press **Reopen session** on the not-yet-past Cancelled Session, read the
+   dialog, and confirm. Read the row's standing column afterwards.
+3. `PATCH /api/sessions/{id}` with `{ "status": "SCHEDULED" }` on the past
+   Cancelled Session.
+4. The same `PATCH` on the Completed Session.
+5. `PATCH` the reopened Session's twin — a Cancelled, not-yet-past Session — with
+   `{ "status": "SCHEDULED", "title": "<a different title>" }`.
+6. Open `/admin/sessions/{id}/edit` for a Cancelled Session and read the Status
+   control.
+
+**Expected result:**
+
+- Step 1: only the not-yet-past Cancelled row offers **Reopen session**. The past
+  Cancelled row and the Completed row offer neither Reopen nor Cancel — a Session
+  the server will refuse gets no control rather than a disabled one.
+- Step 2: the dialog names the Session, says the Session goes back to Scheduled
+  and that Seats held when it was cancelled are still held, and confirming turns
+  the standing column from **Strike** to Scheduled without leaving the page.
+- Step 3 is **409** with `reason: "SESSION_PAST"` and a sentence saying the day
+  has passed and to post a new session for the next date.
+- Step 4 is **409** with `reason: "SESSION_CLOSED"`: a completed Session is never
+  reopened.
+- Step 5 is **409** with `reason: "SESSION_CLOSED"`. Reopening is a status-only
+  write: a body that renames the Session in the same request is the edit the
+  Closed rule refuses, not a reopening. The stored `title` and `status` are both
+  **unchanged**.
+- Step 6: the Status control is still drawn read-only, as its own label. The
+  reopening lives on the register only — the form's job is the Session's facts,
+  and one way to do a thing is what keeps two surfaces agreeing.
+
 ### TC-AR-010 · P0 · Negative — A capacity edit and a reservation cannot cross
 
 **Preconditions:** a **Scheduled** Session with a fee, capacity `max`, and

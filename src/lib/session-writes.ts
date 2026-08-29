@@ -100,17 +100,22 @@ async function lockAndRead(tx: Prisma.TransactionClient, id: string) {
     return { stored, facts: toSessionLockFacts(_count, stored.status) };
 }
 
-/** The edit, decided and written under one lock. */
+/**
+ * The edit, decided and written under one lock. `now` is the instant a
+ * reopening is judged against and comes from the caller, so the rules themselves
+ * read no clock.
+ */
 export function updateSessionLocked(
     id: string,
     patch: SessionPatch,
+    now: Date,
 ): Promise<SessionUpdateOutcome> {
     return prisma.$transaction(async (tx): Promise<SessionUpdateOutcome> => {
         const row = await lockAndRead(tx, id);
         if (!row) {
             return { kind: 'missing' };
         }
-        const refusal = resolveSessionRefusal(row.stored, patch, row.facts);
+        const refusal = resolveSessionRefusal(row.stored, patch, row.facts, now);
         if (refusal) {
             return { kind: 'refused', refusal };
         }

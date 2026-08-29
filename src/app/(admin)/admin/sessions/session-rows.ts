@@ -4,7 +4,11 @@ import { releaseExpiredHolds } from '@/lib/holds';
 import { prisma } from '@/lib/prisma';
 import { getSessionQuotas, type SessionQuota } from '@/lib/recurring-sessions';
 import { resolveSessionFloor, type SessionFloor } from '@/lib/session-floor';
-import { isSessionClosed, SEAT_HOLDING_STATUSES } from '@/lib/session-lock';
+import {
+    canReopenSession,
+    isSessionClosed,
+    SEAT_HOLDING_STATUSES,
+} from '@/lib/session-lock';
 
 /**
  * Everything the Sessions register reads, in one place.
@@ -19,6 +23,12 @@ import { isSessionClosed, SEAT_HOLDING_STATUSES } from '@/lib/session-lock';
  * recomputed: the weighting that makes a per-Session joiner half a monthly
  * member lives there, and a second implementation of it here is a second answer
  * to a question the community's money depends on.
+ *
+ * Whether a Session can be reopened is decided **here**, by the same helper the
+ * route refuses with, and travels to the row as a boolean. A client that
+ * compared the Session's date against its own clock would be reading the
+ * browser's day, and the rule is the WIB day — the two disagree for seven hours
+ * of every one of them.
  */
 
 /** One Session as the register draws it. */
@@ -38,6 +48,8 @@ export type SessionRegisterRow = Readonly<{
     floor: SessionFloor | null;
     /** Completed or Cancelled: nothing here is the Admin's to change but notes. */
     isClosed: boolean;
+    /** Cancelled, and its WIB day has not passed: the one way back to Scheduled. */
+    canReopen: boolean;
 }>;
 
 /** What the query string said about this page, already sanitised. */
@@ -115,6 +127,7 @@ function buildWhere(query: SessionQuery): Prisma.ActivitySessionWhereInput {
 function toRow(
     record: SessionRecord,
     quotas: ReadonlyMap<string, SessionQuota>,
+    now: Date,
 ): SessionRegisterRow {
     return {
         id: record.id,
@@ -129,6 +142,7 @@ function toRow(
         maxPlayers: record.maxPlayers,
         floor: resolveSessionFloor(quotas.get(record.id)),
         isClosed: isSessionClosed(record.status),
+        canReopen: canReopenSession(record.status, record.date, now),
     };
 }
 
@@ -152,5 +166,8 @@ export async function loadSessions(
     const quotas = await getSessionQuotas(
         sessions.map((row) => ({ id: row.id, activityId: row.activityId })),
     );
-    return { rows: sessions.map((row) => toRow(row, quotas)), total };
+    // One instant for the whole page, so two rows on the same day cannot answer
+    // the reopening question differently because the clock turned mid-map.
+    const now = new Date();
+    return { rows: sessions.map((row) => toRow(row, quotas, now)), total };
 }

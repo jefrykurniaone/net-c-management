@@ -73,6 +73,8 @@ function refusalMessage(t: Dictionary, refusal: SessionRefusal): string {
     switch (refusal.reason) {
         case 'SESSION_CLOSED':
             return t.admin.refusedSessionClosed;
+        case 'SESSION_PAST':
+            return t.admin.refusedSessionPast;
         case 'SESSION_HAS_MONEY':
             return t.admin.refusedSessionHasMoney;
         case 'FEE_LOCKED':
@@ -162,7 +164,7 @@ export async function PATCH(
     // business, never zod's — what they turn on is the money behind this Session
     // and where it stands, not the body's shape.
     await releaseExpiredHolds();
-    const outcome = await updateSessionLocked(id, parsed.data);
+    const outcome = await updateSessionLocked(id, parsed.data, new Date());
     if (outcome.kind !== 'updated') {
         return notWrittenResponse(t, outcome, refusalMessage);
     }

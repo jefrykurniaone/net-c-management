@@ -5,10 +5,16 @@ import {
     resolveDeleteRefusal,
     resolveSessionRefusal,
     toSessionLockFacts,
-    type SessionLockFacts,
     type SessionPatch,
-    type StoredSession,
 } from '../session-lock';
+import {
+    DAY_BEFORE,
+    factsOf,
+    OPEN_AND_UNFUNDED,
+    STORED,
+    storedAs,
+    UNCHANGED,
+} from './session-lock-fixtures';
 
 /**
  * The rules that stop an Admin editing or destroying a Session out from under
@@ -16,46 +22,9 @@ import {
  * refusal the route must make regardless of what the form offered, plus the one
  * that matters most: an unchanged field is not an edit, so a notes-only save on
  * a Completed Session — which posts the whole payload — still succeeds.
+ *
+ * The one way back out of Closed has its own suite, `session-reopen.test.ts`.
  */
-
-const STORED: StoredSession = {
-    title: 'Tuesday practice',
-    date: new Date('2026-08-25T00:00:00.000Z'),
-    startTime: '08:00',
-    endTime: '10:00',
-    location: 'GOR Cempaka',
-    maxPlayers: 16,
-    fee: 50_000,
-    notes: null,
-    status: 'SCHEDULED',
-};
-
-/** What the edit form posts when the Admin changed nothing at all. */
-const UNCHANGED: SessionPatch = {
-    title: STORED.title,
-    date: '2026-08-25',
-    startTime: STORED.startTime,
-    endTime: STORED.endTime,
-    location: STORED.location,
-    maxPlayers: STORED.maxPlayers,
-    fee: STORED.fee,
-    notes: '',
-    status: STORED.status,
-};
-
-const OPEN_AND_UNFUNDED: SessionLockFacts = {
-    heldSeats: 0,
-    hasLivePayment: false,
-    isClosed: false,
-};
-
-function factsOf(over: Partial<SessionLockFacts>): SessionLockFacts {
-    return { ...OPEN_AND_UNFUNDED, ...over };
-}
-
-function storedAs(over: Partial<StoredSession>): StoredSession {
-    return { ...STORED, ...over };
-}
 
 describe('isSessionClosed', () => {
     it.each([
@@ -107,7 +76,7 @@ describe('resolveSessionRefusal, an open Session nobody has funded', () => {
             status: 'ONGOING',
         };
         expect(
-            resolveSessionRefusal(STORED, patch, OPEN_AND_UNFUNDED),
+            resolveSessionRefusal(STORED, patch, OPEN_AND_UNFUNDED, DAY_BEFORE),
         ).toBeNull();
     });
 });
@@ -120,6 +89,7 @@ describe('resolveSessionRefusal, money behind the Session', () => {
             STORED,
             { ...UNCHANGED, fee: 60_000 },
             funded,
+            DAY_BEFORE,
         );
         expect(refusal).toEqual({ reason: 'FEE_LOCKED', heldSeats: 6 });
     });
@@ -129,12 +99,15 @@ describe('resolveSessionRefusal, money behind the Session', () => {
             STORED,
             { fee: 0 },
             factsOf({ hasLivePayment: true }),
+            DAY_BEFORE,
         );
         expect(refusal).toEqual({ reason: 'FEE_LOCKED', heldSeats: 0 });
     });
 
     it('lets the same fee through', () => {
-        expect(resolveSessionRefusal(STORED, UNCHANGED, funded)).toBeNull();
+        expect(
+            resolveSessionRefusal(STORED, UNCHANGED, funded, DAY_BEFORE),
+        ).toBeNull();
     });
 
     it('refuses capacity below the Seats already held', () => {
@@ -142,6 +115,7 @@ describe('resolveSessionRefusal, money behind the Session', () => {
             STORED,
             { ...UNCHANGED, maxPlayers: 5 },
             funded,
+            DAY_BEFORE,
         );
         expect(refusal).toEqual({
             reason: 'CAPACITY_BELOW_HELD',
@@ -151,7 +125,9 @@ describe('resolveSessionRefusal, money behind the Session', () => {
 
     it('allows capacity equal to the Seats already held', () => {
         const patch: SessionPatch = { ...UNCHANGED, maxPlayers: 6 };
-        expect(resolveSessionRefusal(STORED, patch, funded)).toBeNull();
+        expect(
+            resolveSessionRefusal(STORED, patch, funded, DAY_BEFORE),
+        ).toBeNull();
     });
 
     it('checks the fee before capacity when both are wrong', () => {
@@ -160,9 +136,9 @@ describe('resolveSessionRefusal, money behind the Session', () => {
             fee: 1,
             maxPlayers: 1,
         };
-        expect(resolveSessionRefusal(STORED, patch, funded)?.reason).toBe(
-            'FEE_LOCKED',
-        );
+        expect(
+            resolveSessionRefusal(STORED, patch, funded, DAY_BEFORE)?.reason,
+        ).toBe('FEE_LOCKED');
     });
 });
 
@@ -173,12 +149,19 @@ describe('resolveSessionRefusal, a Closed Session', () => {
 
     it('accepts a notes-only save that posts every other field unchanged', () => {
         const patch: SessionPatch = { ...posted, notes: 'Rain stopped play.' };
-        expect(resolveSessionRefusal(stored, patch, closed)).toBeNull();
+        expect(
+            resolveSessionRefusal(stored, patch, closed, DAY_BEFORE),
+        ).toBeNull();
     });
 
     it('accepts notes moving from stored null to a written sentence', () => {
         expect(
-            resolveSessionRefusal(stored, { notes: 'Court flooded.' }, closed),
+            resolveSessionRefusal(
+                stored,
+                { notes: 'Court flooded.' },
+                closed,
+                DAY_BEFORE,
+            ),
         ).toBeNull();
     });
 
@@ -196,6 +179,7 @@ describe('resolveSessionRefusal, a Closed Session', () => {
             stored,
             { ...posted, ...over },
             closed,
+            DAY_BEFORE,
         );
         expect(refusal).toEqual({ reason: 'SESSION_CLOSED', heldSeats: 4 });
     });
@@ -206,6 +190,7 @@ describe('resolveSessionRefusal, a Closed Session', () => {
             cancelled,
             { title: 'Renamed' },
             closed,
+            DAY_BEFORE,
         );
         expect(refusal?.reason).toBe('SESSION_CLOSED');
     });
@@ -215,6 +200,7 @@ describe('resolveSessionRefusal, a Closed Session', () => {
             stored,
             { ...posted, fee: 99_000 },
             closed,
+            DAY_BEFORE,
         );
         expect(refusal?.reason).toBe('SESSION_CLOSED');
     });
