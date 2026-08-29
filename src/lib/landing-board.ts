@@ -54,7 +54,7 @@ function feeLines(
     t: Dictionary,
 ): Readonly<{ primary: string; secondary: string | null }> {
     const { perMonth, perSession } = t.landing.board;
-    const monthly = feeLabel(activity.monthlyFee, perMonth, t);
+    const monthly = feeLabel(activity.duesAmount, perMonth, t);
     const session = feeLabel(activity.sessionFee, perSession, t);
 
     if (activity.allowsMonthly && activity.allowsPerSession) {

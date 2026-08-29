@@ -28,7 +28,8 @@ interface RSVPButtonProps {
     paymentMode: PaymentMode | null;
     allowsBothModes: boolean;
     sessionFee: number;
-    monthlyFee: number;
+    /** This Activity's Dues Rate for the Period this Session belongs to (ADR 0002). */
+    duesAmount: number;
     hasMonthlyPaid: boolean;
     sessionPaymentStatus: PaymentStatus | null;
     sessionPaymentNotes: string | null;
@@ -50,7 +51,7 @@ export function RSVPButton({
     paymentMode,
     allowsBothModes,
     sessionFee,
-    monthlyFee,
+    duesAmount,
     hasMonthlyPaid,
     sessionPaymentStatus,
     sessionPaymentNotes,
@@ -212,7 +213,7 @@ export function RSVPButton({
             <JoinModeDialog
                 open={modeDialogOpen}
                 onOpenChange={setModeDialogOpen}
-                monthlyFee={monthlyFee}
+                duesAmount={duesAmount}
                 sessionFee={sessionFee}
                 loading={loading}
                 onMonthly={() => switchMode('MONTHLY')}
@@ -265,7 +266,7 @@ export function RSVPButton({
                             className='w-full'>
                             {t.sessions.payMonthlyFirst} ·{' '}
                             <span className='tabular-nums'>
-                                Rp {monthlyFee.toLocaleString('id-ID')}
+                                Rp {duesAmount.toLocaleString('id-ID')}
                             </span>
                         </Button>
                     )}
@@ -292,7 +293,7 @@ export function RSVPButton({
                     className='w-full'>
                     {t.sessions.registerAndPay} ·{' '}
                     <span className='tabular-nums'>
-                        Rp {monthlyFee.toLocaleString('id-ID')}
+                        Rp {duesAmount.toLocaleString('id-ID')}
                     </span>
                 </Button>
                 {modeSwitch}
@@ -326,7 +327,7 @@ export function RSVPButton({
                 <JoinModeDialog
                     open={modeDialogOpen}
                     onOpenChange={setModeDialogOpen}
-                    monthlyFee={monthlyFee}
+                    duesAmount={duesAmount}
                     sessionFee={sessionFee}
                     loading={loading}
                     onMonthly={chooseMonthly}

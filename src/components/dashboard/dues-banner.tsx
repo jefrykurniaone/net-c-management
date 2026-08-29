@@ -16,7 +16,8 @@ const PAY_NOW_CLASS =
 
 interface UnpaidActivity {
     readonly name: string;
-    readonly monthlyFee: number;
+    /** This Activity's Dues Rate for the current Billing Period (ADR 0002). */
+    readonly duesAmount: number;
 }
 
 function MonthlyDuesBanner({
@@ -32,7 +33,7 @@ function MonthlyDuesBanner({
                     {activity.name} {t.dashboard.duesUnpaidBanner}
                 </p>
                 <p className='truncate text-xs text-warning-soft-foreground/80'>
-                    {monthLabel} · Rp {activity.monthlyFee.toLocaleString('id-ID')}
+                    {monthLabel} · Rp {activity.duesAmount.toLocaleString('id-ID')}
                 </p>
             </div>
             <span className={PAY_NOW_CLASS}>{t.dashboard.payNow}</span>

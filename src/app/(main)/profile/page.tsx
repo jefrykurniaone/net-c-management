@@ -1,4 +1,4 @@
-﻿import { auth } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { COLUMN_MEASURE } from '@/components/layout/measure';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
@@ -8,6 +8,7 @@ import type { PaymentMode, PaymentStatus } from '@prisma/client';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { currentPeriod, type BillingPeriod } from '@/lib/payment-mode';
+import { resolveDuesRate, type DuesRateRow } from '@/lib/dues-rate';
 import {
     buildMembershipModeView,
     isLivePaymentStatus,
@@ -36,7 +37,7 @@ const MEMBERSHIP_SELECT = {
             name: true,
             allowsMonthly: true,
             allowsPerSession: true,
-            monthlyFee: true,
+            duesRates: { select: { amount: true, effectiveFrom: true } },
             sessionFee: true,
         },
     },
@@ -53,7 +54,7 @@ interface MembershipRecord {
         name: string;
         allowsMonthly: boolean;
         allowsPerSession: boolean;
-        monthlyFee: number;
+        duesRates: DuesRateRow[];
         sessionFee: number;
     };
 }
@@ -106,6 +107,9 @@ function toRow(
     dateLocale: typeof enUS,
 ): MembershipRowView {
     const { activity } = membership;
+    // No rate covering the Period is a broken invariant (dues-rate.ts) — read
+    // like the "no fee set" branch elsewhere, never a free Period.
+    const duesAmount = resolveDuesRate(activity.duesRates, currentPeriod(now)) ?? 0;
     return {
         activityId: activity.id,
         name: activity.name,
@@ -117,7 +121,7 @@ function toRow(
             {
                 membership,
                 offered: activity,
-                monthlyFee: activity.monthlyFee,
+                duesAmount,
                 sessionFee: activity.sessionFee,
                 hasLivePaymentThisPeriod: isLivePaymentStatus(periodStatus),
             },

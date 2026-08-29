@@ -24,7 +24,7 @@ function activity(overrides: Partial<PublicActivity> = {}): PublicActivity {
         recurringStartTime: '19:00',
         recurringEndTime: '21:00',
         defaultLocation: 'GOR Cendrawasih',
-        monthlyFee: 150000,
+        duesAmount: 150000,
         sessionFee: 25000,
         allowsMonthly: true,
         allowsPerSession: true,
@@ -124,7 +124,7 @@ describe('buildBoardRows', () => {
         const [row] = buildBoardRows(
             {
                 activities: [
-                    activity({ monthlyFee: 0, allowsPerSession: false }),
+                    activity({ duesAmount: 0, allowsPerSession: false }),
                 ],
                 nextSessions: [],
             },

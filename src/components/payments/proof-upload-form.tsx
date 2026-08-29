@@ -188,7 +188,7 @@ export function ProofUploadForm({
             <ServerSetFields
                 t={t}
                 periodLabel={periodLabel}
-                amount={chosen ? rupiah(chosen.monthlyFee) : ''}
+                amount={chosen ? rupiah(chosen.duesAmount) : ''}
                 owed={chosen ? owedLine(t, chosen.name, month, year) : null}
             />
             <BankAccountInfo account={chosen ?? null} />

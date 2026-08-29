@@ -37,7 +37,12 @@ export interface ProofBankAccount {
 export interface MonthlyActivity extends ProofBankAccount {
     id: string;
     name: string;
-    monthlyFee: number;
+    /** This Activity's Dues Rate for the current Billing Period (ADR 0002). */
+    duesAmount: number;
+    /** Every Period the upload form's month range can select — 2020 through
+     *  one year ahead — keyed by `toPeriodKey(month, year)`. Server-built; a
+     *  picker only ever looks a key up here, never resolves one itself. */
+    duesAmountByPeriod: Readonly<Record<number, number>>;
 }
 
 /** An Activity an explanation names, and the link that resolves it. */
@@ -50,7 +55,11 @@ export interface NamedActivity {
 export interface MembershipRow extends ProofBankAccount {
     id: string;
     name: string;
-    monthlyFee: number;
+    /** This Activity's Dues Rate for the current Billing Period (ADR 0002). */
+    duesAmount: number;
+    /** Every Period the upload form's month range can select — 2020 through
+     *  one year ahead — keyed by `toPeriodKey(month, year)`. */
+    duesAmountByPeriod: Readonly<Record<number, number>>;
     joined: boolean;
     allowsMonthly: boolean;
     /** Server-resolved for the current period. `null` means "unselected". */
@@ -83,7 +92,8 @@ function toMonthlyActivity(row: MembershipRow): MonthlyActivity {
     return {
         id: row.id,
         name: row.name,
-        monthlyFee: row.monthlyFee,
+        duesAmount: row.duesAmount,
+        duesAmountByPeriod: row.duesAmountByPeriod,
         bankName: row.bankName,
         bankAccountNumber: row.bankAccountNumber,
         bankAccountHolder: row.bankAccountHolder,

@@ -1,4 +1,4 @@
-﻿import { auth } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { COLUMN_MEASURE } from '@/components/layout/measure';
 import { prisma } from '@/lib/prisma';
 import { redirect, notFound } from 'next/navigation';
@@ -19,6 +19,7 @@ import {
     currentPeriod,
     toPeriodKey,
 } from '@/lib/payment-mode';
+import { resolveDuesRate } from '@/lib/dues-rate';
 import { getSessionQuotas } from '@/lib/recurring-sessions';
 import { getSettings } from '@/lib/settings';
 import { WhatsappButton } from '@/components/sessions/whatsapp-button';
@@ -57,7 +58,7 @@ export default async function SessionDetailPage({
                     name: true,
                     allowsMonthly: true,
                     allowsPerSession: true,
-                    monthlyFee: true,
+                    duesRates: { select: { amount: true, effectiveFrom: true } },
                     minMembers: true,
                     adminWhatsapp: true,
                 },
@@ -94,6 +95,12 @@ export default async function SessionDetailPage({
     // their per-session payment status, and whether this period's monthly dues
     // are in (seat lock follows money — an unpaid monthly member can't register).
     const period = currentPeriod(activitySession.date);
+    // No rate covering the Period is a broken invariant (dues-rate.ts) — read
+    // like the "no fee set" branch elsewhere, never a free Period. Resolved
+    // against this session's own Period (`period` above), the same Period the
+    // membership/payment gate below is read against, not necessarily "today".
+    const duesAmount =
+        resolveDuesRate(activitySession.activity.duesRates, period) ?? 0;
     const [membership, sessionPayment, monthlyPayment, mySeat] =
         await Promise.all([
             prisma.membership.findUnique({
@@ -308,7 +315,7 @@ export default async function SessionDetailPage({
                             offered.allowsMonthly && offered.allowsPerSession
                         }
                         sessionFee={activitySession.fee}
-                        monthlyFee={activitySession.activity.monthlyFee}
+                        duesAmount={duesAmount}
                         hasMonthlyPaid={monthlyPayment !== null}
                         sessionPaymentStatus={sessionPayment?.status ?? null}
                         sessionPaymentNotes={sessionPayment?.notes ?? null}
