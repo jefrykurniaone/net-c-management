@@ -231,7 +231,7 @@ export default async function AdminDashboardPage() {
             {/* Needs attention + This week */}
             <div className='grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-4'>
                 {/* Needs attention */}
-                <div className='bg-card rounded-xl border border-border overflow-hidden'>
+                <div className='rounded-sm border border-rule bg-tile overflow-hidden'>
                     <div className='flex items-center justify-between px-5 py-4 border-b border-border'>
                         <h2 className='text-[15px] font-semibold text-foreground'>
                             {t.admin.needsAttentionTitle}
@@ -313,7 +313,7 @@ export default async function AdminDashboardPage() {
                 </div>
 
                 {/* This week */}
-                <div className='bg-card rounded-xl border border-border overflow-hidden'>
+                <div className='rounded-sm border border-rule bg-tile overflow-hidden'>
                     <div className='flex items-center justify-between px-5 py-4 border-b border-border'>
                         <h2 className='text-[15px] font-semibold text-foreground'>
                             {t.admin.thisWeekTitle}
@@ -390,7 +390,7 @@ export default async function AdminDashboardPage() {
                         return (
                             <div
                                 key={a.id}
-                                className='bg-card rounded-xl border border-border overflow-hidden'>
+                                className='rounded-sm border border-rule bg-tile overflow-hidden'>
                                 {/* No coloured top border: the accent-line
                                     device is banned, and the Activity is named
                                     by its initial tile plus its name below. */}

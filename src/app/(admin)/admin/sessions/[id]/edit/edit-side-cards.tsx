@@ -21,7 +21,11 @@ interface EditSideCardsProps {
   t: Dictionary;
 }
 
-const CARD_CLASS = "bg-card rounded-xl border border-border p-5";
+/**
+ * The design system's container idiom (DESIGN.md § Cells / Containers): 2px
+ * corner, Enamel Tile ground on Enamel Ground, 1px Ruled Line, bay padding.
+ */
+const CARD_CLASS = "rounded-sm border border-rule bg-tile p-block";
 
 /** One link out to where attendance is actually taken. No controls here. */
 function AttendanceLinkCard({
