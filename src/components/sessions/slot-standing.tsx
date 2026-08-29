@@ -11,16 +11,21 @@ import type { SlotCellData, SlotCellSeats } from './slot-cell-data';
  */
 
 /**
- * The own-Seat states worth preempting the seat figure with. `ABSENT` — Opted
- * Out — is deliberately absent: the member released that Seat, so the free-Seat
- * figure is the fact they now need, and their own withdrawal is said on the
- * Session's own line instead (`OptedOutLine` in `slot-lines.tsx`). Nothing
- * produces a No-Show, so nothing here draws Hollow.
+ * The reader's own standing on a Session preempts the seat figure: a held Seat
+ * (`REGISTERED`, `PRESENT`), a tentative one (`MAYBE`), and a No-Show
+ * (`NO_SHOW`), which outranks the seat figure and the Session's lifecycle mark
+ * exactly as a held Seat does, because it is a fact about the reader's own
+ * Seat. `ABSENT` — Opted Out — stays out for the reason already given: the
+ * member released that Seat, so the free-Seat figure is the fact they now
+ * need, and their own withdrawal is said on the Session's own line instead
+ * (`OptedOutLine` in `slot-lines.tsx`). No-Show is recorded only by an Admin
+ * and never derived (`docs/adr/0001-no-show-attendance-value.md`).
  */
 const OWN_STATES_MARKED: readonly AttendanceStatus[] = [
     'REGISTERED',
     'PRESENT',
     'MAYBE',
+    'NO_SHOW',
 ];
 
 /** Free Seats as `n/max`, in tabular figures under a tracked-caps label. */

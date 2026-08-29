@@ -1800,7 +1800,7 @@ mark or its own status colour:
 | **Strike** | `/sessions` standing column on **Rained Out (Cancelled)**; `/payments` history on a Rejected Payment (TC-MS-017) | `Cancelled` / `Dibatalkan`, `Rejected` / `Ditolak` |
 | **Erased** | `/sessions` and `/sessions/{id}` note line after a withdrawal that forfeited Dues (TC-MS-010) | `Opted Out` / `Batal Ikut` |
 | **Blank** | `/sessions` unposted standing slot and empty day; `/sessions` standing column on **Full Court Challenge**; `/payments` dues card when unpaid; `/dashboard` Activity mark when no Payment exists; `/profile` Membership row for an unpaid period | `Unposted` / `Belum Dipasang`, `None` / `Kosong`, `Full` / `Penuh`, `Pending` (both locales — the loanword the Indonesian dictionary already keeps) |
-| **Hollow** | **No producer.** Nothing in this product records a No-Show, and nothing infers one from a missing row. | `No-Show` / `Tidak Hadir` |
+| **Hollow** | Producer is an Admin-recorded `NO_SHOW` attendance value (#64, PR #75); the reader's own No-Show draws Hollow in the Slot Cell standing column (#78) | `No-Show` / `Tidak Hadir` |
 
 - Every mark clears **4.5:1** against the wash it sits on, in both materials —
   the same pairs §16 measured: Ink **6.31** / **5.40**, Tape **5.36** / **6.20**,
