@@ -2,7 +2,6 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { buildUpdateSessionSchema, type UpdateSessionFormData } from "@/lib/validations/session";
 import { Button } from "@/components/ui/button";
@@ -17,35 +16,33 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
-import { ArrowLeft, CheckCircle, XCircle, Clock, CircleDashed, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import type { ActivitySession, Attendance, AttendanceStatus, User, Activity } from "@prisma/client";
+import type { ActivitySession, Activity } from "@prisma/client";
 import { useLocale } from "@/components/providers/locale-provider";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { parseIntInput } from "@/lib/form-utils";
 import { FormSection } from "@/components/ui/form-section";
-import { RemindMembersButton } from "@/components/admin/remind-members-button";
-import { ShareSessionCard } from "@/components/sessions/share-session-card";
+import { EditSideCards } from "./edit-side-cards";
+import { useSessionEditActions } from "./use-session-edit-actions";
 
 /**
- * What an Admin may set by hand, mirroring `ADMIN_SETTABLE_STATUSES` in
- * `src/app/api/sessions/[id]/attendance/manual/route.ts`. `MAYBE` is the
- * member's own tentative RSVP and is never an Admin's to set.
+ * This form is about the Session's own facts — title, time, venue, capacity,
+ * fee, notes. Recording who turned up is a different job at a different moment
+ * and lives on its own surface, `/admin/sessions/{id}/attendance`; two places to
+ * record attendance is how they come to disagree. The Seats are still counted
+ * here, because a Session with money or Seats behind it has a locked fee.
  */
-type AdminSettableStatus = Exclude<AttendanceStatus, "MAYBE">;
-
-type AttendanceWithUser = Attendance & { user: Pick<User, "id" | "name" | "image"> };
 type SessionWithAttendances = ActivitySession & {
-  attendances: AttendanceWithUser[];
+  attendances: { id: string }[];
   activity: Pick<Activity, "id" | "name">;
 };
 
 export function EditSessionForm({ session }: Readonly<{ session: SessionWithAttendances }>) {
-  const router = useRouter();
   const { locale } = useLocale();
   const t = getDictionary(locale);
+  const { loading, update, remove } = useSessionEditActions(session.id, t);
 
   const STATUS_OPTIONS = [
     { value: "SCHEDULED", label: t.sessionStatus.SCHEDULED },
@@ -54,18 +51,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
     { value: "CANCELLED", label: t.sessionStatus.CANCELLED },
   ];
 
-  // No-Show takes the Hollow mark's label (`t.marks.noShow`), which already
-  // ships in both locales — Opted Out and No-Show must never read the same.
-  const ATTENDANCE_STATUS_OPTIONS = [
-    { value: "REGISTERED", label: t.attendanceStatus.REGISTERED, icon: Clock, color: "text-muted-foreground" },
-    { value: "PRESENT", label: t.attendanceStatus.PRESENT, icon: CheckCircle, color: "text-primary" },
-    { value: "ABSENT", label: t.attendanceStatus.ABSENT, icon: XCircle, color: "text-destructive" },
-    { value: "NO_SHOW", label: t.marks.noShow, icon: CircleDashed, color: "text-destructive" },
-  ];
-  const [loading, setLoading] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<"delete" | "markAll" | null>(null);
-  const [attendances, setAttendances] = useState<AttendanceWithUser[]>(session.attendances);
-  const [attendanceLoading, setAttendanceLoading] = useState<string | null>(null);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   const isFeeLocked = session.attendances.length > 0;
 
@@ -84,84 +70,6 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
     },
   });
 
-  async function onSubmit(data: UpdateSessionFormData) {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/sessions/${session.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error ?? t.admin.sessionUpdateFailed);
-      }
-      toast.success(t.admin.sessionUpdated);
-      router.push("/admin/sessions");
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t.common.error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleDelete() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/sessions/${session.id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(t.admin.sessionDeleteFailed);
-      toast.success(t.admin.sessionDeleted);
-      router.push("/admin/sessions");
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t.common.error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleAttendanceChange(userId: string, status: AdminSettableStatus) {
-    setAttendanceLoading(userId);
-    try {
-      const res = await fetch(`/api/sessions/${session.id}/attendance/manual`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, status }),
-      });
-      if (!res.ok) throw new Error(t.admin.attendanceUpdateFailed);
-      setAttendances((prev) =>
-        prev.map((a) => (a.userId === userId ? { ...a, status } : a))
-      );
-      toast.success(t.admin.attendanceUpdated);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : t.common.error);
-    } finally {
-      setAttendanceLoading(null);
-    }
-  }
-
-  async function handleMarkAllPresent() {
-    setLoading(true);
-    try {
-      await Promise.all(
-        attendances.map((a) =>
-          fetch(`/api/sessions/${session.id}/attendance/manual`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId: a.userId, status: "PRESENT" }),
-          })
-        )
-      );
-      setAttendances((prev) => prev.map((a) => ({ ...a, status: "PRESENT" as const })));
-      toast.success(t.admin.attendanceUpdated);
-    } catch {
-      toast.error(t.admin.attendanceUpdateFailed);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="space-y-6">
       <Link
@@ -178,7 +86,7 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
         </h1>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={form.handleSubmit(update)} className="space-y-5">
             <FormSection title={t.admin.sectionBasicInfo}>
             <FormItem>
               <FormLabel>{t.activity.label}</FormLabel>
@@ -357,141 +265,32 @@ export function EditSessionForm({ session }: Readonly<{ session: SessionWithAtte
               <Button
                 type="button"
                 variant="destructive-outline"
-                onClick={() => setConfirmAction("delete")}
+                onClick={() => setIsConfirmingDelete(true)}
                 loading={loading}
               >
                 {t.admin.deleteBtn}
               </Button>
             </div>
             <ConfirmDialog
-              open={confirmAction === "delete"}
-              onOpenChange={(open) => !open && setConfirmAction(null)}
+              open={isConfirmingDelete}
+              onOpenChange={(open) => !open && setIsConfirmingDelete(false)}
               title={t.admin.deleteBtn}
               description={t.admin.confirmDelete}
               confirmLabel={t.admin.deleteBtn}
               cancelLabel={t.common.cancel}
-              onConfirm={handleDelete}
+              onConfirm={remove}
             />
           </form>
         </Form>
       </div>
 
-      {/* Attendance Management */}
-      {attendances.length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">
-              {t.admin.manualAttendance} ({attendances.length})
-            </h2>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setConfirmAction("markAll")}
-              loading={loading}
-            >
-              {!loading && <CheckCircle className="w-4 h-4 mr-1" />}
-              {t.admin.markAllPresent}
-            </Button>
-            <ConfirmDialog
-              open={confirmAction === "markAll"}
-              onOpenChange={(open) => !open && setConfirmAction(null)}
-              tone="primary"
-              icon={CheckCircle}
-              title={t.admin.markAllPresent}
-              description={t.admin.confirmMarkAll}
-              confirmLabel={t.admin.markAllPresent}
-              cancelLabel={t.common.cancel}
-              onConfirm={handleMarkAllPresent}
-            />
-          </div>
-          <div className="space-y-2">
-            {attendances.map((a) => {
-              const currentOpt = ATTENDANCE_STATUS_OPTIONS.find((o) => o.value === a.status);
-              return (
-                <div
-                  key={a.userId}
-                  className="flex items-center justify-between py-2 border-b border-border last:border-0"
-                >
-                  <div className="flex items-center gap-2">
-                    {attendanceLoading === a.userId ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                    ) : (
-                      currentOpt && (
-                        <currentOpt.icon className={`w-4 h-4 ${currentOpt.color}`} />
-                      )
-                    )}
-                    <span className="text-sm font-medium text-foreground">
-                      {a.user.name ?? "—"}
-                    </span>
-                  </div>
-                  <div className="flex gap-1">
-                    {ATTENDANCE_STATUS_OPTIONS.map((opt) => {
-                      let activeClass = "bg-muted text-muted-foreground ring-1 ring-border";
-                      if (opt.value === "PRESENT") activeClass = "bg-primary/15 text-primary ring-1 ring-primary/40";
-                      if (opt.value === "ABSENT") activeClass = "bg-destructive/15 text-destructive ring-1 ring-destructive/40";
-                      // No-Show wears the Hollow mark's form: a dashed outline,
-                      // no fill. Opted Out keeps its fill, so the two never read
-                      // as the same state (DESIGN.md, The Six Marks).
-                      if (opt.value === "NO_SHOW") activeClass = "border-dashed border-destructive text-destructive";
-                      const isActive = a.status === opt.value;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          disabled={attendanceLoading === a.userId}
-                          onClick={() =>
-                            handleAttendanceChange(
-                              a.userId,
-                              opt.value as AdminSettableStatus
-                            )
-                          }
-                          className={`px-2 py-1 rounded border border-transparent text-xs font-medium transition-colors ${
-                            isActive ? activeClass : "bg-muted text-muted-foreground hover:bg-muted/70"
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Remind members card */}
-      <div className="bg-card rounded-xl border border-border p-5">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">
-              {t.admin.remindSectionTitle}
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {t.admin.remindSectionDesc}
-            </p>
-          </div>
-        </div>
-        <RemindMembersButton
-          sessionId={session.id}
-          label={t.admin.remindMembers}
-          lastReminderAt={session.lastReminderAt?.toISOString() ?? null}
-        />
-      </div>
-
-      {/* Share session card — bottom */}
-      <ShareSessionCard
+      {/* The jobs that are about this Session without being its own facts —
+          attendance among them, as a link out and nothing more. */}
+      <EditSideCards
         sessionId={session.id}
         sessionTitle={session.title}
-        labels={{
-          title: t.admin.shareSession,
-          description: t.admin.shareSessionDesc,
-          copyLink: t.admin.copyLink,
-          copied: t.admin.linkCopied,
-          shareWhatsapp: t.admin.shareViaWhatsapp,
-          shareX: t.admin.shareViaTwitter,
-        }}
+        lastReminderAt={session.lastReminderAt?.toISOString() ?? null}
+        t={t}
       />
     </div>
   );

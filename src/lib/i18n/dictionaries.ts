@@ -739,9 +739,7 @@ const en = {
         deleteBtn: 'Delete Session',
         confirmDelete:
             'Are you sure you want to delete this session? All attendance data will also be deleted.',
-        manualAttendance: 'Manual Attendance',
         markAllPresent: 'Mark All Present',
-        confirmMarkAll: 'Mark all participants as Present?',
         attendanceUpdated: 'Attendance status updated',
         attendanceUpdateFailed: 'Failed to update attendance',
         sessionUpdated: 'Session updated!',
@@ -861,6 +859,32 @@ const en = {
         colBank: 'Bank',
         activitiesEmptyMark: 'Empty',
         activitiesCaption: 'Activities and how each is set up',
+        // The attendance register (ticket #67) — one Session, every Seat on it,
+        // one Save. The four state names are not repeated here: the control and
+        // the mark beside it both read them off `marks.*`, so they cannot come
+        // to disagree, and the stored `ABSENT` says Opted Out in both places.
+        attendanceTitle: 'Attendance',
+        // Names the surface for a screen reader; never drawn on screen.
+        attendanceCaption: 'Attendance for this session',
+        attendanceUntaken:
+            'This session has ended and no attendance has been recorded. Everyone here is still Registered — nobody becomes a No-Show until you record one.',
+        attendanceEmpty: 'Nobody holds a seat on this session.',
+        attendanceEmptyMark: 'Empty',
+        colParticipant: 'Participant',
+        colPaymentMode: 'Payment mode',
+        colSessionPayment: 'Payment',
+        colRecorded: 'Recorded',
+        colRecord: 'Record',
+        attMoneyFree: 'No fee',
+        attMoneyNone: 'Nothing sent',
+        // Names one radio for a screen reader. A register runs forty rows deep,
+        // and "Present" on its own does not say whose seat it is.
+        attRowControlLabel: '{status} for {name}',
+        attUnsaved: 'Unsaved',
+        attSaveBtn: 'Save attendance',
+        attChangedCount: '{n} changed',
+        attNoChanges: 'Nothing changed yet',
+        toAttendance: 'Take attendance',
     },
     activity: {
         label: 'Activity',
@@ -1627,9 +1651,7 @@ const id: typeof en = {
         deleteBtn: 'Hapus Sesi',
         confirmDelete:
             'Yakin ingin menghapus sesi ini? Semua data absensi akan ikut terhapus.',
-        manualAttendance: 'Absensi Manual',
         markAllPresent: 'Tandai Semua Hadir',
-        confirmMarkAll: 'Tandai semua peserta sebagai Hadir?',
         attendanceUpdated: 'Status kehadiran diperbarui',
         attendanceUpdateFailed: 'Gagal mengubah kehadiran',
         sessionUpdated: 'Sesi berhasil diperbarui!',
@@ -1741,6 +1763,25 @@ const id: typeof en = {
         colBank: 'Bank',
         activitiesEmptyMark: 'Kosong',
         activitiesCaption: 'Aktivitas dan cara masing-masing diatur',
+        attendanceTitle: 'Kehadiran',
+        attendanceCaption: 'Kehadiran untuk sesi ini',
+        attendanceUntaken:
+            'Sesi ini sudah berakhir dan kehadiran belum dicatat. Semua di sini masih Terdaftar — tidak ada yang menjadi Tidak Hadir sampai kamu mencatatnya.',
+        attendanceEmpty: 'Belum ada yang memegang kursi di sesi ini.',
+        attendanceEmptyMark: 'Kosong',
+        colParticipant: 'Peserta',
+        colPaymentMode: 'Metode pembayaran',
+        colSessionPayment: 'Pembayaran',
+        colRecorded: 'Tercatat',
+        colRecord: 'Catat',
+        attMoneyFree: 'Tanpa iuran',
+        attMoneyNone: 'Belum dikirim',
+        attRowControlLabel: '{status} untuk {name}',
+        attUnsaved: 'Belum disimpan',
+        attSaveBtn: 'Simpan kehadiran',
+        attChangedCount: '{n} diubah',
+        attNoChanges: 'Belum ada perubahan',
+        toAttendance: 'Catat kehadiran',
     },
     activity: {
         label: 'Aktivitas',

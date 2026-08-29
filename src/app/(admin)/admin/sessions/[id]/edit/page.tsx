@@ -17,12 +17,9 @@ export default async function EditSessionPage({
     where: { id },
     include: {
       activity: { select: { id: true, name: true } },
-      attendances: {
-        include: {
-          user: { select: { id: true, name: true, image: true } },
-        },
-        orderBy: { createdAt: "asc" },
-      },
+      // Only the count is read here, for the fee lock. Attendance itself is
+      // taken on /admin/sessions/[id]/attendance, never in this form.
+      attendances: { select: { id: true } },
     },
   });
 
