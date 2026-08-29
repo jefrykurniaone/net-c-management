@@ -11,7 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useLocale } from '@/components/providers/locale-provider';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 
 const CUSTOM = 'custom';
 
@@ -20,6 +20,70 @@ const PRESET_MINUTES = ['60', '30', '15'] as const;
 
 function isPreset(value: string): boolean {
     return (PRESET_MINUTES as readonly string[]).includes(value);
+}
+
+function presetLabelsFor(
+    t: Dictionary,
+): Record<(typeof PRESET_MINUTES)[number], string> {
+    return {
+        '60': t.admin.holdDuration60,
+        '30': t.admin.holdDuration30,
+        '15': t.admin.holdDuration15,
+    };
+}
+
+/** The preset/custom select itself, split out to keep the field under the
+ * function-length cap. */
+function HoldDurationSelect({
+    value,
+    isCustomSelected,
+    presetLabels,
+    customLabel,
+    onSelect,
+}: Readonly<{
+    value: string;
+    isCustomSelected: boolean;
+    presetLabels: Record<(typeof PRESET_MINUTES)[number], string>;
+    customLabel: string;
+    onSelect: (selected: string) => void;
+}>) {
+    return (
+        <Select
+            value={isCustomSelected ? CUSTOM : value}
+            onValueChange={onSelect}>
+            <SelectTrigger id='holdDuration' className='w-full'>
+                <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+                {PRESET_MINUTES.map((minutes) => (
+                    <SelectItem key={minutes} value={minutes}>
+                        {presetLabels[minutes]}
+                    </SelectItem>
+                ))}
+                <SelectItem value={CUSTOM}>{customLabel}</SelectItem>
+            </SelectContent>
+        </Select>
+    );
+}
+
+/** The custom-minutes sub-field, shown only once "Custom" is picked. */
+function CustomMinutesField({
+    value,
+    onChange,
+    label,
+}: Readonly<{ value: string; onChange: (minutes: string) => void; label: string }>) {
+    return (
+        <div className='space-y-1.5 pt-1'>
+            <Label htmlFor='holdDurationCustom'>{label}</Label>
+            <Input
+                id='holdDurationCustom'
+                type='number'
+                min={1}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            />
+        </div>
+    );
 }
 
 interface HoldDurationFieldProps {
@@ -33,6 +97,9 @@ interface HoldDurationFieldProps {
  * presets, or a custom minute count. Emits minutes as a string — the Settings
  * table stores string values and the server falls back to the 60-minute
  * default when the stored value isn't a positive integer.
+ *
+ * The primary label and hint are the caller's `SettingsRow` — this field
+ * draws only the select and, once "Custom" is picked, its own sub-field.
  */
 export function HoldDurationField({
     value,
@@ -43,12 +110,6 @@ export function HoldDurationField({
     // Once the admin picks "custom", stay there even if they type a preset
     // number (e.g. a custom 30) — only an explicit preset pick leaves it.
     const [isCustomSelected, setIsCustomSelected] = useState(!isPreset(value));
-
-    const presetLabels: Record<(typeof PRESET_MINUTES)[number], string> = {
-        '60': t.admin.holdDuration60,
-        '30': t.admin.holdDuration30,
-        '15': t.admin.holdDuration15,
-    };
 
     function handleSelect(selected: string) {
         if (selected === CUSTOM) {
@@ -61,41 +122,20 @@ export function HoldDurationField({
 
     return (
         <div className='space-y-1.5'>
-            <Label htmlFor='holdDuration'>{t.admin.holdDurationLabel}</Label>
-            <Select
-                value={isCustomSelected ? CUSTOM : value}
-                onValueChange={handleSelect}>
-                <SelectTrigger id='holdDuration' className='w-full'>
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    {PRESET_MINUTES.map((minutes) => (
-                        <SelectItem key={minutes} value={minutes}>
-                            {presetLabels[minutes]}
-                        </SelectItem>
-                    ))}
-                    <SelectItem value={CUSTOM}>
-                        {t.admin.holdDurationCustom}
-                    </SelectItem>
-                </SelectContent>
-            </Select>
+            <HoldDurationSelect
+                value={value}
+                isCustomSelected={isCustomSelected}
+                presetLabels={presetLabelsFor(t)}
+                customLabel={t.admin.holdDurationCustom}
+                onSelect={handleSelect}
+            />
             {isCustomSelected && (
-                <div className='space-y-1.5 pt-1'>
-                    <Label htmlFor='holdDurationCustom'>
-                        {t.admin.holdDurationCustomLabel}
-                    </Label>
-                    <Input
-                        id='holdDurationCustom'
-                        type='number'
-                        min={1}
-                        value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                    />
-                </div>
+                <CustomMinutesField
+                    value={value}
+                    onChange={onChange}
+                    label={t.admin.holdDurationCustomLabel}
+                />
             )}
-            <p className='text-xs text-muted-foreground'>
-                {t.admin.holdDurationHint}
-            </p>
         </div>
     );
 }
