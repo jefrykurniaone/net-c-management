@@ -623,7 +623,6 @@ const en = {
         colSession: 'Session',
         colDate: 'Date',
         colLocation: 'Location',
-        colParticipants: 'Participants',
         colStatus: 'Status',
         colActions: 'Actions',
         detail: 'Detail',
@@ -745,7 +744,11 @@ const en = {
         sessionCreated: 'Session created!',
         sessionCreateFailed: 'Failed to create session',
         activityLocked: 'Activity cannot be changed after the session is created.',
-        feeLocked: 'Fee cannot be changed once members have registered.',
+        // Reworded with the locking rules (#69): a Payment freezes the fee even
+        // where no Seat is held, and a released hold unfreezes it, so
+        // "once members have registered" no longer states the rule.
+        feeLocked:
+            'This fee cannot be changed: this session already has a payment or a held seat.',
         sessionCreateHint: 'Activity and fee have restrictions after creation — see below.',
         memberUpdated: 'Successfully updated',
         memberUpdateFailed: 'Failed to update',
@@ -958,6 +961,46 @@ const en = {
          * is no obligation until they choose.
          */
         modeNotChosen: 'Not chosen',
+        // The Sessions register (ticket #69). Column heads are reused from the
+        // blocks above; these are the values only this register says, and the
+        // sentences the locking rules state on the route and in the form.
+        sessionsCaption: 'Sessions and where each one stands',
+        sessionsEmptyMark: 'Empty',
+        /**
+         * The capacity and floor figures, spoken. `6/16` on its own does not say
+         * which number is which, and a register runs forty rows deep.
+         */
+        seatsHeldSpoken: '{n} of {max} seats held',
+        floorSpoken: '{n} of {needed} members committed',
+        /**
+         * An Activity that sets no minimum has no floor — a different fact from
+         * a floor that has been met, which is what `0/0` would read as.
+         */
+        floorNone: 'No floor',
+        /** Said in words beside the figure, so viability is never a colour. */
+        floorShort: 'Below floor',
+        cancelSessionBtn: 'Cancel session',
+        confirmCancelSessionTitle: 'Cancel {title}?',
+        confirmCancelSessionDesc:
+            'Members see this session as cancelled, and afterwards nothing but its notes can be changed. Seats already held are not released.',
+        sessionCancelled: 'Session cancelled.',
+        sessionCancelFailed: 'This session could not be cancelled.',
+        /**
+         * The three refusals `PATCH /api/sessions/[id]` makes, each naming the
+         * reason and the fix. The stable code travels beside the sentence in
+         * `reason`; this is what the Admin actually reads.
+         */
+        refusedSessionClosed:
+            'This session is completed or cancelled, so nothing but its notes can be changed. Undo the other changes and save the notes on their own.',
+        refusedFeeLocked:
+            'This session already has a payment or a held seat, so its fee cannot be changed. Post a new session at the new fee instead.',
+        refusedCapacityBelowHeld:
+            'Capacity cannot go below the {n} seats already held. Set it to {n} or higher, or release a seat first.',
+        /** The same facts, said in the form beside the fields they lock. */
+        capacityHeldFloor:
+            'Capacity cannot go below the {n} seats already held on this session.',
+        closedFieldsLocked:
+            'This session is completed or cancelled, so only its notes can be changed here.',
     },
     activity: {
         label: 'Activity',
@@ -1611,7 +1654,6 @@ const id: typeof en = {
         colSession: 'Sesi',
         colDate: 'Tanggal',
         colLocation: 'Lokasi',
-        colParticipants: 'Peserta',
         colStatus: 'Status',
         colActions: 'Aksi',
         detail: 'Detail',
@@ -1730,7 +1772,8 @@ const id: typeof en = {
         sessionCreated: 'Sesi berhasil dibuat!',
         sessionCreateFailed: 'Gagal membuat sesi',
         activityLocked: 'Aktivitas tidak bisa diubah setelah sesi dibuat.',
-        feeLocked: 'Iuran tidak bisa diubah setelah ada peserta yang mendaftar.',
+        feeLocked:
+            'Biaya ini tidak bisa diubah: sesi ini sudah punya pembayaran atau kursi yang dipegang.',
         sessionCreateHint: 'Aktivitas dan iuran memiliki batasan setelah sesi dibuat — lihat di bawah.',
         memberUpdated: 'Berhasil diperbarui',
         memberUpdateFailed: 'Gagal memperbarui',
@@ -1896,6 +1939,28 @@ const id: typeof en = {
         memberAttendanceCaption: 'Sesi terakhir yang kursinya dipegang anggota ini',
         memberNoActivities: 'Anggota ini belum mengikuti aktivitas apa pun.',
         modeNotChosen: 'Belum dipilih',
+        sessionsCaption: 'Sesi dan posisi masing-masing',
+        sessionsEmptyMark: 'Kosong',
+        seatsHeldSpoken: '{n} dari {max} kursi terisi',
+        floorSpoken: '{n} dari {needed} anggota terkumpul',
+        floorNone: 'Tanpa batas minimum',
+        floorShort: 'Di bawah batas minimum',
+        cancelSessionBtn: 'Batalkan sesi',
+        confirmCancelSessionTitle: 'Batalkan {title}?',
+        confirmCancelSessionDesc:
+            'Anggota melihat sesi ini sebagai dibatalkan, dan setelah itu hanya catatannya yang bisa diubah. Kursi yang sudah dipegang tidak dilepas.',
+        sessionCancelled: 'Sesi dibatalkan.',
+        sessionCancelFailed: 'Sesi ini tidak bisa dibatalkan.',
+        refusedSessionClosed:
+            'Sesi ini sudah selesai atau dibatalkan, jadi hanya catatannya yang bisa diubah. Batalkan perubahan lain dan simpan catatannya saja.',
+        refusedFeeLocked:
+            'Sesi ini sudah punya pembayaran atau kursi yang dipegang, jadi biayanya tidak bisa diubah. Buat sesi baru dengan biaya yang baru.',
+        refusedCapacityBelowHeld:
+            'Kapasitas tidak bisa kurang dari {n} kursi yang sudah dipegang. Isi {n} atau lebih, atau lepas satu kursi dulu.',
+        capacityHeldFloor:
+            'Kapasitas tidak bisa kurang dari {n} kursi yang sudah dipegang di sesi ini.',
+        closedFieldsLocked:
+            'Sesi ini sudah selesai atau dibatalkan, jadi hanya catatannya yang bisa diubah di sini.',
     },
     activity: {
         label: 'Aktivitas',

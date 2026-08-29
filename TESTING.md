@@ -17,6 +17,11 @@ to the same conventions and inheriting §16.0 by reference. It covers what a
 member can see and do on the board, the dashboard, a Session, the dues surfaces
 and the mobile rail.
 
+**Admin-register verification (§18, `TC-AR-*`)** is the third, written to the same
+conventions and inheriting §16.0 by reference. It covers the ruled registers the
+admin surfaces are built on and the rules they reflect — starting with the
+Sessions register and the locks a Session takes on once money is behind it.
+
 > The full test-case report (with screenshots) is generated as a DOCX under
 > `docs/` — that folder is **git-ignored**, so it is a local artifact only.
 
@@ -132,7 +137,9 @@ Each maps to one or more test cases. Find them in the sessions list or by title.
    equal times are rejected too; nothing created.
 6. **Create — valid** → appears as Scheduled, 0/max.
 7. **Edge — locked fields on edit** — open a session's edit page → Activity is
-   read-only; **Fee** is disabled once members have registered.
+   read-only; **Fee** is read-only once the session has a payment or a held seat.
+   The rules themselves, and the refusals behind them, are §18's `TC-AR-003`
+   through `TC-AR-005`.
 8. **Update** — change title/times → persists in the list.
 9. **Manual attendance** — mark a player Present → persists (verify via CSV).
 10. **Edge — CSV headers localized (OBS-03)** — `GET /api/sessions/{id}/export`
@@ -1764,6 +1771,183 @@ short one.
   `padding-bottom` of **96px** (`pb-24`) below 768px and **24px** (`md:pb-6`)
   above it, so no surface has to remember. A page that reserves its own
   clearance instead is a second answer to one question and should be reported.
+
+---
+
+## 18. Admin registers (`TC-AR-*`)
+
+The admin surfaces are ruled registers: one row per thing, shared rules, tabular
+figures, a mark in its own standing column, no cards. This section verifies the
+Sessions register (`/admin/sessions`) and the two locking rules a Session takes
+on once money is behind it — the rules are enforced on `PATCH
+/api/sessions/[id]` and only *reflected* in the form, so every refusal case here
+is run against the route, not against whichever control the form happened to
+draw.
+
+### 18.0 Conventions and shared preconditions
+
+§16.0's conventions apply unchanged: an owner or admin account from §3, the §2
+seed, both locales, and the two board materials. Two additions:
+
+- **Fixtures.** The §4 seeded sessions are the fixtures. Three states are needed
+  and can be reached from the seed: a Session **nobody has claimed a Seat on and
+  no Payment names**, a Session with **at least one seat-holding Attendance**
+  (`REGISTERED` or `PRESENT`), and a Session whose status is **`COMPLETED`**.
+- **The route is exercised directly.** `PATCH /api/sessions/{id}` with a signed-in
+  admin cookie, `Content-Type: application/json`. Every refusal is a **409** whose
+  body carries both a translated `error` sentence and a stable `reason` code; the
+  case fails on a 200, on a different status, or on a body missing either field.
+
+### TC-AR-001 · P0 · Positive — Every Session row carries its eight facts, ruled, at both widths
+
+**Preconditions:** admin on `/admin/sessions`, at least three Sessions listed.
+
+**Steps:**
+1. At 1440 × 900, read the `<thead>` and one row.
+2. Read the computed `border` between two neighbouring rows and two neighbouring
+   cells.
+3. Resize to 390 × 844 and read the same row.
+4. Read the capacity and floor cells with a screen reader.
+
+**Expected result:**
+
+- Eight columns, in this order: **Date** (date over the time range, tabular),
+  **Session** (the title), **Activity** (initial tile plus name), **Location**,
+  **Capacity** (`held/max`), **Floor** (`committed/needed`), **Status** (one mark),
+  **Actions**.
+- Rows are separated by a shared **1px** rule and the register is bounded by one
+  frame. There are no cards and no coloured accent line at any width.
+- At 390px the register **collapses by axis**: each row is still a ruled row, and
+  each cell carries its column's own label above its value. The `<thead>` is
+  hidden there and the inline labels are hidden at full width — nothing is
+  announced twice.
+- The capacity cell announces "*n* of *max* seats held" and the floor cell
+  "*n* of *needed* members committed"; neither leaves a bare `6/16` to be
+  interpreted.
+- A Session whose Activity sets `minMembers = 0` draws **"No floor"**, never
+  `0/0`. A Session below its floor carries the words **"Below floor"** beside the
+  figure — the fact is never carried by colour alone.
+
+### TC-AR-002 · P0 · Positive — A cancelled Session reads as struck, and its figures still hold
+
+**Preconditions:** one Session cancelled from its row (see `TC-AR-006`).
+
+**Steps:**
+1. Find the cancelled Session's row and read the standing column.
+2. Read the title cell's colour and text decoration.
+3. Repeat with colour removed (grayscale), per §16.0.
+
+**Expected result:**
+
+- The standing column carries the **Strike** mark, whose own label is struck
+  through, and the title recedes to Quiet Ink beside it. The strike is on the
+  mark, not on the title: one line through two words reads as a stamp, a second
+  through the value reads as damage to the row.
+- With all colour removed the row is still identifiable as cancelled, by the
+  struck label alone.
+- The row offers no **Cancel session** control — the Session is already closed —
+  while its attendance, edit, detail and CSV controls remain.
+
+### TC-AR-003 · P0 · Negative — The fee of a Session with money behind it is refused
+
+**Preconditions:** a **Scheduled** Session with at least one seat-holding
+Attendance, or one live (`PENDING`/`CONFIRMED`) Payment naming it. Note its
+stored `fee`.
+
+**Steps:**
+1. `PATCH /api/sessions/{id}` with `{ "fee": <stored fee + 1000> }`.
+2. Re-read the Session and compare its `fee`.
+3. Open `/admin/sessions/{id}/edit` and read the Fee field.
+4. Repeat step 1 on a Session with **no** held Seat and **no** live Payment.
+
+**Expected result:**
+
+- **409**, with `reason: "FEE_LOCKED"` and a sentence naming both the reason and
+  the fix ("…already has a payment or a held seat, so its fee cannot be changed.
+  Post a new session at the new fee instead."), in the caller's own locale.
+- The stored `fee` is **unchanged**. The old behaviour — the field silently
+  dropped and a 200 returned — is a failure of this case.
+- In the form the Fee input is **`readonly`**, not `disabled`: it is focusable,
+  its value posts, it carries the Enamel Ground fill (`bg-board`), and a Body-size
+  sentence beneath it is tied to it with `aria-describedby`.
+- Step 4 returns **200** and the fee changes: a Session with no money behind it
+  stays fully editable.
+
+### TC-AR-004 · P0 · Negative — Capacity cannot go below the Seats already held
+
+**Preconditions:** a Scheduled Session with **n ≥ 2** seat-holding Attendances.
+
+**Steps:**
+1. `PATCH` with `{ "maxPlayers": n - 1 }`.
+2. `PATCH` with `{ "maxPlayers": n }`.
+3. Let a reservation hold lapse (§14.3's hold, or set `holdExpiresAt` into the
+   past) and repeat step 1 counting only the Seats that survive the sweep.
+
+**Expected result:**
+
+- Step 1 is **409** with `reason: "CAPACITY_BELOW_HELD"`, and the sentence names
+  the figure: "Capacity cannot go below the *n* seats already held. Set it to *n*
+  or higher, or release a seat first."
+- Step 2 is **200**: capacity *equal* to the held Seats fits everyone who holds
+  one and only refuses new claims.
+- Step 3 succeeds against the lower count — the lazy hold sweep runs at the top
+  of the write, so an expired hold neither floors capacity nor locks a fee.
+- In the form the capacity input carries `min` equal to the held Seats and the
+  same Body-size sentence, tied to it with `aria-describedby`. It is **not**
+  read-only: raising capacity is still the Admin's to do.
+
+### TC-AR-005 · P0 · Negative — A Completed or Cancelled Session accepts notes and nothing else
+
+**Preconditions:** one Session stored as `COMPLETED` and one as `CANCELLED`.
+
+**Steps:**
+1. `PATCH` the Completed Session with `{ "title": "<a different title>" }`.
+2. `PATCH` it with `{ "status": "SCHEDULED" }`.
+3. `PATCH` it with `{ "notes": "Rain stopped play." }`.
+4. Open its edit form, change **only** the notes, and Save — the form posts every
+   field, each at its stored value.
+5. Repeat steps 1 and 3 against the Cancelled Session.
+
+**Expected result:**
+
+- Steps 1 and 2 are **409** with `reason: "SESSION_CLOSED"`. `status` is locked
+  like every other field: a closed Session is not reopened from here.
+- Step 3 is **200** and the notes are stored. What happened is exactly what an
+  Admin writes down afterwards.
+- Step 4 **succeeds**: an unchanged field is not an edit, so a whole-payload save
+  that changes only the notes is not refused.
+- The form shows every field but the notes in the read-only treatment, with one
+  Body-size sentence — "This session is completed or cancelled, so only its notes
+  can be changed here." — that each of them points at with `aria-describedby`.
+  The status control is drawn as its own label in that treatment rather than as a
+  disabled `<select>`.
+
+### TC-AR-006 · P1 · Positive — The register's jobs act from the row, and it is traversable by keyboard
+
+**Preconditions:** admin on `/admin/sessions`, at least one Scheduled Session.
+
+**Steps:**
+1. Tab from the page heading through one row's controls and read the focus
+   indicator on each.
+2. Press Enter on **Take attendance**, then go back.
+3. Press Enter on **Cancel session** and read the dialog, then confirm.
+4. Read the register's head for the way to post a new Session.
+5. Read `<tr>` for a `tabindex` attribute.
+
+**Expected result:**
+
+- Tab reaches each row's controls in DOM order — attendance, edit, detail, CSV,
+  cancel — each with a visible focus ring, and Enter presses them.
+- **Take attendance** lands on `/admin/sessions/{id}/attendance`; **Edit** on
+  `/admin/sessions/{id}/edit`; **Detail** on `/sessions/{id}`; **CSV** downloads
+  the export.
+- Cancel asks first, names the Session in its title, and states what cancelling
+  does before it is confirmed. Confirmed, the row's standing column becomes
+  Strike without leaving the page.
+- **New Session** sits in the register's head and lands on
+  `/admin/sessions/new`.
+- No `<tr>` carries a `tabindex`: the row's own controls are what focus travels
+  through.
 - Scrolled fully to the bottom, the last element of the page is still fully
   visible above the rail, and a tap on it activates it rather than a rail cell.
 - The rail carries `pb-[max(env(safe-area-inset-bottom),0.375rem)]`, so on a
