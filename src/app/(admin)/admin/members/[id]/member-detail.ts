@@ -6,6 +6,7 @@ import {
     type PaymentMode,
     type PaymentStatus,
 } from '@prisma/client';
+import { ADMITTED_MEMBER_WHERE } from '@/lib/admission';
 import { pickPeriodPaymentStatus } from '@/lib/membership-mode-view';
 import {
     resolveMembershipStanding,
@@ -145,7 +146,14 @@ const MEMBER_INCLUDE = {
             },
         },
     },
+    /**
+     * Finished Seats only, and the same three states the counts above them are
+     * tallied from. Without that filter a member holding twenty upcoming Seats
+     * sorts every one of them above their past — newest first is what a history
+     * is read by, and a Seat that has not happened yet is not history.
+     */
     attendances: {
+        where: { status: { in: HISTORICAL_STATUSES } },
         orderBy: { session: { date: 'desc' } },
         take: RECENT_ATTENDANCE_LIMIT,
         select: {
@@ -157,13 +165,17 @@ const MEMBER_INCLUDE = {
 } as const;
 
 /**
- * The Dues history. Its own query rather than a nested one: ordering by two
- * columns needs an array, and a `readonly` array — which is what `as const`
- * would make it — does not satisfy a Prisma `orderBy`.
+ * The Dues history — monthly rows only. A per-Session Payment carries a month
+ * and a year too, so without the type filter one busy month of session Fees
+ * fills the whole register and reads as Dues, which is a different obligation.
+ *
+ * Its own query rather than a nested one: ordering by two columns needs an
+ * array, and a `readonly` array — which is what `as const` would make it — does
+ * not satisfy a Prisma `orderBy`.
  */
 function findDues(userId: string): Promise<MemberDuesRow[]> {
     return prisma.payment.findMany({
-        where: { userId },
+        where: { userId, type: PaymentType.MONTHLY },
         orderBy: [{ year: 'desc' }, { month: 'desc' }],
         take: RECENT_DUES_LIMIT,
         select: {
@@ -180,9 +192,15 @@ type MemberRecord = NonNullable<
     Awaited<ReturnType<typeof findMemberRecord>>
 >;
 
+/**
+ * One member. Selects on the roster predicate as well as the id, so an
+ * Applicant's own id typed into the address bar is a 404 rather than a profile
+ * page presenting somebody nobody has let in yet as a member — with a Joined
+ * date, a Dues history and an attendance record they cannot have.
+ */
 function findMemberRecord(id: string) {
-    return prisma.user.findUnique({
-        where: { id },
+    return prisma.user.findFirst({
+        where: { id, ...ADMITTED_MEMBER_WHERE },
         select: {
             id: true,
             name: true,

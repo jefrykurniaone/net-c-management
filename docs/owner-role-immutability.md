@@ -50,6 +50,27 @@ their place. Withheld rather than blank is deliberate — an Admin who sees an e
 Owner has not filled their profile in, goes looking for the number elsewhere, and learns the rule
 only by being refused. A blank hides the rule; **Withheld** states it.
 
+The register's search is filtered for the same reason. A filter that matches on a value the row
+refuses to print is an oracle for that value: an Admin types one character at a time and watches the
+Owner's row appear or vanish. So the email arm of the search skips Owner rows for anybody but an
+Owner; the Owner stays findable by name, which is the identifier the surface does show.
+
+#### Where this rule is not yet enforced
+
+Three Admin-reachable routes still return an Owner's stored `email` and `phone`, so as of this
+writing the rule holds on the Members register and in the contact picker but not across the whole
+product. Recorded here rather than left to be rediscovered:
+
+- `GET /api/users` (`src/app/api/users/route.ts`) gates on `isAdminRole` and selects `email` and
+  `phone` for every row, Owner included.
+- `GET /api/payments/export` (`src/app/api/payments/export/route.ts`) and
+  `GET /api/sessions/[id]/export` (`src/app/api/sessions/[id]/export/route.ts`) write both fields
+  into a downloadable CSV with no role filter.
+
+Closing them means running `resolveOwnerVisibility` over the rows in each handler before they are
+serialised. It is deliberately not done in the change that recreated this document, which was a
+display-only ticket, and is tracked on issue #70.
+
 ### 3. An Owner sees both Admins' numbers and their own
 
 The same handler in `src/app/api/users/admin-contacts/route.ts` gives a caller whose role is `OWNER`

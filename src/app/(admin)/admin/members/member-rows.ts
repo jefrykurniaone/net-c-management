@@ -94,20 +94,34 @@ export type MemberQuery = Readonly<{
 }>;
 
 /**
+ * Search by name always; by email only where the email is not being withheld
+ * from this viewer.
+ *
+ * A filter that matches on a value the row refuses to show is an oracle for it:
+ * an Admin types one character at a time and watches the Owner row appear or
+ * vanish, and recovers the address the cell would not print. So the email arm
+ * skips Owner rows for anybody but an Owner — the Owner is still findable by
+ * name, which is the one identifier this surface does show.
+ */
+function searchWhere(search: string, viewerRole: Role): Prisma.UserWhereInput {
+    if (!search) {
+        return {};
+    }
+    const like = { contains: search, mode: 'insensitive' as const };
+    const byEmail: Prisma.UserWhereInput =
+        viewerRole === Role.OWNER
+            ? { email: like }
+            : { email: like, role: { not: Role.OWNER } };
+    return { OR: [{ name: like }, byEmail] };
+}
+
+/**
  * Admitted people only. An Applicant is not a Member — they hold Memberships
  * picked while completing their profile, and none of them mean anything until
  * an Admin lets them in, so the roster selects on `admittedAt` and the
  * admission queue keeps its own surface.
  */
-function buildWhere(query: MemberQuery): Prisma.UserWhereInput {
-    const search = query.search
-        ? {
-              OR: [
-                  { name: { contains: query.search, mode: 'insensitive' as const } },
-                  { email: { contains: query.search, mode: 'insensitive' as const } },
-              ],
-          }
-        : {};
+function buildWhere(query: MemberQuery, viewerRole: Role): Prisma.UserWhereInput {
     const activity = query.activityId
         ? {
               memberships: {
@@ -115,7 +129,11 @@ function buildWhere(query: MemberQuery): Prisma.UserWhereInput {
               },
           }
         : {};
-    return { ...ADMITTED_MEMBER_WHERE, ...search, ...activity };
+    return {
+        ...ADMITTED_MEMBER_WHERE,
+        ...searchWhere(query.search, viewerRole),
+        ...activity,
+    };
 }
 
 /**
@@ -191,7 +209,7 @@ export async function loadMembers(
     viewerRole: Role,
     now: Date,
 ): Promise<{ rows: MemberRow[]; total: number }> {
-    const where = buildWhere(query);
+    const where = buildWhere(query, viewerRole);
     const [users, total] = await Promise.all([
         prisma.user.findMany({
             where,
