@@ -53,10 +53,12 @@ function shortfallNoteOf(
     if (expectedPrice === null || amount >= expectedPrice) {
         return null;
     }
-    const template = isMonthly
-        ? t.admin.confirmBelowDues
-        : t.admin.confirmBelowFee;
-    return template.replace('{amount}', rupiah(expectedPrice));
+    if (isMonthly) {
+        return t.admin.confirmBelowDues
+            .replace('{month}', billingPeriodLabel(t, payment.month, payment.year))
+            .replace('{amount}', rupiah(expectedPrice));
+    }
+    return t.admin.confirmBelowFee.replace('{amount}', rupiah(expectedPrice));
 }
 
 /** What Rejecting monthly Dues does to the member's Seats, said beforehand. */
