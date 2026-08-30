@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Chip } from '@/components/ui/chip';
 
 /**
  * Shared empty-state (UX-DR17): a card, an optional neutral chip and one
@@ -28,6 +28,13 @@ import { Badge } from '@/components/ui/badge';
  * `chipLabel={t.common.empty}`; a caller that omits it gets the card and
  * the sentence with no chip, which is not a regression — no call site
  * rendered a chip before this ticket.
+ *
+ * It is a `string`, not a `ReactNode` like `title` and `description`. Those
+ * two legitimately take markup; a chip's label does not. The label is the
+ * accessible channel that carries the state (The Label Rule), and `Chip`
+ * requires a plain string for exactly that reason, so the narrower type here
+ * is the chip's contract reaching its caller rather than an arbitrary
+ * restriction. Both call sites already pass a string.
  */
 export function EmptyState({
     icon: Icon,
@@ -40,7 +47,7 @@ export function EmptyState({
     title: ReactNode;
     description?: ReactNode;
     action?: ReactNode;
-    chipLabel?: ReactNode;
+    chipLabel?: string;
 }>) {
     return (
         <div className='rounded-xl bg-card py-12 text-center shadow-lift'>
@@ -51,9 +58,7 @@ export function EmptyState({
                 />
             )}
             {chipLabel && (
-                <Badge variant='secondary' className='mb-2'>
-                    {chipLabel}
-                </Badge>
+                <Chip variant='neutral' label={chipLabel} className='mb-2' />
             )}
             <p className='type-body text-foreground'>{title}</p>
             {description && (
