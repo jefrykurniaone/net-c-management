@@ -915,7 +915,7 @@ const en = {
         // and cash top-ups today, and blocking would teach them to type a
         // figure that matches instead of the one that was sent.
         confirmBelowDues:
-            'This is less than the current Dues of {amount}. You can still Confirm.',
+            'This is less than the Dues for {month} of {amount}. You can still Confirm.',
         confirmBelowFee:
             'This is less than the current Fee of {amount}. You can still Confirm.',
         rejectPaymentTitle: 'Reject this payment?',
@@ -1979,7 +1979,7 @@ const id: typeof en = {
         confirmPaymentDesc:
             'Anggota langsung diberi tahu, dan pembayaran dihitung lunas.',
         confirmBelowDues:
-            'Jumlah ini kurang dari Iuran saat ini sebesar {amount}. Kamu tetap bisa Konfirmasi.',
+            'Jumlah ini kurang dari Iuran {month} sebesar {amount}. Kamu tetap bisa Konfirmasi.',
         confirmBelowFee:
             'Jumlah ini kurang dari Biaya Sesi saat ini sebesar {amount}. Kamu tetap bisa Konfirmasi.',
         rejectPaymentTitle: 'Tolak pembayaran ini?',
