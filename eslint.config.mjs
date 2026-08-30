@@ -19,29 +19,6 @@ const eslintConfig = defineConfig([
     // source and its findings are reported twice.
     ".claude/**",
   ]),
-  // DESIGN.md, Hero: the ninth type role is the public route's and nothing
-  // else. Tailwind `@utility` is global, so file placement guarantees nothing
-  // and this restriction is the actual enforcement — the size gap to Display is
-  // a property, not a guard. A board is read, not shouted at: board surfaces
-  // cap at `type-display`.
-  {
-    files: ["src/app/(main)/**", "src/app/(admin)/**"],
-    rules: {
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "Literal[value=/type-hero/]",
-          message:
-            "type-hero is scoped to the public route (DESIGN.md, Hero). Board surfaces cap at type-display.",
-        },
-        {
-          selector: "TemplateElement[value.raw=/type-hero/]",
-          message:
-            "type-hero is scoped to the public route (DESIGN.md, Hero). Board surfaces cap at type-display.",
-        },
-      ],
-    },
-  },
   // Ticket 04, Rule 1: `src/lib/public-landing.ts` is the sole thing an
   // unauthenticated route may query, and its Rule 3 bans mutation on an
   // unauthenticated GET. A reviewable choke point only holds while nothing

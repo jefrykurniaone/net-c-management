@@ -68,7 +68,13 @@ export function HeroBand({
                     {communityName}
                 </p>
 
-                <h1 className='type-hero min-w-0 max-w-full break-words text-foreground'>
+                {/* Display, the same role the app's page titles take.
+                    Rally has one condensed heavy uppercase role and it is
+                    system-wide, so the pitch and an admin page heading are
+                    the same thing at the same size — which is why the
+                    ESLint restriction that used to confine the retired
+                    Hero role to this route is gone. */}
+                <h1 className='type-display min-w-0 max-w-full break-words text-foreground'>
                     {t.landing.hero.pitch}
                 </h1>
 
@@ -99,12 +105,11 @@ export function HeroBand({
 }
 
 /**
- * A loud action is a **large tile**, never a rounded pill — the square edge
- * holds at every size. On the painted board the polarity inverts: the ground is
- * the lit green and the label is the board's own ink, which the token layer
- * already pairs correctly. Both directions measure 6.82:1; chalk on lit green
- * measures 2.29:1 and is banned, so this pairing is the one thing on the public
- * route that must not be overridden.
+ * The page's loud action. Its ground is PBP Green in both themes — the one
+ * thing on a page that should not change when the light does — and it carries
+ * Black Green, at 8.74:1. Off-white on that green measures 1.69:1 and white
+ * 1.96:1: both are banned, and the token layer cannot produce either, so this
+ * pairing is the one thing on the public route that must not be overridden.
  */
 function HeroAction({ t }: Readonly<{ t: Dictionary }>) {
     return (
