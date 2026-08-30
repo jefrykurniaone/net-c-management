@@ -1,16 +1,29 @@
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
+import type { ReactNode } from 'react';
+import type { DuesChangeNotice } from '@/lib/dues-notice';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
  * The dues alert banner: monthly Dues take priority; otherwise any
- * per-session reservation still awaiting payment. Unchanged by this ticket —
- * moved out of the page component so the page stays a reasonable length
- * while it takes on the Slot Cell rebuild.
+ * per-session reservation still awaiting payment. Moved out of the page
+ * component so the page stays a reasonable length while it takes on the Slot
+ * Cell rebuild.
+ *
+ * It also carries the **queued Dues change** notice (#113), and that is why the
+ * banner now renders when nothing is unpaid. A member who has already paid this
+ * month is exactly the member who most needs to hear that the figure changes in
+ * September, and the old component returned `null` for them. So the notice is a
+ * variant of its own: the same box treatment, body text, one sentence per
+ * Activity, no "Pay now" pill and no link — there is nothing to pay yet. The
+ * sentence carries the fact in words; no colour or icon is doing that work, and
+ * the block is not interactive, so there is nothing to reach by keyboard.
  */
 
-const BANNER_CLASS =
-    'flex items-center gap-3 rounded-xl border border-warning-soft-border bg-warning-soft px-3.5 py-3 hover:bg-warning-soft/80 transition-colors';
+const BANNER_BOX =
+    'rounded-xl border border-warning-soft-border bg-warning-soft px-3.5 py-3';
+const BANNER_CLASS = `flex items-center gap-3 ${BANNER_BOX} hover:bg-warning-soft/80 transition-colors`;
+const NOTICE_CLASS = `${BANNER_BOX} space-y-1`;
 const PAY_NOW_CLASS =
     'shrink-0 rounded-lg bg-warning-solid px-3 py-1.5 text-xs font-semibold text-warning-solid-foreground';
 
@@ -18,6 +31,10 @@ interface UnpaidActivity {
     readonly name: string;
     /** This Activity's Dues Rate for the current Billing Period (ADR 0002). */
     readonly duesAmount: number;
+}
+
+function formatAmount(amount: number): string {
+    return `Rp ${amount.toLocaleString('id-ID')}`;
 }
 
 function MonthlyDuesBanner({
@@ -33,7 +50,7 @@ function MonthlyDuesBanner({
                     {activity.name} {t.dashboard.duesUnpaidBanner}
                 </p>
                 <p className='truncate text-xs text-warning-soft-foreground/80'>
-                    {monthLabel} · Rp {activity.duesAmount.toLocaleString('id-ID')}
+                    {monthLabel} · {formatAmount(activity.duesAmount)}
                 </p>
             </div>
             <span className={PAY_NOW_CLASS}>{t.dashboard.payNow}</span>
@@ -61,17 +78,41 @@ function ReservationsDueBanner({
     );
 }
 
-export function DuesBanner({
-    firstUnpaid,
-    outstandingCount,
-    monthLabel,
+/** "{Activity} Dues change to Rp 90.000 from September 2026". */
+function noticeSentence(notice: DuesChangeNotice, t: Dictionary): string {
+    return t.dashboard.duesChangeNotice
+        .replace('{activity}', notice.activityName)
+        .replace('{amount}', formatAmount(notice.amount))
+        .replace(
+            '{month}',
+            `${t.months[notice.period.month]} ${notice.period.year}`,
+        );
+}
+
+function DuesChangeNotices({
+    notices,
     t,
-}: Readonly<{
-    firstUnpaid: UnpaidActivity | undefined;
-    outstandingCount: number;
-    monthLabel: string;
-    t: Dictionary;
-}>) {
+}: Readonly<{ notices: readonly DuesChangeNotice[]; t: Dictionary }>) {
+    return (
+        <div className={NOTICE_CLASS}>
+            {notices.map((notice) => (
+                <p
+                    key={notice.activityId}
+                    className='text-[13px] text-warning-soft-foreground'>
+                    {noticeSentence(notice, t)}
+                </p>
+            ))}
+        </div>
+    );
+}
+
+/** The unpaid alert, or `null` when the member owes nothing right now. */
+function unpaidAlert(
+    firstUnpaid: UnpaidActivity | undefined,
+    outstandingCount: number,
+    monthLabel: string,
+    t: Dictionary,
+): ReactNode {
     if (firstUnpaid) {
         return (
             <MonthlyDuesBanner
@@ -85,4 +126,32 @@ export function DuesBanner({
         return <ReservationsDueBanner count={outstandingCount} t={t} />;
     }
     return null;
+}
+
+export function DuesBanner({
+    firstUnpaid,
+    outstandingCount,
+    notices,
+    monthLabel,
+    t,
+}: Readonly<{
+    firstUnpaid: UnpaidActivity | undefined;
+    outstandingCount: number;
+    /** Queued Dues changes this member is billed Monthly for (#113). */
+    notices: readonly DuesChangeNotice[];
+    monthLabel: string;
+    t: Dictionary;
+}>) {
+    const alert = unpaidAlert(firstUnpaid, outstandingCount, monthLabel, t);
+    if (alert === null && notices.length === 0) {
+        return null;
+    }
+    return (
+        <div className='space-y-2'>
+            {alert}
+            {notices.length > 0 ? (
+                <DuesChangeNotices notices={notices} t={t} />
+            ) : null}
+        </div>
+    );
 }

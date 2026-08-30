@@ -14,6 +14,7 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { getUserActivityIds } from '@/lib/activity';
 import { currentPeriod, resolvePaymentMode } from '@/lib/payment-mode';
 import { resolveDuesRate } from '@/lib/dues-rate';
+import { findDuesChangeNotices } from '@/lib/dues-notice';
 import { getOutstandingSessionBills } from '@/lib/payments';
 import { releaseExpiredHolds } from '@/lib/holds';
 import { getDashboardSessionsBoard } from '@/lib/dashboard-sessions';
@@ -163,6 +164,11 @@ export default async function DashboardPage() {
           }
         : undefined;
     const duesCount = unpaidMonthly.length + outstandingBills.length;
+    // A queued Dues change, for the Activities where this member is billed
+    // Monthly for the month it starts. Nothing is stored and nothing clears it:
+    // the sentence stops the Period it arrives, because the resolver stops
+    // calling an arrived change a change (`src/lib/dues-notice.ts`).
+    const duesChangeNotices = findDuesChangeNotices(memberships, now);
 
     const boardsByActivity = new Map(
         dashboardBoard.boards.map((board) => [board.activityId, board]),
@@ -189,6 +195,7 @@ export default async function DashboardPage() {
             <DuesBanner
                 firstUnpaid={firstUnpaid}
                 outstandingCount={outstandingBills.length}
+                notices={duesChangeNotices}
                 monthLabel={t.months[currentMonth]}
                 t={t}
             />

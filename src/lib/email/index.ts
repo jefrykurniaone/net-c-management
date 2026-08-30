@@ -7,3 +7,7 @@ export { sendHoldExpired, type HoldExpiredParams } from './hold-expired';
 export { sendDayReminder, type DayReminderParams } from './day-reminder';
 export { sendPaymentStatus, type PaymentStatusParams } from './payment-status';
 export { sendAdmission, type AdmissionParams } from './admission';
+export type { DuesChangeParams } from './dues-change-params';
+export { sendDuesChangeQueued } from './dues-change-queued';
+export { sendDuesChangeReplaced } from './dues-change-replaced';
+export { sendDuesChangeWithdrawn } from './dues-change-withdrawn';

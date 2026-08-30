@@ -7,6 +7,7 @@ import {
     duesRateRefusalStatus,
     withdrawQueuedDuesRate,
 } from '@/lib/dues-rate-writes';
+import { queueDuesChangeEmail } from '@/lib/dues-change-mail';
 import { isAdminRole } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
@@ -55,9 +56,10 @@ export async function DELETE(
         return NextResponse.json({ error: t.common.error }, { status: 400 });
     }
 
+    const effectiveFrom = Number.parseInt(raw, DECIMAL_RADIX);
     const outcome = await withdrawQueuedDuesRate({
         activityId: id,
-        effectiveFrom: Number.parseInt(raw, DECIMAL_RADIX),
+        effectiveFrom,
     });
     if (outcome.kind === 'missing') {
         return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -71,5 +73,10 @@ export async function DELETE(
             { status: duesRateRefusalStatus(outcome.reason) },
         );
     }
+    // The withdrawal reached the row, so the members who were told about it are
+    // told it is off. The outcome carries no amount: the figure that stays is
+    // what the current Period charges, read from the Activity's rows inside the
+    // post-response callback.
+    queueDuesChangeEmail(id, { kind: 'withdrawn', effectiveFrom });
     return NextResponse.json({ success: true });
 }

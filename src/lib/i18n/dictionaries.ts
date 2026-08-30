@@ -279,6 +279,14 @@ const en = {
         participants: 'participants',
         viewAll: 'View all sessions →',
         feePerPerson: '/person',
+        /**
+         * The queued Dues change, one sentence per Activity it concerns. Member
+         * vocabulary: "Dues", a figure and a month — "rate" is the Admin's word
+         * for the stored row and never appears here. `{month}` receives the month
+         * and the year, because a change may be queued as far as twelve Periods
+         * ahead and "from January" alone would not say which.
+         */
+        duesChangeNotice: '{activity} Dues change to {amount} from {month}',
     },
     sessions: {
         title: 'Sessions',
@@ -1399,6 +1407,7 @@ const id: typeof en = {
         participants: 'peserta',
         viewAll: 'Lihat semua sesi →',
         feePerPerson: '/orang',
+        duesChangeNotice: 'Iuran {activity} berubah menjadi {amount} mulai {month}',
     },
     sessions: {
         title: 'Sesi',
