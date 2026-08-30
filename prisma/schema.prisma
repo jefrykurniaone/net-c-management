@@ -147,7 +147,6 @@ model Activity {
   // No colour: the livery is a magnet tile bearing the Activity's initial, so
   // an admin-chosen hex has nowhere to render and could clear neither contrast
   // nor legibility on both board materials (DESIGN.md:316).
-  monthlyFee       Int     @default(0) // consolidated monthly dues per Activity (AR-7)
   sessionFee       Int     @default(0) // default per-session price inherited by new Sessions (FR-8)
   allowsMonthly    Boolean @default(true) // Activity offers the Monthly payment mode (FR-9)
   allowsPerSession Boolean @default(false) // Activity offers the Per-Session payment mode (FR-9)

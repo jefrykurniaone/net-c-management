@@ -18,9 +18,9 @@ import type { ActivityForm, DuesRateFieldProps } from './dues-rate-field';
 /**
  * What an Activity save posts. On edit the Dues figure travels as `duesRate` —
  * an amount **and** the Period it starts from — because a Dues Rate is a history
- * rather than a live field. `monthlyFee` rides along unchanged and is stripped
- * by the update schema, so a cached bundle still posting one cannot write the
- * column this work is retiring.
+ * rather than a live field. `duesAmount` rides along unchanged and is stripped
+ * by the update schema, so a cached bundle still posting one cannot write it —
+ * the retired live column has no `Activity` field left for it to reach.
  */
 export type ActivityRequestBody = CreateActivityFormData & {
     duesRate?: { amount: number; effectiveFrom: number };
@@ -59,7 +59,7 @@ export function useDuesRateField(
         }
         setEffectiveFrom(view.nextEffectiveFrom);
         if (view.currentAmount !== null) {
-            form.setValue('monthlyFee', view.currentAmount);
+            form.setValue('duesAmount', view.currentAmount);
         }
     }
 
@@ -78,7 +78,7 @@ export function useDuesRateField(
         },
         toRequestBody: (data) => ({
             ...data,
-            duesRate: { amount: data.monthlyFee, effectiveFrom },
+            duesRate: { amount: data.duesAmount, effectiveFrom },
         }),
     };
 }

@@ -80,10 +80,12 @@ export async function GET(req: Request) {
  *
  * An Activity that existed for even an instant without a rate row is an
  * Activity whose Billing Periods resolve to no amount, so the two rows are one
- * transaction rather than two statements. The rate is `monthlyFee` as stored —
+ * transaction rather than two statements. The rate is `duesAmount` as posted —
  * the figure the form submitted — and `setById` records the Admin who created
  * it, which the migration's own seeded rows cannot say because nobody set
- * those.
+ * those. `duesAmount` is destructured out before `tx.activity.create`: the
+ * generated client rejects an unknown field, and there is no `Activity` column
+ * left for it to land on.
  *
  * A `P2002` out of here still means the slug: `(activityId, effectiveFrom)` is
  * written exactly once, for an Activity id that did not exist a moment ago.
@@ -92,12 +94,13 @@ function createActivityWithDuesRate(
     data: CreateActivityFormData,
     setById: string,
 ): Promise<Activity> {
+    const { duesAmount, ...activityData } = data;
     return prisma.$transaction(async (tx) => {
-        const created = await tx.activity.create({ data });
+        const created = await tx.activity.create({ data: activityData });
         await tx.duesRate.create({
             data: {
                 activityId: created.id,
-                amount: created.monthlyFee,
+                amount: duesAmount,
                 effectiveFrom: BEGINNING_OF_TIME,
                 setById,
             },

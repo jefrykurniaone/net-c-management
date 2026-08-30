@@ -35,7 +35,7 @@ type TextFieldName =
     | 'bankAccountNumber'
     | 'bankAccountHolder';
 
-type IntFieldName = 'monthlyFee' | 'sessionFee' | 'minMembers' | 'maxPlayers';
+type IntFieldName = 'duesAmount' | 'sessionFee' | 'minMembers' | 'maxPlayers';
 
 /** Sentinel for the "no weekly auto-schedule" select option. */
 const RECURRING_OFF = 'off';
@@ -236,7 +236,7 @@ function MoneyFields({
             <div className='grid grid-cols-2 gap-4'>
                 <IntField
                     form={form}
-                    name='monthlyFee'
+                    name='duesAmount'
                     label={t.admin.activityFee}
                     min={0}
                 />

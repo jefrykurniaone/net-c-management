@@ -137,7 +137,7 @@ export async function seedMemberships(
             await upsertMembership(userId, activityId, membershipMode(cfg.slug, email));
             if (!paysMonthly(cfg.slug, email)) continue;
             for (const period of activityPeriods(cfg.slug)) {
-                await createMonthlyPayment(userId, activityId, cfg.monthlyFee, period, ownerId);
+                await createMonthlyPayment(userId, activityId, cfg.duesRate, period, ownerId);
             }
         }
     }
@@ -172,8 +172,8 @@ export async function seedHistoryExtras(
     const prev = periodOf(monthsAgo(1, 2));
 
     const rows = [
-        { slug: 'tennis', fee: TENNIS.monthlyFee, status: PaymentStatus.PENDING, notes: null, createdAt: monthsAgo(1, 2) },
-        { slug: 'futsal', fee: FUTSAL.monthlyFee, status: PaymentStatus.REJECTED, notes: 'wrong amount', createdAt: monthsAgo(1, 1) },
+        { slug: 'tennis', fee: TENNIS.duesRate, status: PaymentStatus.PENDING, notes: null, createdAt: monthsAgo(1, 2) },
+        { slug: 'futsal', fee: FUTSAL.duesRate, status: PaymentStatus.REJECTED, notes: 'wrong amount', createdAt: monthsAgo(1, 1) },
     ];
     for (const r of rows) {
         const activityId = idBySlug.get(r.slug);

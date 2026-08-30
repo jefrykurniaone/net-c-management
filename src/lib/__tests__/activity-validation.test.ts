@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { getDictionary } from '../i18n/dictionaries';
-import { buildCreateActivitySchema } from '../validations/activity';
+import {
+    buildCreateActivitySchema,
+    buildUpdateActivitySchema,
+} from '../validations/activity';
 
 const t = getDictionary('en');
 
@@ -13,7 +16,7 @@ const t = getDictionary('en');
 const VALID_ACTIVITY = {
     name: 'Badminton',
     slug: 'badminton',
-    monthlyFee: 150_000,
+    duesAmount: 150_000,
     sessionFee: 25_000,
     allowsMonthly: true,
     allowsPerSession: false,
@@ -54,5 +57,31 @@ describe('buildCreateActivitySchema', () => {
         // bundle posting the old shape must still create an Activity.
         expect(parsed.success).toBe(true);
         expect(parsed.success && 'icon' in parsed.data).toBe(false);
+    });
+
+    it('drops a monthlyFee a stale client still sends rather than storing it', () => {
+        const parsed = buildCreateActivitySchema(t).safeParse({
+            ...VALID_ACTIVITY,
+            monthlyFee: 150_000,
+        });
+        // The retired live column has no field left for it to reach — a cached
+        // admin bundle still posting the old name must still create an
+        // Activity, never silently store the stale field.
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && 'monthlyFee' in parsed.data).toBe(false);
+    });
+});
+
+describe('buildUpdateActivitySchema', () => {
+    it('drops a monthlyFee a stale client still sends rather than storing it', () => {
+        const parsed = buildUpdateActivitySchema(t).safeParse({
+            name: 'Badminton',
+            monthlyFee: 150_000,
+        });
+        // `duesAmount` is omitted from the update schema entirely — the Dues
+        // figure travels as `duesRate` on update — so the old name is stripped
+        // as an unknown key exactly like the current name would be.
+        expect(parsed.success).toBe(true);
+        expect(parsed.success && 'monthlyFee' in parsed.data).toBe(false);
     });
 });

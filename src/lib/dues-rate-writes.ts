@@ -202,8 +202,8 @@ async function writeQueuedDuesRate(
 /**
  * The Activity update, and the Dues Rate it may carry, as one write.
  *
- * `data` is whatever the update schema let through; it no longer carries
- * `monthlyFee`, because the Dues figure is now a rate row. A `duesRate` of
+ * `data` is whatever the update schema let through; it no longer carries the
+ * retired live column, because the Dues figure is now a rate row. A `duesRate` of
  * `null` is a save that says nothing about Dues — the standing-toggle on the
  * register, for one — and leaves every rate row untouched.
  *

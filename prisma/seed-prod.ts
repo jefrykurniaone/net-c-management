@@ -46,7 +46,7 @@ const ACTIVITIES = [
     {
         slug: 'badminton',
         name: 'Badminton',
-        monthlyFee: 50_000,
+        duesRate: 50_000,
         sessionFee: 25_000,
         allowsMonthly: true,
         allowsPerSession: true,
@@ -60,7 +60,7 @@ const ACTIVITIES = [
     {
         slug: 'futsal',
         name: 'Futsal',
-        monthlyFee: 40_000,
+        duesRate: 40_000,
         sessionFee: 15_000,
         allowsMonthly: true,
         allowsPerSession: true,
@@ -93,7 +93,7 @@ async function seedSettings() {
  */
 async function seedActivities() {
     for (const e of ACTIVITIES) {
-        const { slug, ...data } = e;
+        const { slug, duesRate, ...data } = e;
         const activity = await prisma.activity.upsert({
             where: { slug },
             update: data,
@@ -106,15 +106,15 @@ async function seedActivities() {
                     effectiveFrom: BEGINNING_OF_TIME,
                 },
             },
-            update: { amount: activity.monthlyFee },
+            update: { amount: duesRate },
             create: {
                 activityId: activity.id,
-                amount: activity.monthlyFee,
+                amount: duesRate,
                 effectiveFrom: BEGINNING_OF_TIME,
             },
         });
         console.log(
-            `[ok] Activity: ${activity.name} (${activity.recurringStartTime}–${activity.recurringEndTime}, monthly + per-session, Dues Rate ${activity.monthlyFee})`,
+            `[ok] Activity: ${activity.name} (${activity.recurringStartTime}–${activity.recurringEndTime}, monthly + per-session, Dues Rate ${duesRate})`,
         );
     }
 }
