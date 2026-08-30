@@ -1,9 +1,9 @@
 import { format } from 'date-fns';
 import type { Locale as DateFnsLocale } from 'date-fns';
 import { ActivityBadge } from '@/components/activity/activity-badge';
-import { MarkedValue } from '@/components/ui/mark';
+import { StatusValue } from '@/components/ui/chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
-import { sessionState } from '@/lib/status-mark';
+import { sessionState } from '@/lib/status-chip';
 import type { SessionRegisterRow } from './session-rows';
 
 /**
@@ -42,20 +42,20 @@ export function SessionWhen({
 }
 
 /**
- * What it is. A cancelled Session's title is drawn through `MarkedValue`, which
- * recedes the value and leaves the line itself on the Strike mark in the
- * standing column — one line through the mark's own label reads as a stamp,
- * where a second through the title reads as damage to the row.
+ * What it is. A cancelled Session's title is drawn through `StatusValue`, which
+ * recedes the value and leaves the word "Cancelled" to the void chip in the
+ * standing column. Nothing is struck: a line through the title would read as
+ * damage to the row rather than as a state.
  */
 export function SessionTitle({
     session,
 }: Readonly<{ session: SessionRegisterRow }>) {
     return (
-        <MarkedValue
+        <StatusValue
             state={sessionState(session.status)}
             className='type-title text-foreground'>
             {session.title}
-        </MarkedValue>
+        </StatusValue>
     );
 }
 

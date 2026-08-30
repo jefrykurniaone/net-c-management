@@ -83,7 +83,7 @@ async function loadProfile(userId: string, period: BillingPeriod) {
             select: MEMBERSHIP_SELECT,
         }),
         // The Payments standing against the current Billing Period. This is the
-        // same fact the write path gates a mode switch on, so the mark on a row
+        // same fact the write path gates a mode switch on, so the chip on a row
         // and the sentence beside its control can never disagree.
         prisma.payment.findMany({
             where: { userId, month: period.month, year: period.year },

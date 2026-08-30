@@ -1,5 +1,5 @@
-import { Mark, MarkedValue, StateMark } from '@/components/ui/mark';
-import { attendanceState, sessionState } from '@/lib/status-mark';
+import { Chip, StatusChip, StatusValue } from '@/components/ui/chip';
+import { attendanceState, sessionState } from '@/lib/status-chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { SlotCellData, SlotCellQuota } from './slot-cell-data';
 
@@ -12,9 +12,9 @@ import type { SlotCellData, SlotCellQuota } from './slot-cell-data';
 const TITLE_CLASS = 'type-title text-card-foreground';
 
 /**
- * A void Session dims its title rather than striking it — the strike lives on
- * the mark's own label, where one line through two words reads as a stamp
- * instead of as damage to the cell.
+ * A void Session dims its title rather than striking it. The chip beside it
+ * says "Cancelled" in words; a line drawn through the cell's own title would
+ * read as damage to the cell instead of as a state.
  */
 export function SlotTitle({ data }: Readonly<{ data: SlotCellData }>) {
     if (data.status === null) {
@@ -22,52 +22,50 @@ export function SlotTitle({ data }: Readonly<{ data: SlotCellData }>) {
     }
     return (
         <h3>
-            <MarkedValue
+            <StatusValue
                 state={sessionState(data.status)}
                 className={TITLE_CLASS}>
                 {data.title}
-            </MarkedValue>
+            </StatusValue>
         </h3>
     );
 }
 
 /**
  * The Activity's minimum-members viability floor, per Session, from
- * `getSessionQuotas`. It wraps rather than running out of the cell: a mark that
- * overflows would be clipped by the lattice.
+ * `getSessionQuotas`. It wraps rather than running out of the cell: a chip that
+ * overflows would be clipped by the lattice. The count rides in the chip's own
+ * label because a chip carries exactly one label and no children.
  */
 function QuotaLine({
     quota,
     t,
 }: Readonly<{ quota: SlotCellQuota; t: Dictionary }>) {
-    const label = quota.isMet
+    const said = quota.isMet
         ? t.sessions.quotaMet
         : t.sessions.quotaNeedMore.replace(
               '{n}',
               String(quota.needed - quota.committed),
           );
     return (
-        <Mark
-            kind={quota.isMet ? 'ink' : 'tape'}
-            className='max-w-full justify-start whitespace-normal text-left'>
-            <span>{label}</span>
-            <span className='tabular-nums'>
-                ({quota.committed}/{quota.needed})
-            </span>
-        </Mark>
+        <Chip
+            variant={quota.isMet ? 'settled' : 'provisional'}
+            label={`${said} (${quota.committed}/${quota.needed})`}
+            className='max-w-full justify-start whitespace-normal text-left'
+        />
     );
 }
 
 /**
  * The reader's own withdrawal, said on the Session's own line rather than in the
  * standing column: that column holds exactly one thing, and the free-Seat figure
- * is the fact a member who released a Seat now needs. Erased and neutral — their
- * own choice is never dressed as a failure, and the copy says Opted Out.
+ * is the fact a member who released a Seat now needs. Neutral — their own choice
+ * is never dressed as a failure, and the copy says Opted Out.
  */
 function OptedOutLine({ t }: Readonly<{ t: Dictionary }>) {
     return (
         <span className='flex flex-wrap items-center gap-hair'>
-            <StateMark state={attendanceState('ABSENT')} labels={t.marks} />
+            <StatusChip state={attendanceState('ABSENT')} labels={t.chips} />
             <span className='type-caption text-muted-foreground'>
                 {t.sessions.boardOptedOut}
             </span>

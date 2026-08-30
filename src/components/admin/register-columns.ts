@@ -10,8 +10,8 @@ import type { ReactNode } from 'react';
  * - `figure` — a count, a capacity, an instant. Tabular, hard right.
  * - `amount` — a Rupiah amount. Tabular, hard right, and never broken across
  *   two lines, because half an amount is a different number.
- * - `standing` — one mark from the resolver and nothing else, on the register's
- *   shared right edge, so every mark on the surface lands on one line.
+ * - `standing` — one chip from the resolver and nothing else, on the register's
+ *   shared right edge, so every chip on the surface lands on one line.
  * - `actions` — the row's own controls, on that same edge.
  */
 export const REGISTER_COLUMN_KINDS = [
@@ -80,7 +80,7 @@ export function alignClassFor(kind?: RegisterColumnKind): string {
 }
 
 /**
- * How each kind's value sits in its cell. Marks and controls carry their own
+ * How each kind's value sits in its cell. Chips and controls carry their own
  * lettering, so those two kinds set only the box that holds them — and that box
  * is a flex row, because text alignment does not move a flex child.
  */

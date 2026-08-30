@@ -13,7 +13,7 @@ import { ActivityTile } from './activity-badge';
  * There is no Upcoming/Past tab and no pager here any more. A board shows a
  * range and every day in it keeps a cell, so moving through time is the week
  * nav's job. Text search went with them for the same reason: a board that hides
- * the days whose Sessions did not match would draw a Blank mark on them, which
+ * the days whose Sessions did not match would draw a neutral chip on them, which
  * says an Admin has not posted — a search result quietly lying about the state
  * of the week.
  *

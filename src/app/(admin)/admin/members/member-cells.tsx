@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { PaymentMode, PaymentStatus, Role } from '@prisma/client';
 import { ActivityTile } from '@/components/activity/activity-badge';
-import { Mark, StateMark } from '@/components/ui/mark';
+import { Chip, StatusChip } from '@/components/ui/chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { DuesStanding } from '@/lib/member-standing';
-import { paymentState } from '@/lib/status-mark';
+import { paymentState } from '@/lib/status-chip';
 import { cn } from '@/lib/utils';
 import { MemberActions } from './member-actions';
 import type { MembershipCell, MemberRow } from './member-rows';
@@ -61,13 +61,13 @@ export function modeLabel(mode: PaymentMode | null, t: Dictionary): string {
 /**
  * Standing on one Membership: the Dues state for the current Billing Period.
  *
- * Where a Payment stands against the period, the mark comes from the one
+ * Where a Payment stands against the period, the chip comes from the one
  * resolver every surface reads, so this row and the member's own profile can
  * never disagree about what Confirmed looks like. Where none does, there is no
- * stored state to resolve and the Blank is drawn directly — the same reasoning
- * as `profile.markNotPaid`. A per-Session Membership draws nothing at all.
+ * stored state to resolve and the neutral chip is drawn directly — the same
+ * reasoning as `profile.markNotPaid`. A per-Session Membership draws nothing.
  */
-export function StandingMark({
+export function StandingChip({
     standing,
     t,
 }: Readonly<{ standing: DuesStanding; t: Dictionary }>) {
@@ -75,11 +75,11 @@ export function StandingMark({
         return null;
     }
     if (standing === 'owed') {
-        return <Mark kind='blank'>{t.admin.standingOwed}</Mark>;
+        return <Chip variant='neutral' label={t.admin.standingOwed} />;
     }
     const status =
         standing === 'settled' ? PaymentStatus.CONFIRMED : PaymentStatus.PENDING;
-    return <StateMark state={paymentState(status)} labels={t.marks} />;
+    return <StatusChip state={paymentState(status)} labels={t.chips} />;
 }
 
 /**
@@ -176,7 +176,7 @@ export function MemberRole({
                 {t.roles[member.role]}
             </span>
             {!member.isActive && (
-                <Mark kind='erased'>{t.admin.inactive2}</Mark>
+                <Chip variant='neutral' label={t.admin.inactive2} />
             )}
         </span>
     );
@@ -223,7 +223,7 @@ function MembershipLine({
             <span className='type-caption text-muted-foreground'>
                 {modeLabel(membership.mode, t)}
             </span>
-            <StandingMark standing={membership.standing} t={t} />
+            <StandingChip standing={membership.standing} t={t} />
         </span>
     );
 }

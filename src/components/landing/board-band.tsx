@@ -1,4 +1,4 @@
-import { Mark } from '@/components/ui/mark';
+import { Chip } from '@/components/ui/chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { BoardRow } from '@/lib/landing-board';
 import { Band, BandHead, Lattice, Livery } from './band';
@@ -84,8 +84,8 @@ function StandingLine({ row }: Readonly<{ row: BoardRow }>) {
 }
 
 /**
- * The Activity's own next scheduled date, or the **Blank** mark where it has
- * none. Blank means *expected but not yet placed*, which is the honest state of
+ * The Activity's own next scheduled date, or the **neutral** chip where it has
+ * none. Neutral means *expected but not yet placed*, which is the honest state of
  * an Activity nobody has posted a session for — and the row keeps its place
  * either way, because a board that hides its empty cells is a list of cards.
  *
@@ -103,7 +103,7 @@ function NextDate({ row, t }: Readonly<{ row: BoardRow; t: Dictionary }>) {
                     {row.nextDate}
                 </p>
             ) : (
-                <Mark kind='blank'>{t.marks.unposted}</Mark>
+                <Chip variant='neutral' label={t.chips.unposted} />
             )}
         </div>
     );
@@ -132,7 +132,7 @@ function Fee({ row }: Readonly<{ row: BoardRow }>) {
 function EmptyStrip({ t }: Readonly<{ t: Dictionary }>) {
     return (
         <div className='flex flex-wrap items-center gap-cell p-block'>
-            <Mark kind='blank'>{t.marks.unposted}</Mark>
+            <Chip variant='neutral' label={t.chips.unposted} />
             <p className='type-body text-secondary-foreground'>
                 {t.landing.board.empty}
             </p>

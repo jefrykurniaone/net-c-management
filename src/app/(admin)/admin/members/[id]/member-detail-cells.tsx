@@ -1,10 +1,10 @@
 import { format, type Locale as DateFnsLocale } from 'date-fns';
 import { ActivityTile } from '@/components/activity/activity-badge';
-import { MarkedValue, StateMark } from '@/components/ui/mark';
+import { StatusChip, StatusValue } from '@/components/ui/chip';
 import type { RegisterColumn } from '@/components/admin/register-columns';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
-import { attendanceState, paymentState } from '@/lib/status-mark';
-import { modeLabel, StandingMark } from '../member-cells';
+import { attendanceState, paymentState } from '@/lib/status-chip';
+import { modeLabel, StandingChip } from '../member-cells';
 import type {
     MemberActivityRow,
     MemberAttendanceRow,
@@ -71,14 +71,14 @@ export function activityColumns(
                 </span>
             ),
         },
-        countColumn('present', t.marks.present, (row) => row.present),
-        countColumn('optedOut', t.marks.optedOut, (row) => row.optedOut),
-        countColumn('noShow', t.marks.noShow, (row) => row.noShow),
+        countColumn('present', t.chips.present, (row) => row.present),
+        countColumn('optedOut', t.chips.optedOut, (row) => row.optedOut),
+        countColumn('noShow', t.chips.noShow, (row) => row.noShow),
         {
             key: 'standing',
             head: t.admin.colStanding,
             kind: 'standing',
-            render: (row) => <StandingMark standing={row.standing} t={t} />,
+            render: (row) => <StandingChip standing={row.standing} t={t} />,
         },
     ];
 }
@@ -100,9 +100,9 @@ export function duesColumns(
             head: t.admin.colAmount,
             kind: 'amount',
             render: (row) => (
-                <MarkedValue state={paymentState(row.status)}>
+                <StatusValue state={paymentState(row.status)}>
                     {rupiah(row.amount)}
-                </MarkedValue>
+                </StatusValue>
             ),
         },
         {
@@ -110,7 +110,7 @@ export function duesColumns(
             head: t.admin.colStatus,
             kind: 'standing',
             render: (row) => (
-                <StateMark state={paymentState(row.status)} labels={t.marks} />
+                <StatusChip state={paymentState(row.status)} labels={t.chips} />
             ),
         },
     ];
@@ -144,9 +144,9 @@ export function attendanceColumns(
             head: t.admin.colStatus,
             kind: 'standing',
             render: (row) => (
-                <StateMark
+                <StatusChip
                     state={attendanceState(row.status)}
-                    labels={t.marks}
+                    labels={t.chips}
                 />
             ),
         },

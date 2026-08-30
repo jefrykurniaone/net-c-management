@@ -48,7 +48,7 @@ function postedCell(
 
 /**
  * A standing weekly slot with nothing posted. No title of its own and
- * nothing to open — the Activity names it and the Blank mark says an Admin
+ * nothing to open — the Activity names it and the neutral chip says an Admin
  * has not posted it yet.
  */
 function unpostedCell(

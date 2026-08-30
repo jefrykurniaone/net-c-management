@@ -3,8 +3,8 @@ import type { Locale as DateFnsLocale } from 'date-fns';
 import { ExternalLink, MessageCircle } from 'lucide-react';
 import type { PaymentStatus, PaymentType } from '@prisma/client';
 import { ActivityInitial } from '@/components/activity/activity-badge';
-import { MarkedValue, StateMark } from '@/components/ui/mark';
-import { paymentState } from '@/lib/status-mark';
+import { StatusChip, StatusValue } from '@/components/ui/chip';
+import { paymentState } from '@/lib/status-chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
@@ -71,8 +71,8 @@ export function PaymentHistoryList({
 }
 
 /**
- * One Payment. Its standing is a mark from the resolver — never a coloured
- * badge — and its amount carries which of Dues or a Fee it is, and which
+ * One Payment. Its standing is a chip from the resolver — never a colour this
+ * row picks — and its amount carries which of Dues or a Fee it is, and which
  * Billing Period it belongs to, in the same column every row shares.
  */
 function PaymentHistoryRow({
@@ -114,8 +114,8 @@ function PaymentHistoryRow({
 
 /**
  * What the Payment is worth, what period it settles, and where it stands. The
- * amount dims under a void state rather than being struck — the Strike mark
- * beside it carries the line.
+ * amount dims under a void state rather than being struck — the void chip
+ * beside it says "Rejected" in words.
  */
 function PaymentStanding({
     payment,
@@ -130,12 +130,12 @@ function PaymentStanding({
     return (
         <div className='flex shrink-0 flex-col items-end gap-hair text-right'>
             <p className='type-label text-muted-foreground'>{periodLabel}</p>
-            <MarkedValue
+            <StatusValue
                 state={state}
                 className='type-figure tabular-nums text-card-foreground'>
                 Rp {RUPIAH_FORMAT.format(payment.amount)}
-            </MarkedValue>
-            <StateMark state={state} labels={t.marks} />
+            </StatusValue>
+            <StatusChip state={state} labels={t.chips} />
             {payment.proofUrl && (
                 <a
                     href={payment.proofUrl}
@@ -151,8 +151,8 @@ function PaymentStanding({
 }
 
 /**
- * A Rejected Payment is already unmistakable from its Strike mark — a real
- * line through the label, the value beside it dimmed. This notice only adds
+ * A Rejected Payment is already unmistakable from its void chip — the word
+ * "Rejected", the value beside it dimmed. This notice only adds
  * what the member needs to act on it: why, and how to reach the admin — so it
  * stays in Secondary Ink rather than a surface-local status colour.
  */

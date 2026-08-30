@@ -96,9 +96,9 @@ function postedSlot(
 
 /**
  * A standing weekly slot with nothing on it. It has no Session, so it has no
- * title of its own and nothing to open — the Activity names it and the Blank
- * mark says an Admin has not posted it. Never a No-Show: Hollow means someone
- * should have turned up and didn't, and missing data is not that.
+ * title of its own and nothing to open — the Activity names it and the neutral
+ * chip says an Admin has not posted it. Never a No-Show: that void chip means
+ * someone should have turned up and didn't, and missing data is not that.
  */
 function unpostedSlot(
     slot: Extract<BoardSlot, { kind: 'unposted' }>,

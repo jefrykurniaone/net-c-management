@@ -18,7 +18,7 @@ import type { SessionQuota } from './recurring-sessions';
  * **posted** (a Session exists, carried with what a cell needs), **unposted**
  * (an Activity's recurring day falls here and nothing has been posted), or
  * **empty** (nothing planned, nothing posted). Telling the second from the third
- * is the whole point: both draw a Blank mark, but only the second is a day
+ * is the whole point: both draw a neutral chip, but only the second is a day
  * somebody owed the board a Session, and the copy differs.
  *
  * Three things this deliberately does not do. **It reads nothing** — data in,
@@ -28,8 +28,8 @@ import type { SessionQuota } from './recurring-sessions';
  * committed-versus-needed seats and the Activity's minimum-members viability
  * floor are `getSessionQuotas`' job (`src/lib/recurring-sessions.ts`); its
  * result arrives as {@link BoardDaysInput.quotas} and passes through untouched.
- * **It writes no copy** — day and month names, the Blank mark's two different
- * sentences and every mark label live in the dictionary, so a day carries its
+ * **It writes no copy** — day and month names, the neutral chip's two different
+ * sentences and every chip label live in the dictionary, so a day carries its
  * situation and its numbers and the surface resolves the words.
  *
  * Session dates are stored as UTC midnight of their WIB calendar day, so every
@@ -54,7 +54,7 @@ export interface BoardActivity {
 
 /**
  * The `ActivitySession` fields a board cell draws. A Prisma row fits; the status
- * is carried raw so the surface resolves its mark through `resolveStatusMark`.
+ * is carried raw so the surface resolves its chip through `resolveStatusChip`.
  */
 export interface BoardSession {
     readonly id: string;

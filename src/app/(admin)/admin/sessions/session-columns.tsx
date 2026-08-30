@@ -1,8 +1,8 @@
 import type { Locale as DateFnsLocale } from 'date-fns';
 import type { RegisterColumn } from '@/components/admin/register-columns';
-import { StateMark } from '@/components/ui/mark';
+import { StatusChip } from '@/components/ui/chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
-import { sessionState } from '@/lib/status-mark';
+import { sessionState } from '@/lib/status-chip';
 import { SessionActions } from './session-actions';
 import {
     SessionActivity,
@@ -87,9 +87,9 @@ function standingColumns(
             kind: 'standing',
             sortKey: 'status',
             render: (session) => (
-                <StateMark
+                <StatusChip
                     state={sessionState(session.status)}
-                    labels={t.marks}
+                    labels={t.chips}
                 />
             ),
         },

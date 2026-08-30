@@ -1,4 +1,4 @@
-import { Mark } from '@/components/ui/mark';
+import { Chip } from '@/components/ui/chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { SlotCell, type SlotCellData } from './slot-cell';
 
@@ -35,9 +35,9 @@ export type BoardDayView = Readonly<{
 }>;
 
 /**
- * A Blank-marked strip. A community with nothing posted keeps its board and
- * says so here: Blank means *expected but not yet placed*, which is the honest
- * state of a community that has just been set up.
+ * A neutral-chipped strip. A community with nothing posted keeps its board and
+ * says so here: neutral means *expected but not yet placed*, which is the
+ * honest state of a community that has just been set up.
  */
 export function BoardNotice({
     label,
@@ -45,7 +45,7 @@ export function BoardNotice({
 }: Readonly<{ label: string; body: string }>) {
     return (
         <div className='flex flex-wrap items-center gap-cell border border-rule bg-tile px-block py-cell'>
-            <Mark kind='blank'>{label}</Mark>
+            <Chip variant='neutral' label={label} />
             <p className='type-caption text-secondary-foreground'>{body}</p>
         </div>
     );
@@ -53,7 +53,7 @@ export function BoardNotice({
 
 /**
  * A day with nothing planned and nothing posted. It keeps its cell, and it
- * takes a Blank mark like an unposted day — but not the *same label*. Unposted
+ * takes a neutral chip like an unposted day — but not the *same label*. Unposted
  * means an Admin owed a Session here and has not put one up; this day was never
  * a day anybody was going to play. Labelling both "Unposted" tells a member the
  * Admin is behind on a day nothing was ever planned for.
@@ -65,7 +65,7 @@ function EmptyDay({ t }: Readonly<{ t: Dictionary }>) {
         <div className='grid grid-cols-[5.5rem_minmax(0,1fr)] items-baseline gap-cell bg-tile p-cell'>
             <span aria-hidden='true' />
             <span className='flex flex-wrap items-center gap-cell'>
-                <Mark kind='blank'>{t.sessions.boardNothingMark}</Mark>
+                <Chip variant='neutral' label={t.sessions.boardNothingMark} />
                 <span className='type-caption text-muted-foreground'>
                     {t.sessions.boardNothingOnDay}
                 </span>
