@@ -8,6 +8,7 @@
 @import "./styles/board-materials.css";
 @import "./styles/type-roles.css";
 @import "./styles/mark-forms.css";
+@import "./styles/motion.css";
 
 @custom-variant dark (&:is(.dark *));
 
