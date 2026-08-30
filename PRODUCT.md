@@ -94,7 +94,7 @@ Binding decisions that the code does not yet implement. They are product truth a
 
 **Explicitly undecided**
 
-- **Domain terminology is unresolved.** Known collisions and overloads, none yet adjudicated: "Session" means the auth session, the meetup (`ActivitySession`), and a per-meetup charge (`PaymentType.SESSION`); money is variously `monthlyFee`, `sessionFee`, `fee`, "dues", and "iuran"; "member" means a `Role`, a `User`, and an active `Membership`; `AttendanceStatus.ABSENT` is used to mean "opted out, forfeited" rather than "did not show up", leaving genuine no-shows unrecorded; and the functional difference between `OWNER` and `ADMIN` is undefined.
+- **Domain terminology is unresolved.** Known collisions and overloads, none yet adjudicated: "Session" means the auth session, the meetup (`ActivitySession`), and a per-meetup charge (`PaymentType.SESSION`); money is variously `Dues Rate`, `sessionFee`, `fee`, "dues", and "iuran"; "member" means a `Role`, a `User`, and an active `Membership`; `AttendanceStatus.ABSENT` is used to mean "opted out, forfeited" rather than "did not show up", leaving genuine no-shows unrecorded; and the functional difference between `OWNER` and `ADMIN` is undefined.
 - **Cited decision records do not exist.** Code and test cases reference `AD-2`, `AD-4`–`AD-8`, `AD-10`, `AD-13`, `AD-14`, `AR-7`, `FR-4`, `FR-8`–`FR-10`, `NFR-3`, `NFR-8` across nine files. No document in the repository defines any of them. Their rationale is currently unretrievable.
 - Whether a member with an unselected payment mode on a both-modes Activity has any path to choose it outside a session-registration flow. Today `/payments/upload` shows them a dead-end empty state.
 

@@ -32,7 +32,7 @@ export async function seedSettings() {
 export async function seedActivities(): Promise<Map<string, string>> {
     const idBySlug = new Map<string, string>();
     for (const e of ACTIVITY_CONFIGS) {
-        const { slug, ...data } = e;
+        const { slug, duesRate, ...data } = e;
         const activity = await prisma.activity.upsert({
             where: { slug },
             update: data,
@@ -45,15 +45,15 @@ export async function seedActivities(): Promise<Map<string, string>> {
                     effectiveFrom: BEGINNING_OF_TIME,
                 },
             },
-            update: { amount: activity.monthlyFee },
+            update: { amount: duesRate },
             create: {
                 activityId: activity.id,
-                amount: activity.monthlyFee,
+                amount: duesRate,
                 effectiveFrom: BEGINNING_OF_TIME,
             },
         });
         idBySlug.set(slug, activity.id);
-        console.log(`[ok] Activity: ${activity.name} (Dues Rate ${activity.monthlyFee})`);
+        console.log(`[ok] Activity: ${activity.name} (Dues Rate ${duesRate})`);
     }
     return idBySlug;
 }

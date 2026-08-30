@@ -28,7 +28,9 @@ function activityObjectSchema(t: Dictionary) {
         description: z.string().max(1000).optional(),
         // Explicit-required money fields — a blank submit is a validation error,
         // never a silent 0 (UX-DR14, FR-8). `min(0)` still allows a deliberate 0.
-        monthlyFee: z
+        // The initial Dues Rate: the create path writes this as the Activity's
+        // beginning-of-time DuesRate row, never a column on Activity.
+        duesAmount: z
             .number({ error: t.validation.feeRequired })
             .int()
             .min(0, t.validation.sessionFeeMin),
@@ -123,15 +125,15 @@ function duesRateObjectSchema(t: Dictionary) {
 }
 
 /**
- * Updating an Activity no longer writes `monthlyFee`: the Dues figure is a
+ * Updating an Activity no longer writes `duesAmount`: the Dues figure is a
  * `DuesRate` row against a Billing Period, so the field is omitted here rather
  * than rejected. A cached bundle still posting one has it stripped, the way a
- * stale `color` is — the column itself stays until ticket #114 drops it, and the
- * create path still writes it as the Activity's beginning-of-time rate.
+ * stale `color` is — the create path still writes `duesAmount` as the
+ * Activity's beginning-of-time rate.
  */
 export function buildUpdateActivitySchema(t: Dictionary) {
     return activityObjectSchema(t)
-        .omit({ monthlyFee: true })
+        .omit({ duesAmount: true })
         .partial()
         .extend({
             isActive: z.boolean().optional(),

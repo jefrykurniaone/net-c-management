@@ -9,7 +9,6 @@ export interface ActivityOption {
     id: string;
     name: string;
     slug: string;
-    monthlyFee: number;
     sessionFee: number;
     allowsMonthly: boolean;
     allowsPerSession: boolean;

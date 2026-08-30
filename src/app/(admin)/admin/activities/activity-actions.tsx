@@ -29,18 +29,14 @@ import { Plus, Pencil } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { buildDuesRateFieldView } from '@/lib/dues-rate-view';
-import type { DuesRateRow } from '@/lib/dues-rate';
+import { resolveDuesRate, type DuesRateRow } from '@/lib/dues-rate';
+import { currentPeriod } from '@/lib/billing-period';
 
 export interface ActivityRow {
     id: string;
     name: string;
     slug: string;
     description: string | null;
-    /**
-     * The live column, kept until ticket #114 drops it. The Dues figure this
-     * form edits is a `DuesRate` row, not this — see `duesRates`.
-     */
-    monthlyFee: number;
     /** The Activity's Dues Rate history, which the Dues field resolves through. */
     duesRates: readonly DuesRateRow[];
     sessionFee: number;
@@ -81,6 +77,13 @@ function ActivityFormDialog({
         activity !== undefined && nowIso !== undefined
             ? buildDuesRateFieldView(activity.duesRates, new Date(nowIso), t)
             : null;
+    // Falls back to the rate the Activity charges right now when `duesView` is
+    // null with an Activity present — `nowIso` missing on an edit — rather than
+    // leaving the amount box empty on an Activity that already has a price.
+    const currentRate =
+        activity !== undefined
+            ? resolveDuesRate(activity.duesRates, currentPeriod(new Date()))
+            : null;
 
     const form = useForm<CreateActivityFormData>({
         resolver: zodResolver(buildCreateActivitySchema(t)),
@@ -92,7 +95,7 @@ function ActivityFormDialog({
             // explicitly — a blank submit is rejected, never a silent 0. On edit
             // it is the Dues Rate: the queued figure when one is queued, so an
             // unrelated save re-states that change instead of replacing it.
-            monthlyFee: duesView?.amount ?? activity?.monthlyFee,
+            duesAmount: duesView?.amount ?? currentRate ?? undefined,
             sessionFee: activity?.sessionFee,
             allowsMonthly: activity?.allowsMonthly ?? true,
             allowsPerSession: activity?.allowsPerSession ?? false,

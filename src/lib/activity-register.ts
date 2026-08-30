@@ -48,9 +48,9 @@ type RegisterQuery = Readonly<{
 /**
  * An inactive Activity sinks to the bottom of the name sort, the standing sort
  * puts it where the direction asks, and `name` breaks every tie. Unchanged from
- * before Dues moved off the `monthlyFee` column — including that the **Dues**
- * sort never routes through here and so, like the old `monthlyFee` branch,
- * ranks active and inactive Activities together.
+ * before Dues became a rate history — including that the **Dues**
+ * sort never routes through here and so, like the old retired-live-column
+ * branch, ranks active and inactive Activities together.
  */
 function buildActivityOrderBy(
     sortBy: string,

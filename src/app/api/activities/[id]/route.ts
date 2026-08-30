@@ -72,7 +72,7 @@ function activityWriteError(err: unknown, t: Dictionary) {
  * PATCH /api/activities/[id] — update activity (admin only).
  *
  * The Dues figure arrives as `duesRate: { amount, effectiveFrom }` rather than
- * as `monthlyFee`: a Dues Rate is a history against a Billing Period, so a save
+ * as a live amount field: a Dues Rate is a history against a Billing Period, so a save
  * names the month the new amount starts from. The Activity's fields and that
  * rate row are written under one Activity row lock in
  * `src/lib/dues-rate-writes.ts`, so two Admins saving at once cannot both queue

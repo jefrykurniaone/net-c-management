@@ -73,7 +73,7 @@ function DuesAmountInput({
     field,
     describedBy,
 }: Readonly<{
-    field: ControllerRenderProps<CreateActivityFormData, 'monthlyFee'>;
+    field: ControllerRenderProps<CreateActivityFormData, 'duesAmount'>;
     describedBy: string;
 }>) {
     const { formItemId, formMessageId, error } = useFormField();
@@ -101,7 +101,7 @@ function DuesAmountField({
     return (
         <FormField
             control={form.control}
-            name='monthlyFee'
+            name='duesAmount'
             render={({ field }) => (
                 <FormItem>
                     <FormLabel>{t.admin.activityFee}</FormLabel>

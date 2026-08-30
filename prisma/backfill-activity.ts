@@ -17,6 +17,7 @@ config({ path: '.env.local' });
 
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { BEGINNING_OF_TIME } from '../src/lib/billing-period';
 
 const DEFAULTS = {
     communityName: 'Xclub Badminton',
@@ -35,22 +36,43 @@ async function main() {
     const rows = await prisma.settings.findMany();
     const settings = Object.fromEntries(rows.map((s) => [s.key, s.value]));
 
-    const activity = await prisma.activity.upsert({
-        where: { slug: 'badminton' },
-        update: {},
-        create: {
-            name: settings.communityName ?? DEFAULTS.communityName,
-            slug: 'badminton',
-            monthlyFee: Number(
-                settings.defaultMonthlyFee ?? DEFAULTS.defaultMonthlyFee,
-            ),
-            defaultLocation:
-                settings.defaultLocation ?? DEFAULTS.defaultLocation,
-            maxPlayers: Number(settings.maxPlayers ?? DEFAULTS.maxPlayers),
-            adminWhatsapp: settings.adminWhatsapp ?? DEFAULTS.adminWhatsapp,
-            logoUrl: settings.logoUrl ?? DEFAULTS.logoUrl,
-            isActive: true,
-        },
+    // The legacy default fee, written as the Activity's beginning-of-time
+    // DuesRate row in the same transaction as the Activity — never a column on
+    // Activity, the way `route.ts` and `seed/core.ts` write it.
+    const duesAmount = Number(
+        settings.defaultMonthlyFee ?? DEFAULTS.defaultMonthlyFee,
+    );
+    const activity = await prisma.$transaction(async (tx) => {
+        const created = await tx.activity.upsert({
+            where: { slug: 'badminton' },
+            update: {},
+            create: {
+                name: settings.communityName ?? DEFAULTS.communityName,
+                slug: 'badminton',
+                defaultLocation:
+                    settings.defaultLocation ?? DEFAULTS.defaultLocation,
+                maxPlayers: Number(settings.maxPlayers ?? DEFAULTS.maxPlayers),
+                adminWhatsapp: settings.adminWhatsapp ?? DEFAULTS.adminWhatsapp,
+                logoUrl: settings.logoUrl ?? DEFAULTS.logoUrl,
+                isActive: true,
+            },
+        });
+        await tx.duesRate.upsert({
+            where: {
+                activityId_effectiveFrom: {
+                    activityId: created.id,
+                    effectiveFrom: BEGINNING_OF_TIME,
+                },
+            },
+            update: {},
+            create: {
+                activityId: created.id,
+                amount: duesAmount,
+                effectiveFrom: BEGINNING_OF_TIME,
+                setById: null,
+            },
+        });
+        return created;
     });
     console.log(`✔ Badminton activity: ${activity.id} (${activity.name})`);
 
