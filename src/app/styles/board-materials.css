@@ -3,7 +3,7 @@
 
    Roles (DESIGN.md, Colours). Every value below is one of these or a
    measured derivative of one, and every pair a surface can produce is
-   asserted in `src/lib/__tests__/theme-contrast.test.ts`, which parses
+   asserted in `src/lib/__tests__/design-tokens.test.ts`, which parses
    *this file* — so a nudged token fails on a number, not an opinion.
 
      Black Green  #0E1F17   dark ground; ink on light grounds; ink on Lime

@@ -6,7 +6,7 @@
  * The point of parsing `src/app/styles/board-materials.css` rather than
  * keeping a second copy of the hex values here is that there is then exactly
  * one source of truth. A token nudged in the stylesheet fails on a number in
- * `src/lib/__tests__/theme-contrast.test.ts`, not on somebody's opinion of
+ * `src/lib/__tests__/design-tokens.test.ts`, not on somebody's opinion of
  * whether it still looks all right — which is what DESIGN.md's contrast table
  * is worth nothing without.
  */
