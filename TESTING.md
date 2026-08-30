@@ -729,7 +729,7 @@ surfaces; either material.
    ```js
    await fetch('/api/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' },
      body: JSON.stringify({ name: 'Colour Probe QA', slug: 'colour-probe-qa', minMembers: 2, maxPlayers: 8,
-       sessionFee: 15000, monthlyFee: 50000, allowsMonthly: true, allowsPerSession: true, color: '#ff00ff' }) })
+       sessionFee: 15000, duesAmount: 50000, allowsMonthly: true, allowsPerSession: true, color: '#ff00ff' }) })
      .then(async (r) => [r.status, await r.json()]);
    ```
 5. Delete the probe activity afterwards (`DELETE /api/activities/{id}` → `200`).
@@ -3429,3 +3429,909 @@ to prove the two Members conditions independent) was restored and re-read.
 Every P0 and P1 case passes. The "Not met" list above is unchanged by this
 addendum except that `TC-AR-036`'s sweep now covers the forms and the dashboard;
 SonarLint has still been consulted on no ticket.
+
+---
+
+## 19. Dues Rate (`TC-DR-*`)
+
+Spec #107 turned the Dues an Activity charges into a **history against Billing
+Periods**. One rate row per (Activity, effective-from Period), the rate of a
+Period being the row with the greatest effective-from that is not after it, and
+a Period that has arrived keeping its rate for ever. The live `monthlyFee`
+column is gone.
+
+This area tests **what a member is charged and what an Admin is allowed to
+change**, which are the two things a price that used to be one mutable number
+can now get wrong. "The resolver returns the newer row" is not a case here —
+Vitest owns that. "A Proof uploaded today for January records January's figure"
+is, and it is read from the `Payment` row rather than from the screen.
+
+Money is the whole subject, so every P0 in this area is asserted **from the
+database**: the amount a `Payment` row stored, the rows a migration wrote, the
+rows a refused write left alone. A surface agreeing with the database is a
+separate, weaker claim, and it is made separately.
+
+### 19.0 Conventions and shared preconditions
+
+This area inherits **§16.0 and §18.0 in full** — the same id / priority / type /
+preconditions / numbered steps / expected-result shape, the same P0-P1-P2
+meanings, the same two board materials, the same locale and viewport switches —
+and restates only what differs.
+
+**Surfaces and seams in scope.** `/admin/activities` (the register and the
+create and edit dialogs), `PATCH /api/activities/{id}`,
+`DELETE /api/activities/{id}/dues-rate`, `POST /api/activities`, the monthly arm
+of `POST /api/payments/upload`, `/payments/upload`, the Confirm dialog on
+`/admin/payments`, `/admin`'s total-due tile, the `/dashboard` dues banner, and
+the three dues-change email templates.
+
+**Out of scope**, deliberately: per-Session Fees (a Session has always carried
+its own frozen Fee), payment-mode resolution and graduation, Billing Period
+keys, Confirm / Reject behaviour, and the payments page — this spec changed
+nothing on it, and §13 owns it.
+
+**Shared preconditions for every case in this area**, on top of §18.0's:
+
+1. §1 prerequisites done, `npm run dev` running on `http://localhost:3000`, and
+   the §2 seed loaded.
+2. The accounts are §3's: `admin@xclub.local` (**Admin Satu**) unless a case says
+   otherwise, `admin2@xclub.local` where two Admins have to write at once,
+   `owner@xclub.local` where the Owner's own attempt is the point, and
+   `member@xclub.local` (**Adi Pratama**) / `member2@xclub.local` where a member
+   has to be charged or told something. `member2@xclub.local` is Monthly on
+   Badminton since `202607`, so one member covers a past, the current and a
+   queued Period. Tennis carries five Monthly seed members and is the
+   banner-and-email fixture Activity.
+3. **The refusal shape**, which differs from §18.0 item 6 in exactly one way: the
+   stable code travels in **`code`**, not `reason`. Every Dues Rate refusal is
+   `{ "error": "<the sentence in the caller's locale>", "code": "<the code>" }`
+   with `DUES_RATE_PERIOD_ARRIVED` and `DUES_RATE_NOTHING_QUEUED` at **409** and
+   `DUES_RATE_PERIOD_OUT_OF_RANGE` at **400** (`src/lib/dues-rate-writes.ts`).
+   A case fails on a 200, on a different status, or on a body missing either
+   field.
+4. **The clock cannot be moved on the running app.** No case asks for one to be.
+   Where a rule turns on *when* it is asked, the case picks Periods around the
+   real boundary instead and says which: on the run day the current Period is
+   **August 2026** (`202608`), the next — and the earliest a change may start
+   from — is **September 2026** (`202609`), the horizon ends at **August 2027**
+   (`202708`), and `202709` is the first Period out of range. Where only an
+   injected `now` can prove a claim (a queued change disappearing the instant its
+   Period arrives), the case **cites the Vitest test that injects one** and says
+   so in its expected result rather than pretending the browser proved it.
+5. **The pure rules are Vitest's and are not duplicated here.**
+   `src/lib/__tests__/dues-rate.test.ts` (resolution and the beginning-of-time
+   row), `dues-rate-queue.test.ts` (the twelve-Period window, the freeze, the
+   no-op save, the field view) and `dues-notice.test.ts` (who hears about a
+   change, and which email a write owes) are cited by id where a case rests on
+   one. A `TC-DR-*` case asserts something a member or an Admin can observe.
+6. **The upload form is locked to the current Period** — `/payments/upload`
+   renders the Period as a read-only field carrying `t.payments.periodLocked`,
+   and has no month picker. Only `POST /api/payments/upload` accepts another
+   month (any month from 2020 to one year ahead), as `multipart/form-data` with
+   `activityId`, `month`, `year` and `file`. So every case that pays a Period
+   other than the current one goes **through the route**, and no case has a step
+   that picks a month on the form. The amount is server-authoritative in both
+   paths: the client never sends one, and a client that sends one is ignored.
+7. **Email cannot be delivered in dev** (`.env.local` carries no `GMAIL_USER` /
+   `GMAIL_APP_PASSWORD`). The audience is proven by restarting the dev server
+   with **dummy** credentials so every send fails at SMTP authentication and is
+   logged **once per recipient**, and the expected result is stated as the count
+   and the identity of those attempts. Recipient locale is `DEFAULT_LOCALE`
+   (`en`) for every recipient — there is no per-user locale column, and the
+   Admin's cookie is the Admin's language, not the member's
+   (`src/lib/dues-change-mail.ts`). **So the spec's "in both locales" criterion
+   resolves, for email, to the template layout being bilingual — both languages
+   in one message — and not to a per-recipient locale.** Every on-screen string
+   is still read in both locales, by `TC-DR-018`.
+8. **Known pre-existing defect, not re-found here:**
+   [#128](https://github.com/jefrykurniaone/net-c-management/issues/128) — the seeded bank
+   account numbers carry spaces (`1234 567 890`) and the Activity edit dialog's
+   digit-only rule refuses them, so the dialog cannot be **saved** on seeded data
+   until the field is set to digits. Every case that saves the edit dialog names
+   that in its preconditions: set the Bank Account Number to digits first, and
+   restore the seeded value by SQL afterwards. A case fails on the Dues Rate
+   rule, never on #128.
+9. **No case invents a fixture it does not also remove.** A queued rate row is
+   withdrawn through `DELETE /api/activities/{id}/dues-rate` **before its Period
+   arrives** — once it arrives nothing can delete it, which is the rule under
+   test. A monthly upload writes a `Payment` row, a storage object in
+   `payment-proofs`, and `REGISTERED` Attendance rows through
+   `syncMonthlyAttendances`: the recorded run names the probe that added each and
+   the probe that took it away, and re-compares the counts afterwards.
+10. **Vocabulary**, from `CONTEXT.md`: **Dues Rate** is Admin-facing — the amount
+    an Activity charges for Dues in one Billing Period. **Dues** is what a member
+    is told, always with a figure and a month. Billing Period, Payment, Proof and
+    Participant keep their meanings, and no metaphor word appears in user-facing
+    copy. Case text quotes user-facing copy verbatim.
+
+### 19.1 What a Period charges
+
+### TC-DR-001 · P0 · Positive — A Proof for the current Period records the current Period's rate
+
+**Preconditions:** `member2@xclub.local`, Monthly on Badminton since `202607`.
+Badminton's rate rows read from the database first, and its current-Period rate
+noted. No Badminton `MONTHLY` Payment for `202608` belonging to that member, or
+its `amount` and `status` recorded so it can be put back.
+
+**Steps:**
+1. Read `SELECT "amount", "effectiveFrom" FROM "DuesRate" WHERE "activityId" =
+   '<Badminton>'` and resolve the August 2026 rate by hand from the rows.
+2. As the member, open `/payments/upload`, choose Badminton, and read the Period
+   field and the Amount field.
+3. Attach an image and Submit.
+4. Read the `Payment` row for (member, Badminton, `month = 8`, `year = 2026`,
+   `type = 'MONTHLY'`) from the database.
+5. Remove the fixture: the `Payment` row, its storage object, and the
+   `REGISTERED` Attendance rows the upload synced.
+
+**Expected result:**
+
+- The Period field is **read-only** and reads August 2026, with
+  `t.payments.periodLocked` beneath it; the Amount field is read-only and reads
+  the resolved August rate as **`Rp 75.000`** (`Rp ` + `toLocaleString('id-ID')`).
+- The submit is **201**, and the stored `Payment.amount` **equals the resolved
+  August rate exactly** — not the queued figure, not a figure the client sent.
+- `status` is `PENDING` and the row's `month`/`year` are `8`/`2026`.
+- The amount is server-authoritative: a request carrying `amount` in the form
+  data stores the resolved rate regardless.
+
+### TC-DR-002 · P0 · Positive — A Proof for a Period with a queued rate records that Period's rate
+
+**Preconditions:** a rate change queued on Badminton from **September 2026**
+(`202609`) at an amount that differs from August's — queued through
+`PATCH /api/activities/{Badminton}` with
+`{ "duesRate": { "amount": 90000, "effectiveFrom": 202609 } }` as an admin.
+`member2@xclub.local` Monthly on Badminton. No `202609` Badminton Payment for
+that member.
+
+**Steps:**
+1. Confirm the queued row exists and that August's resolved rate is unchanged.
+2. As the member, `POST /api/payments/upload` as `multipart/form-data` with
+   `activityId = <Badminton>`, `month = 9`, `year = 2026` and an image file.
+3. Read the created `Payment` row.
+4. Repeat step 2 for `month = 8`, `year = 2026` and read that row too.
+5. Withdraw the queued change and remove both Payments, their storage objects
+   and the Attendance rows they synced.
+
+**Expected result:**
+
+- Step 2 is **201** and the September `Payment.amount` is **90 000** — the rate
+  the queued row gives September, charged before September has arrived. Pre-paying
+  a future month is charged at what that month will cost, never at today's figure.
+- Step 4's August `Payment.amount` is the **August** rate (75 000), from the same
+  request path on the same day: two Periods, two prices, one Activity.
+- Neither upload writes, moves or reads a live field; the queued row is untouched
+  by both.
+
+### TC-DR-003 · P0 · Positive — A Proof for a past Period records that Period's rate, not today's
+
+**Preconditions:** Badminton carrying a beginning-of-time rate and **no** later
+arrived row (the seed state), so every past Period resolves to the founding
+figure. `member2@xclub.local` Monthly on Badminton since `202607`. No `202607`
+Badminton Payment for that member.
+
+**Steps:**
+1. Read Badminton's rate rows and resolve July 2026 by hand.
+2. As the member, `POST /api/payments/upload` with `month = 7`, `year = 2026` and
+   an image.
+3. Read the created `Payment` row.
+4. Read the same member's existing seeded Payments for earlier Periods and
+   compare their `amount` fields against the resolver's answer for their own
+   Periods.
+5. Remove the fixture as in `TC-DR-001`.
+
+**Expected result:**
+
+- **201**, and `Payment.amount` equals the **July 2026** rate — the figure that
+  Period charged. Catching up on arrears is never repriced at today's figure,
+  which is user story 2 and the reason the beginning-of-time row exists.
+- Step 4: every seeded Payment's amount still agrees with its own Period's rate.
+  The migration repriced nothing (`TC-DR-007` proves that from the totals).
+- Where an Activity's Period resolves to no row at all the route answers **400**
+  `t.payments.noMonthlyFee` and writes nothing — never a `Payment` of 0.
+
+### 19.2 The freeze and the queue
+
+### TC-DR-004 · P0 · Negative — A rate cannot be started from the current Period or any before it, as Admin or as Owner
+
+**Preconditions:** Badminton, with its rate rows recorded in full (`amount`,
+`effectiveFrom`, `setById`, `setAt`). An admin and the Owner signed in.
+
+**Steps:**
+1. As the admin, `PATCH /api/activities/{Badminton}` with
+   `{ "duesRate": { "amount": 99000, "effectiveFrom": 202608 } }` — the current
+   Period.
+2. Repeat with `"effectiveFrom": 202607`, and again with `"effectiveFrom": 0`
+   (the beginning-of-time key).
+3. Re-read every Badminton rate row and compare field by field.
+4. Repeat steps 1–3 signed in as `owner@xclub.local`.
+5. Repeat step 1 with a second field in the same body
+   (`{ "name": "…", "duesRate": { … } }`) and re-read the Activity's `name`.
+
+**Expected result:**
+
+- Every attempt in steps 1, 2 and 4 is **409** with
+  `code: "DUES_RATE_PERIOD_ARRIVED"` and the sentence *"That month has already
+  arrived, so what it charges is settled and cannot be changed. Pick a later
+  month for the new rate."* (`id`: *"Bulan itu sudah berjalan, jadi nominalnya
+  sudah final dan tidak bisa diubah. Pilih bulan setelahnya untuk tarif baru."*).
+  An out-of-range answer here would be the wrong lesson and fails the case: the
+  arrived test runs first deliberately.
+- Every rate row is **unchanged**, `setById` and `setAt` included. No row is
+  added.
+- The **Owner is refused exactly as the Admin is**: immutability is a property of
+  the Period, not of who is asking.
+- Step 5: the Activity's `name` is **unchanged** too. A refused rate leaves no
+  half-renamed Activity behind — the refusal sits before the update, inside the
+  same transaction.
+
+### TC-DR-005 · P0 · Negative — A rate cannot be started beyond twelve Periods ahead, or from a key that is not a month
+
+**Preconditions:** Badminton, rate rows recorded. Current Period August 2026, so
+the allowed window is `202609` … `202708`.
+
+**Steps:**
+1. `PATCH` with `{ "duesRate": { "amount": 99000, "effectiveFrom": 202709 } }` —
+   thirteen ahead.
+2. `PATCH` with `"effectiveFrom": 202613` — a key inside the numeric interval
+   that encodes no calendar month.
+3. `PATCH` with `"effectiveFrom": 202708` — the last allowed Period.
+4. `PATCH` with `"effectiveFrom": 202609` — the first allowed Period.
+5. Re-read the rate rows after each, and open the edit dialog's **Starts from**
+   picker and count its options.
+6. Withdraw whatever steps 3 and 4 queued.
+
+**Expected result:**
+
+- Steps 1 and 2 are **400** with `code: "DUES_RATE_PERIOD_OUT_OF_RANGE"` and the
+  sentence *"A new rate starts from next month at the earliest and twelve months
+  ahead at the latest. Pick a month in that range."* (`id`: *"Tarif baru paling
+  cepat mulai bulan depan dan paling lambat dua belas bulan ke depan. Pilih bulan
+  dalam rentang itu."*), and **nothing is written**.
+- `202613` is refused for the same reason and never stored. Stored, it would
+  arrive one day, become the rate from January 2027 onward, and be frozen there
+  by the very rule that protects a settled Period — which is why the route tests
+  membership of the picker's list rather than a numeric interval
+  (`dues-rate-queue.test.ts`, *"accepts exactly the keys the picker offers, and
+  nothing between them"*).
+- Steps 3 and 4 are **200** and each leaves **exactly one** queued row.
+- The picker offers **twelve** options, the first September 2026 and the last
+  August 2027 — the control and the rule read one list.
+
+### TC-DR-006 · P0 · Negative — An arrived rate cannot be deleted, as Admin or as Owner
+
+**Preconditions:** Badminton with its beginning-of-time row (`effectiveFrom = 0`)
+and nothing queued. An admin and the Owner signed in.
+
+**Steps:**
+1. As the admin, `DELETE /api/activities/{Badminton}/dues-rate?effectiveFrom=0`.
+2. `DELETE …?effectiveFrom=202608` (the current Period) and
+   `…?effectiveFrom=202607`.
+3. `DELETE …?effectiveFrom=202609` while nothing is queued.
+4. `DELETE …?effectiveFrom=202610xyz` and `DELETE` with no `effectiveFrom` at
+   all.
+5. Re-read every rate row.
+6. Repeat steps 1–3 and 5 signed in as `owner@xclub.local`.
+7. Open the edit dialog and read whether any control offers to delete the current
+   rate.
+
+**Expected result:**
+
+- Steps 1 and 2 are **409** `code: "DUES_RATE_PERIOD_ARRIVED"` with the arrived
+  sentence — the founding rate included. The beginning-of-time row is the one an
+  Activity's whole history rests on, and it is refused by the same rule rather
+  than by a special case.
+- Step 3 is **409** `code: "DUES_RATE_NOTHING_QUEUED"` with *"There is no queued
+  dues change to withdraw. Reload the page to see what this activity charges
+  now."*
+- Step 4 is **400** both times: a whole run of digits or nothing, so `202610xyz`
+  is refused rather than read as `202610`.
+- Every rate row is **byte-identical** afterwards, for the Admin and for the
+  Owner alike.
+- Step 7: **Withdraw** is drawn only while something is queued, and it names the
+  queued Period. There is no control anywhere that offers to delete the rate an
+  arrived Period is on.
+
+### TC-DR-007 · P0 · Positive — The migration seeded one rate per Activity and repriced no Payment
+
+**Preconditions:** the shared dev database `netc`, and the two migrations
+`20260829163748_add_dues_rate` and `20260830100000_drop_activity_monthly_fee`
+applied. The pre-migration figures, from the map's wave-1 baseline: `monthlyFee`
+Badminton `cmr4c8pal0004b4dfzbntbi5d` **75 000**, Basket
+`cmt0gxmfn0007fkdf294sd66k` **60 000**, Futsal `cmr4c8par0005b4df6vdpl5m8`
+**40 000**, Tennis `cmt0gxmfq0008fkdf1e473kc5` **55 000**; `Payment` rows **44**,
+`sum(amount)` **2 360 000**.
+
+**Steps:**
+1. `SELECT "activityId", "amount", "effectiveFrom", "setById" FROM "DuesRate"
+   ORDER BY "activityId", "effectiveFrom"`.
+2. `SELECT count(*), sum("amount") FROM "Payment"`.
+3. `SELECT column_name FROM information_schema.columns WHERE table_name =
+   'Activity'`.
+4. `git grep -n monthlyFee -- src prisma/schema.prisma prisma/seed*` and read
+   `npm run build` for the same token. `prisma/migrations/` is excluded on
+   purpose: the drop migration has to name the column it drops.
+5. `npx prisma migrate diff --from-config-datasource … --to-schema
+   prisma/schema.prisma --exit-code` against the dev database, and re-run the
+   seed on a scratch database.
+
+**Expected result:**
+
+- **One row per Activity at `effectiveFrom = 0`**, its `amount` equal to that
+  Activity's `monthlyFee` at migration time — 75 000 / 60 000 / 40 000 / 55 000
+  against the four ids above — and `setById` null for the seeded rows, because
+  nobody set them.
+- `Payment` is **44 rows summing 2 360 000**, unchanged. The migration priced
+  nothing again: a Payment records what it recorded.
+- **No `monthlyFee` column** on `Activity`, and no reference to the token in
+  `src/`, in `prisma/schema.prisma` or in either seeder — the contract step is
+  complete, not merely unread.
+- `migrate diff` reports **No difference detected**, and the seed runs clean on a
+  scratch database: an Activity created by the seeder carries its own
+  beginning-of-time row.
+
+### TC-DR-008 · P1 · Positive — A queued change is replaced by saving again, and the disclosure follows it
+
+**Preconditions:** Tennis, nothing queued, its current rate noted. An admin. The
+Bank Account Number set to digits first, per 19.0 item 8 (#128), and restored
+afterwards.
+
+**Steps:**
+1. Open `/admin/activities`, open Tennis's edit dialog, and read the sentence
+   beneath the Dues field.
+2. Set the Dues amount to a figure above the current rate, pick **September
+   2026** in **Starts from**, and Save. Re-open the dialog and read the sentence.
+3. Save again with a different amount and the **same** month. Re-open and read.
+4. Save again with a different amount and **October 2026**. Re-open and read.
+5. `SELECT "amount", "effectiveFrom", "setById", "setAt" FROM "DuesRate" WHERE
+   "activityId" = '<Tennis>'` after each save.
+6. Save once more repeating step 4's amount and month exactly, and re-read the
+   rows.
+7. Withdraw the queued change.
+
+**Expected result:**
+
+- Step 1's sentence is *"This activity charges Rp 55.000 a month. A new rate
+  applies from the month you pick, never from a month that has already
+  arrived."*, at Body size in Secondary Ink, tied to the amount box and to the
+  picker by `aria-describedby` on `dues-rate-note-{activityId}`.
+- After each of steps 2–4 the sentence is the queued form — *"This activity
+  charges {amount} a month, changing to {queued} from {month}."* — naming the
+  figure just saved and its month, and a **Withdraw** tile stands beside it.
+- **Exactly one queued row exists after every save**, at the month last chosen.
+  Replacing at a different month leaves no row behind at the old one: correcting
+  a decision is one save, not a delete and a re-add.
+- Step 6 writes nothing: the row's `setAt` and `setById` are **unmoved**, because
+  the same save arriving twice must not falsify who raised the Dues and when
+  (`dues-rate-queue.test.ts`, *"isDuesRateSaveUnchanged"*).
+- The current rate is never the thing edited: the resolved current-Period rate is
+  the same before and after every save in this case.
+
+### TC-DR-009 · P1 · Positive — A queued change is withdrawn, from the tile and from the route
+
+**Preconditions:** a change queued on Tennis from September 2026. An admin.
+
+**Steps:**
+1. Open the edit dialog, read the sentence and press **Withdraw**.
+2. Read the toast, and re-read the sentence without reloading the page.
+3. Re-read the rate rows.
+4. Queue the change again and withdraw it with
+   `DELETE /api/activities/{Tennis}/dues-rate?effectiveFrom=202609`.
+5. Press Withdraw a second time with nothing queued.
+
+**Expected result:**
+
+- The tile is a `type='button'` **Blank action** inside the form: pressing it
+  withdraws the rate and **saves no other field** of the half-edited dialog.
+- The toast reads *"Queued dues change withdrawn."* / *"Perubahan iuran yang
+  antre ditarik kembali."*, the sentence returns to the current-rate form, and
+  the Withdraw tile disappears — all through the `aria-live="polite"` region, so
+  the change is announced where it happened.
+- The queued row is **gone** and every arrived row is untouched.
+- Step 4 is **200** `{ "success": true }`.
+- Step 5 is **409** `DUES_RATE_NOTHING_QUEUED`, and the message is surfaced as
+  the route's own sentence rather than a generic failure.
+
+### TC-DR-010 · P1 · Edge — Saving the amount the current Period charges withdraws a queued change and writes no row
+
+**Preconditions:** Tennis charging 55 000 now, with a change to 70 000 queued
+from September 2026. An admin.
+
+**Steps:**
+1. Save the dialog with the Dues amount set back to **55 000** and **September
+   2026** in the picker.
+2. Read the rate rows.
+3. Repeat with **October 2026** picked instead — a month that is not the queued
+   one.
+4. Read the rows again, and the disclosure.
+
+**Expected result:**
+
+- Both saves are **200**, and afterwards **no queued row exists at all**: an
+  Admin who types what the Activity charges now means "charge what we charge
+  now", whichever month the picker happens to be showing. Before #127 the
+  October save left the September row in place; this is that regression's net.
+- **No row is written at the picked month** — the request's own row is deleted
+  along with any other queued one.
+- Every arrived row is untouched, and the disclosure is back to the current-rate
+  sentence with no Withdraw tile.
+- The email that follows is the **withdrawn** one, and only if something had been
+  queued (`TC-DR-016`).
+
+### TC-DR-011 · P1 · Positive — A new Activity has a rate from creation
+
+**Preconditions:** an admin. No Activity on the slug the case uses.
+
+**Steps:**
+1. `POST /api/activities` with a valid body carrying `duesAmount: 50000` and no
+   other money field.
+2. Read the created Activity's `DuesRate` rows.
+3. `POST` a second Activity with a stray `monthlyFee: 50000` **and** a
+   `duesAmount`, and read the response body and the rows.
+4. Open `/admin/activities` and read the new rows' Dues cells; open the create
+   dialog and look for a **Starts from** picker.
+5. `DELETE /api/activities/{id}` for both.
+
+**Expected result:**
+
+- **201**, and exactly one `DuesRate` row for the new Activity, at
+  `effectiveFrom = 0`, `amount = 50000`, `setById` naming the creating Admin —
+  the Activity and its founding rate are one transaction, so no Activity ever
+  exists for an instant with no rate.
+- Step 3: the stray `monthlyFee` is **stripped**, never stored, and appears in no
+  response body; the created row still carries `duesAmount`'s figure. There is no
+  column left for it to land on.
+- The register prints the new Activity's current rate immediately, with no
+  special case for "never had a change".
+- The **create** dialog offers a single amount box and **no** month picker: there
+  is no month to choose for a founding rate.
+
+### TC-DR-012 · P1 · Edge — Two Admins saving at once leave exactly one queued row
+
+**Preconditions:** Tennis with nothing queued. Two admin sessions,
+`admin@xclub.local` and `admin2@xclub.local`. Where the two presses cannot be
+made to overlap by hand, issue them as two `fetch` calls without awaiting the
+first.
+
+**Steps:**
+1. Issue `PATCH /api/activities/{Tennis}` from both sessions in the same moment,
+   one with `{ "amount": 80000, "effectiveFrom": 202609 }` and the other with
+   `{ "amount": 65000, "effectiveFrom": 202610 }`.
+2. Read every `DuesRate` row for Tennis.
+3. Read the disclosure in a freshly opened dialog.
+4. Repeat several times, alternating which request is issued first, and withdraw
+   whatever is queued between runs.
+
+**Expected result:**
+
+- **Exactly one queued row after every run**, carrying whichever save committed
+  second. Two future rows — one of them nameable by no disclosure and reachable
+  by no Withdraw — is the failure this case exists to catch, and the Activity's
+  own `SELECT … FOR UPDATE` is what prevents it.
+- Both requests answer **200**: neither is refused, because both are legal; the
+  second simply replaces.
+- The disclosure names the surviving row, and Withdraw removes it in one press.
+- No arrived row moves in any run.
+
+### 19.3 The surfaces that read a rate
+
+### TC-DR-013 · P1 · Positive — The shortfall note judges a Payment by its own Period
+
+**Preconditions:** two `PENDING` `MONTHLY` Payments belonging to the same member
+on the same Activity: one for a **past** Period whose amount equals that Period's
+rate, and one for the **current** Period whose amount is below the current rate.
+An arrived rate change between the two Periods where the seed has none — added by
+SQL as a rate row at an arrived Period, and removed by SQL afterwards, since the
+route refuses to write one.
+
+**Steps:**
+1. On `/admin/payments`, press **Confirm** on the past-Period Payment and read
+   the dialog.
+2. Press **Confirm** on the current-Period Payment and read the dialog, and read
+   the `aria-describedby` on its Confirm button.
+3. Confirm the second one and re-read the Payment.
+4. Restore both Payments and remove the SQL-added rate row.
+
+**Expected result:**
+
+- Step 1 draws **no shortfall note**: the Payment paid exactly what its own month
+  charged, and a note there would be the old defect — today's figure judging a
+  settled month.
+- Step 2 draws the note, and the figure in it is the rate of the **Payment's own
+  Billing Period**, never today's. The sentence stays at Body size in Secondary
+  Ink with the Confirm button pointing at it through `aria-describedby`, exactly
+  as `TC-AR-024` asserts.
+- The wording is the dictionary's own at run time and is quoted verbatim into the
+  recorded run: `t.admin.confirmBelowDues` said "the current Dues" while
+  [#129](https://github.com/jefrykurniaone/net-c-management/issues/129) stood,
+  and the copy fix names the Payment's Period instead. The case
+  passes on the **figure and the Period it came from**; the sentence is recorded
+  as read.
+- Step 3 is **200** and `status` is `CONFIRMED`: it warns, it never blocks.
+- A per-Session Payment is still judged by its Session's own Fee
+  (`t.admin.confirmBelowFee`), unchanged by this spec.
+
+### TC-DR-014 · P1 · Positive — The dashboard's total due is this Period's rate, and a queued rise does not inflate it
+
+**Preconditions:** `/admin` as an admin. The current Period's total due read and
+noted, together with each active Activity's monthly-Membership headcount and its
+resolved current rate.
+
+**Steps:**
+1. Read the total-due tile and compute the expected figure by hand:
+   `Σ headcount × resolveDuesRate(rows, August 2026)`.
+2. Queue a **rise** on Tennis from September 2026 and reload `/admin`.
+3. Read the tile again.
+4. Withdraw the queued change, reload, and read it once more.
+5. Read `dues-rate.test.ts` and `dues-rate-queue.test.ts` for the rollover claim.
+
+**Expected result:**
+
+- The tile equals the hand-computed figure to the rupiah, from the rate rows
+  rather than from any live field.
+- After step 2 the tile is **unchanged**. A rate queued for next month is not
+  this month's rate, and the total moves on the first day of the new Period and
+  not a day before — because `currentPeriod(now)` moves and nothing is written.
+- Step 4 returns the same figure again.
+- **The rollover itself is asserted by Period choice, not by a moved clock**: no
+  clock is injectable on the running app. The claim that the figure changes the
+  instant the Period arrives rests on the resolver's own tests, which pass `now`,
+  and on this case showing that the *only* input that decides the figure is the
+  Period passed in.
+- An Activity no rate row covers contributes **nothing** and logs
+  `[admin dashboard] no Dues Rate covers …` — a short total reads as short
+  against `collected`, where an invented figure would read as correct.
+
+### TC-DR-015 · P1 · Positive — The dashboard banner tells only the members a change will bill
+
+**Preconditions:** Tennis, with a change queued from **September 2026**. From
+wave 3's fixture shape: one Tennis member flipped to **per-Session** by SQL
+(`wulan.sari`), one given a **pending switch to Monthly** effective `202609`
+(`nadia.putri`), and the rest Monthly. Every SQL fixture restored afterwards.
+
+**Steps:**
+1. Sign in as a Monthly Tennis member and read `/dashboard`.
+2. Sign in as the per-Session member and read `/dashboard`.
+3. Sign in as the member whose switch to Monthly lands in September and read
+   `/dashboard`.
+4. Sign in as a member who is on Tennis but whose Membership has **no** mode
+   chosen, and read `/dashboard`.
+5. Read the sentence in both locales, and read it for a member who has already
+   paid this month.
+6. Withdraw the change and re-read each dashboard.
+
+**Expected result:**
+
+- Step 1: the banner carries one sentence for Tennis — *"Tennis Dues change to
+  Rp 70.000 from September 2026"* (`id`: *"Iuran Tennis berubah menjadi
+  Rp 70.000 mulai September 2026"*) — in words, with no colour or icon carrying
+  the fact, no **Pay now** pill and no link: there is nothing to pay yet.
+- Step 2: **nothing**. A member paying per Session is never told about a price
+  they do not pay.
+- Step 3: the sentence **is** shown. The audience is resolved for the Period the
+  change starts from, not for today, so a switch that lands by then counts
+  (`dues-notice.test.ts`, *"tells a member whose pending switch to Monthly lands
+  by that Period"*).
+- Step 4: **nothing**. A member with both modes offered and none chosen has not
+  been put on Dues, and a Dues figure would be the first they heard of owing any.
+- Step 5: the banner renders **even for a member who owes nothing this month** —
+  that member is exactly the one who needs to hear it — and one sentence per
+  affected Activity, ordered by Activity name.
+- Step 6: every sentence is gone with no write anywhere.
+- **"Gone once the Period arrives" is proven by Vitest**, not by the browser:
+  `dues-notice.test.ts`, *"drops the sentence once the Period arrives, with no
+  write anywhere"*, passes a `now` inside the queued month. No clock can be moved
+  on the running app, and the run records that this clause is cited rather than
+  re-executed.
+
+### TC-DR-016 · P1 · Positive — Each of the three triggers emails exactly the audience, and an unconfigured app sends nothing
+
+**Preconditions:** two dev-server states. **(a)** as shipped, with no
+`GMAIL_USER` / `GMAIL_APP_PASSWORD`. **(b)** restarted with **dummy** values for
+both, so every send fails at SMTP authentication and is logged once per
+recipient. Tennis as the fixture Activity, with its Monthly headcount, its
+per-Session member and its pending-switch member known from `TC-DR-015`.
+
+**Steps:**
+1. In state (a), queue a change on Tennis and read the response and the server
+   log.
+2. Restart in state (b). Queue a change on Tennis; count and identify the send
+   attempts in the log, and note when they happen relative to the response.
+3. Replace the queued change and read the log again.
+4. Withdraw it and read the log again.
+5. Save the dialog again changing nothing about Dues, and read the log.
+6. Read one template's rendered HTML.
+
+**Expected result:**
+
+- Step 1 is **200** and **nothing is sent and nothing is logged**: the send is
+  guarded by `isEmailConfigured()` before any audience is read.
+- Step 2: **one attempted send per member of the resolved audience** — every
+  member billed Monthly for the effective Period, including the pending-switch
+  member — and **none to the per-Session member**, none to a member with no mode
+  chosen, none to an inactive or unadmitted member, and none to a member with no
+  address. Every attempt happens **after** the response, through `after()`; the
+  Admin's save is not slowed by the audience query.
+- Step 3 sends the **replaced** template alone — never a withdrawal followed by a
+  queue. Step 4 sends the **withdrawn** one, naming the figure that **stays**
+  (what the current Period charges), never the figure that will now never apply.
+- Step 5 sends **nothing**: a save that queued nothing owes no email.
+- Every failure is logged as `[dues-rate] change email to <address> failed:` and
+  **none is thrown**: the route's answer is unaffected.
+- The message is the shared **bilingual layout** — both languages in one email —
+  and every recipient gets `DEFAULT_LOCALE` (`en`), there being no per-user
+  locale. That is what this spec's "both locales" resolves to for email, and it
+  is recorded as such rather than as a per-recipient result.
+
+### TC-DR-017 · P1 · Negative — A member cannot set or withdraw a rate
+
+**Preconditions:** `member@xclub.local`, and Badminton's rate rows recorded.
+
+**Steps:**
+1. As the member, `PATCH /api/activities/{Badminton}` with
+   `{ "duesRate": { "amount": 1000, "effectiveFrom": 202609 } }`.
+2. As the member, `DELETE /api/activities/{Badminton}/dues-rate?effectiveFrom=202609`.
+3. As the member, `POST /api/activities` with a valid body.
+4. Re-read every rate row.
+5. Repeat step 1 signed out.
+
+**Expected result:**
+
+- Steps 1–3 are **403** `{ "error": "Forbidden" }`. The role check runs before
+  the body is parsed, so a member never reaches the rate rules at all.
+- Step 5 is the admission refusal, not a 403 leak.
+- **No rate row is written, changed or deleted** by any of them, and no email is
+  queued.
+
+### 19.4 Both locales, the keyboard, and the register
+
+### TC-DR-018 · P1 · Positive — No English leaks into the Indonesian build on any Dues Rate surface
+
+**Preconditions:** `NEXT_LOCALE` set to `id`; a change queued on Tennis so every
+queued-state string renders.
+
+**Steps:**
+1. In `id`, read the Activity edit dialog: the Dues label, the **Starts from**
+   label, every option in the picker, the disclosure sentence, and the Withdraw
+   tile.
+2. Trigger each of the three refusals through the route with an `id` cookie and
+   read the `error` sentences.
+3. Read the `/dashboard` banner sentence, the Activities register's Dues column
+   head and its "no rate" cell, and the Confirm dialog's shortfall sentence.
+4. Compare each string against the `en` build and list every one that matches.
+5. Read the withdraw toast in `id`.
+
+**Expected result:**
+
+- Every string switches: *Mulai dari*, *Tarik kembali*, *Perubahan iuran yang
+  antre ditarik kembali.*, *Belum ada tarif*, the three refusal sentences quoted
+  in `TC-DR-004`, `TC-DR-005` and `TC-DR-006`, and the banner's *"Iuran
+  {activity} berubah menjadi {amount} mulai {month}"* with the month name from
+  `t.months`.
+- The month options are Indonesian month names, not English ones or bare keys.
+- The only cross-locale matches are the community name, proper nouns, numerals
+  and currency — `Rp 75.000` is formatted `id-ID` in both locales by design.
+- No metaphor word from `CONTEXT.md` appears in either locale, and no
+  member-facing string says "rate": member copy says Dues with a figure and a
+  month.
+
+### TC-DR-019 · P1 · Positive — The picker and the disclosure are reachable and announced
+
+**Preconditions:** the Activity edit dialog open on an Activity with a change
+queued. A screen reader, or the accessibility tree.
+
+**Steps:**
+1. Tab from the Dues amount box and record every stop through the picker, the
+   disclosure and the Withdraw tile.
+2. Open the picker from the keyboard, move through the twelve options with the
+   arrow keys, and choose one with Enter.
+3. Read the accessible name of the picker's trigger, and the `aria-describedby`
+   of both the amount box and the trigger.
+4. Withdraw the change without reloading, and observe what is announced.
+5. Click the **Starts from** label and read where focus went.
+6. Read the disclosure's computed font size and colour, in both materials.
+
+**Expected result:**
+
+- Tab reaches the amount box, then the picker trigger, then the Withdraw tile,
+  each with a visible focus ring; the disclosure is text and is not a tab stop.
+- The picker opens, traverses and commits from the keyboard alone.
+- The trigger is named by a real `<label>` bound with `htmlFor`, and **both** the
+  amount box and the trigger point at the disclosure with `aria-describedby`
+  (`dues-rate-note-{activityId}`), so the condition reaches a screen reader as
+  part of the field rather than as decoration. A validation message joins the
+  description rather than replacing it.
+- The disclosure is an `aria-live="polite"` region: a change being queued,
+  replaced or withdrawn is announced **where it happens**, not on the next focus.
+- Clicking the label focuses the trigger.
+- The sentence renders at **Body** size in Secondary Ink in both materials —
+  never Caption and never the muted step (`DESIGN.md`).
+
+### TC-DR-020 · P2 · Positive — The Activities register prints the current rate and sorts by it
+
+**Preconditions:** `/admin/activities` as an admin, the four seeded Activities,
+and a change queued on one of them.
+
+**Steps:**
+1. Read each row's Dues cell and compare it against the resolved current-Period
+   rate.
+2. Press the Dues column head to sort ascending, then descending, and record the
+   order.
+3. Look for any marker of the queued change in the register.
+4. Deactivate an Activity, sort by Dues again, and reactivate it.
+5. Read the cell of an Activity with no rate row at all (created by SQL, removed
+   afterwards).
+
+**Expected result:**
+
+- Every Dues cell reads what **this** Billing Period charges, formatted
+  `Rp 75.000`, with tabular figures down the column.
+- The sort ranks by the resolved current rate in both directions, and **name
+  breaks every tie**, so two loads of the same data give the same list. The sort
+  is `?sortBy=dues`; every other sort keeps its own `orderBy`.
+- **No marker for a queued change anywhere in the register**: a queued change is
+  not a standing, and the register answers "which Activity charges most" about
+  the month it is showing.
+- Step 4: the Dues sort ranks active and inactive Activities together, unchanged
+  from before the rate history (`src/lib/activity-register.ts`).
+- Step 5: the cell reads **"No rate set"** / **"Belum ada tarif"** — never an em
+  dash, which means the Activity does not offer Monthly, and never `Rp 0`, which
+  would read as a free month rather than a missing row.
+
+### 19.5 Recorded run — 2026-08-30
+
+Executed once against `main` at **`559484b`** (the merge of PR #133 for
+[#129](https://github.com/jefrykurniaone/net-c-management/issues/129), on top of
+`4162470`), on the §2 seed on the local `netc` database, on **Next.js 16.2.6**
+(dev server on `http://localhost:3000`), at **1440 × 900**, in **both locales**.
+Playwright (MCP) drove the surfaces, signed in from `/auth/dev`; the routes were
+called through an API harness on `/api/dev-login`; the database was read through
+`pg`. The current Billing Period on the run day was **August 2026** (`202608`).
+
+**The painted-board material was not measured this run.** Every colour and size
+below is the enamel material's. §16 and `TC-AR-036` hold the both-materials
+sweep, and re-reading this area on the painted board is still owed.
+
+Every figure below is measured — from the route's own response, from the
+database, from the server log, or from `getComputedStyle` — never from what a
+screenshot looked like.
+
+**The seed was left as it was found.** After the run: `Payment` **44** rows /
+`sum(amount)` **2,360,000**, `PENDING 3 / CONFIRMED 40 / REJECTED 1`;
+`Attendance` `REGISTERED 69 / PRESENT 38 / ABSENT 13 / MAYBE 3`; `DuesRate`
+exactly one row per Activity at `effectiveFrom 0` (75000 / 60000 / 40000 /
+55000); Tennis memberships back to five Monthly from `202608` with nothing
+pending; the two sentinel Sessions, the sentinel Activities and every sentinel
+Payment, storage object and Attendance row removed; the one Proof URL pointed at
+a dead host restored to `NULL`. Residue: `updatedAt` moved on rows the run
+touched, and `Tennis.description` was re-saved as the empty string it already
+was. The pre-existing
+[#128](https://github.com/jefrykurniaone/net-c-management/issues/128) was worked
+around as 19.0 item 8 says — Tennis `bankAccountNumber` set to `002101045566` by
+SQL and restored to `0021 0104 5566`.
+
+| Case | Priority | Result |
+|---|---|---|
+| TC-DR-001 | P0 | **Pass** — form as `member2@xclub.local`: Period input read-only `August 2026` with "The current period, set by the calendar"; Amount read-only `Rp 75.000` with "Set by this activity's monthly fee" (that copy is [#134](https://github.com/jefrykurniaone/net-c-management/issues/134)); Submit disabled until a file is attached. A 1×1 PNG → `POST /api/payments/upload` **201**, row `{ amount: 75000, month: 8, year: 2026, type: MONTHLY, status: PENDING }` (`cmtfa246x001y1kdfhez27tn1`); toast "Payment proof uploaded! Awaiting admin confirmation."; `/payments` dues card `Rp 75.000 /month · IN REVIEW`. Client-field injection through the route (multipart `amount=1`, October 2026 while 90.000 was queued from September) → **201** and a stored `amount` of **90000** — the client figure never reaches the row. Fixture removed: 1 Payment, 1 `payment-proofs` object, 3 `REGISTERED` Attendance rows from `syncMonthlyAttendances` |
+| TC-DR-002 | P0 | **Pass** — Admin `PATCH /api/activities/cmr4c8pal0004b4dfzbntbi5d` `{"duesRate":{"amount":90000,"effectiveFrom":202609}}` → **200**. member2's route upload `month=9&year=2026` → **201**, `Payment.amount` **90000**; `month=8&year=2026` → **201**, `amount` **75000**. Same path, same day, two Periods, two prices. The queued row was untouched by both (`{90000, 202609}` still present) |
+| TC-DR-003 | P0 | **Pass** — route upload `month=7&year=2026` → **201**, `amount` **75000** (the beginning-of-time row; July has no later row). Cross-check over every seeded `MONTHLY` Payment: `count(*) WHERE amount <> resolved rate of its own Period` = **0**. June 2026, before member2's Monthly `effectiveFrom 202607` → **403** "You're not on monthly billing for this activity this period." — not a Payment of 0. **The no-covering-row 400 (`payments.noMonthlyFee`) was not exercised**: every Activity carries a beginning-of-time row, and reaching that guard would mean deleting a seed row |
+| TC-DR-004 | P0 | **Pass** — as Admin and as Owner, `PATCH` with `effectiveFrom` `202608`, `202607` and `0` → six × **409** `code: "DUES_RATE_PERIOD_ARRIVED"`, `error: "That month has already arrived, so what it charges is settled and cannot be changed. Pick a later month for the new rate."` Admin `PATCH {"name":"Badminton QA","duesRate":{…,"effectiveFrom":202608}}` → **409** with the same code, and `Activity.name` **unchanged** (`Badminton`). Rate rows byte-identical before and after — `amount`, `effectiveFrom`, `setById`, `setAt` |
+| TC-DR-005 | P0 | **Pass** — `effectiveFrom 202709` → **400** `DUES_RATE_PERIOD_OUT_OF_RANGE`, `error: "A new rate starts from next month at the earliest and twelve months ahead at the latest. Pick a month in that range."`; `202613` → **400** with the same code; rows unchanged after both. `202708` → **200**, rows `[{75000,0},{80000,202708, setById cmr4c8pb20007b4dftnl351r2}]`; `202609` → **200**, rows `[{75000,0},{80000,202609}]` — exactly one queued row, the `202708` one replaced. `DELETE …?effectiveFrom=202609` → **200** `{"success":true}` and the rows restored. The edit dialog's **Starts from** picker offers **12** options, `September 2026` … `August 2027` (`id`: `September 2026` … `Agustus 2027`) |
+| TC-DR-006 | P0 | **Pass** — `DELETE …/dues-rate?effectiveFrom=0`, `=202608` and `=202607`, as Admin and as Owner → six × **409** `DUES_RATE_PERIOD_ARRIVED` with the same sentence as `TC-DR-004`. `=202609` with nothing queued → **409** `DUES_RATE_NOTHING_QUEUED`, `error: "There is no queued dues change to withdraw. Reload the page to see what this activity charges now."` `=202610xyz` → **400** `{"error":"An error occurred"}` (no `code`); no `effectiveFrom` at all → **400** likewise. Rows byte-identical. In the dialog **Withdraw** is drawn only while a change is queued (0 buttons without one, 1 with), and no control anywhere offers to delete an arrived rate |
+| TC-DR-007 | P0 | **Pass** — `DuesRate`: `badminton cmr4c8pal0004b4dfzbntbi5d 75000 @0`, `basket cmt0gxmfn0007fkdf294sd66k 60000 @0`, `futsal cmr4c8par0005b4df6vdpl5m8 40000 @0`, `tennis cmt0gxmfq0008fkdf1e473kc5 55000 @0`, `setById NULL` — equal to the wave-1 `monthlyFee` baseline. `Payment` **44 / 2,360,000**, both baselines unchanged. `information_schema.columns` for `Activity` matching `%fee%`: only `sessionFee`. `_prisma_migrations`: `20260829163748_add_dues_rate` finished `2026-08-29T17:00:56Z`, `20260830100000_drop_activity_monthly_fee` finished `2026-08-30T01:13:16Z`. `git grep -n monthlyFee -- src prisma/schema.prisma prisma/*.ts` → only `src/lib/__tests__/activity-validation.test.ts`, the two cases asserting the old name is stripped. `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code` → **No difference detected**, exit 0. On the scratch database `netc_scratch_w4` (created, then dropped): `migrate deploy` "All migrations have been successfully applied", `prisma db seed` exit 0, 4 Activities each with one rate row `0:75000 / 0:60000 / 0:40000 / 0:55000`, **75 Payments / 4,250,000**, no `monthlyFee` column, head `20260830100000_drop_activity_monthly_fee`, `migrate diff` exit 0 |
+| TC-DR-008 | P1 | **Pass** — Tennis edit dialog. The opening disclosure `#dues-rate-note-cmt0gxmfq0008fkdf1e473kc5` reads "This activity charges Rp 55.000 a month. A new rate applies from the month you pick, never from a month that has already arrived." as a `<p>` at **15px** in `rgb(84, 97, 91)` with `aria-live="polite"` and no Withdraw. Save `70000 / September 2026` → reopened: "This activity charges Rp 55.000 a month, changing to Rp 70.000 from September 2026.", Withdraw ×1, amount box `70000`, trigger `September 2026`. Save `75000 / September 2026` → "…changing to Rp 75.000 from September 2026."; rows carry exactly one with `effectiveFrom > 202608`: `{75000, 202609, setById cmr4c8pb20007b4dftnl351r2}`. Save `80000 / October 2026` → "…changing to Rp 80.000 from October 2026."; one queued `{80000, 202610}` and **none left at `202609`**. The same save repeated byte-for-byte left `setAt` unchanged (`2026-08-29T19:47:06.957Z`, database clock) and `setById` unchanged. The current rate read `Rp 55.000` throughout. `aria-describedby="dues-rate-note-cmt0gxmfq0008fkdf1e473kc5"` on `input[name=duesAmount]` **and** on the trigger `#dues-rate-period-cmt0gxmfq0008fkdf1e473kc5` |
+| TC-DR-009 | P1 | **Pass** — the tile is `<button type="button">Withdraw</button>`. Pressed by keyboard (Enter) with `70000 / 202609` queued: the dialog stays open, the sentence returns to the current-rate form **without a reload** through the `aria-live="polite"` region, the tile is gone, the amount box is back to `55000` and the trigger to `September 2026`, and the toast reads "Queued dues change withdrawn."; the rows carry the beginning-of-time row only. At the route, `DELETE …?effectiveFrom=202609` → **200** `{"success":true}`; with nothing queued → **409** `DUES_RATE_NOTHING_QUEUED` — the tile cannot be pressed twice, because it disappears. Observation, not a failure: after the tile unmounts, `document.activeElement` is the dialog container |
+| TC-DR-010 | P1 | **Pass** — with `{80000, 202610}` queued and the current rate 55000, saving `55000 / October 2026` → **200**, toast "Activity updated!", and the rows carry only `{55000, 0}`: no queued row at `202610` and none anywhere. The reopened dialog draws the current-rate sentence and no Withdraw. The `55000 / 202609` variant is #127's own Vitest case and was **not re-run on the form**. The email that followed the same arm under dummy credentials was the **withdrawn** template's three sends (see `TC-DR-016`) |
+| TC-DR-011 | P1 | **Pass** — `POST /api/activities` with `monthlyFee: 111111` and no `duesAmount` → **400**, no Activity and no rate row. `POST` with `duesAmount: 123456` **and** a stray `monthlyFee: 999999` → **201**, and exactly one `DuesRate` `{123456, effectiveFrom 0, setById cmr4c8pb20007b4dftnl351r2}` — the creating Admin. `PATCH {"monthlyFee":555555,"description":"patched"}` → **200** with the rows unchanged. `GET /api/activities` items carry no `monthlyFee` key. A second sentinel (`Aikido QA`, `duesAmount 55000`) printed `Rp 55.000` in the register at once. **Not exercised: the create dialog's control set** — the amount box without a picker was not opened this run. Both sentinels deleted (`DELETE /api/activities/{id}` → **200**) |
+| TC-DR-012 | P1 | **Pass** — three rounds, `admin@` `{80000, 202609}` against `admin2@` `{65000, 202610}` fired together with the order alternated. **Both 200 every round.** Rows afterwards: round 1 one queued `{65000, 202610}`, round 2 one queued `{80000, 202609}`, round 3 one queued `{65000, 202610}` — exactly one row with `effectiveFrom > 202608` each time, `setById` whichever committed second (admin2, `cmr4c8pbj0009b4dfkzoogwvh`, in all three), the beginning-of-time row unmoved. Between rounds `DELETE` on the surviving key → **200**, on the other → **409** `DUES_RATE_NOTHING_QUEUED` |
+| TC-DR-013 | P1 | **Pass** — fixture: a SQL-inserted arrived row on Badminton `{80000, 202608}` (id `w5dr013arrivedrow`, deleted afterwards) and member2 Payments July 75000, August 75000, September 90000, October 90000, all `PENDING`. Confirm dialogs: July (= July's 75000) **no note**; September and October (= 90000) **no note**; August: "**This is less than the Dues for August 2026 of Rp 80.000. You can still Confirm.**", a `<p>` at **15px** in `rgb(84, 97, 91)` with the dialog's Confirm button pointing at it through `aria-describedby`. Confirming through `PATCH /api/payments/cmtf9i2il000f1kdfu5miltak {"status":"CONFIRMED"}` → **200**, `status CONFIRMED`, `amount 75000` — it warns, it never blocks. Escape on the other dialogs wrote nothing (July still `IN REVIEW` afterwards). In `id`, on `member@xclub.local`'s August Badminton row against the same fixture: "**Jumlah ini kurang dari Iuran Agustus 2026 sebesar Rp 80.000. Kamu tetap bisa Konfirmasi.**" That is [#129](https://github.com/jefrykurniaone/net-c-management/issues/129)'s copy as merged in `559484b`: the sentence names the Payment's **own** Period |
+| TC-DR-014 | P1 | **Pass** — the `/admin` tile reads "Collected · August — Rp 2.24M of **Rp 3.06M** due", and Σ headcount × current rate = 27×75000 + 6×60000 + 10×40000 + 5×55000 = **3,060,000** (the tile abbreviates to `M`; no full figure is exposed). With Badminton `90000 / 202609` queued the tile read **Rp 3.06M**, unchanged; after the withdrawal, **Rp 3.06M** again. Control: while the SQL-inserted **arrived** row `{80000, 202608}` existed the tile read **Rp 3.19M** (= 3,195,000) — the tile follows the Period's rate, not the queue. `id`: "Rp 2.24M dari Rp 3.19M tagihan", read while that fixture row existed. The rollover itself is **asserted by Period choice** (August against September 2026) plus the resolver's Vitest; no clock is injectable. **The `[admin dashboard] no Dues Rate covers …` log line was not observed**: the only rate-less Activity (Aikido QA) had no members, so it contributed nothing without reaching the resolver |
+| TC-DR-015 | P1 | **Pass** — fixture on Tennis by SQL, restored afterwards: `wulan.sari` per-Session; `nadia.putri` per-Session with `pendingMode MONTHLY`, `pendingEffectiveFrom 202609`; `putri.anggraini` `paymentMode NULL`. Queued: Tennis `70000 / 202609`, Badminton `90000 / 202609`. On `/dashboard`: **Citra Dewi** (Monthly, August `CONFIRMED`, owes nothing) → "Tennis Dues change to Rp 70.000 from September 2026"; **Wulan Sari** (per-Session on Tennis) → **no Tennis sentence**, only "Badminton Dues change to Rp 90.000 from September 2026" where she is Monthly; **Nadia Putri** (pending switch), in `id` → "Iuran Tennis berubah menjadi Rp 70.000 mulai September 2026" and the Badminton one; **Putri Anggraini** (no mode on Tennis) → **no Tennis sentence**, Badminton only; **Adi Pratama** (Monthly on both) → the Badminton sentence then the Tennis one, in Activity-name order. The notice box carries **0** links and **0** buttons, at 13px. After the withdrawals the sentences were gone. "Gone once the Period arrives" is **cited to `src/lib/__tests__/dues-notice.test.ts`**, not executed in the browser |
+| TC-DR-016 | P1 | **Pass on the logged events, with one anomaly filed as [#135](https://github.com/jefrykurniaone/net-c-management/issues/135)** — (a) unconfigured, as shipped: queue, replace and withdraw each → **200** with **0** `[dues-rate]` lines in the server log. (b) restarted with dummy `GMAIL_USER` / `GMAIL_APP_PASSWORD`: the audience is the Tennis members resolving Monthly for `202609` — `member@`, `nadia.putri@` (the pending switch) and `citra.dewi@`. Per-recipient `[dues-rate] change email to <address> failed: … 535-5.7.8` lines: replace `80000/202610` → **3**; withdraw → **3**; a save changing nothing about Dues → **0**; queue `70000/202609` on a warm server → **3**; replace as the first request after a fresh start → **3**; replace warm → **3**; withdraw → **3**; queue as the first request after a fresh start → **3**. **None** to `wulan.sari@` or `putri.anggraini@` in any event. Every batch landed after the response (route application code 37–84 ms, one cold compile 1268–1366 ms). **The anomaly**: the very first queue event of the run — the first request after the first restart — answered **200** and logged **nothing at all**, neither a per-recipient nor a batch-level line, within 45 s or ever; two deliberate reproductions of the same sequence logged three lines each. Filed as #135 (`needs-info`). **Not exercised**: the inactive, unadmitted and no-address exclusions, for want of a fixture. Locale: the template layout is bilingual and every recipient gets `DEFAULT_LOCALE` (`en`), per 19.0 item 7. Real delivery is not verifiable in dev |
+| TC-DR-017 | P1 | **Pass** — as `member@xclub.local`: `PATCH …/activities/{Badminton}` carrying a `duesRate` → **403** `{"error":"Forbidden"}`; `DELETE …/dues-rate?effectiveFrom=202609` → **403**; `POST /api/activities` → **403**. Signed out: `PATCH` → **401** `{"error":"Unauthorized"}`, `DELETE` → **401**. Rate rows byte-identical |
+| TC-DR-018 | P1 | **Pass on its assertions; defect [#134](https://github.com/jefrykurniaone/net-c-management/issues/134) found by this case.** In `id`: register head "AKTIVITAS IURAN BIAYA METODE JADWAL MINGGUAN KAPASITAS BATAS MINIMUM BANK STATUS AKSI"; dialog label "Iuran Bulanan (Rp)", picker label "Mulai dari", options `September 2026, Oktober 2026, November 2026, Desember 2026, Januari 2027, Februari 2027, Maret 2027, April 2027, Mei 2027, Juni 2027, Juli 2027, Agustus 2027` — month names, not keys; disclosure "Aktivitas ini menagih Rp 55.000 per bulan, berubah menjadi Rp 70.000 mulai September 2026."; Withdraw "Tarik kembali"; save "Simpan Perubahan"; the rate-less cell "Belum ada tarif"; the shortfall sentence as in `TC-DR-013`; the dashboard tile "Rp 2.24M dari Rp 3.19M tagihan"; the member banner "Iuran Tennis berubah menjadi Rp 70.000 mulai September 2026". Money reads `Rp 55.000` (`id-ID`) in both locales, as designed. No metaphor word, and no member-facing string says "rate". **The defect**: the **en** label reads "Monthly Fee (Rp)" and the upload form says "monthly fee" — `admin.activityFee`, `payments.amountLocked` and `payments.noMonthlyFee`, against `CONTEXT.md:70`, which lists "monthly fee" under *Avoid* → #134. **Not exercised: the three refusal `error` sentences through the route with an `id` cookie** — the API harness cannot attach `NEXT_LOCALE` to the signed-in request context, so they came back in English because the cookie never reached the server. Recorded as "route sentences in `id` not verified" |
+| TC-DR-019 | P1 | **Pass** — tab order inside the dialog with a change queued: `input[name=duesAmount]` → `#dues-rate-period-…` (`role="combobox"`) → **Withdraw** → `input[name=sessionFee]`; the disclosure `<p>` carries no `tabindex` and is not a stop. `label[for="dues-rate-period-cmt0gxmfq0008fkdf1e473kc5"]` reads "Starts from". Focus rings under `:focus-visible`: the trigger at `box-shadow: rgb(255,255,255) 0 0 0 2px, rgb(23,97,74) 0 0 0 4px`; Withdraw, after its 0.15 s transition, at `box-shadow: oklab(0.4418 -0.0786 0.0173 / 0.5) 0 0 0 3px` with `border-color rgb(23,97,74)`. From the keyboard, Enter opens one `listbox` of **12** options and ArrowDown + Enter picks `October 2026`, closing it with focus still on the trigger. `aria-describedby="dues-rate-note-…"` on both the amount box and the trigger. Withdrawing by Enter is announced through the `aria-live="polite"` note — the sentence changes in place, with no reload. The disclosure measures **15px** `rgb(84, 97, 91)` on enamel; the painted board was not measured. **Not exercised**: the validation-message join, and focusing the trigger by clicking its label. Observation: focus lands on the dialog container after the tile unmounts |
+| TC-DR-020 | P2 | **Pass** — cells `Rp 75.000 / Rp 60.000 / Rp 55.000 / Rp 40.000` at `font-variant-numeric: tabular-nums`. `?sortBy=dues&sortDir=asc`: Futsal 40.000, Aikido QA 55.000, Tennis 55.000, Basket 60.000, Badminton 75.000; `desc`: Badminton, Basket, Aikido QA, Tennis, Futsal — the 55.000 tie broken by **name** both ways. With Tennis carrying `70000 / 202609` queued its cell still read `Rp 55.000` and drew **no marker of any kind**. The deactivated, rate-less Aikido QA sorted together with the active rows (last in `desc`) and its cell read **"No rate set"** (`span.type-figure`, no em dash and no `Rp 0`), `id` **"Belum ada tarif"**. Fixture deleted |
+
+**Summary.** 20 cases, all written by this ticket. **20 executed, 20 Pass, 0
+Fail, 0 Not run.** **Every P0 passes.** Two defects were found by the run and
+filed rather than fixed here:
+[#134](https://github.com/jefrykurniaone/net-c-management/issues/134) — the
+English copy still says "monthly fee" (`admin.activityFee`,
+`payments.amountLocked`, `payments.noMonthlyFee`), which `CONTEXT.md:70` lists
+under *Avoid* — found by `TC-DR-018` and seen again on `TC-DR-001`'s upload form;
+and [#135](https://github.com/jefrykurniaone/net-c-management/issues/135) — one
+queued-Dues email event attempted no sends and logged nothing, not reproduced in
+two attempts. Neither is a failed assertion of the case that found it, and both
+are `type:bug` + `spec:dues-rate`. The steps recorded above as **not exercised**
+are listed under **Not met**.
+
+**The database assertions, and what proved them.**
+
+| Claim | Proof |
+|---|---|
+| A Proof records the rate of the Period it pays for | Three uploads by one member on one day through one path: July 2026 → `amount` **75000**, August 2026 → **75000**, September 2026 with `{90000, 202609}` queued → **90000**. Read from the `Payment` rows, not from the screen |
+| The client never sets the price | A multipart upload carrying `amount=1` for October 2026 while 90.000 was queued from September stored **90000** |
+| No seeded Payment was repriced | `count(*) FROM "Payment" WHERE amount <> the resolved rate of its own Period` = **0**, over every seeded `MONTHLY` row |
+| An arrived Period's rate is never rewritten | Twelve refusals — `PATCH` and `DELETE` at `202608`, `202607` and `0`, as Admin and as Owner — each **409** `DUES_RATE_PERIOD_ARRIVED`, with the rate rows read field by field before and after and byte-identical each time, `setById` and `setAt` included |
+| A refused rate leaves no half-written Activity | `PATCH {"name":"Badminton QA","duesRate":{…,"effectiveFrom":202608}}` → **409**, and `Activity.name` still `Badminton` |
+| The migration seeded one rate per Activity and repriced no Payment | One `effectiveFrom 0` row per Activity at **75000 / 60000 / 40000 / 55000** against the four seeded ids, `setById NULL`; `Payment` **44 / 2,360,000**, equal to the wave-1 and wave-4 baselines; `Activity` carries no `%fee%` column but `sessionFee`; `migrate diff` **No difference detected**, exit 0 |
+| At most one queued row survives concurrent saves | Three rounds of two un-awaited saves at different amounts and different months: **both 200** every round, and exactly one row with `effectiveFrom > 202608` afterwards, carrying whichever committed second |
+| A queued rise cannot inflate this month's total | The `/admin` total-due tile read **Rp 3.06M** before, during and after a `90000 / 202609` queue; a SQL-inserted **arrived** row `{80000, 202608}` moved the same tile to **Rp 3.19M** |
+| The seed is unchanged | `Payment` **44 / 2,360,000**, `3 / 40 / 1`; `Attendance` `69 / 38 / 13 / 3`; `DuesRate` one row per Activity at `effectiveFrom 0`; Tennis back to five Monthly from `202608` with nothing pending; every sentinel row, object and Attendance removed |
+
+**Payments suite re-run.** The upload path changed, so §13 and the Payments
+queue of §18 are re-run in full and recorded here rather than by editing either
+section.
+
+| Case | Result |
+|---|---|
+| §13.1 unpaid dues surfaced | **Pass** — member2 `/payments`, August 2026: "Badminton Rp 75.000 /month · PAID" after the Admin's Confirm; dashboard "DUES 0 unpaid" |
+| §13.2 upload proof | **Pass** — `/payments/upload`, Badminton, amount locked `Rp 75.000`, PNG attached, Submit → **201**, history row "DUES · AUGUST 2026 Rp 75.000 IN REVIEW" |
+| §13.3 in-review badge | **Pass** — dues card and history read **IN REVIEW**; dashboard activity card "Badminton IN REVIEW"; no unpaid banner |
+| §13.4 client file check | **Pass** — a `.txt` on the input → toast "Unsupported file format. Use JPG, PNG, or WebP." plus the hint, the input value cleared, Submit still disabled. The server-side `400` for a `.txt` was **not re-sent this run** |
+| §13.5 payment mode dialog | **Pass** — sentinel Session "W5 QA Badminton" (1 Sep): "Register & pay · Rp 75.000" and **Change payment mode** → dialog "Choose how you pay … Monthly … Rp 75.000/mo · Per session … Rp 25.000/session" |
+| §13.6 no mode chosen | **Pass** — Eka, with no mode, on the sentinel "W5 QA Futsal": a plain **Register** with no price → the same dialog at `Rp 40.000/mo` / `Rp 15.000/session` |
+| §13.7 rejected payment | **Pass** — `/payments?historyStatus=REJECTED`: "Rejection reason: QA: amount short of the September dues", refund guidance, 1 WhatsApp link |
+| §13.8 profile | **Pass on read** — the profile shows the stored phone `6281200000012` (already normalised), the Language control at `English`, the Theme controls and Sign Out. The edit dialog, the phone normalisation and the language toggle were **not exercised** this run |
+| TC-AR-020 | **Pass** — `?pageSize=all`: 48 rows (44 seed plus 4 sentinels at the time), in the sequence `IN REVIEW ×6`, then `CONFIRMED ×41`, then the `REJECTED` row last; heading "Confirm or reject payment proofs · **6 waiting for a decision**". Steps 4–5 — an explicit column sort and **Back to the queue order** — were not re-run |
+| TC-AR-021 | **Pass** — `?activityId=<Basket>`: "· **nothing is waiting for a decision**", 6 rows, nothing Tape; `?status=CONFIRMED`: the sentence **absent**; `?search=zzzznomatch`: the register's own empty row, "EMPTY — No payments match your search." — #101's wording, now present |
+| TC-AR-022 | **Pass** — the thumbnail is a `<button aria-label="Open the Proof from Adi Pratama">`, Enter opens "Proof from Adi Pratama · Badminton · August 2026" and Escape returns focus to the same button; **39** rows read "No Proof"; a Payment pointed at `https://dead.invalid/…` by SQL reads **"Failed to load"**, and the page rendered all 44 rows with it present. Fixture restored to `NULL` |
+| TC-AR-023 | **Pass on the measure, fixture not built** — the seed holds 4 Proofs, 1 of them on the 40-row page: `/_next/image?…&w=48&q=75` at `devicePixelRatio 1`, **300 B** transferred, and **0** fetches of the original object before or after the full-size dialog opened. The forty-Proof sentinel set was not created |
+| TC-AR-024 | **Pass** — the same dialogs as `TC-DR-013`: an equal-amount Payment draws no note, Escape writes nothing, the low Payment draws the (now #129) sentence at 15px in Secondary Ink with `aria-describedby`, and Confirm → **200** `CONFIRMED` |
+| TC-AR-025 | **Pass** — the dialog refuses an empty and a space-only reason with `role="alert"` carrying "No reason given. Write why you are rejecting this payment — the member sees it."; Reject is **not** disabled; the Seat sentence reads "Every seat this member is Registered for in Badminton sessions in September 2026 is released. Seats they attended or opted out of are untouched." with `aria-describedby` on Reject; at the route `{"status":"REJECTED"}` and `{"notes":"   "}` are both **400** `{"error":"REJECT_REASON_REQUIRED"}`, and a real reason → **200** `REJECTED` with `notes` verbatim; a per-Session Payment's dialog carries **no** Seat sentence |
+| TC-AR-026 | **Pass** — member2 after the Reject: the history row carries the `REJECTED` mark, the reason verbatim, refund guidance and the WhatsApp route back, with the amount at `rgb(84,97,91)` and `text-decoration: none` — dimmed, not struck. After the Confirm: the dues card reads **PAID** and the row `CONFIRMED`. The marks carry their own words, and no enum reaches the member beyond those labels |
+
+**Fixtures created and removed.** Every one, and the state re-compared above:
+member2's monthly Payments for July, August, September and October 2026 with
+their `payment-proofs` objects and the `REGISTERED` Attendance rows
+`syncMonthlyAttendances` wrote; queued rate rows on Badminton and Tennis at
+`202609`, `202610` and `202708`, each withdrawn through the route before its
+Period could arrive; one SQL-inserted **arrived** rate row on Badminton
+(`{80000, 202608}`, id `w5dr013arrivedrow`) for `TC-DR-013` and `TC-DR-014`,
+deleted by SQL because no route may; two sentinel Activities (`Aikido QA` and the
+`duesAmount` probe) deleted through `DELETE /api/activities/{id}`; two sentinel
+Sessions (`W5 QA Badminton`, `W5 QA Futsal`) for §13.5 and §13.6; the Tennis
+membership fixtures for `TC-DR-015` and `TC-DR-016` (one per-Session, one pending
+switch to Monthly from `202609`, one with no mode) restored by SQL; one Proof URL
+pointed at a dead host for `TC-AR-022` and restored to `NULL`; Tennis's
+`bankAccountNumber` set to digits for the dialog cases (#128) and restored to
+`0021 0104 5566`. The scratch database `netc_scratch_w4` was created for
+`TC-DR-007` and dropped.
+
+**Not met.**
+
+- **The painted-board material was not measured.** Every colour and size in this
+  run is the enamel material's. `TC-DR-008`, `TC-DR-013` and `TC-DR-019` each
+  state a Body-size-in-Secondary-Ink claim that holds on one material only so
+  far.
+- **`TC-DR-003`'s no-covering-row 400.** `payments.noMonthlyFee` was not
+  exercised: every Activity carries a beginning-of-time row, and reaching that
+  guard would mean deleting a seed row. The `null`-never-0 rule stands on
+  `dues-rate.test.ts` and on `payments.ts`'s own guard.
+- **`TC-DR-011`'s create dialog.** The claim that the create form offers an
+  amount box and no month picker was not read this run; the route half of the
+  case was.
+- **`TC-DR-014`'s missing-rate log line.** `[admin dashboard] no Dues Rate covers
+  …` was not observed, because the only rate-less Activity had no members and so
+  contributed nothing without reaching the resolver.
+- **`TC-DR-016`'s excluded members.** The inactive, unadmitted and no-address
+  exclusions were not exercised, for want of a fixture; the per-Session and
+  no-mode exclusions were. Real delivery is not verifiable in dev at all, so the
+  audience is proven by attempted sends and never by a received message.
+- **`TC-DR-018`'s refusal sentences in `id`.** The API harness cannot attach
+  `NEXT_LOCALE` to a signed-in request, so the three refusals came back in
+  English because the cookie never reached the server. Every other `id` string in
+  the case was read on the surfaces.
+- **`TC-DR-019`'s validation-message join and label click.** Neither was
+  exercised. The `aria-describedby` wiring both rest on was read directly.
+- **Payments suite gaps**, each noted in its row: §13.4's server-side `400`,
+  §13.8's edit dialog, phone normalisation and language toggle, `TC-AR-020`'s
+  column sort and **Back to the queue order**, and `TC-AR-023`'s forty-Proof
+  fixture and weight ratio.
+- **SonarLint has still been consulted on no ticket in this spec.**
+  `mcp__ide__getDiagnostics` is not resolvable in this environment, for this
+  executor either; the IDE MCP server failed to connect this session.
+  `tsc --noEmit` through `npm run build`, plus ESLint at zero warnings, stood in,
+  as they did in every earlier wave and in §18.6. This remains the one acceptance
+  criterion of the map that no wave has satisfied.
