@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Chip } from '@/components/ui/chip';
 import { cn } from '@/lib/utils';
 
 export interface ChartFigureValue {
@@ -95,11 +95,7 @@ function ChartEmptyState({
 }: Readonly<{ chipLabel: string; message: string }>) {
     return (
         <div className='flex flex-col items-center gap-2 py-8 text-center'>
-            {/* Badge's own "neutral" variant is #149's to name; `secondary`
-                already resolves to the Shells family DESIGN.md assigns the
-                neutral chip, so this call site does not restyle Badge and
-                only needs to change if #149 renames the variant. */}
-            <Badge variant='secondary'>{chipLabel}</Badge>
+            <Chip variant='neutral' label={chipLabel} />
             <p className='type-caption text-muted-foreground'>{message}</p>
         </div>
     );
