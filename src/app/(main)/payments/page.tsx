@@ -2,18 +2,18 @@ import { auth } from "@/lib/auth";
 import { COLUMN_MEASURE } from "@/components/layout/measure";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
-import { Chip } from "@/components/ui/chip";
-import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
-import { HoldCountdown } from "@/components/payments/hold-countdown";
+import {
+  MonthlyDuesSection,
+  OutstandingReservationsSection,
+  type MonthlyDuesRow,
+} from "@/components/payments/monthly-dues-cards";
 import { PaymentHistoryFilters } from "@/components/payments/payment-history-filters";
 import { PaymentHistoryList } from "@/components/payments/payment-history-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { parsePagination } from "@/lib/table-params";
-import Link from "next/link";
 import { CreditCard } from "lucide-react";
 import { getLocale } from "@/lib/i18n/locale";
 import { getDictionary } from "@/lib/i18n/dictionaries";
@@ -22,6 +22,13 @@ import { resolveDuesRate } from "@/lib/dues-rate";
 import { getOutstandingSessionBills } from "@/lib/payments";
 import { releaseExpiredHolds } from "@/lib/holds";
 import type { Prisma } from "@prisma/client";
+
+/** Which of the three standings a monthly Activity's Dues card draws. */
+function duesStatus(paid: boolean, inReview: boolean): MonthlyDuesRow["status"] {
+  if (paid) return "paid";
+  if (inReview) return "inReview";
+  return "unpaid";
+}
 
 export default async function PaymentsPage({
   searchParams,
@@ -168,6 +175,21 @@ export default async function PaymentsPage({
 
   const monthLabel = `${t.months[currentMonth]} ${currentYear}`;
 
+  // The current Billing Period's standing per Activity, already resolved —
+  // the card only ever draws one of these three states, never picks one.
+  const monthlyDuesRows: MonthlyDuesRow[] = monthlyActivities.map((activity) => {
+    const paid = isPaid(activity.id);
+    const inReview = isInReview(activity.id);
+    const status = duesStatus(paid, inReview);
+    return {
+      id: activity.id,
+      name: activity.name,
+      duesAmount: activity.duesAmount,
+      status,
+      hold: status === "unpaid" ? holdByActivity.get(activity.id) : undefined,
+    };
+  });
+
   return (
     <div className={`${COLUMN_MEASURE} space-y-6`}>
       <h1 className="text-2xl font-bold text-foreground">{t.payments.title}</h1>
@@ -185,98 +207,20 @@ export default async function PaymentsPage({
       )}
 
       {/* Outstanding per-session reservations — pay before the hold lapses */}
-      {outstandingBills.length > 0 && (
-        <section className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            {t.payments.outstandingReservations}
-          </p>
-          <div className="bg-card rounded-xl border border-border divide-y divide-border overflow-hidden">
-            {outstandingBills.map((bill) => (
-              <Link
-                key={bill.sessionId}
-                href={`/sessions/${bill.sessionId}/pay`}
-                className="flex items-center gap-3 p-4 hover:bg-accent transition-colors"
-              >
-                <ActivityInitial name={bill.activity.name} />
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-foreground truncate">{bill.title}</p>
-                  {/* The Activity name rides the caption line: the tile alone
-                      cannot tell apart two Activities sharing an initial. */}
-                  <p className="text-xs text-muted-foreground tabular-nums">
-                    {bill.activity.name} · Rp {bill.fee.toLocaleString("id-ID")} ·{" "}
-                    {format(new Date(bill.date), "d MMM", { locale: dateLocale })}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  {/* A Seat held on money not yet sent is provisional. */}
-                  <Chip variant="provisional" label={t.payments.payNow} />
-                  <p className="text-[11px] text-warning tabular-nums">
-                    <HoldCountdown
-                      iso={new Date(bill.holdExpiresAt).toISOString()}
-                      template={t.payments.payWithin}
-                      expiredLabel={t.sessions.holdExpired}
-                    />
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
+      <OutstandingReservationsSection
+        bills={outstandingBills}
+        t={t}
+        dateLocale={dateLocale}
+      />
 
       {/* Current-month dues per activity */}
-      {monthlyActivities.length > 0 && (
-        <section className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-            {monthLabel}
-          </p>
-          <div className="bg-card rounded-xl border border-border divide-y divide-border overflow-hidden">
-            {monthlyActivities.map((activity) => {
-              const paid = isPaid(activity.id);
-              const inReview = isInReview(activity.id);
-              const hold = paid || inReview ? undefined : holdByActivity.get(activity.id);
-              return (
-                <div key={activity.id} className="flex items-center gap-3 p-4">
-                  <ActivityInitial name={activity.name} />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-foreground truncate">{activity.name}</p>
-                    <p className="text-xs text-muted-foreground tabular-nums">
-                      Rp {activity.duesAmount.toLocaleString("id-ID")} {t.payments.perMonth}
-                    </p>
-                  </div>
-                  {paid ? (
-                    <Chip variant="settled" label={t.payments.paid} />
-                  ) : inReview ? (
-                    <Chip variant="provisional" label={t.payments.inReview} />
-                  ) : (
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <Link href="/payments/upload">
-                        {/* Dues nobody has paid yet: expected, not yet placed. */}
-                        <Chip variant="neutral" label={t.payments.unpaid} />
-                      </Link>
-                      {hold && (
-                        <p className="text-[11px] text-warning tabular-nums">
-                          <HoldCountdown
-                            iso={hold.toISOString()}
-                            template={t.payments.payWithin}
-                            expiredLabel={t.sessions.holdExpired}
-                          />
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
+      <MonthlyDuesSection rows={monthlyDuesRows} monthLabel={monthLabel} t={t} />
 
       {/* Submission history */}
       <section className="space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+        <h2 className="type-label text-muted-foreground">
           {t.payments.historyLabel}
-        </p>
+        </h2>
 
         <PaymentHistoryFilters
           t={t}

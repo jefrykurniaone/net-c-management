@@ -161,7 +161,7 @@ function PaymentCard({
     const state = paymentState(payment.status);
     return (
         <Card size='sm'>
-            <CardHeader className='flex-row items-center gap-cell space-y-0'>
+            <CardHeader className='flex flex-row items-center gap-cell'>
                 <ActivityInitial name={payment.activity.name} />
                 <CardTitle className='min-w-0 flex-1 truncate'>
                     {payment.activity.name}
