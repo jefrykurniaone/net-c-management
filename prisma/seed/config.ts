@@ -29,7 +29,7 @@ const BADMINTON = {
     maxPlayers: 24,
     adminWhatsapp: '6281200000001',
     bankName: 'BCA',
-    bankAccountNumber: '1234 567 890',
+    bankAccountNumber: '1234567890',
     bankAccountHolder: 'XClub Community',
 } as const;
 
@@ -48,7 +48,7 @@ const FUTSAL = {
     maxPlayers: 12,
     adminWhatsapp: '6281200000002',
     bankName: 'Mandiri',
-    bankAccountNumber: '1370 0099 8877',
+    bankAccountNumber: '137000998877',
     bankAccountHolder: 'XClub Futsal',
 } as const;
 
@@ -67,7 +67,7 @@ const BASKET = {
     maxPlayers: 10,
     adminWhatsapp: '6281200000001',
     bankName: 'BNI',
-    bankAccountNumber: '0345 6789 012',
+    bankAccountNumber: '03456789012',
     bankAccountHolder: 'XClub Basket',
 } as const;
 
@@ -86,7 +86,7 @@ const TENNIS = {
     maxPlayers: 8,
     adminWhatsapp: '6281200000002',
     bankName: 'BRI',
-    bankAccountNumber: '0021 0104 5566',
+    bankAccountNumber: '002101045566',
     bankAccountHolder: 'XClub Tennis',
 } as const;
 
