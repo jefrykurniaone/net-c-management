@@ -17,9 +17,10 @@ interface MembershipCellProps {
 
 /**
  * One Membership — a member's standing belonging to one Activity, carrying how
- * they pay for it. The cell reads top to bottom as the question a member came
- * here with: which Activity, what is in force for the Billing Period they are
- * in, and then the control that changes the next one.
+ * they pay for it. One row inside the memberships card, reading top to bottom
+ * as the question a member came here with: which Activity, what is in force
+ * for the Billing Period they are in, and then the control that changes the
+ * next one.
  */
 export function MembershipCell({
     row,
@@ -67,7 +68,7 @@ function InForceLine({
 }: Readonly<{ row: MembershipRowView; t: Dictionary }>) {
     const { inForce, currentPeriodLabel } = row.mode;
     return (
-        <div className='flex flex-wrap items-baseline justify-between gap-cell border-t border-rule pt-cell'>
+        <div className='flex flex-wrap items-baseline justify-between gap-cell border-t border-border pt-cell'>
             <div className='min-w-0'>
                 {/* The period sits in the same column on every row, so its
                     year takes tabular figures and the rows line up. */}
