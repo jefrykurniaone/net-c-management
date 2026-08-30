@@ -31,7 +31,7 @@ import {
  * something you find by scrolling past a roster, and it is what gives the nav
  * badge somewhere to point. The cost is that on most days it is **empty**, so
  * the empty state is part of the design — and the register draws it, as one
- * ruled row carrying a **Blank** mark and one line.
+ * ruled row carrying a **neutral** chip and one line.
  *
  * It is the first surface built on the shared register, and the vocabulary is
  * **Admit / Decline** throughout: those are the Admin's acts on a person, and

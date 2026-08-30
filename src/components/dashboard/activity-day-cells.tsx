@@ -1,4 +1,4 @@
-import { Mark } from '@/components/ui/mark';
+import { Chip } from '@/components/ui/chip';
 import { SlotCell } from '@/components/sessions/slot-cell';
 import type { BoardDay, BoardSlot } from '@/lib/board-days';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
@@ -10,8 +10,8 @@ import { dashboardSlotCell, type DashboardSlotContext } from './dashboard-slot-d
  * above these rows to carry it instead (see `SlotCellData.day`). A day with a
  * Session — posted, or the standing weekly slot with nothing posted yet —
  * renders through the Slot Cell, exactly as the sessions board draws it; a
- * day with neither takes a Blank mark, the same shape of state an unposted
- * day takes, just with no Activity to name.
+ * day with neither takes a neutral chip, the same state an unposted day takes,
+ * just with no Activity to name.
  *
  * `gap-px` over a rule-coloured ground draws the lattice's shared rules, the
  * same device `SessionsBoard` uses — so this stays a ruled column of day
@@ -34,7 +34,7 @@ function EmptyDayCell({
                 </span>
             </span>
             <span className='flex flex-wrap items-center gap-cell'>
-                <Mark kind='blank'>{t.sessions.boardNothingMark}</Mark>
+                <Chip variant='neutral' label={t.sessions.boardNothingMark} />
                 <span className='type-caption text-muted-foreground'>
                     {t.sessions.boardNothingOnDay}
                 </span>

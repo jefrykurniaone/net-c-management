@@ -1,4 +1,4 @@
-import type { MarkLabelKey } from '@/lib/status-mark';
+import type { ChipLabelKey } from '@/lib/status-chip';
 
 export type Locale = 'en' | 'id';
 
@@ -108,13 +108,13 @@ const en = {
             head: 'What you can play here',
             // Authored to survive the empty state: it describes what a row
             // holds rather than asserting that any exist, because this line
-            // renders above the Blank strip on a community that has just been
-            // set up.
+            // renders above the neutral-chipped strip on a community that has
+            // just been set up.
             body: 'One activity, its weekly slot, where it happens, and when it next happens.',
             // The band never disappears — a community with nothing configured
-            // renders one Blank-marked strip carrying this line, never a
+            // renders one neutral-chipped strip carrying this line, never a
             // dropped band, because dropping it leaves a generic poster. The
-            // mark's own label is `marks.unposted`, which already means
+            // chip's own label is `chips.unposted`, which already means
             // *expected but not yet placed* in both locales; a second wording
             // for it here would be two strings for one idea.
             empty: 'Nothing has been posted here yet.',
@@ -156,7 +156,7 @@ const en = {
             //
             // Standing constraint: it may not name a schedule, sessions, or any
             // other inventory. The community may have nothing posted yet — 07
-            // renders the board band Blank in that case — and a snippet
+            // renders the board band neutral in that case — and a snippet
             // promising what is not there is `PRODUCT.md:94`'s evidence ban one
             // layer out. It describes the community and the act of joining, and
             // nothing else.
@@ -216,10 +216,11 @@ const en = {
      * the community name and the organizer's WhatsApp number, and no community
      * data at all.
      *
-     * Three states on one route, told apart by their mark before their words:
-     * **Tape** (provisional and held) for an Applicant waiting, **Strike**
-     * (void) for one an organizer declined, and Strike again for a member who
-     * was removed. Each carries one statement and one lead line; the page's only
+     * Three states on one route, each naming itself in its chip's own label:
+     * **provisional** (held) for an Applicant waiting, **void** for one an
+     * organizer declined, and void again for a member who was removed — the
+     * labels tell those two apart. Each carries one statement and one lead
+     * line; the page's only
      * affordances are messaging an organizer and signing out.
      */
     pending: {
@@ -260,7 +261,7 @@ const en = {
         payNow: 'Pay now',
         duesUnpaidBanner: 'dues unpaid',
         /**
-         * The Activity card's Blank mark when nothing has been sent for the
+         * The Activity card's neutral chip when nothing has been sent for the
          * period. Its own key rather than `duesUnpaidBanner`, which is prose the
          * dues banner reads as "{Activity} dues unpaid" and would become
          * "Badminton Pending" if the two shared one.
@@ -401,7 +402,7 @@ const en = {
         boardNextWeek: 'Next week',
         boardWeekOf: '{start} – {end}',
         // A day nobody planned anything on, as opposed to one an Admin still
-        // owes a Session. Both draw a Blank mark; only the second is late.
+        // owes a Session. Both draw a neutral chip; only the second is late.
         boardNothingMark: 'None',
         boardNothingOnDay: 'Nothing on this day.',
         boardNotPosted: 'An Admin has not posted this session yet.',
@@ -438,7 +439,7 @@ const en = {
         unpaidDuesTitle: '{count} unpaid dues for {month}',
         perMonth: '/month',
         paid: 'Paid',
-        /** Blank mark: Dues owed with nothing sent yet. Cf. `inReview`. */
+        /** Neutral chip: Dues owed with nothing sent yet. Cf. `inReview`. */
         unpaid: 'Pending',
         historyLabel: 'History',
         submitted: 'Submitted',
@@ -558,9 +559,9 @@ const en = {
         leaveToast: 'You left {name}',
         // Per-Activity payment mode, and when a change to it takes effect.
         // Payment mode belongs to a Membership, not to the person, so the copy
-        // names the Activity every time. `markNotPaid` labels the Blank mark for
-        // a Billing Period nothing has been paid against yet — it lives here
-        // rather than in `marks` because it labels a thing with no stored state.
+        // names the Activity every time. `markNotPaid` labels the neutral chip
+        // for a Billing Period nothing has been paid against yet — it lives here
+        // rather than in `chips` because it labels a thing with no stored state.
         membershipsHint:
             'You pay for each activity on its own. Changing one leaves the others as they are.',
         modeLegend: 'How you pay for {name}',
@@ -877,7 +878,7 @@ const en = {
         activitiesCaption: 'Activities and how each is set up',
         // The attendance register (ticket #67) — one Session, every Seat on it,
         // one Save. The four state names are not repeated here: the control and
-        // the mark beside it both read them off `marks.*`, so they cannot come
+        // the chip beside it both read them off `chips.*`, so they cannot come
         // to disagree, and the stored `ABSENT` says Opted Out in both places.
         attendanceTitle: 'Attendance',
         // Names the surface for a screen reader; never drawn on screen.
@@ -911,7 +912,7 @@ const en = {
         colPeriod: 'Billing Period',
         colSent: 'Sent',
         // The two Proof cells that are not an image. Neither is ever a broken
-        // image glyph, and neither is a mark: the register keeps every mark on
+        // image glyph, and neither is a chip: the register keeps every chip on
         // the standing column's shared edge.
         proofNone: 'No Proof',
         proofFailed: 'Failed to load',
@@ -955,12 +956,12 @@ const en = {
         membersSubtitle: '{n} members',
         membersNoMemberships: 'No activities',
         /**
-         * The Blank mark on a monthly Membership: Dues owed for the current
+         * The neutral chip on a monthly Membership: Dues owed for the current
          * Billing Period with nothing settled against it — nothing sent, or
          * only a Rejected Payment, which funds nothing either way. The same
          * word the member's own surfaces use for this state (`payments.unpaid`,
          * `profile.markNotPaid`), so the two never disagree. It is deliberately
-         * not `marks.pending`, which means an Admin is holding a Proof.
+         * not `chips.pending`, which means an Admin is holding a Proof.
          */
         standingOwed: 'Pending',
         /**
@@ -1124,6 +1125,8 @@ const en = {
         cancel: 'Cancel',
         copy: 'Copy',
         copied: 'Copied',
+        /** The neutral chip on `EmptyState` (#150) — a state, not a sentence. */
+        empty: 'Empty',
         phoneCountryCodeHint:
             'Country code without + (e.g. 628123456789). A leading 08 is converted automatically.',
     },
@@ -1159,7 +1162,7 @@ const en = {
     },
     paymentStatus: {
         // The Admin queue's status filter. Reads the same word as the rows it
-        // filters, which take theirs from `marks.pending`.
+        // filters, which take theirs from `chips.pending`.
         PENDING: 'In review',
         CONFIRMED: 'Confirmed',
         REJECTED: 'Rejected',
@@ -1172,9 +1175,9 @@ const en = {
         // Opted Out in the glossary. Never surfaced as "Absent".
         ABSENT: 'Opted Out',
     },
-    // Labels for the six marks. Keyed by MarkLabelKey so a state can only name
-    // a label that ships in both languages.
-    marks: {
+    // Labels for the five status chips. Keyed by ChipLabelKey so a state can
+    // only name a label that ships in both languages.
+    chips: {
         scheduled: 'Scheduled',
         ongoing: 'Ongoing',
         completed: 'Completed',
@@ -1188,10 +1191,11 @@ const en = {
          * The word a member has not paid at all is **Pending** — money still
          * owed, nothing sent. Two states, two words, and neither borrows the
          * other's: see `payments.unpaid`, `profile.markNotPaid` and
-         * `dashboard.duesPendingMark`, which are the Blank marks for that one.
+         * `dashboard.duesPendingMark`, which are the neutral chips for that
+         * one.
          *
          * This is the only label key a Payment's PENDING status resolves to
-         * (`PAYMENT_MARKS` in `status-mark.ts`), so every surface showing a
+         * (`PAYMENT_CHIPS` in `status-chip.ts`), so every surface showing a
          * submitted Proof reads the same word.
          */
         pending: 'In review',
@@ -1202,7 +1206,7 @@ const en = {
         optedOut: 'Opted Out',
         noShow: 'No-Show',
         unposted: 'Unposted',
-    } satisfies Record<MarkLabelKey, string>,
+    } satisfies Record<ChipLabelKey, string>,
     roles: {
         ADMIN: 'Admin',
         MEMBER: 'Member',
@@ -2124,6 +2128,7 @@ const id: typeof en = {
         cancel: 'Batal',
         copy: 'Salin',
         copied: 'Tersalin',
+        empty: 'Kosong',
         phoneCountryCodeHint:
             'Kode negara tanpa + (contoh: 628123456789). Awalan 08 dikonversi otomatis.',
     },
@@ -2168,7 +2173,7 @@ const id: typeof en = {
         PRESENT: 'Hadir',
         ABSENT: 'Batal Ikut',
     },
-    marks: {
+    chips: {
         scheduled: 'Terjadwal',
         ongoing: 'Berlangsung',
         completed: 'Selesai',

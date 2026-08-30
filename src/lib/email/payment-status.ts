@@ -5,6 +5,7 @@ import {
     formatRupiah,
     renderBody,
     renderEmailHtml,
+    type DetailRow,
     type EmailLocale,
 } from './layout';
 
@@ -50,7 +51,7 @@ export async function sendPaymentStatus(p: PaymentStatusParams): Promise<void> {
             <strong>rejected</strong> by the admin. Any linked registration has been released.
             Please check your payment proof and re-upload if needed.`;
 
-    const rows = [
+    const rows: DetailRow[] = [
         { label: isId ? '🧾 Tagihan' : '🧾 Billed for', value: p.billedFor },
         { label: isId ? '💸 Nominal' : '💸 Amount', value: formatRupiah(p.amount) },
         {
@@ -58,6 +59,7 @@ export async function sendPaymentStatus(p: PaymentStatusParams): Promise<void> {
             value: isApproved
                 ? isId ? '✅ Disetujui' : '✅ Approved'
                 : isId ? '❌ Ditolak' : '❌ Rejected',
+            chip: isApproved ? 'settled' : 'void',
         },
     ];
     if (p.notes) {

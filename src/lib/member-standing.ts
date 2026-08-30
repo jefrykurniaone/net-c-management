@@ -20,16 +20,16 @@ import {
  *
  * Standing is a property of a **monthly** Membership only. A per-Session
  * Membership has no recurring obligation, so there is nothing for it to be in
- * good or bad standing on — it carries its mode label and no mark.
+ * good or bad standing on — it carries its mode label and no chip.
  */
 
 /**
- * - `settled` — the period's Dues are Confirmed. Drawn in **Ink**.
+ * - `settled` — the period's Dues are Confirmed. Drawn **settled**.
  * - `awaiting` — a Payment stands against the period and an Admin has not
- *   decided it. Drawn as **Tape**.
+ *   decided it. Drawn **provisional**.
  * - `owed` — the period is not funded: nothing has been sent, or the only
- *   Payment against it was Rejected and funds nothing. Drawn **Blank**, which is
- *   the same mark the member's own profile draws for this state.
+ *   Payment against it was Rejected and funds nothing. Drawn **neutral**, which
+ *   is the same chip the member's own profile draws for this state.
  * - `none` — not a monthly Membership, so there is no standing to draw.
  */
 export type DuesStanding = 'settled' | 'awaiting' | 'owed' | 'none';

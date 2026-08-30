@@ -1,4 +1,4 @@
-﻿import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { COLUMN_MEASURE } from '@/components/layout/measure';
 import { auth } from '@/lib/auth';
 import { getLocale } from '@/lib/i18n/locale';
@@ -25,7 +25,7 @@ import {
 
 /**
  * The sessions board. Every day of the displayed week gets a cell, whether or
- * not anything is on it — a day with nothing posted carries a Blank mark and
+ * not anything is on it — a day with nothing posted carries a neutral chip and
  * says so, so a member knows an Admin has not posted rather than that they are
  * missing something.
  *
@@ -58,8 +58,8 @@ function weekHref(scope: URLSearchParams, week: string): string {
 }
 
 /**
- * The board's own designed states, both of them a Blank-marked strip above a
- * board that still draws every day. Blank means *expected but not yet placed*,
+ * The board's own designed states, both of them a neutral-chipped strip above a
+ * board that still draws every day. Neutral means *expected but not yet placed*,
  * which is the honest state of a community that has just been set up — and a
  * dropped surface would read as broken rather than as quiet.
  */
@@ -69,11 +69,11 @@ function noticeFor(
     t: Dictionary,
 ): { label: string; body: string } | null {
     if (!board.hasAnySession) {
-        return { label: t.marks.unposted, body: t.sessions.boardNeverPosted };
+        return { label: t.chips.unposted, body: t.sessions.boardNeverPosted };
     }
     if (view === 'mine' && !board.hasJoinedActivities) {
         return {
-            label: t.marks.unposted,
+            label: t.chips.unposted,
             body: t.sessions.noJoinedActivities,
         };
     }

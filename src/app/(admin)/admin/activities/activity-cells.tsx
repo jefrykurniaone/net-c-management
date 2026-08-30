@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { ActivityInitial } from '@/components/activity/activity-badge';
-import { Mark } from '@/components/ui/mark';
+import { Chip } from '@/components/ui/chip';
 import type { BillingPeriod } from '@/lib/billing-period';
 import { resolveDuesRate, type DuesRateRow } from '@/lib/dues-rate';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
@@ -78,10 +78,10 @@ export function activityWeeklySlotLabel(activity: Activity, t: Dictionary): stri
 
 /**
  * Who they are: the initial tile, the name, and the slug beneath it. An
- * inactive Activity's name is dimmed, not struck, the way `MarkedValue`
- * treats a void value; the Strike mark in the standing column carries the
- * line. `MarkedValue` itself takes a `DomainState`, and Activity active/
- * inactive isn't one (see `ActivityStanding`), so this applies the same
+ * inactive Activity's name is dimmed the way `StatusValue` treats a value
+ * beside a void chip; the chip in the standing column carries the word.
+ * `StatusValue` itself takes a `DomainState`, and Activity active/inactive
+ * isn't one (see `ActivityStanding`), so this applies the same
  * `text-muted-foreground` class directly rather than routing through it.
  */
 export function ActivityIdentity({ activity }: Readonly<{ activity: Activity }>) {
@@ -135,20 +135,20 @@ export function ActivityBank({ activity }: Readonly<{ activity: Activity }>) {
 }
 
 /**
- * Active or inactive, told apart by a mark rather than by colour. Whether an
- * Activity is active is a standing configuration fact, not a stored
- * lifecycle it moves through, so `status-mark.ts`'s resolver has no domain
- * for it (by design — see its comment on Role) and this is the one place
- * that picks a mark kind by hand instead of going through
- * `resolveStatusMark`.
+ * Active or inactive, told apart by a written label. Whether an Activity is
+ * active is a standing configuration fact, not a stored lifecycle it moves
+ * through, so `status-chip.ts`'s resolver has no domain for it (by design —
+ * see its comment on Role) and this is the one place that picks a chip variant
+ * by hand instead of going through `resolveStatusChip`.
  */
 export function ActivityStanding({
     activity,
     t,
 }: Readonly<{ activity: Activity; t: Dictionary }>) {
     return (
-        <Mark kind={activity.isActive ? 'ink' : 'strike'}>
-            {activity.isActive ? t.admin.active : t.admin.inactive2}
-        </Mark>
+        <Chip
+            variant={activity.isActive ? 'settled' : 'void'}
+            label={activity.isActive ? t.admin.active : t.admin.inactive2}
+        />
     );
 }

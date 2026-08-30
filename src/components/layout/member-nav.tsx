@@ -150,8 +150,8 @@ export function MemberTopBar({ communityName, logoUrl }: ShellProps) {
  * Fixed bottom rail — mobile only (< md). A rail of equal cells divided by
  * 1px rules (never floating pills with gaps between them, per the Cell-Scale
  * Rule), full-bleed to both screen edges. The active cell is a filled Court
- * Green identity tile — form (a filled rectangle), not colour alone, is what
- * marks it, matching the Mark-Not-Hue Rule the rest of the system follows.
+ * Green identity tile — a filled cell, not colour alone, is what marks it, so
+ * the active item survives a reader who cannot see the hue.
  */
 export function MemberBottomNav() {
     const pathname = usePathname();

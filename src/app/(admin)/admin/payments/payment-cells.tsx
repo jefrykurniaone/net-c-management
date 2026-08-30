@@ -2,8 +2,8 @@ import { format } from 'date-fns';
 import type { Locale as DateFnsLocale } from 'date-fns';
 import type { PaymentStatus, PaymentType } from '@prisma/client';
 import { ActivityInitial } from '@/components/activity/activity-badge';
-import { MarkedValue } from '@/components/ui/mark';
-import { paymentState } from '@/lib/status-mark';
+import { StatusValue } from '@/components/ui/chip';
+import { paymentState } from '@/lib/status-chip';
 import type { DuesRateRow } from '@/lib/dues-rate';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { billingPeriodLabel, rupiah } from './payment-format';
@@ -135,23 +135,22 @@ export function PaymentActivity({
  * Admin's comparison is against the bank screenshot rather than a second
  * column.
  *
- * A Rejected amount is drawn by `MarkedValue`, which dims it to Secondary Ink
- * and leaves the line-through on the Strike mark's own label in the standing
- * column — one line through two words reads as a stamp, a second line through
- * the value beside it reads as damage to the row. That is the shipped
- * precedent (`src/components/ui/mark.tsx`) and the member payments history is
- * already asserted against it (`TESTING.md` TC-MS-017), so the queue matches it
- * rather than striking the figure itself.
+ * A Rejected amount is drawn by `StatusValue`, which dims it to the muted ink
+ * and leaves the word "Rejected" to the void chip in the standing column.
+ * Nothing is struck through anywhere: a line drawn through the value beside a
+ * chip reads as damage to the row rather than as a state. That is the shipped
+ * precedent (`src/components/ui/chip.tsx`), so the queue matches it rather than
+ * marking the figure itself.
  */
 export function PaymentAmount({
     payment,
 }: Readonly<{ payment: PaymentQueueRow }>) {
     return (
-        <MarkedValue
+        <StatusValue
             state={paymentState(payment.status)}
             className='text-foreground'>
             {rupiah(payment.amount)}
-        </MarkedValue>
+        </StatusValue>
     );
 }
 

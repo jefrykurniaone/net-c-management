@@ -370,7 +370,7 @@ export default async function SessionDetailPage({
                             players={players}
                             youLabel={locale === 'id' ? 'Kamu' : 'you'}
                             showAllTemplate={t.sessions.showAllPlayers}
-                            markLabels={t.marks}
+                            chipLabels={t.chips}
                         />
                     )}
                 </div>

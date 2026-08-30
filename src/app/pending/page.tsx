@@ -6,7 +6,8 @@ import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { resolveAdmissionState, type AdmissionState } from '@/lib/admission';
-import { Mark } from '@/components/ui/mark';
+import type { ChipVariant } from '@/lib/status-chip';
+import { Chip } from '@/components/ui/chip';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { SignOutAction } from './sign-out-action';
 
@@ -15,7 +16,7 @@ import { SignOutAction } from './sign-out-action';
  *
  * An **interstitial**, not a receipt: vertical-centred, owning the whole
  * viewport under the identity rail — the one placement DESIGN.md reserves for
- * interstitials. One mark, one statement, one lead line, two affordances.
+ * interstitials. One chip, one statement, one lead line, two affordances.
  *
  * It echoes **nothing** back — not the profile, not the Activities picked — and
  * queries **no community data**. The gate is disclosed before the click and
@@ -33,37 +34,43 @@ export const metadata: Metadata = {
 /** The 40rem single-task column. */
 const COLUMN_CLASS = 'max-w-[40rem]';
 
-/** What the reader is told, chosen by the state the two columns resolve to. */
+/**
+ * What the reader is told, chosen by the state the two columns resolve to.
+ *
+ * The variant is narrowed to the only two this route can mean. A waiting room
+ * has no settled state and no neutral one — an Applicant is being held or has
+ * been turned away — and the narrow type is what stops a later edit quietly
+ * announcing a rejection in the settled green.
+ */
 type Statement = Readonly<{
-    mark: 'tape' | 'strike';
-    markLabel: string;
+    variant: Extract<ChipVariant, 'provisional' | 'void'>;
+    chipLabel: string;
     title: string;
     lead: string;
 }>;
 
 function statementFor(state: AdmissionState, t: Dictionary): Statement {
-    // Tape is *provisional and held*, Strike is *void* — under the Mark-Not-Hue
-    // Rule the two are tellable apart with colour removed, which is what makes
-    // "not yet" and "no" different before a word is read.
+    // Provisional is *held*, void is *no*. Under The Label Rule the chip says
+    // which in words, so "not yet" and "no" never rest on the colour alone.
     if (state === 'declined') {
         return {
-            mark: 'strike',
-            markLabel: t.pending.declinedMark,
+            variant: 'void',
+            chipLabel: t.pending.declinedMark,
             title: t.pending.declinedTitle,
             lead: t.pending.declinedLead,
         };
     }
     if (state === 'revoked') {
         return {
-            mark: 'strike',
-            markLabel: t.pending.revokedMark,
+            variant: 'void',
+            chipLabel: t.pending.revokedMark,
             title: t.pending.revokedTitle,
             lead: t.pending.revokedLead,
         };
     }
     return {
-        mark: 'tape',
-        markLabel: t.pending.waitingMark,
+        variant: 'provisional',
+        chipLabel: t.pending.waitingMark,
         title: t.pending.waitingTitle,
         lead: t.pending.waitingLead,
     };
@@ -121,7 +128,7 @@ function WhatsappAction({
 }
 
 /**
- * One mark, one statement, one lead line, two actions — vertical-centred so it
+ * One chip, one statement, one lead line, two actions — vertical-centred so it
  * owns the viewport under the rail.
  */
 function Interstitial({
@@ -137,7 +144,7 @@ function Interstitial({
         <main className='flex flex-1 items-center justify-center px-block py-bay'>
             <div
                 className={`flex w-full ${COLUMN_CLASS} flex-col items-center gap-block text-center`}>
-                <Mark kind={statement.mark}>{statement.markLabel}</Mark>
+                <Chip variant={statement.variant} label={statement.chipLabel} />
                 <h1 className='type-display min-w-0 max-w-full text-balance text-foreground'>
                     {statement.title}
                 </h1>

@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { id as localeId, enUS } from "date-fns/locale";
-import { Mark } from "@/components/ui/mark";
+import { Chip } from "@/components/ui/chip";
 import { ActivityInitial } from "@/components/activity/activity-badge";
 import { UnpaidBanner } from "@/components/payments/unpaid-banner";
 import { HoldCountdown } from "@/components/payments/hold-countdown";
@@ -208,8 +208,8 @@ export default async function PaymentsPage({
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  {/* A Seat held on money not yet sent is provisional — tape. */}
-                  <Mark kind="tape">{t.payments.payNow}</Mark>
+                  {/* A Seat held on money not yet sent is provisional. */}
+                  <Chip variant="provisional" label={t.payments.payNow} />
                   <p className="text-[11px] text-warning tabular-nums">
                     <HoldCountdown
                       iso={new Date(bill.holdExpiresAt).toISOString()}
@@ -245,14 +245,14 @@ export default async function PaymentsPage({
                     </p>
                   </div>
                   {paid ? (
-                    <Mark kind="ink">{t.payments.paid}</Mark>
+                    <Chip variant="settled" label={t.payments.paid} />
                   ) : inReview ? (
-                    <Mark kind="tape">{t.payments.inReview}</Mark>
+                    <Chip variant="provisional" label={t.payments.inReview} />
                   ) : (
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <Link href="/payments/upload">
                         {/* Dues nobody has paid yet: expected, not yet placed. */}
-                        <Mark kind="blank">{t.payments.unpaid}</Mark>
+                        <Chip variant="neutral" label={t.payments.unpaid} />
                       </Link>
                       {hold && (
                         <p className="text-[11px] text-warning tabular-nums">
@@ -287,7 +287,11 @@ export default async function PaymentsPage({
         />
 
         {historyPayments.length === 0 ? (
-          <EmptyState icon={CreditCard} title={t.payments.noPayments} />
+          <EmptyState
+            icon={CreditCard}
+            chipLabel={t.common.empty}
+            title={t.payments.noPayments}
+          />
         ) : (
           <PaymentHistoryList
             payments={historyPayments}

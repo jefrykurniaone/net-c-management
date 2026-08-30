@@ -1,7 +1,7 @@
 import type { PaymentStatus } from '@prisma/client';
 import type { BoardDay } from '@/lib/board-days';
 import { ActivityInitial } from '@/components/activity/activity-badge';
-import { MoneyMark } from './money-mark';
+import { MoneyChip } from './money-chip';
 import { ActivityDayCells } from './activity-day-cells';
 import type { DashboardSlotContext } from './dashboard-slot-data';
 
@@ -40,7 +40,7 @@ export function ActivitySummaryCard({
                 <span className='flex-1 text-[15px] font-semibold text-foreground truncate'>
                     {activity.name}
                 </span>
-                <MoneyMark
+                <MoneyChip
                     isMonthlyDue={isMonthlyDue}
                     paymentStatus={paymentStatus}
                     outstanding={outstanding}

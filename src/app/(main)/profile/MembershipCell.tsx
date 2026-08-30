@@ -2,9 +2,9 @@
 
 import type { PaymentStatus } from '@prisma/client';
 import { Button } from '@/components/ui/button';
-import { Mark, StateMark } from '@/components/ui/mark';
+import { Chip, StatusChip } from '@/components/ui/chip';
 import { ActivityInitial } from '@/components/activity/activity-badge';
-import { paymentState } from '@/lib/status-mark';
+import { paymentState } from '@/lib/status-chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { MembershipRowView } from '@/lib/membership-mode-view';
 import { PaymentModeControl } from './PaymentModeControl';
@@ -57,7 +57,7 @@ export function MembershipCell({
 
 /**
  * What is in force for the Billing Period the member is already in — the period
- * a switch cannot rewrite. The mark beside it is the evidence for that: money in
+ * a switch cannot rewrite. The chip beside it is the evidence for that: money in
  * for this period is exactly what settles it, and a settled period is what
  * pushes a change into the next one.
  */
@@ -85,23 +85,23 @@ function InForceLine({
                     </p>
                 )}
             </div>
-            <PeriodPaymentMark status={row.periodPaymentStatus} t={t} />
+            <PeriodPaymentChip status={row.periodPaymentStatus} t={t} />
         </div>
     );
 }
 
 /**
  * The Payment standing against the current Billing Period, drawn through the one
- * seam — no surface here picks its own mark or its own status colour. A period
- * nothing has been paid against yet has no stored state at all, which is the one
- * case a bare **Blank** mark is for: expected, not yet placed.
+ * seam — no surface here picks its own variant or its own status colour. A
+ * period nothing has been paid against yet has no stored state at all, which is
+ * the one case a bare **neutral** chip is for: expected, not yet placed.
  */
-function PeriodPaymentMark({
+function PeriodPaymentChip({
     status,
     t,
 }: Readonly<{ status: PaymentStatus | null; t: Dictionary }>) {
     if (status === null) {
-        return <Mark kind='blank'>{t.profile.markNotPaid}</Mark>;
+        return <Chip variant='neutral' label={t.profile.markNotPaid} />;
     }
-    return <StateMark state={paymentState(status)} labels={t.marks} />;
+    return <StatusChip state={paymentState(status)} labels={t.chips} />;
 }

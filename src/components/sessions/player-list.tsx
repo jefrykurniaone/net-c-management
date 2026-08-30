@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import type { AttendanceStatus } from '@prisma/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { StateMark } from '@/components/ui/mark';
-import { attendanceState, type MarkLabelKey } from '@/lib/status-mark';
+import { StatusChip } from '@/components/ui/chip';
+import { attendanceState, type ChipLabelKey } from '@/lib/status-chip';
 
 const PREVIEW_COUNT = 4;
 
@@ -13,7 +13,7 @@ export interface PlayerItem {
     name: string;
     initials: string;
     image: string;
-    /** The stored Attendance state. The mark resolver, not this list, decides
+    /** The stored Attendance state. The chip resolver, not this list, decides
      *  how it is drawn — no surface computes its own status colour. */
     status: AttendanceStatus;
     isYou: boolean;
@@ -23,12 +23,12 @@ export function PlayerList({
     players,
     youLabel,
     showAllTemplate,
-    markLabels,
+    chipLabels,
 }: Readonly<{
     players: PlayerItem[];
     youLabel: string;
     showAllTemplate: string;
-    markLabels: Readonly<Record<MarkLabelKey, string>>;
+    chipLabels: Readonly<Record<ChipLabelKey, string>>;
 }>) {
     const [expanded, setExpanded] = useState(false);
     const canCollapse = players.length > PREVIEW_COUNT;
@@ -52,9 +52,9 @@ export function PlayerList({
                             </span>
                         )}
                     </p>
-                    <StateMark
+                    <StatusChip
                         state={attendanceState(player.status)}
-                        labels={markLabels}
+                        labels={chipLabels}
                     />
                 </div>
             ))}
