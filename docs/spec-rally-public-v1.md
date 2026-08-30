@@ -4,8 +4,8 @@
 |---|---|
 | Spec | [#143](https://github.com/jefrykurniaone/net-c-management/issues/143) — `spec:rally-public` |
 | Run | `run:rally` |
-| Execution map | filled in at Stage 4 of the pipeline |
-| Tickets | filled in at Stage 3 of the pipeline |
+| Execution map | [#175](https://github.com/jefrykurniaone/net-c-management/issues/175) |
+| Tickets | #153–#158 — sub-issues of #143 |
 | Version | v1 (2026-08-30) |
 | Grilled from | the request to restyle the app after the Playbypoint case study |
 | Depends on | [#142](https://github.com/jefrykurniaone/net-c-management/issues/142) (foundation). Binding ADR: [0003](adr/0003-retire-papan-jadwal-for-rally.md). Supersedes the 2026-08-19 public-copy authority decision |
@@ -16,7 +16,7 @@ This is a verbatim copy of the tracker issue at the time of ticketing. The issue
 
 Grilled on 2026-08-30 as part of run `rally`. Depends on the foundation spec (`spec:rally-foundation`) for tokens, type roles, chips and pattern primitives. Supersedes the 2026-08-19 decision that the dictionary authors every public string.
 
-Repo copy: `docs/spec-rally-public-v1.md`. Execution map and tickets are linked below once they exist.
+Repo copy: `docs/spec-rally-public-v1.md` (PR #147). Execution map: #175. Tickets: #153–#158, linked below as sub-issues.
 
 ## Problem Statement
 

@@ -4,8 +4,8 @@
 |---|---|
 | Spec | [#144](https://github.com/jefrykurniaone/net-c-management/issues/144) — `spec:rally-member` |
 | Run | `run:rally` |
-| Execution map | filled in at Stage 4 of the pipeline |
-| Tickets | filled in at Stage 3 of the pipeline |
+| Execution map | [#175](https://github.com/jefrykurniaone/net-c-management/issues/175) |
+| Tickets | #159–#163 — sub-issues of #144 |
 | Version | v1 (2026-08-30) |
 | Grilled from | the request to restyle the app after the Playbypoint case study |
 | Depends on | [#142](https://github.com/jefrykurniaone/net-c-management/issues/142) (foundation); renders `Activity.icon` from [#145](https://github.com/jefrykurniaone/net-c-management/issues/145) when present. Binding ADR: [0003](adr/0003-retire-papan-jadwal-for-rally.md) |
@@ -16,7 +16,7 @@ This is a verbatim copy of the tracker issue at the time of ticketing. The issue
 
 Grilled on 2026-08-30 as part of run `rally`. Depends on the foundation spec (`spec:rally-foundation`) for tokens, type roles, chips and pattern primitives. Reads `Activity.icon` if the admin spec has landed, and falls back to the initial tile if it has not.
 
-Repo copy: `docs/spec-rally-member-v1.md`. Execution map and tickets are linked below once they exist.
+Repo copy: `docs/spec-rally-member-v1.md` (PR #147). Execution map: #175. Tickets: #159–#163, linked below as sub-issues.
 
 ## Problem Statement
 

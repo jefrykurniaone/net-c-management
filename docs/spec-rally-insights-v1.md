@@ -4,8 +4,8 @@
 |---|---|
 | Spec | [#146](https://github.com/jefrykurniaone/net-c-management/issues/146) — `spec:rally-insights` |
 | Run | `run:rally` |
-| Execution map | filled in at Stage 4 of the pipeline |
-| Tickets | filled in at Stage 3 of the pipeline |
+| Execution map | [#175](https://github.com/jefrykurniaone/net-c-management/issues/175) |
+| Tickets | #169–#173 — sub-issues of #146 |
 | Version | v1 (2026-08-30) |
 | Grilled from | the request to restyle the app after the Playbypoint case study |
 | Depends on | [#142](https://github.com/jefrykurniaone/net-c-management/issues/142) (foundation), [#144](https://github.com/jefrykurniaone/net-c-management/issues/144) (member dashboard card), [#145](https://github.com/jefrykurniaone/net-c-management/issues/145) (admin dashboard region). Binding ADRs: [0002](adr/0002-dues-rate-history.md), [0003](adr/0003-retire-papan-jadwal-for-rally.md) |
@@ -16,7 +16,7 @@ This is a verbatim copy of the tracker issue at the time of ticketing. The issue
 
 Grilled on 2026-08-30 as part of run `rally`. Depends on the foundation spec (`spec:rally-foundation`) for tokens and the chart palette, on the admin spec (`spec:rally-admin`) for the dashboard region the admin charts fill, and on the member spec (`spec:rally-member`) for the dashboard card the member sparkline sits in.
 
-Repo copy: `docs/spec-rally-insights-v1.md`. Execution map and tickets are linked below once they exist.
+Repo copy: `docs/spec-rally-insights-v1.md` (PR #147). Execution map: #175. Tickets: #169–#173, linked below as sub-issues.
 
 ## Problem Statement
 

@@ -4,8 +4,8 @@
 |---|---|
 | Spec | [#142](https://github.com/jefrykurniaone/net-c-management/issues/142) — `spec:rally-foundation` |
 | Run | `run:rally` |
-| Execution map | filled in at Stage 4 of the pipeline |
-| Tickets | filled in at Stage 3 of the pipeline |
+| Execution map | [#175](https://github.com/jefrykurniaone/net-c-management/issues/175) |
+| Tickets | #148, #149, #150, #151, #152, #174 — sub-issues of #142 |
 | Version | v1 (2026-08-30) |
 | Grilled from | the request to restyle the app after the Playbypoint case study (Afternow, Dribbble shot 26560263) |
 | Depends on | nothing open; first spec of the run. Binding ADR: [0003](adr/0003-retire-papan-jadwal-for-rally.md) |
@@ -16,7 +16,7 @@ This is a verbatim copy of the tracker issue at the time of ticketing. The issue
 
 Grilled on 2026-08-30 from the request to restyle the app after the Playbypoint brand case study (Afternow, Dribbble shot 26560263). Depends on nothing open. First of five specs in run `rally`; every other spec in the run depends on this one.
 
-Repo copy: `docs/spec-rally-foundation-v1.md`. Execution map and tickets are linked below once they exist.
+Repo copy: `docs/spec-rally-foundation-v1.md` (PR #147). Execution map: #175. Tickets: #148, #149, #150, #151, #152, #174, linked below as sub-issues.
 
 ## Problem Statement
 
