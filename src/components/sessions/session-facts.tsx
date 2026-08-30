@@ -67,7 +67,7 @@ export function SessionFacts({
         t.sessions.durationHours,
     );
     return (
-        <div className='bg-card rounded-xl border border-border p-5 text-sm text-secondary-foreground divide-y divide-border'>
+        <div className='rounded-sm border border-rule bg-tile p-block text-sm text-secondary-foreground divide-y divide-border'>
             <div className={ROW_CLASS}>
                 <CalendarDays className={ICON_CLASS} />
                 <span className='text-foreground'>{session.dateLabel}</span>
