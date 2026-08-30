@@ -24,7 +24,7 @@ import {
     ParticipantIdentity,
     PaymentModeCell,
     RecordCell,
-    RecordedMark,
+    RecordedChip,
 } from './attendance-cells';
 import {
     UNTAKEN_NOTICE_ID,
@@ -146,7 +146,7 @@ function attendanceColumns(
             key: 'recorded',
             head: t.admin.colRecorded,
             kind: 'standing',
-            render: (row) => <RecordedMark status={row.status} t={t} />,
+            render: (row) => <RecordedChip status={row.status} t={t} />,
         },
         {
             key: 'record',

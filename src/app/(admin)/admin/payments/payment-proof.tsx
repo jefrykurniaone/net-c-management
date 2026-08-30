@@ -36,9 +36,9 @@ import { cn } from '@/lib/utils';
  *
  * Two cells here are not images at all and are designed as cells rather than
  * left to the browser's broken-image glyph: a Payment with no Proof, and a
- * Proof whose URL will not load. Neither uses a mark — the register keeps every
- * mark on the standing column's shared edge, so a second mark in this column
- * would break the one line every mark on the surface lands on.
+ * Proof whose URL will not load. Neither uses a chip — the register keeps every
+ * chip on the standing column's shared edge, so a second chip in this column
+ * would break the one line every chip on the surface lands on.
  */
 
 /**

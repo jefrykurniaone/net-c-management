@@ -20,8 +20,8 @@ import { TopRight } from './slot-standing';
  *    column above the time; the board leaves it out because its band owns it.
  * 2. **what** — the Session title as Title, on the first line; then venue and
  *    the Activity's livery as Caption on the second, with one note below that.
- * 3. **standing** — free Seats as `n/max` in Figure **or** a mark, hard right of
- *    the first line, so every mark on the surface sits on one edge.
+ * 3. **standing** — free Seats as `n/max` in Figure **or** a chip, hard right of
+ *    the first line, so every chip on the surface sits on one edge.
  *
  * The positions are non-negotiable: a member reads any row in two seconds
  * because everything is always in the same place, and one row that reflows
@@ -35,14 +35,14 @@ import { TopRight } from './slot-standing';
  * differently by different browsers. So the cell is a ground that holds two
  * children — the anchor covering the three columns, and, only where the caller
  * resolved one, an action row beneath it aligned to the Session's own column.
- * The three columns are untouched by it, no mark leaves its shared right edge,
+ * The three columns are untouched by it, no chip leaves its shared right edge,
  * and the row-wide tap target that opens the Session survives. A cell with no
  * action renders exactly the arrangement it did before there were any.
  *
  * Livery is a magnet tile bearing the Activity's initial, with no colour
  * ({@link ActivityTile}) — never a coloured square and never an edge stripe.
  *
- * Every state here comes from the mark resolver — see `slot-standing.tsx` for
+ * Every state here comes from the chip resolver — see `slot-standing.tsx` for
  * the standing column's fixed precedence and `slot-lines.tsx` for the note.
  */
 

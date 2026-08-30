@@ -1,5 +1,5 @@
 import type { AttendanceStatus } from '@prisma/client';
-import { Mark, StateMark } from '@/components/ui/mark';
+import { Chip, StatusChip } from '@/components/ui/chip';
 import {
     ADMIN_SETTABLE_STATUSES,
     type AdminSettableStatus,
@@ -8,8 +8,8 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 import {
     attendanceState,
     paymentState,
-    resolveStatusMark,
-} from '@/lib/status-mark';
+    resolveStatusChip,
+} from '@/lib/status-chip';
 import { cn } from '@/lib/utils';
 import type { AttendanceRegisterRow, MoneyStanding } from './attendance-view';
 
@@ -27,12 +27,12 @@ export function participantLabel(row: AttendanceRegisterRow): string {
 }
 
 /**
- * The label for one attendance value, taken from the mark resolver rather than
- * picked here, so the control and the mark beside it can never disagree — and so
+ * The label for one attendance value, taken from the chip resolver rather than
+ * picked here, so the control and the chip beside it can never disagree — and so
  * the stored `ABSENT` reads as **Opted Out** wherever it appears.
  */
 export function statusLabel(status: AttendanceStatus, t: Dictionary): string {
-    return t.marks[resolveStatusMark(attendanceState(status)).labelKey];
+    return t.chips[resolveStatusChip(attendanceState(status)).labelKey];
 }
 
 /**
@@ -99,28 +99,30 @@ export function PaymentModeCell({
 
 /**
  * Whether money stands behind this Seat. A Payment that exists is drawn through
- * the resolver at its own standing; nothing sent takes a **Blank** — nobody has
- * placed it, which is not the same as a failure.
+ * the resolver at its own standing; nothing sent takes a **neutral** chip —
+ * nobody has placed it, which is not the same as a failure.
  */
 export function MoneyCell({
     money,
     t,
 }: Readonly<{ money: MoneyStanding; t: Dictionary }>) {
     if (money.kind === 'none') {
-        return <Mark kind='blank'>{t.admin.attMoneyNone}</Mark>;
+        return <Chip variant='neutral' label={t.admin.attMoneyNone} />;
     }
-    return <StateMark state={paymentState(money.status)} labels={t.marks} />;
+    return <StatusChip state={paymentState(money.status)} labels={t.chips} />;
 }
 
-/** What is stored against this Seat right now, as its mark. */
-export function RecordedMark({
+/** What is stored against this Seat right now, as its chip. */
+export function RecordedChip({
     status,
     t,
 }: Readonly<{ status: AttendanceStatus; t: Dictionary }>) {
-    return <StateMark state={attendanceState(status)} labels={t.marks} />;
+    return <StatusChip state={attendanceState(status)} labels={t.chips} />;
 }
 
-/** `2px` corner, like every other cell on the board — the marks' own radius. */
+/* The `2px` corner is the retired board radius. Rally's ladder gives a control
+   8px, but restyling this option is the admin surface's own ticket, so it is
+   left standing here rather than changed in passing. */
 const OPTION_BASE_CLASS =
     'inline-flex min-h-11 cursor-pointer items-center gap-hair rounded-[2px] border px-cell py-hair type-label focus-within:border-ring focus-within:ring-2 focus-within:ring-ring';
 

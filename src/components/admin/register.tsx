@@ -1,5 +1,5 @@
 import { DataTablePagination } from '@/components/ui/data-table-pagination';
-import { Mark } from '@/components/ui/mark';
+import { Chip } from '@/components/ui/chip';
 import { SortableTh } from '@/components/ui/sortable-th';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { RawSearchParams } from '@/lib/table-params';
@@ -20,7 +20,7 @@ import {
  *
  * It owns the lattice and hands none of it out. Shared 1px rules between rows
  * and between columns rather than gaps between floating panels; tabular figures
- * down every column of numbers; a standing column carrying one mark and nothing
+ * down every column of numbers; a standing column carrying one chip and nothing
  * else; a designed empty row; and the axis collapse below `768px`.
  *
  * **Data, never nodes.** A caller describes columns and rows. There is no
@@ -59,7 +59,7 @@ type RegisterProps<Row extends RegisterRow> = Readonly<{
     caption: string;
     /** The raw query, so a sort link keeps the rest of it. */
     searchParams: RawSearchParams;
-    /** The designed empty row: a Blank mark and one sentence. */
+    /** The designed empty row: a neutral chip and one sentence. */
     empty: Readonly<{ mark: string; text: string }>;
     pagination?: RegisterPagination;
 }>;
@@ -149,9 +149,9 @@ function RegisterRowCells<Row extends RegisterRow>({
 }
 
 /**
- * Nothing to show is still a register: a ruled row carrying a **Blank** mark —
- * *expected but not yet placed* — and one sentence saying what is missing.
- * A blank panel would say nothing at all.
+ * Nothing to show is still a register: a ruled row carrying a **neutral** chip
+ * — *expected but not yet placed* — and one sentence saying what is missing.
+ * An empty panel would say nothing at all.
  */
 function RegisterEmptyRow({
     span,
@@ -161,7 +161,7 @@ function RegisterEmptyRow({
         <tr className={ROW_CLASS}>
             <td colSpan={span} className={BODY_CELL_CLASS}>
                 <span className='flex flex-wrap items-center gap-cell'>
-                    <Mark kind='blank'>{empty.mark}</Mark>
+                    <Chip variant='neutral' label={empty.mark} />
                     <span className='type-caption text-muted-foreground'>
                         {empty.text}
                     </span>

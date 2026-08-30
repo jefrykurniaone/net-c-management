@@ -1,8 +1,8 @@
 import type { Locale as DateFnsLocale } from 'date-fns';
-import { StateMark } from '@/components/ui/mark';
+import { StatusChip } from '@/components/ui/chip';
 import type { RegisterColumn } from '@/components/admin/register-columns';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
-import { paymentState } from '@/lib/status-mark';
+import { paymentState } from '@/lib/status-chip';
 import { expectedPriceOf } from '@/lib/payment-price';
 import { PaymentActions } from './payment-actions';
 import { PaymentProof, type ProofLabels } from './payment-proof';
@@ -134,7 +134,7 @@ function outcomeColumns(
             head: t.admin.colStatus,
             kind: 'standing',
             render: (p) => (
-                <StateMark state={paymentState(p.status)} labels={t.marks} />
+                <StatusChip state={paymentState(p.status)} labels={t.chips} />
             ),
         },
         {

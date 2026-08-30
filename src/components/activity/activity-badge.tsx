@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { activityInitial } from '@/lib/activity-initial';
 import { cn } from '@/lib/utils';
 
@@ -64,15 +63,29 @@ export function ActivityTile({ name, className }: ActivityLiveryProps) {
 /**
  * Tile plus the Activity name. The name is what tells two Activities sharing
  * an initial apart, so the tile is never the only identifier here.
+ *
+ * It draws its own pill rather than reaching for the status chip: a chip
+ * carries one written state label in Label caps, and an Activity name is a
+ * proper noun that must not be uppercased and is not a state. The shape is the
+ * chip's — a pill, a hairline, a card face — so the two read as one family.
  */
 export function ActivityBadge({ name, className }: ActivityLiveryProps) {
     return (
-        <Badge
-            variant='outline'
-            className={cn('h-auto gap-1.5 py-0.5 pl-0.5', className)}>
+        <span
+            className={cn(
+                'inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full',
+                // `overflow-hidden` is load-bearing, not decoration: the tile is
+                // a `rounded-sm` square sitting at `pl-0.5` inside a pill, so
+                // its left corners fall outside the pill's arc without it.
+                // `ActivityTile` drops its contact shadow on the strength of
+                // this clip.
+                'overflow-hidden border border-border bg-card py-0.5 pl-0.5 pr-2.5',
+                'type-caption whitespace-nowrap text-secondary-foreground',
+                className,
+            )}>
             <ActivityTile name={name} />
             {name}
-        </Badge>
+        </span>
     );
 }
 
