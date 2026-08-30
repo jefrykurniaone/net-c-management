@@ -1113,6 +1113,8 @@ const en = {
         cancel: 'Cancel',
         copy: 'Copy',
         copied: 'Copied',
+        /** The neutral chip on `EmptyState` (#150) — a state, not a sentence. */
+        empty: 'Empty',
         phoneCountryCodeHint:
             'Country code without + (e.g. 628123456789). A leading 08 is converted automatically.',
     },
@@ -2107,6 +2109,7 @@ const id: typeof en = {
         cancel: 'Batal',
         copy: 'Salin',
         copied: 'Tersalin',
+        empty: 'Kosong',
         phoneCountryCodeHint:
             'Kode negara tanpa + (contoh: 628123456789). Awalan 08 dikonversi otomatis.',
     },

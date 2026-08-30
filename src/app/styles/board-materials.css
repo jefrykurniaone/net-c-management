@@ -73,6 +73,14 @@
 
   --secondary: #F0E9DB;
   --secondary-foreground: #3F5147;
+  /* Button's second action (#150): Black Green ground, off-white ink, fixed
+     across both themes — the same invariance `--primary-solid` already uses
+     for the Rally action, because a button that changes colour when the
+     theme does is not "the action" any more. Distinct from `--secondary`
+     above, which stays a light neutral on purpose (#148: `--secondary-foreground`
+     runs body text at 54 sites, so it cannot become an inverted fill). */
+  --secondary-solid: #0E1F17;
+  --secondary-solid-foreground: #F1EEE5;
   --muted: #F0E9DB;
   --muted-foreground: #4A5C52;
   --subtle-foreground: #55675D;
@@ -170,6 +178,10 @@
 
   --secondary: #182C22;
   --secondary-foreground: #B3C1B6;
+  /* Same invariant pair as `:root` — Black Green ground, off-white ink, on
+     purpose unchanged from the light theme's values. */
+  --secondary-solid: #0E1F17;
+  --secondary-solid-foreground: #F1EEE5;
   --muted: #1E3529;
   --muted-foreground: #B3C1B6;
   --subtle-foreground: #9EAEA2;

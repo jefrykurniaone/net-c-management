@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 /**
  * Dashboard stat card (UX-DR8): shadcn Card + tracked-caps Label head + the
@@ -24,7 +25,12 @@ export function StatCard({
     href?: string;
 }>) {
     const card = (
-        <Card className='gap-1.5'>
+        <Card
+            className={cn(
+                'gap-1.5',
+                href &&
+                    'transition-shadow duration-150 hover:shadow-lift-hover motion-reduce:transition-none',
+            )}>
             <CardHeader className='flex flex-row items-center justify-between pb-0'>
                 <CardTitle className='type-label text-muted-foreground'>
                     {label}
@@ -68,7 +74,7 @@ export function StatStrip({
     }>;
 }>) {
     return (
-        <div className='grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-xl border border-border bg-border'>
+        <div className='grid grid-cols-2 lg:grid-cols-4 gap-px overflow-hidden rounded-xl bg-border shadow-lift'>
             {items.map((item, i) => (
                 <div key={i} className='flex flex-col gap-1 bg-card px-5 py-4'>
                     <p className='type-label text-muted-foreground'>

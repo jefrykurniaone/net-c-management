@@ -45,6 +45,8 @@
   --color-subtle-foreground: var(--subtle-foreground);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-secondary: var(--secondary);
+  --color-secondary-solid-foreground: var(--secondary-solid-foreground);
+  --color-secondary-solid: var(--secondary-solid);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
   --color-primary-solid: var(--primary-solid);
@@ -171,5 +173,13 @@
   input[inputmode='numeric'],
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+  /* Sonner ships its own hardcoded box-shadow with zero-specificity `:where()`
+     selectors precisely so a consumer can override it without `!important`.
+     `--border-radius` is set from `--radius-xl` in `sonner.tsx`; the shadow
+     has no matching CSS variable in the library, so it is overridden here
+     with the Rally token instead of the library's own rgba value. */
+  [data-sonner-toast] {
+    box-shadow: var(--shadow-lift);
   }
 }

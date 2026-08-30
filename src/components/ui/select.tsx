@@ -32,14 +32,15 @@ function SelectValue({
 }
 
 /**
- * The Inputs / Fields treatment — Enamel Tile ground, one Ruled Line border,
- * `2px` corner, `10px` padding, a 2px offset Court Green focus ring — same as
- * `Input`. `size="default"` sizes from that padding, the way `Input` does;
- * `size="sm"` keeps a fixed compact height for a caller that wants one (no
- * caller in this repo passes it today, so the compact tier is unverified
- * against a live consumer). `dark:bg-input/30` and its hover pair are gone
- * for the same reason as `Input`'s: `bg-tile` already carries both board
- * materials, and the dark variant would have out-specified it regardless.
+ * The Inputs / Fields treatment — a card-coloured ground, one `--input`
+ * edge, `8px` control radius, `10px` padding, a 2px offset Purple focus ring
+ * — same as `Input`. `size="default"` sizes from that padding, the way
+ * `Input` does; `size="sm"` keeps a fixed compact height for a caller that
+ * wants one (no caller in this repo passes it today, so the compact tier is
+ * unverified against a live consumer). `dark:bg-input/30` and its hover pair
+ * are gone for the same reason as `Input`'s: `bg-card` already carries both
+ * theme materials, and the dark variant would have out-specified it
+ * regardless.
  */
 function SelectTrigger({
   className,
@@ -54,7 +55,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-1.5 rounded-[2px] border border-rule bg-tile px-cell py-cell type-body text-foreground whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=sm]:h-8 data-[size=sm]:py-1 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "flex w-fit items-center justify-between gap-1.5 rounded-md border border-input bg-card px-cell py-cell type-body text-foreground whitespace-nowrap transition-colors duration-150 outline-none select-none motion-reduce:transition-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground data-[size=sm]:h-8 data-[size=sm]:py-1 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}
@@ -79,7 +80,7 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         data-align-trigger={position === "item-aligned"}
-        className={cn("relative z-50 max-h-(--radix-select-content-available-height) min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-[2px] bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", position ==="popper"&&"data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1", className )}
+        className={cn("relative z-50 max-h-(--radix-select-content-available-height) min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-lift duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", position ==="popper"&&"data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1", className )}
         position={position}
         align={align}
         {...props}

@@ -33,7 +33,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius)",
+          /* A toast is a floating surface, so it takes the 12px surface
+             radius rather than the 8px control radius `--radius` names.
+             The box-shadow this library hardcodes has no matching
+             variable, so it is overridden with `--shadow-lift` in
+             `globals.css` instead, against `[data-sonner-toast]`. */
+          "--border-radius": "var(--radius-xl)",
         } as React.CSSProperties
       }
       toastOptions={{

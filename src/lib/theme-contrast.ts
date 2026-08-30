@@ -171,6 +171,11 @@ export const AA_PAIRS: readonly ContrastPair[] = [
     textPair('primary', 'primary-soft', 'link on its own wash'),
     textPair('primary-foreground', 'primary', 'checkbox tick, avatar badge'),
     textPair('primary-solid-foreground', 'primary-solid', 'the primary action'),
+    textPair(
+        'secondary-solid-foreground',
+        'secondary-solid',
+        'the secondary action (#150)',
+    ),
     textPair('success', 'background', 'settled ink on the ground'),
     textPair('success', 'card', 'settled ink on a card'),
     textPair('success-foreground', 'success', 'ink on a settled fill'),
@@ -217,7 +222,7 @@ export const RECORDED_PAIRS: readonly RecordedPair[] = [
     {
         fg: 'card',
         bg: 'background',
-        reason: 'tonal step; the card is bounded by --border and --shadow-lift',
+        reason: 'tonal step; the card is bounded by its shadow and its own face (#150 dropped the card border)',
     },
     {
         fg: 'primary-solid',

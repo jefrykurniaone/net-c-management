@@ -11,7 +11,7 @@ export function FormSection({
     children,
 }: Readonly<{ title: string; hint?: string; children: ReactNode }>) {
     return (
-        <fieldset className='space-y-4 rounded-sm border border-rule p-block'>
+        <fieldset className='space-y-4 rounded-xl border border-border p-block'>
             <legend className='px-1 text-sm font-semibold text-foreground'>
                 {title}
             </legend>
