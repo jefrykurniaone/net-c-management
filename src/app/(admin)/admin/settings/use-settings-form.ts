@@ -4,10 +4,20 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
+import {
+    checkPublicCopyPatch,
+    publicCopyRefusalMessage,
+    type StoredPublicCopy,
+} from '@/lib/public-copy';
 
 export const DEFAULT_HOLD_DURATION_MINUTES = '60';
 
-export interface SettingsMap {
+/**
+ * Extends the public-copy keys rather than restating them (#153): the key list
+ * lives in `src/lib/public-copy.ts` beside the caps, so a field added there is
+ * a field this form can already hold.
+ */
+export interface SettingsMap extends StoredPublicCopy {
     communityName?: string;
     defaultLocation?: string;
     adminWhatsapp?: string;
@@ -139,7 +149,8 @@ function useLogoUpload({
     };
 }
 
-/** Save: `PATCH /api/settings`, unchanged validation and payload. */
+/** Save: `PATCH /api/settings`. Two refusals before the request goes out — the
+ *  community name, and the public copy's caps (#153) — then the same payload. */
 function useSettingsSave({
     t,
     router,
@@ -151,6 +162,14 @@ function useSettingsSave({
         e.preventDefault();
         if (!settings.communityName?.trim()) {
             toast.error(t.validation.communityNameRequired);
+            return;
+        }
+        // The same check the API makes, from the same constants, so the form
+        // never sends a body it knows will be refused (#153). The counter under
+        // each field has already said which one it is.
+        const refusal = checkPublicCopyPatch(settings);
+        if (refusal) {
+            toast.error(publicCopyRefusalMessage(refusal, t));
             return;
         }
         setSaving(true);

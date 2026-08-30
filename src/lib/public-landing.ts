@@ -3,6 +3,12 @@ import { revalidateTag, unstable_cache } from 'next/cache';
 import { SessionStatus, type Prisma } from '@prisma/client';
 import { prisma } from './prisma';
 import { getDictionary, type Locale } from './i18n/dictionaries';
+import {
+    PUBLIC_COPY_KEYS,
+    resolvePublicCopy,
+    type PublicCopy,
+    type StoredPublicCopy,
+} from './public-copy';
 import { wibDayKey, wibDayStartFromKey } from './wib';
 import { resolveDuesRate } from './dues-rate';
 import type { BillingPeriod } from './billing-period';
@@ -324,13 +330,41 @@ export async function getPublicSessionCard(
     return row ? { ...row, date: new Date(row.date) } : null;
 }
 
-/** The only two `Settings` keys an unauthenticated page may read. */
-const PUBLIC_SETTINGS_KEYS = ['communityName', 'logoUrl'];
+/**
+ * Every `Settings` key an unauthenticated page may read: the two identity keys,
+ * plus the Admin-authored public copy (#153). Rule 4's ban on admin free text
+ * still stands for `Activity.description`, `ActivitySession.title` and `notes`
+ * — text written under an internal-tool assumption — and these keys are the
+ * honest fix that comment named: fields an Admin fills *knowing* they are
+ * public, capped and validated on the way in (`src/lib/public-copy.ts`).
+ *
+ * Explicitly `string[]`, never a `readonly`/`as const` array: Prisma's `in`
+ * filter takes a mutable array.
+ */
+const PUBLIC_SETTINGS_KEYS: string[] = [
+    'communityName',
+    'logoUrl',
+    ...PUBLIC_COPY_KEYS,
+];
 
-/** Community identity as stored: a blank name means "not configured". */
-interface StoredIdentity {
+/** What the table holds: a blank name means "not configured", as does a
+ *  missing copy key — neither carries its own default this side of the cache. */
+interface StoredPublicSettings {
     communityName: string;
     logoUrl: string;
+    copy: StoredPublicCopy;
+}
+
+/** The copy keys out of a raw key-value map. A missing key stays missing. */
+function pickStoredCopy(map: Record<string, string>): StoredPublicCopy {
+    const copy: StoredPublicCopy = {};
+    for (const key of PUBLIC_COPY_KEYS) {
+        const value = map[key];
+        if (value !== undefined) {
+            copy[key] = value;
+        }
+    }
+    return copy;
 }
 
 /**
@@ -340,9 +374,17 @@ interface StoredIdentity {
  * reads the locale cookie internally; and it returns `adminWhatsapp`, which
  * ticket 04 bars from `/`. So identity comes through this choke point like
  * everything else, under the same tag and window.
+ *
+ * #153 widened it from identity to every published `Settings` key rather than
+ * adding a second cached read: the copy and the name are written by the same
+ * form, invalidated by the same `PATCH`, and read by the same render, so a
+ * second entry would double the queries on a miss and buy nothing.
+ *
+ * The cache key stays `public-identity`. It is an opaque namespace, not a
+ * description, and changing it would drop every warm entry for a rename.
  */
-const readCachedIdentity = unstable_cache(
-    async (): Promise<StoredIdentity> => {
+const readCachedPublicSettings = unstable_cache(
+    async (): Promise<StoredPublicSettings> => {
         const rows = await prisma.settings.findMany({
             where: { key: { in: PUBLIC_SETTINGS_KEYS } },
             select: { key: true, value: true },
@@ -351,6 +393,7 @@ const readCachedIdentity = unstable_cache(
         return {
             communityName: map.communityName?.trim() ?? '',
             logoUrl: map.logoUrl ?? '',
+            copy: pickStoredCopy(map),
         };
     },
     ['public-identity'],
@@ -370,12 +413,30 @@ export interface PublicIdentity {
 export async function getPublicIdentity(
     locale: Locale,
 ): Promise<PublicIdentity> {
-    const stored = await readCachedIdentity();
+    const stored = await readCachedPublicSettings();
     return {
         communityName:
             stored.communityName || getDictionary(locale).brand.unnamedCommunity,
         logoUrl: stored.logoUrl,
     };
+}
+
+/**
+ * The Admin's own words for `/`, with every fallback already applied (#153).
+ *
+ * Same shape of contract as `getPublicIdentity`: the stored rows come out of
+ * the cache, and the locale-dependent defaulting happens **here**, outside the
+ * cache scope, because a cookie may not be read inside one. An empty hero field
+ * resolves to the dictionary; an empty about paragraph resolves to `null` and
+ * an untitled feature card is dropped, so a half-filled form can never render a
+ * band of nothing.
+ *
+ * `/` renders the two hero fields today. The about paragraph and the feature
+ * cards are carried here for #154, which builds the bands that show them.
+ */
+export async function getPublicCopy(locale: Locale): Promise<PublicCopy> {
+    const { copy } = await readCachedPublicSettings();
+    return resolvePublicCopy(copy, getDictionary(locale));
 }
 
 /**
@@ -385,8 +446,8 @@ export async function getPublicIdentity(
  * to every route, and `getSettings()` there was an uncached `findMany` that made
  * `/` cost two Settings queries per render, defeating ticket 10's
  * zero-connections-on-a-hit before the cache existed. Shares
- * `readCachedIdentity` with the page body, so the pair costs one query at most
- * and zero on a hit.
+ * `readCachedPublicSettings` with the page body, so the pair costs one query at
+ * most and zero on a hit.
  *
  * A rename therefore moves the `<title>` and the OG image as well as the board,
  * which is the second reason the Settings routes sit in the invalidation set.
@@ -401,6 +462,11 @@ export async function getPublicCommunityName(locale: Locale): Promise<string> {
  * fields, and **only** those — reserve, attendance and payments publish nothing
  * here (ticket 04's ban on capacity data is what buys that), so the app's
  * highest-frequency writes never touch this cache.
+ *
+ * `PATCH /api/settings` is in that set already, for a rename; since #153 the
+ * same call is what makes the Admin's public copy appear on `/` right after
+ * they save, with no redeploy and no wait on `REVALIDATE_SECONDS`. Nothing else
+ * writes those keys, so this is the whole invalidation edge for the copy.
  *
  * `{ expire: 0 }`, not `'max'`: `'max'` is stale-while-revalidate, which would
  * hand the next visitor the cancelled session one more time. A cached page

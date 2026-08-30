@@ -52,7 +52,16 @@ const DISCLOSURE_ID = 'landing-hero-disclosure';
 export function HeroBand({
     t,
     communityName,
-}: Readonly<{ t: Dictionary; communityName: string }>) {
+    headline,
+    subline,
+}: Readonly<{
+    t: Dictionary;
+    communityName: string;
+    /** Resolved copy, never empty — `getPublicCopy` has already applied the
+     *  dictionary fallback, so this band never asks whether one is needed. */
+    headline: string;
+    subline: string;
+}>) {
     return (
         <section
             className={`${PAINTED_BOARD_CLASS} w-full bg-board px-block ${HERO_AIR_CLASS}`}>
@@ -73,13 +82,20 @@ export function HeroBand({
                     system-wide, so the pitch and an admin page heading are
                     the same thing at the same size — which is why the
                     ESLint restriction that used to confine the retired
-                    Hero role to this route is gone. */}
+                    Hero role to this route is gone.
+
+                    Since #153 the words are the Admin's when they have written
+                    any and the dictionary's when they have not, resolved before
+                    they reach this band. `break-words` is still here for the
+                    same reason it always was, and now covers a second case: a
+                    value that got past the caps through an older client
+                    degrades visibly instead of painting over the action. */}
                 <h1 className='type-display min-w-0 max-w-full break-words text-foreground'>
-                    {t.landing.hero.pitch}
+                    {headline}
                 </h1>
 
-                <p className='type-body text-secondary-foreground'>
-                    {t.landing.hero.lead}
+                <p className='type-body min-w-0 max-w-full break-words text-secondary-foreground'>
+                    {subline}
                 </p>
 
                 <HeroAction t={t} />

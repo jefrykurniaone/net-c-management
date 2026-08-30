@@ -8,6 +8,7 @@ import { PhonePicker } from '@/components/admin/phone-picker';
 import { HoldDurationField } from '@/components/admin/hold-duration-field';
 import { SettingsSection } from '@/components/admin/settings-sections';
 import { SettingsRow, settingsHelperId } from '@/components/admin/settings-rows';
+import { PublicCopySection } from './public-copy-section';
 import type { SettingsMap } from './use-settings-form';
 
 /**
@@ -160,8 +161,7 @@ function PaymentSection({
             <SettingsRow
                 id='holdDuration'
                 label={t.admin.holdDurationLabel}
-                helper={t.admin.holdDurationHint}
-                isLast>
+                helper={t.admin.holdDurationHint}>
                 <HoldDurationField
                     value={holdDurationMinutes}
                     onChange={(minutes) =>
@@ -200,6 +200,11 @@ export function SettingsForm({
                     holdDurationMinutes={settings.holdDurationMinutes ?? defaultHoldDurationMinutes}
                     update={update}
                 />
+                {/* Last in the frame, so it carries the frame's last unruled
+                    row (#153). Added beside the three sections above rather
+                    than inside one of them: nothing here configures how the
+                    community runs, it is what a stranger reads. */}
+                <PublicCopySection t={t} settings={settings} update={update} />
             </div>
             <Button type='submit' className='mt-bay w-full' loading={saving}>
                 {t.admin.saveSettings}
