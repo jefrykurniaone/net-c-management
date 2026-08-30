@@ -45,7 +45,7 @@ export function ShareSessionCard({
     }
 
     return (
-        <div className='bg-card rounded-xl border border-border p-5'>
+        <div className='rounded-sm border border-rule bg-tile p-block'>
             <div className='flex items-start justify-between gap-2 mb-4'>
                 <div>
                     <h2 className='text-sm font-semibold text-foreground'>

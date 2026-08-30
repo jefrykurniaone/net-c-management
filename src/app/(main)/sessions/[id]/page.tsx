@@ -291,7 +291,7 @@ export default async function SessionDetailPage({
                 />
 
                 {/* RSVP card */}
-                <div className='bg-card rounded-xl border border-border p-5 space-y-3'>
+                <div className='rounded-sm border border-rule bg-tile p-block space-y-3'>
                     <div className='flex items-baseline justify-between gap-2'>
                         <h2 className='font-semibold text-foreground'>
                             {t.sessions.areYouPlaying}
@@ -343,7 +343,7 @@ export default async function SessionDetailPage({
                 </div>
 
                 {/* Players card */}
-                <div className='bg-card rounded-xl border border-border p-5'>
+                <div className='rounded-sm border border-rule bg-tile p-block'>
                     <div className='flex items-center justify-between mb-3'>
                         <h2 className='font-semibold text-foreground'>
                             {t.sessions.playersLabel}
