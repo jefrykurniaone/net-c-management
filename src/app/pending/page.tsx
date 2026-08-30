@@ -34,9 +34,16 @@ export const metadata: Metadata = {
 /** The 40rem single-task column. */
 const COLUMN_CLASS = 'max-w-[40rem]';
 
-/** What the reader is told, chosen by the state the two columns resolve to. */
+/**
+ * What the reader is told, chosen by the state the two columns resolve to.
+ *
+ * The variant is narrowed to the only two this route can mean. A waiting room
+ * has no settled state and no neutral one — an Applicant is being held or has
+ * been turned away — and the narrow type is what stops a later edit quietly
+ * announcing a rejection in the settled green.
+ */
 type Statement = Readonly<{
-    variant: ChipVariant;
+    variant: Extract<ChipVariant, 'provisional' | 'void'>;
     chipLabel: string;
     title: string;
     lead: string;

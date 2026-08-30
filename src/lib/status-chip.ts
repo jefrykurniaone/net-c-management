@@ -14,12 +14,20 @@ import type {
  * orange, a void thing is dark red, a withdrawn or unplaced thing is neutral,
  * and an informational thing is purple.
  */
+const VARIANT = {
+    settled: 'settled',
+    provisional: 'provisional',
+    void: 'void',
+    neutral: 'neutral',
+    info: 'info',
+} as const;
+
 export const CHIP_VARIANTS = [
-    'settled',
-    'provisional',
-    'void',
-    'neutral',
-    'info',
+    VARIANT.settled,
+    VARIANT.provisional,
+    VARIANT.void,
+    VARIANT.neutral,
+    VARIANT.info,
 ] as const;
 
 export type ChipVariant = (typeof CHIP_VARIANTS)[number];
@@ -87,16 +95,16 @@ export const attendanceState = (status: AttendanceStatus): DomainState => ({
  * Only a cancelled Session is void.
  */
 const SESSION_CHIPS: Record<SessionStatus, StatusChip> = {
-    SCHEDULED: { variant: 'settled', labelKey: 'scheduled' },
-    ONGOING: { variant: 'settled', labelKey: 'ongoing' },
-    COMPLETED: { variant: 'settled', labelKey: 'completed' },
-    CANCELLED: { variant: 'void', labelKey: 'cancelled' },
+    SCHEDULED: { variant: VARIANT.settled, labelKey: 'scheduled' },
+    ONGOING: { variant: VARIANT.settled, labelKey: 'ongoing' },
+    COMPLETED: { variant: VARIANT.settled, labelKey: 'completed' },
+    CANCELLED: { variant: VARIANT.void, labelKey: 'cancelled' },
 };
 
 const PAYMENT_CHIPS: Record<PaymentStatus, StatusChip> = {
-    CONFIRMED: { variant: 'settled', labelKey: 'confirmed' },
-    PENDING: { variant: 'provisional', labelKey: 'pending' },
-    REJECTED: { variant: 'void', labelKey: 'rejected' },
+    CONFIRMED: { variant: VARIANT.settled, labelKey: 'confirmed' },
+    PENDING: { variant: VARIANT.provisional, labelKey: 'pending' },
+    REJECTED: { variant: VARIANT.void, labelKey: 'rejected' },
 };
 
 /**
@@ -112,11 +120,11 @@ const PAYMENT_CHIPS: Record<PaymentStatus, StatusChip> = {
  * doing the work the six mark forms used to.
  */
 const ATTENDANCE_CHIPS: Record<AttendanceStatus, StatusChip> = {
-    REGISTERED: { variant: 'settled', labelKey: 'registered' },
-    PRESENT: { variant: 'settled', labelKey: 'present' },
-    MAYBE: { variant: 'provisional', labelKey: 'maybe' },
-    ABSENT: { variant: 'neutral', labelKey: 'optedOut' },
-    NO_SHOW: { variant: 'void', labelKey: 'noShow' },
+    REGISTERED: { variant: VARIANT.settled, labelKey: 'registered' },
+    PRESENT: { variant: VARIANT.settled, labelKey: 'present' },
+    MAYBE: { variant: VARIANT.provisional, labelKey: 'maybe' },
+    ABSENT: { variant: VARIANT.neutral, labelKey: 'optedOut' },
+    NO_SHOW: { variant: VARIANT.void, labelKey: 'noShow' },
 };
 
 /**

@@ -58,7 +58,7 @@ function weekHref(scope: URLSearchParams, week: string): string {
 }
 
 /**
- * The board's own designed states, both of them a Blank-marked strip above a
+ * The board's own designed states, both of them a neutral-chipped strip above a
  * board that still draws every day. Neutral means *expected but not yet placed*,
  * which is the honest state of a community that has just been set up — and a
  * dropped surface would read as broken rather than as quiet.

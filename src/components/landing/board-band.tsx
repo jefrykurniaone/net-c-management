@@ -125,7 +125,7 @@ function Fee({ row }: Readonly<{ row: BoardRow }>) {
 
 /**
  * A community with nothing configured keeps this band and renders it as one
- * Blank-marked strip. Dropping the band leaves the page a poster, and an empty
+ * neutral-chipped strip. Dropping the band leaves the page a poster, and an empty
  * board is not embarrassing — it is what a community that has just been set up
  * actually looks like.
  */

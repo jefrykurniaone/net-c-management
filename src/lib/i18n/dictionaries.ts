@@ -108,8 +108,8 @@ const en = {
             head: 'What you can play here',
             // Authored to survive the empty state: it describes what a row
             // holds rather than asserting that any exist, because this line
-            // renders above the Blank strip on a community that has just been
-            // set up.
+            // renders above the neutral-chipped strip on a community that has
+            // just been set up.
             body: 'One activity, its weekly slot, where it happens, and when it next happens.',
             // The band never disappears — a community with nothing configured
             // renders one neutral-chipped strip carrying this line, never a
@@ -156,7 +156,7 @@ const en = {
             //
             // Standing constraint: it may not name a schedule, sessions, or any
             // other inventory. The community may have nothing posted yet — 07
-            // renders the board band Blank in that case — and a snippet
+            // renders the board band neutral in that case — and a snippet
             // promising what is not there is `PRODUCT.md:94`'s evidence ban one
             // layer out. It describes the community and the act of joining, and
             // nothing else.

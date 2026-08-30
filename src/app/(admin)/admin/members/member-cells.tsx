@@ -32,7 +32,7 @@ export type RoleView = Readonly<{ role: Role; isActive: boolean }>;
 
 /**
  * A Role is a standing property of a person, not a state of a thing, so it is
- * lettered as a tracked-caps label and never as one of the six marks.
+ * lettered as a tracked-caps label and never as a status chip.
  *
  * **Admin and Owner are drawn identically and differ only in the word.** The
  * Owner carries no capability an Admin lacks — it is an immutability and
@@ -90,8 +90,7 @@ export function StandingChip({
  * name and hold a complete profile, or carry a name and still be stuck at
  * onboarding. `isProfileComplete` is a state of the account's setup, so it is
  * lettered as a tracked-caps label — the same treatment the role already
- * uses below — never one of the six marks, which are reserved for a
- * standing.
+ * uses below — never a status chip, which is reserved for a standing.
  */
 export function MemberIdentity({
     member,

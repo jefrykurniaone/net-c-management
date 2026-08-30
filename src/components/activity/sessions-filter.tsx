@@ -48,8 +48,15 @@ const RULED_GROUP =
 /** Builds the href for one filter state, holding the rest of the board's. */
 type HrefFor = (next: { activityId?: string; view?: SessionView }) => string;
 
-/** One cell of a ruled filter group. On or off; never colour alone. */
-function Chip({
+/**
+ * One cell of a ruled filter group. On or off; never colour alone.
+ *
+ * Named for what it is rather than "Chip": the status chip in
+ * `src/components/ui/chip.tsx` is a labelled, non-interactive state pill, and
+ * two components under one name with incompatible props is a collision waiting
+ * for the first file that needs both.
+ */
+function FilterCell({
     href,
     isOn,
     children,
@@ -80,12 +87,12 @@ function ViewSwitch({
     return (
         <div className={RULED_GROUP}>
             {(['mine', 'all'] as const).map((value) => (
-                <Chip
+                <FilterCell
                     key={value}
                     href={href({ view: value, activityId: '' })}
                     isOn={view === value}>
                     {value === 'mine' ? labels.viewMine : labels.viewAll}
-                </Chip>
+                </FilterCell>
             ))}
         </div>
     );
@@ -106,17 +113,17 @@ function ActivityChips({
     return (
         <div className='flex overflow-x-auto'>
             <div className={RULED_GROUP}>
-                <Chip href={href({ activityId: '' })} isOn={selected === undefined}>
+                <FilterCell href={href({ activityId: '' })} isOn={selected === undefined}>
                     {allLabel}
-                </Chip>
+                </FilterCell>
                 {activities.map((activity) => (
-                    <Chip
+                    <FilterCell
                         key={activity.id}
                         href={href({ activityId: activity.id })}
                         isOn={selected === activity.id}>
                         <ActivityTile name={activity.name} />
                         {activity.name}
-                    </Chip>
+                    </FilterCell>
                 ))}
             </div>
         </div>

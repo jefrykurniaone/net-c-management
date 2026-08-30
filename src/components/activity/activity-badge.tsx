@@ -74,7 +74,12 @@ export function ActivityBadge({ name, className }: ActivityLiveryProps) {
         <span
             className={cn(
                 'inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full',
-                'border border-border bg-card py-0.5 pl-0.5 pr-2.5',
+                // `overflow-hidden` is load-bearing, not decoration: the tile is
+                // a `rounded-sm` square sitting at `pl-0.5` inside a pill, so
+                // its left corners fall outside the pill's arc without it.
+                // `ActivityTile` drops its contact shadow on the strength of
+                // this clip.
+                'overflow-hidden border border-border bg-card py-0.5 pl-0.5 pr-2.5',
                 'type-caption whitespace-nowrap text-secondary-foreground',
                 className,
             )}>

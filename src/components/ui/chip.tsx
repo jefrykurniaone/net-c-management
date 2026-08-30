@@ -116,6 +116,13 @@ const VOID_VALUE_CLASS = 'text-muted-foreground';
 /**
  * The value a status applies to — a Session's title, a Payment's amount. Under
  * a void state it is de-emphasised, never struck: the chip carries the state.
+ *
+ * One widening to know about. The retired `MarkedValue` keyed off the Strike
+ * mark, and No-Show was Hollow rather than Strike, so a No-Show value was never
+ * dimmed. No-Show is now void like the other two, so a caller that passes an
+ * `attendanceState` here **would** dim it. Nothing does today — every call site
+ * passes `paymentState` or `sessionState` — but a surface that wants a No-Show
+ * row to read at full strength has to say so rather than assume it.
  */
 function StatusValue({
     state,

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
+    attendanceState,
+    paymentState,
     resolveStatusChip,
+    sessionState,
     CHIP_VARIANTS,
     type ChipLabelKey,
     type ChipVariant,
@@ -20,111 +23,71 @@ const ATTENDANCE_STATUSES = [
     'NO_SHOW',
 ] as const;
 
-/** Every state the product can be in, as the resolver's own input. */
+/**
+ * Every state the product can be in, as the resolver's own input. Built through
+ * the exported constructors, which is also what every call site uses.
+ */
 const EVERY_STATE: readonly DomainState[] = [
-    ...SESSION_STATUSES.map((status): DomainState => ({ domain: 'session', status })),
-    ...PAYMENT_STATUSES.map((status): DomainState => ({ domain: 'payment', status })),
-    ...ATTENDANCE_STATUSES.map(
-        (status): DomainState => ({ domain: 'attendance', status }),
-    ),
+    ...SESSION_STATUSES.map(sessionState),
+    ...PAYMENT_STATUSES.map(paymentState),
+    ...ATTENDANCE_STATUSES.map(attendanceState),
 ];
 
-describe('resolveStatusChip — Payment', () => {
-    it('settles a Confirmed Payment', () => {
-        expect(resolveStatusChip({ domain: 'payment', status: 'CONFIRMED' })).toEqual({
-            variant: 'settled',
-            labelKey: 'confirmed',
-        });
-    });
+/** One expected row: the state, the variant it draws, and the word it says. */
+type Expected = readonly [DomainState, ChipVariant, ChipLabelKey];
 
-    it('holds a Pending Payment as provisional', () => {
-        expect(resolveStatusChip({ domain: 'payment', status: 'PENDING' })).toEqual({
-            variant: 'provisional',
-            labelKey: 'pending',
-        });
-    });
+const PAYMENT_CASES: readonly Expected[] = [
+    [paymentState('CONFIRMED'), 'settled', 'confirmed'],
+    [paymentState('PENDING'), 'provisional', 'pending'],
+    [paymentState('REJECTED'), 'void', 'rejected'],
+];
 
-    it('voids a Rejected Payment', () => {
-        expect(resolveStatusChip({ domain: 'payment', status: 'REJECTED' })).toEqual({
-            variant: 'void',
-            labelKey: 'rejected',
-        });
-    });
-});
+const SESSION_CASES: readonly Expected[] = [
+    [sessionState('SCHEDULED'), 'settled', 'scheduled'],
+    [sessionState('ONGOING'), 'settled', 'ongoing'],
+    [sessionState('COMPLETED'), 'settled', 'completed'],
+    [sessionState('CANCELLED'), 'void', 'cancelled'],
+];
 
-describe('resolveStatusChip — Session', () => {
-    it('voids a cancelled Session', () => {
-        expect(resolveStatusChip({ domain: 'session', status: 'CANCELLED' })).toEqual({
-            variant: 'void',
-            labelKey: 'cancelled',
-        });
-    });
+/**
+ * `ABSENT` is the stored name for Opted Out — the member released their own
+ * Seat. That is a choice, so it is neutral rather than void, and it never
+ * surfaces as "Absent". `NO_SHOW` is the failure beside it.
+ */
+const ATTENDANCE_CASES: readonly Expected[] = [
+    [attendanceState('REGISTERED'), 'settled', 'registered'],
+    [attendanceState('PRESENT'), 'settled', 'present'],
+    [attendanceState('MAYBE'), 'provisional', 'maybe'],
+    [attendanceState('ABSENT'), 'neutral', 'optedOut'],
+    [attendanceState('NO_SHOW'), 'void', 'noShow'],
+];
 
-    it.each(['SCHEDULED', 'ONGOING', 'COMPLETED'] as const)(
-        'settles a posted Session (%s)',
-        (status) => {
-            expect(resolveStatusChip({ domain: 'session', status }).variant).toBe(
-                'settled',
-            );
+describe('resolveStatusChip', () => {
+    it.each([...PAYMENT_CASES, ...SESSION_CASES, ...ATTENDANCE_CASES])(
+        '%o draws a $1 chip labelled $2',
+        (state, variant, labelKey) => {
+            expect(resolveStatusChip(state)).toEqual({ variant, labelKey });
         },
     );
 
     it('keeps a distinct label for every Session status', () => {
-        const labels = SESSION_STATUSES.map(
-            (status) => resolveStatusChip({ domain: 'session', status }).labelKey,
-        );
+        const labels = SESSION_CASES.map(([state]) => resolveStatusChip(state).labelKey);
+
         expect(new Set(labels).size).toBe(labels.length);
-    });
-});
-
-describe('resolveStatusChip — Attendance', () => {
-    it('settles a held Seat', () => {
-        expect(resolveStatusChip({ domain: 'attendance', status: 'REGISTERED' })).toEqual(
-            { variant: 'settled', labelKey: 'registered' },
-        );
-    });
-
-    it('settles a Present Participant', () => {
-        expect(resolveStatusChip({ domain: 'attendance', status: 'PRESENT' })).toEqual({
-            variant: 'settled',
-            labelKey: 'present',
-        });
-    });
-
-    it('holds an unsettled Maybe as provisional', () => {
-        expect(resolveStatusChip({ domain: 'attendance', status: 'MAYBE' })).toEqual({
-            variant: 'provisional',
-            labelKey: 'maybe',
-        });
-    });
-
-    it('leaves a released Seat neutral rather than marking it a failure', () => {
-        // ABSENT is the stored name for Opted Out — the member's own choice.
-        expect(resolveStatusChip({ domain: 'attendance', status: 'ABSENT' })).toEqual({
-            variant: 'neutral',
-            labelKey: 'optedOut',
-        });
-    });
-
-    it('voids a No-Show', () => {
-        // Held a Seat, did not withdraw, did not attend.
-        expect(resolveStatusChip({ domain: 'attendance', status: 'NO_SHOW' })).toEqual({
-            variant: 'void',
-            labelKey: 'noShow',
-        });
     });
 
     it('tells No-Show apart from Opted Out by variant and by label', () => {
-        const optedOut = resolveStatusChip({ domain: 'attendance', status: 'ABSENT' });
-        const noShow = resolveStatusChip({ domain: 'attendance', status: 'NO_SHOW' });
+        const optedOut = resolveStatusChip(attendanceState('ABSENT'));
+        const noShow = resolveStatusChip(attendanceState('NO_SHOW'));
+
         expect(noShow.variant).not.toBe(optedOut.variant);
         expect(noShow.labelKey).not.toBe(optedOut.labelKey);
     });
 
     it('never surfaces the stored ABSENT wording', () => {
-        expect(
-            resolveStatusChip({ domain: 'attendance', status: 'ABSENT' }).labelKey,
-        ).not.toMatch(/absent/i);
+        expect(resolveStatusChip(attendanceState('ABSENT')).labelKey).not.toMatch(
+            /absent/i,
+        );
     });
 });
 
@@ -152,8 +115,8 @@ describe('the chip vocabulary', () => {
 
     /**
      * Cancelled, Rejected and No-Show are all void, so the label is the only
-     * thing telling them apart — which is The Label Rule doing the work the six
-     * mark forms used to do with their shapes.
+     * thing telling them apart — The Label Rule doing the work the six mark
+     * forms used to do with their shapes.
      */
     it('gives every void state its own label', () => {
         const voidLabels = EVERY_STATE.map(resolveStatusChip)

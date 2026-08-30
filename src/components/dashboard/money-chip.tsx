@@ -25,7 +25,9 @@ export function MoneyChip({
     outstanding: number;
     t: Dictionary;
 }>) {
-    if (isMonthlyDue) return duesChip(paymentStatus, t);
+    if (isMonthlyDue) {
+        return duesChip(paymentStatus, t);
+    }
     if (outstanding > 0) {
         return (
             <Link href='/payments'>
@@ -48,6 +50,8 @@ function duesChip(paymentStatus: PaymentStatus | undefined, t: Dictionary) {
         );
     }
     const chip = <StatusChip state={paymentState(paymentStatus)} labels={t.chips} />;
-    if (paymentStatus !== 'REJECTED') return chip;
+    if (paymentStatus !== 'REJECTED') {
+        return chip;
+    }
     return <Link href='/payments/upload'>{chip}</Link>;
 }
