@@ -85,7 +85,7 @@ export function SortableTh({
             data-testid={`sort-th-${column}`}>
             <Link
                 href={href}
-                className='inline-flex items-center gap-1 type-label text-muted-foreground hover:text-foreground transition-colors'>
+                className='inline-flex items-center gap-1 type-label text-muted-foreground hover:text-foreground transition-colors duration-150 motion-reduce:transition-none'>
                 {label}
                 <SortChevron isActive={isActive} dir={currentDir} />
             </Link>

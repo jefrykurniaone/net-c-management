@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { NativeSelect } from '@/components/ui/native-select';
 import type { RawSearchParams } from '@/lib/table-params';
 
 export type { RawSearchParams };
@@ -16,7 +17,7 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
  */
 const NAV_BOX_CLASS =
     'h-7 w-7 shrink-0 flex items-center justify-center rounded-md border border-input bg-background';
-const NAV_ENABLED_CLASS = `${NAV_BOX_CLASS} hover:bg-muted text-muted-foreground transition-colors`;
+const NAV_ENABLED_CLASS = `${NAV_BOX_CLASS} hover:bg-muted text-muted-foreground transition-colors duration-150 motion-reduce:transition-none`;
 const NAV_DISABLED_CLASS = `${NAV_BOX_CLASS} text-muted-foreground/30 cursor-not-allowed`;
 
 interface PageNavButtonProps {
@@ -118,18 +119,18 @@ export function DataTablePagination({
                     <span className='text-xs text-muted-foreground whitespace-nowrap'>
                         {labels.perPage}
                     </span>
-                    <select
+                    <NativeSelect
                         value={pageSize === 'all' ? 'all' : String(pageSize)}
                         onChange={(e) => handleSizeChange(e.target.value)}
                         data-testid='page-size-select'
-                        className='h-7 shrink-0 border border-input rounded-md px-2 text-xs bg-background'>
+                        className='h-7 w-auto shrink-0 px-2 py-0 text-xs'>
                         {PAGE_SIZE_OPTIONS.map((n) => (
                             <option key={n} value={n}>
                                 {n}
                             </option>
                         ))}
                         <option value='all'>{labels.showAll}</option>
-                    </select>
+                    </NativeSelect>
                 </div>
                 {pageSize !== 'all' && (
                     <div className='flex items-center gap-1.5'>

@@ -287,7 +287,11 @@ export default async function PaymentsPage({
         />
 
         {historyPayments.length === 0 ? (
-          <EmptyState icon={CreditCard} title={t.payments.noPayments} />
+          <EmptyState
+            icon={CreditCard}
+            chipLabel={t.common.empty}
+            title={t.payments.noPayments}
+          />
         ) : (
           <PaymentHistoryList
             payments={historyPayments}

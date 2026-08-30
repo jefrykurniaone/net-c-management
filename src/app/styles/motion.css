@@ -1,0 +1,32 @@
+/* ─────────────────────────────────────────────────────────────
+   Rally — the motion layer (#151).
+
+   Hover and focus transitions on interactive elements, 150-200ms, per
+   DESIGN.md's Motion section. One utility, `.transition-rally`, so a call
+   site reaches for a token rather than inventing a duration; the duration
+   itself lives in `--duration-rally` for the same reason `--radius` lives in
+   the colour layer rather than at each call site.
+
+   No entrance or scroll animation lives here — the spec is explicit that
+   there is none, and this file only ever grows hover/focus utilities.
+   ───────────────────────────────────────────────────────────── */
+
+@theme inline {
+  /* 175ms sits in the middle of the spec's 150-200ms band. */
+  --duration-rally: 175ms;
+}
+
+.transition-rally {
+  transition-property: color, background-color, border-color, box-shadow, transform;
+  transition-timing-function: ease-out;
+  transition-duration: var(--duration-rally);
+}
+
+/* Collapses every Rally transition to zero rather than removing the
+   `transition-property` list, so a reduced-motion user still gets the end
+   state instantly and never a partial, half-eased frame. */
+@media (prefers-reduced-motion: reduce) {
+  .transition-rally {
+    transition-duration: 0ms;
+  }
+}
