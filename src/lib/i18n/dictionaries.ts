@@ -288,6 +288,17 @@ const en = {
          */
         duesChangeNotice: '{activity} Dues change to {amount} from {month}',
     },
+    /**
+     * Shared chart infrastructure (#169). Every admin/member chart ticket
+     * (#170-#172) appends its own title, caption and series labels at the
+     * end of this block — never reorders or reformats what is already here.
+     */
+    insights: {
+        emptyChip: 'Empty',
+        emptyMessage: 'No data for this period yet.',
+        valuesToggle: 'View chart values as text',
+        valuesListLabel: 'Chart values',
+    },
     sessions: {
         title: 'Sessions',
         subtitle: '',
@@ -1408,6 +1419,12 @@ const id: typeof en = {
         viewAll: 'Lihat semua sesi →',
         feePerPerson: '/orang',
         duesChangeNotice: 'Iuran {activity} berubah menjadi {amount} mulai {month}',
+    },
+    insights: {
+        emptyChip: 'Kosong',
+        emptyMessage: 'Belum ada data untuk periode ini.',
+        valuesToggle: 'Lihat nilai grafik sebagai teks',
+        valuesListLabel: 'Nilai grafik',
     },
     sessions: {
         title: 'Sesi',
