@@ -5,6 +5,7 @@ import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import {
     getPublicCommunityName,
+    getPublicCopy,
     getPublicIdentity,
     getPublicLandingData,
 } from '@/lib/public-landing';
@@ -20,9 +21,10 @@ import { LandingFooter } from '@/components/landing/landing-footer';
 // clubs: there is one community per deployment.
 //
 // Two bands and a footer. The painted hero carries the pitch and the one loud
-// action; the enamel band below carries the community's real Activities, which
-// is the page's only per-community substance, because the copy is generic by
-// decision and identity arrives as data. The page is short on purpose — a page
+// action; the enamel band below carries the community's real Activities. The
+// pitch used to be generic by decision; #153 reopened that, so an Admin who
+// writes a headline and a subline in Settings replaces it, and one who writes
+// nothing still gets a page that reads. The page is short on purpose — a page
 // that scrolls with nothing to say is worse than one that stops.
 //
 // Everything it reads comes through `src/lib/public-landing.ts`, the sole
@@ -69,10 +71,11 @@ export default async function LandingPage() {
     // locale-resolved and that resolution may not happen inside a cache scope.
     // On a cache hit this render touches Prisma zero times.
     const locale = await getLocale();
-    const [session, identity, landing] = await Promise.all([
+    const [session, identity, landing, copy] = await Promise.all([
         auth(),
         getPublicIdentity(locale),
         getPublicLandingData(),
+        getPublicCopy(locale),
     ]);
     const t = getDictionary(locale);
 
@@ -93,7 +96,17 @@ export default async function LandingPage() {
                 communityName={identity.communityName}
                 logoUrl={identity.logoUrl}
             />
-            <HeroBand t={t} communityName={identity.communityName} />
+            {/* The hero's two lines are the Admin's own words when Settings
+                carries them and the dictionary's when it does not (#153). The
+                about paragraph and the feature cards `copy` also resolves have
+                no band to render into yet — #154 builds those — so this page
+                deliberately reads two of the four fields and no more. */}
+            <HeroBand
+                t={t}
+                communityName={identity.communityName}
+                headline={copy.heroHeadline}
+                subline={copy.heroSubline}
+            />
             <main className='flex-1'>
                 <BoardBand t={t} rows={rows} />
             </main>
