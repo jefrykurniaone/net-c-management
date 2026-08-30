@@ -5,18 +5,18 @@ import { DEFAULT_LOCALE, getDictionary } from '@/lib/i18n/dictionaries';
 import { getPublicCommunityName } from '@/lib/public-landing';
 
 /**
- * The link-preview card: the community name as a wordmark on painted board, and
- * nothing else (ticket 12 decision 5).
+ * The link-preview card: the community name as a wordmark on the dark ground,
+ * and nothing else (ticket 12 decision 5).
  *
  * Why generated rather than static or absent. `PRODUCT.md:94` bars screenshots,
  * photos and any real-world evidence; `:90` bars sport iconography; `:86` says
  * no brand, wordmark or logo exists. A static image under those three is a
  * neutral rectangle that says nothing, and no image at all leaves the person who
  * was sent a WhatsApp link with a bare card as the only thing they see before
- * deciding to tap. The name on board is the one asset that is *true* for every
- * deployment, and ticket 01 had already fixed the composition: Board Ground,
- * Chalk Ink lettering, the community name as the wordmark, no mark ever scaled
- * up to stand in for one.
+ * deciding to tap. The name is the one asset that is *true* for every
+ * deployment, and the composition was fixed by ticket 01 and kept by Rally:
+ * the dark ground, off-white lettering, the community name as the wordmark,
+ * nothing else ever scaled up to stand in for one.
  *
  * It sits at the **root** segment, so every route without its own card inherits
  * it — the auth pages, `/onboarding`, `/s/[id]`, and the authenticated pages
@@ -48,22 +48,27 @@ export const contentType = 'image/png';
  * is static and because a crawler sends no `NEXT_LOCALE` cookie anyway, so `en`
  * is what every scraper reads (ticket 12, F2). It describes the composition
  * rather than naming the community, since the name is runtime configuration and
- * this string is resolved once; DESIGN.md:309's metaphor ban is why the material
- * is named by its colour and not as a board.
+ * this string is resolved once; DESIGN.md's rule that design vocabulary stays
+ * out of user-facing copy is why the ground is named by its colour.
  */
 export const alt = getDictionary(DEFAULT_LOCALE).landing.meta.ogAlt;
 
-/** Board Ground and Chalk Ink, the painted material's own pair (`DESIGN.md`). */
-const BOARD_GROUND = '#1B2621';
-const CHALK_INK = '#E7ECE9';
+/**
+ * Black Green and the off-white ink it carries — the dark theme's own ground
+ * and foreground (`DESIGN.md`, Colours). Hardcoded rather than tokenised
+ * because `ImageResponse` renders outside the document and reaches no CSS
+ * variable; these two are brand, not layout, so they move with the palette.
+ */
+const BLACK_GREEN = '#0E1F17';
+const OFF_WHITE_INK = '#F1EEE5';
 
 /** The card's content measure: 1200 less an 80px gutter on each side. */
 const CONTENT_WIDTH = size.width - 160;
 
 /**
- * The Mark role's tracking, which is what makes the name read as stencilled
- * furniture rather than as a shouted slab — the two are different devices and
- * The Tracked-Caps-Are-Structural Rule does not let them merge.
+ * The wordmark's tracking. Tracked *out* caps read as a name; the Display
+ * role's condensed caps are drawn *in* and read as a headline. Two devices
+ * that happen to share capitals, and the card wants the first.
  */
 const MARK_TRACKING_EM = 0.14;
 
@@ -115,14 +120,14 @@ export default async function Image() {
                     // every other guarantee clips instead of bleeding.
                     overflow: 'hidden',
                     padding: 80,
-                    backgroundColor: BOARD_GROUND,
+                    backgroundColor: BLACK_GREEN,
                     fontFamily: 'Archivo',
                 }}>
                 <div
                     style={{
                         display: 'flex',
                         maxWidth: CONTENT_WIDTH,
-                        color: CHALK_INK,
+                        color: OFF_WHITE_INK,
                         fontSize,
                         fontWeight: 900,
                         lineHeight: 1.05,
