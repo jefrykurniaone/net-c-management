@@ -1,7 +1,21 @@
 import 'server-only';
 import nodemailer, { type Transporter } from 'nodemailer';
+import { formatSendFailure } from './send-error';
 
 let _transporter: Transporter | null = null;
+
+// Verified against installed nodemailer 7.0.13 (node_modules/nodemailer/lib/smtp-connection/index.js):
+// each option is read as `this.options.<name> || <DEFAULT>`, so an explicit value here always wins
+// over the library default. The Gmail well-known preset (lib/well-known/services.json) only sets
+// host/port/secure, so it never overrides these.
+/** How long to wait for the TCP connection to establish before failing (ms). */
+const CONNECTION_TIMEOUT_MS = 15_000;
+/** How long to wait for the SMTP greeting after connecting before failing (ms). */
+const GREETING_TIMEOUT_MS = 10_000;
+/** How long a connected socket may sit idle before it is torn down as stalled (ms). */
+const SOCKET_TIMEOUT_MS = 30_000;
+/** How long to wait for the DNS lookup of the SMTP host before failing (ms). */
+const DNS_TIMEOUT_MS = 10_000;
 
 /** Whether the Gmail SMTP credentials are present. Senders should no-op when false. */
 export function isEmailConfigured(): boolean {
@@ -18,6 +32,10 @@ function getTransporter(): Transporter {
         _transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: { user, pass },
+            connectionTimeout: CONNECTION_TIMEOUT_MS,
+            greetingTimeout: GREETING_TIMEOUT_MS,
+            socketTimeout: SOCKET_TIMEOUT_MS,
+            dnsTimeout: DNS_TIMEOUT_MS,
         });
     }
     return _transporter;
@@ -45,10 +63,15 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     // Gmail rewrites the From to the authenticated account; use it as sender
     // with the community name as the display label.
     const from = `"${input.communityName}" <${process.env.GMAIL_USER}>`;
-    await transporter.sendMail({
-        from,
-        to: input.to,
-        subject: input.subject,
-        html: input.html,
-    });
+    const startedAt = Date.now();
+    try {
+        await transporter.sendMail({
+            from,
+            to: input.to,
+            subject: input.subject,
+            html: input.html,
+        });
+    } catch (error) {
+        throw formatSendFailure(error, Date.now() - startedAt);
+    }
 }
