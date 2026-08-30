@@ -11,13 +11,23 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { LocaleProvider } from '@/components/providers/locale-provider';
 import { Analytics } from '@vercel/analytics/next';
 
-// One lettering system, as a real board has: a grotesque with signage
-// bones that holds at 900 for the community mark and stays quiet at 400
-// in a dense admin table.
+// One family, loaded as a variable font on both of its axes: weight
+// 100–900 and width 62–125. The width axis is what gives Rally a
+// condensed heavy display face (the Display role sets `wdth` 66) and a
+// neutral grotesque for everything else out of a single download,
+// instead of a second family — see `src/app/styles/type-roles.css`.
+//
+// `axes` is only accepted when the weight is variable: `next/font`
+// rejects it outright against a static weight list
+// (`validate-google-font-function-call.js`, "Axes can only be defined
+// for variable fonts when the weight property is nonexistent or set to
+// `variable`"), which is why the five static weights this used to
+// request are gone. The variable file covers all of them and more.
 const archivo = Archivo({
     variable: '--font-archivo',
     subsets: ['latin'],
-    weight: ['400', '600', '700', '800', '900'],
+    weight: 'variable',
+    axes: ['wdth'],
 });
 
 // This runs on every request to *every* route, which is why it reads the

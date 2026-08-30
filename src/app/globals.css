@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* The two board materials and the eight typographic roles. Split out so
+/* The Rally colour layer and the eight typographic roles. Split out so
    this file stays the token map and the base layer, both under the
    300-line cap in CLAUDE.md. */
 @import "./styles/board-materials.css";
@@ -67,30 +67,26 @@
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
 
-  /* Papan Jadwal board roles — the material itself, named. */
-  --color-board: var(--board);
-  --color-tile: var(--tile);
-  --color-rule: var(--rule);
-  --color-wash-ink: var(--wash-ink);
-  --color-wash-tape: var(--wash-tape);
-  --color-wash-strike: var(--wash-strike);
+  /* Two steps and a pill: 8px on controls, 12px on surfaces, and
+     `rounded-full` for chips and avatars. Every Tailwind alias resolves
+     to one of the two, so a call site cannot invent a third radius — a
+     third step is a change to this ladder, not a class name. `rounded`
+     with no suffix takes `--radius` from the colour layer. */
+  --radius-xs: 8px;
+  --radius-sm: 8px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 12px;
+  --radius-3xl: 12px;
+  --radius-4xl: 12px;
 
-  /* Square. A stamped tile edge, never a rounded card. */
-  --radius-sm: var(--radius);
-  --radius-md: var(--radius);
-  --radius-lg: var(--radius);
-  --radius-xl: var(--radius);
-  --radius-2xl: var(--radius);
-  --radius-3xl: var(--radius);
-  --radius-4xl: var(--radius);
-  --radius-rail: 3px;
-
-  /* Spacing rhythm: hairline / cell / block / bay, then two steps that exist
-     only for air *between* full-bleed bands on the public route and never
-     appear inside a cell. They continue the scale's own doubling rather than
-     inventing numbers, and below 768px they collapse one place — 112 → 56,
-     56 → 28 — landing back exactly on `bay`, so mobile inherits board density
-     and no new number enters the scale. */
+  /* Spacing rhythm: hairline / cell / block / bay, then two steps that
+     exist only for air *between* full-bleed bands on the public route
+     and never appear inside a cell. They continue the scale's own
+     doubling rather than inventing numbers, and below 768px they
+     collapse one place — 112 → 56, 56 → 28 — landing back exactly on
+     `bay`, so no new number enters the scale on a phone. */
   --spacing-hair: 2px;
   --spacing-cell: 10px;
   --spacing-block: 16px;
@@ -98,9 +94,46 @@
   --spacing-band: 56px;
   --spacing-band-lead: 112px;
 
-  /* Depth is a tile on a board: its own edge plus a contact shadow. */
-  --shadow-tile: 0 1px 0 var(--rule), 0 2px 3px -1px rgb(21 30 27 / 0.14);
-  --shadow-tile-pressed: inset 0 1px 2px rgb(21 30 27 / 0.18);
+  /* Depth is a card lifted off the ground on a soft, low, offset shadow
+     — two layers, a tight contact and a wide diffusion. Pressed takes
+     `shadow-none`: there is no third token, because a control that is
+     being pressed is not lifted. The tints are per-theme in the colour
+     layer, so the same token reads on an off-white ground and on Black
+     Green. */
+  --shadow-lift: 0 1px 2px -1px var(--shadow-tint-weak),
+    0 6px 16px -6px var(--shadow-tint);
+  --shadow-lift-hover: 0 2px 4px -1px var(--shadow-tint-weak),
+    0 12px 26px -8px var(--shadow-tint-strong);
+
+  /* ── Retired Papan Jadwal names ───────────────────────────────
+     Roughly sixty files still name these. Each resolves to its nearest
+     Rally value here, at the token level rather than at the call site,
+     because the retired colours are consumed through four different
+     utility prefixes — `bg-`, `border-`, `divide-`, `ring-offset-` —
+     and one alias covers every one of them. #174 removes this block and
+     migrates the call sites with it. Nothing new may consume a name in
+     it. The shadow aliases restate `--shadow-lift` rather than
+     referencing it, because a theme key referencing a sibling theme key
+     is not a substitution Tailwind is documented to make. */
+  --color-board: var(--background); /* alias — removed by #174 */
+  --color-tile: var(--card); /* alias — removed by #174 */
+  --color-rule: var(--border); /* alias — removed by #174 */
+  --color-wash-ink: var(--success-soft); /* alias — removed by #174 */
+  --color-wash-tape: var(--warning-soft); /* alias — removed by #174 */
+  --color-wash-strike: var(--destructive-soft); /* alias — removed by #174 */
+  /* alias — removed by #174 */
+  --shadow-tile: 0 1px 2px -1px var(--shadow-tint-weak),
+    0 6px 16px -6px var(--shadow-tint);
+  --shadow-tile-pressed: 0 0 0 0 transparent; /* alias — removed by #174 */
+}
+
+/* `rounded` with no suffix is the one radius Tailwind hardcodes — it emits
+   `border-radius: 0.25rem` and reads no theme key, so overriding `--radius`
+   does not reach it and two call sites were quietly rendering a third radius
+   the scale does not have. Redefining the utility is what closes the ladder;
+   without it the rule above is a claim rather than a guarantee. */
+@utility rounded {
+  border-radius: var(--radius);
 }
 
 @layer base {
@@ -113,17 +146,17 @@
   html {
     @apply font-sans;
   }
-  /* The One Hand Rule. Tailwind's preflight hands code/pre a monospace
-     stack; a real board is lettered by one hand, so they inherit. */
+  /* One family across the system. Tailwind's preflight hands code/pre a
+     monospace stack; Rally condenses and weights one variable font
+     rather than downloading a second, so they inherit. */
   code,
   kbd,
   samp,
   pre {
     font-family: inherit;
   }
-  /* The Tracked-Caps-Are-Structural Rule: column heads are the board's own
-     furniture, so a table head takes the Label role from the token layer
-     rather than each table restating a size. */
+  /* Column heads take the Label role from the token layer rather than
+     each table restating a size. */
   th {
     @apply type-label text-muted-foreground text-left;
   }

@@ -1,172 +1,207 @@
 /* ─────────────────────────────────────────────────────────────
-   Papan Jadwal — enamel board under hall lighting.
-   Near-neutral enamel, graphite ink, one blue-leaning court green
-   as the identity. Mark colours are bound to marks and nothing else.
+   Rally — the colour layer, both themes.
+
+   Roles (DESIGN.md, Colours). Every value below is one of these or a
+   measured derivative of one, and every pair a surface can produce is
+   asserted in `src/lib/__tests__/design-tokens.test.ts`, which parses
+   *this file* — so a nudged token fails on a number, not an opinion.
+
+     Black Green  #0E1F17   dark ground; ink on light grounds; ink on Lime
+                            and on PBP Green
+     Lime         #D8F25E   brand surface — highlight, active navigation
+     PBP Green    #3ED27E   the primary action ground. Carries Black Green
+                            and nothing else: off-white on it is 1.69:1 and
+                            white 1.96:1, both banned
+     White        #FFFFFF   card and popover faces (light)
+     Shells       #FBF8F1 cream · #F0E9DB beige · #8B7E68 taupe
+                            grounds, dividers, input edges
+     Purple       #6C4CF0   the reference value — charts and decoration.
+                            Darkened to #4B31B8 for running text and focus
+                            on light grounds, lifted to #B7A4F7 on dark
+     Orange       #E8701A   the reference value — charts and decoration.
+                            #8A4708 as ink on light, #F2A24A on dark
+     Dark Red     #9E2B25   void and failed. #F08078 on dark
+
+   Colour no longer carries meaning on its own: a chip's label is the
+   channel, colour reinforces it. Both themes are computed as pairs.
    ───────────────────────────────────────────────────────────── */
 :root {
-  --board: #E8EBEA;
-  --tile: #F7F9F8;
-  /* The Visible Rule Rule: ≥3:1 against the cell it borders. DESIGN.md's
-     #7F8B87 measures 3.34:1 on tile but only 2.94:1 on the ground, and
-     outline controls sit on the ground. Darkened until it clears every
-     enamel surface (3.72:1 tile, 3.28:1 ground, 3.56:1 on the lightest
-     wash). */
-  --rule: #77837F;
-  --wash-ink: #E4F0EA;
-  --wash-tape: #FBF3E2;
-  --wash-strike: #FAECEA;
+  --background: #F0E9DB;
+  --foreground: #0E1F17;
+  --card: #FFFFFF;
+  --card-foreground: #0E1F17;
+  --popover: #FFFFFF;
+  --popover-foreground: #0E1F17;
 
-  --background: #E8EBEA;
-  --foreground: #151E1B;
-  --card: #F7F9F8;
-  --card-foreground: #151E1B;
-  --popover: #F7F9F8;
-  --popover-foreground: #151E1B;
+  /* Purple is the "go somewhere" colour — links, focus, selected state —
+     and it is read as text far more often than it is filled, so the bare
+     token is the darkened ink (8.64:1 on card) and the reference value is
+     kept for charts. PBP Green is the "do something" colour and lives on
+     `-solid`, where a fill is what the token is for. */
+  --primary: #4B31B8;
+  --primary-foreground: #FFFFFF;
+  --primary-solid: #3ED27E;
+  --primary-solid-foreground: #0E1F17;
+  --primary-soft: #E9E3FB;
+  --primary-soft-border: #4B31B8;
 
-  --primary: #17614A;
-  --primary-foreground: #F7F9F8;
-  --primary-solid: #17614A;
-  --primary-solid-foreground: #F7F9F8;
-  --primary-soft: #E4F0EA;
-  --primary-soft-border: #17614A;
+  /* Settled and confirmed. PBP Green cannot be read as text on an
+     off-white ground (1.96:1), so the ink step is the same green taken
+     down to 6.56:1 on card; the bright value stays the action's. */
+  --success: #136B3F;
+  --success-foreground: #FFFFFF;
+  --success-soft: #DDF2E4;
+  --success-soft-border: #136B3F;
+  --success-soft-foreground: #136B3F;
 
-  /* The Ink mark. Settled and true — the same court green as the
-     identity, because The One Green Rule permits exactly one. */
-  --success: #17614A;
-  --success-foreground: #F7F9F8;
-  --success-soft: #E4F0EA;
-  --success-soft-border: #17614A;
-  --success-soft-foreground: #17614A;
+  /* Provisional and held. */
+  --warning: #8A4708;
+  --warning-foreground: #FFFFFF;
+  --warning-solid: #8A4708;
+  --warning-solid-foreground: #FFFFFF;
+  --warning-soft: #FAEBD6;
+  --warning-soft-border: #8A4708;
+  --warning-soft-foreground: #8A4708;
 
-  /* The Tape mark. Provisional and held. */
-  --warning: #8A5A0B;
-  --warning-foreground: #F7F9F8;
-  --warning-solid: #8A5A0B;
-  --warning-solid-foreground: #F7F9F8;
-  --warning-soft: #FBF3E2;
-  --warning-soft-border: #8A5A0B;
-  --warning-soft-foreground: #8A5A0B;
+  /* Void or failed. */
+  --destructive: #9E2B25;
+  --destructive-foreground: #FFFFFF;
+  --destructive-solid: #9E2B25;
+  --destructive-solid-foreground: #FFFFFF;
+  --destructive-soft: #F8E3E1;
+  --destructive-soft-border: #9E2B25;
 
-  /* The Strike mark. Void or failed. */
-  --destructive: #A62F26;
-  --destructive-foreground: #F7F9F8;
-  --destructive-solid: #A62F26;
-  --destructive-solid-foreground: #F7F9F8;
-  --destructive-soft: #FAECEA;
-  --destructive-soft-border: #A62F26;
+  --secondary: #F0E9DB;
+  --secondary-foreground: #3F5147;
+  --muted: #F0E9DB;
+  --muted-foreground: #4A5C52;
+  --subtle-foreground: #55675D;
+  /* Lime is the highlight surface: the active navigation item, a selected
+     option, a focused menu row. It is a *hue* step against the beige
+     ground rather than a lightness one (1.04:1), so a caller that needs
+     the state identifiable without colour draws the rule with it — taupe
+     clears 3.18:1 on Lime — or sets the weight, as the navigation does. */
+  --accent: #D8F25E;
+  --accent-foreground: #0E1F17;
 
-  --secondary: #E8EBEA;
-  --secondary-foreground: #54615B;
-  --muted: #E8EBEA;
-  --muted-foreground: #54615B;
-  --subtle-foreground: #66726D;
-  --accent: #E4F0EA;
-  --accent-foreground: #17614A;
+  /* Taupe is the third Shells step and it is dark on purpose: one value
+     serves input edges, dividers and the 1px lattice a few surfaces still
+     draw, and the darkest thing it has to clear 3:1 against is Lime. At
+     #8B7E68 the worst case on any light surface is 3.18:1. */
+  --border: #8B7E68;
+  --input: #8B7E68;
+  --ring: #4B31B8;
 
-  --border: #77837F;
-  --input: #77837F;
-  --ring: #17614A;
+  --chart-1: #3ED27E;
+  --chart-2: #6C4CF0;
+  --chart-3: #E8701A;
+  --chart-4: #9E2B25;
+  --chart-5: #0E1F17;
 
-  --chart-1: #17614A;
-  --chart-2: #8A5A0B;
-  --chart-3: #A62F26;
-  --chart-4: #151E1B;
-  --chart-5: #77837F;
+  /* 8px controls. Surfaces take 12px through `--radius-xl` and up; see
+     the radius ladder in `globals.css`. */
+  --radius: 8px;
 
-  --radius: 2px;
+  /* Cards float on a soft offset shadow rather than a hard edge, so the
+     tint is the ink colour at low alpha, not a neutral black. */
+  --shadow-tint-weak: rgb(14 31 23 / 0.07);
+  --shadow-tint: rgb(14 31 23 / 0.13);
+  --shadow-tint-strong: rgb(14 31 23 / 0.18);
 
-  --sidebar: #F7F9F8;
-  --sidebar-foreground: #151E1B;
-  --sidebar-primary: #17614A;
-  --sidebar-primary-foreground: #F7F9F8;
-  --sidebar-accent: #E4F0EA;
-  --sidebar-accent-foreground: #17614A;
-  --sidebar-border: #77837F;
-  --sidebar-ring: #17614A;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #0E1F17;
+  --sidebar-primary: #3ED27E;
+  --sidebar-primary-foreground: #0E1F17;
+  --sidebar-accent: #D8F25E;
+  --sidebar-accent-foreground: #0E1F17;
+  --sidebar-border: #8B7E68;
+  --sidebar-ring: #4B31B8;
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Papan Jadwal — the painted dark-green board.
-   A second real material, not an inversion. Ground and identity are
-   separated on lightness *and* chroma, because both are green-family.
+   Rally — the dark theme. A real Black Green ground, not a dimmed
+   light theme: card faces step *up* from the ground, washes are
+   darkened and their inks lifted until every pair clears AA.
+
+   `.dark` also names the material the public hero band forces
+   regardless of the visitor's theme, so every value here has to hold
+   inside a light-themed page as well as a dark-themed one.
    ───────────────────────────────────────────────────────────── */
 .dark {
-  --board: #1B2621;
-  --tile: #243029;
-  /* DESIGN.md's Board Rule #6E7D76 clears tile (3.41:1) and ground
-     (3.87:1) but only reaches 2.86:1 on the Ink wash, which is the
-     lightest cell a rule ever borders on this material — and since
-     `* { border-border }` every bordered wash cell inherits it. Lifted
-     until it clears the worst case (3.37:1 on Ink wash, 3.74:1 tile,
-     4.25:1 ground), still well below Chalk Secondary so it reads as a
-     drawn rule and not as lettering. */
-  --rule: #7A8981;
-  --wash-ink: #1E3A2E;
-  --wash-tape: #3A2E14;
-  --wash-strike: #3A211E;
+  --background: #0E1F17;
+  --foreground: #F1EEE5;
+  --card: #182C22;
+  --card-foreground: #F1EEE5;
+  --popover: #182C22;
+  --popover-foreground: #F1EEE5;
 
-  --background: #1B2621;
-  --foreground: #E7ECE9;
-  --card: #243029;
-  --card-foreground: #E7ECE9;
-  --popover: #243029;
-  --popover-foreground: #E7ECE9;
+  --primary: #B7A4F7;
+  --primary-foreground: #0E1F17;
+  /* The action is the same green in both themes — it is the one thing on
+     a page that should not change when the light does — and it carries
+     Black Green in both. */
+  --primary-solid: #3ED27E;
+  --primary-solid-foreground: #0E1F17;
+  --primary-soft: #241E48;
+  --primary-soft-border: #B7A4F7;
 
-  --primary: #4FBF8E;
-  --primary-foreground: #1B2621;
-  --primary-solid: #4FBF8E;
-  --primary-solid-foreground: #1B2621;
-  --primary-soft: #1E3A2E;
-  --primary-soft-border: #4FBF8E;
+  /* On a dark ground PBP Green reads as text at 8.74:1, so the ink step
+     and the bright value are the same colour here. */
+  --success: #3ED27E;
+  --success-foreground: #0E1F17;
+  --success-soft: #12331F;
+  --success-soft-border: #3ED27E;
+  --success-soft-foreground: #3ED27E;
 
-  --success: #4FBF8E;
-  --success-foreground: #1B2621;
-  --success-soft: #1E3A2E;
-  --success-soft-border: #4FBF8E;
-  --success-soft-foreground: #4FBF8E;
+  --warning: #F2A24A;
+  --warning-foreground: #2A1B06;
+  --warning-solid: #F2A24A;
+  --warning-solid-foreground: #2A1B06;
+  --warning-soft: #38290F;
+  --warning-soft-border: #F2A24A;
+  --warning-soft-foreground: #F2A24A;
 
-  --warning: #DFA83E;
-  --warning-foreground: #2A2109;
-  --warning-solid: #DFA83E;
-  --warning-solid-foreground: #2A2109;
-  --warning-soft: #3A2E14;
-  --warning-soft-border: #DFA83E;
-  --warning-soft-foreground: #DFA83E;
+  --destructive: #F08078;
+  --destructive-foreground: #2A1412;
+  --destructive-solid: #F08078;
+  --destructive-solid-foreground: #2A1412;
+  --destructive-soft: #3A1D1A;
+  --destructive-soft-border: #F08078;
 
-  --destructive: #EE7B72;
-  --destructive-foreground: #2A1513;
-  --destructive-solid: #EE7B72;
-  --destructive-solid-foreground: #2A1513;
-  --destructive-soft: #3A211E;
-  --destructive-soft-border: #EE7B72;
+  --secondary: #182C22;
+  --secondary-foreground: #B3C1B6;
+  --muted: #1E3529;
+  --muted-foreground: #B3C1B6;
+  --subtle-foreground: #9EAEA2;
+  /* Lime is the ink here, not the ground. A lime *fill* in the dark theme
+     would strand `text-primary` — lifted purple on Lime is 1.4:1 — and
+     every menu row and navigation item that pairs the two would fail, so
+     the accent inverts into a deep olive carrying Lime at 10.06:1. */
+  --accent: #27381C;
+  --accent-foreground: #D8F25E;
 
-  --secondary: #1B2621;
-  --secondary-foreground: #9AA6A0;
-  --muted: #1B2621;
-  --muted-foreground: #9AA6A0;
-  /* DESIGN.md's Chalk Quiet #8A968F measures 4.47:1 on board tile, just
-     short of 4.5. Lightened until it clears on both board surfaces
-     (4.70:1 tile, 5.35:1 ground) while staying below Chalk Secondary. */
-  --subtle-foreground: #8E9A93;
-  --accent: #1E3A2E;
-  --accent-foreground: #4FBF8E;
+  --border: #7B8C80;
+  --input: #7B8C80;
+  --ring: #B7A4F7;
 
-  --border: #7A8981;
-  --input: #7A8981;
-  --ring: #4FBF8E;
+  --chart-1: #3ED27E;
+  --chart-2: #B7A4F7;
+  --chart-3: #F2A24A;
+  --chart-4: #F08078;
+  --chart-5: #D8F25E;
 
-  --chart-1: #4FBF8E;
-  --chart-2: #DFA83E;
-  --chart-3: #EE7B72;
-  --chart-4: #E7ECE9;
-  --chart-5: #9AA6A0;
+  /* A tinted shadow disappears on a dark ground; these are neutral and
+     deeper so a card still reads as lifted. */
+  --shadow-tint-weak: rgb(0 0 0 / 0.32);
+  --shadow-tint: rgb(0 0 0 / 0.48);
+  --shadow-tint-strong: rgb(0 0 0 / 0.60);
 
-  --sidebar: #243029;
-  --sidebar-foreground: #E7ECE9;
-  --sidebar-primary: #4FBF8E;
-  --sidebar-primary-foreground: #1B2621;
-  --sidebar-accent: #1E3A2E;
-  --sidebar-accent-foreground: #4FBF8E;
-  --sidebar-border: #7A8981;
-  --sidebar-ring: #4FBF8E;
+  --sidebar: #182C22;
+  --sidebar-foreground: #F1EEE5;
+  --sidebar-primary: #3ED27E;
+  --sidebar-primary-foreground: #0E1F17;
+  --sidebar-accent: #27381C;
+  --sidebar-accent-foreground: #D8F25E;
+  --sidebar-border: #7B8C80;
+  --sidebar-ring: #B7A4F7;
 }

@@ -1,57 +1,54 @@
 ---
-name: Papan Jadwal
-description: A sports-community app built as the court schedule board its members already read standing up.
+name: Rally
+description: A sports-community app in the register of a contemporary club platform — deep green and lime, bright green actions, warm off-white grounds, rounded cards on soft shadows, condensed heavy uppercase headlines.
 colors:
-  enamel-ground: "#E8EBEA"
-  enamel-tile: "#F7F9F8"
-  graphite-ink: "#151E1B"
-  ruled-line: "#7F8B87"
-  secondary-ink: "#54615B"
-  quiet-ink: "#66726D"
-  court-green: "#17614A"
-  court-green-wash: "#E4F0EA"
-  tape-ochre: "#8A5A0B"
-  tape-ochre-wash: "#FBF3E2"
-  struck-red: "#A62F26"
-  struck-red-wash: "#FAECEA"
-  board-ground: "#1B2621"
-  board-tile: "#243029"
-  board-rule: "#6E7D76"
-  chalk-ink: "#E7ECE9"
-  chalk-secondary: "#9AA6A0"
-  chalk-quiet: "#8A968F"
-  court-green-lit: "#4FBF8E"
-  tape-ochre-lit: "#DFA83E"
-  struck-red-lit: "#EE7B72"
-  court-green-wash-board: "#1E3A2E"
-  tape-ochre-wash-board: "#3A2E14"
-  struck-red-wash-board: "#3A211E"
+  black-green: "#0E1F17"
+  lime: "#D8F25E"
+  pbp-green: "#3ED27E"
+  white: "#FFFFFF"
+  shell-cream: "#FBF8F1"
+  shell-beige: "#F0E9DB"
+  shell-taupe: "#8B7E68"
+  purple: "#6C4CF0"
+  purple-ink: "#4B31B8"
+  purple-lit: "#B7A4F7"
+  orange: "#E8701A"
+  orange-ink: "#8A4708"
+  orange-lit: "#F2A24A"
+  dark-red: "#9E2B25"
+  dark-red-lit: "#F08078"
+  green-ink: "#136B3F"
+  off-white: "#F1EEE5"
+  ground-lift: "#182C22"
+  olive-deep: "#27381C"
+  ink-supporting: "#3F5147"
+  ink-muted: "#4A5C52"
+  ink-quiet: "#55675D"
+  ink-supporting-lit: "#B3C1B6"
+  ink-quiet-lit: "#9EAEA2"
+  rule-lit: "#7B8C80"
 typography:
-  mark:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "clamp(1.125rem, 2.4vw, 1.5rem)"
-    fontWeight: 900
-    lineHeight: 1
-    letterSpacing: "0.14em"
-  hero:
-    fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "clamp(2.25rem, 8vw, 5rem)"
-    fontWeight: 900
-    lineHeight: 0.95
-    letterSpacing: "-0.03em"
-    textTransform: "uppercase"
-    textWrap: "balance"
   display:
     fontFamily: "Archivo, system-ui, sans-serif"
-    fontSize: "clamp(1.75rem, 5vw, 3rem)"
-    fontWeight: 800
-    lineHeight: 1.02
-    letterSpacing: "-0.02em"
+    fontSize: "clamp(2rem, 4.6vw, 3.5rem)"
+    fontStretch: "66%"
+    fontWeight: 900
+    lineHeight: 0.94
+    letterSpacing: "-0.01em"
+    textTransform: "uppercase"
+    textWrap: "balance"
+  statement:
+    fontFamily: "Archivo, system-ui, sans-serif"
+    fontSize: "clamp(1.25rem, 2.6vw, 1.875rem)"
+    fontStretch: "normal"
+    fontWeight: 600
+    lineHeight: 1.28
+    letterSpacing: "-0.015em"
   title:
     fontFamily: "Archivo, system-ui, sans-serif"
     fontSize: "1.0625rem"
     fontWeight: 700
-    lineHeight: 1.25
+    lineHeight: 1.3
     letterSpacing: "-0.01em"
   body:
     fontFamily: "Archivo, system-ui, sans-serif"
@@ -71,6 +68,7 @@ typography:
     fontWeight: 700
     lineHeight: 1.1
     letterSpacing: "0.1em"
+    textTransform: "uppercase"
   figure:
     fontFamily: "Archivo, system-ui, sans-serif"
     fontSize: "1.0625rem"
@@ -84,8 +82,13 @@ typography:
     lineHeight: 1
     fontFeature: "tnum"
 rounded:
-  tile: "2px"
-  rail: "3px"
+  control: "8px"
+  surface: "12px"
+  pill: "9999px"
+shadow:
+  lift: "0 1px 2px -1px {tint-weak}, 0 6px 16px -6px {tint}"
+  lift-hover: "0 2px 4px -1px {tint-weak}, 0 12px 26px -8px {tint-strong}"
+  pressed: "none"
 spacing:
   hair: "2px"
   cell: "10px"
@@ -95,329 +98,431 @@ spacing:
   band-lead: "112px"
 components:
   action-primary:
-    backgroundColor: "{colors.court-green}"
-    textColor: "{colors.enamel-tile}"
-    rounded: "{rounded.tile}"
-    padding: "12px 20px"
+    backgroundColor: "{colors.pbp-green}"
+    textColor: "{colors.black-green}"
+    rounded: "{rounded.control}"
+    shadow: "{shadow.lift}"
     typography: "{typography.label}"
-  action-primary-hover:
-    backgroundColor: "{colors.graphite-ink}"
-    textColor: "{colors.enamel-tile}"
-  cell:
-    backgroundColor: "{colors.enamel-tile}"
-    textColor: "{colors.graphite-ink}"
-    rounded: "{rounded.tile}"
-    padding: "{spacing.cell}"
-  mark-ink:
-    backgroundColor: "{colors.court-green-wash}"
-    textColor: "{colors.court-green}"
-    rounded: "{rounded.tile}"
-    padding: "3px 8px"
-    typography: "{typography.label}"
-  mark-tape:
-    backgroundColor: "{colors.tape-ochre-wash}"
-    textColor: "{colors.tape-ochre}"
-    rounded: "{rounded.tile}"
-    padding: "3px 8px"
-    typography: "{typography.label}"
-  mark-strike:
-    backgroundColor: "{colors.struck-red-wash}"
-    textColor: "{colors.struck-red}"
-    rounded: "{rounded.tile}"
-    padding: "3px 8px"
-    typography: "{typography.label}"
-  mark-erased:
-    backgroundColor: "{colors.enamel-ground}"
-    textColor: "{colors.secondary-ink}"
-    rounded: "{rounded.tile}"
-    padding: "3px 8px"
-    typography: "{typography.label}"
+  action-secondary:
+    backgroundColor: "{colors.black-green}"
+    textColor: "{colors.off-white}"
+    rounded: "{rounded.control}"
+  card:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.black-green}"
+    rounded: "{rounded.surface}"
+    shadow: "{shadow.lift}"
+    padding: "{spacing.block}"
 ---
 
-<!-- SEED: established with the user before implementation; re-run /impeccable document once there's code to capture the actual tokens and components. -->
+<!-- First draft for the Rally system (#148). Chips (#149), primitives (#150)
+     and patterns (#151) fill in the sections marked as theirs; #152 finalises
+     this document against what actually shipped. -->
 
-# Design System: Papan Jadwal
+# Design System: Rally
 
 ## Overview
 
-**Creative North Star: "The Court Schedule Board"**
+**Creative North Star: "The club, not the noticeboard"**
 
-Every member of this community has stood in front of a `papan jadwal` at a GOR — the ruled board by the entrance where courts run across and time slots run down, where names go onto magnetic tiles, and where a mark against your name is what makes your money real. It is read standing up, in bad light, in two seconds, by people who are about to play. This system is that board: not a board-themed dashboard, but the object itself rebuilt as software.
+This is the software a serious club would put its name on. Not a utility that
+happens to track attendance, and not a hall notice board rebuilt in pixels —
+a product that looks like it belongs to the sport, and that a member is willing
+to hand their money to. The register is a contemporary club platform: a
+near-black green and a pale lime as the brand pair, one bright green that means
+*act*, warm off-white grounds, cards that lift off those grounds on soft
+shadows, and headlines set in condensed heavy uppercase.
 
-The board decides everything downstream. Structure is a ruled lattice, not a scatter of floating cards — cells share their rules with their neighbours, because that is what a grid physically is. Corners are square (2px, the barely-there round of a stamped tile edge). Depth is a tile resting on a board: a hard bottom edge for thickness plus a tight contact shadow, never an ambient glow. Colour arrives at cell scale, filling whole cells, never as a tint sprinkled over a neutral ground.
+The system's own name is **Rally**. It names the design, not the product, and
+it never appears in anything a member reads.
 
-The single most consequential decision here is that **state is carried by a mark, not by a hue.** A settled thing is written in ink; a provisional thing is held with tape; a void thing is struck through; a withdrawn thing is erased; an expected thing that never happened is left hollow. Colour reinforces each mark but never carries it alone. This came out of a real constraint — court green is the identity, so green could not also mean "paid" — and it turned out to be the better system regardless, because this app shows state on nearly every surface and WCAG 1.4.1 does not accept colour as the only channel.
+Three decisions carry the rest.
 
-Dark mode is not an inversion. The world ships two real objects: an **enamel board** under hall lighting and a **painted dark-green board** of the kind on every Indonesian school and hall wall. Because both grounds are green-family, identity and ground are separated on **two** axes — the dark ground is desaturated far past the identity green, not merely darkened — and every pair is computed rather than eyeballed.
+**Meaning travels in words; colour reinforces it.** Every state this product
+shows — paid, pending, rejected, registered, present, opted out, no-show,
+cancelled, full — is a chip with a written label. Colour makes a queue of forty
+rows scannable before the labels are read, and it is never the only channel, so
+WCAG 1.4.1 is satisfied by the label rather than by a shape a reader has to
+learn.
 
-**Key Characteristics:**
+**Two grounds, one action.** The light theme is off-white grounds carrying
+Black Green ink; the dark theme is a real Black Green ground carrying off-white
+ink, with card faces stepping *up* from it. What does not change between them
+is the action: PBP Green with Black Green on it, in both. A member should not
+have to re-find the button when the light changes.
 
-- Ruled lattice as page structure; shared borders, not gaps
-- Square tiles (2px); no soft corners anywhere
-- One lettering system, signage weights, tabular figures
-- Six state marks, distinguished by form before colour
-- Two real board materials, not one palette and its inversion
-- Rules are ink you can see, at 3:1 minimum against their cell
+**Every pair is computed, not eyeballed.** The palette was sampled for its
+register and then adjusted by measurement until every text pair cleared 4.5:1
+and every rule, ring and edge cleared 3:1, in both themes. The numbers live in
+`src/lib/theme-contrast.ts` as data, and `src/lib/__tests__/design-tokens.test.ts`
+reads them back out of the stylesheet, so a nudged token fails on a number.
 
-## Colors
+**Key characteristics:**
 
-Near-neutral enamel and graphite ink, with a single blue-leaning court green as the identity and three mark colours that never carry state on their own.
+- Warm off-white grounds; white cards that lift on a soft offset shadow
+- Two radii and a pill: 8px controls, 12px surfaces, `rounded-full` chips and avatars
+- One bright green that means *act*, in both themes
+- Lime as the highlight surface; purple as the "go somewhere" colour
+- One variable family carrying a condensed display face and a neutral text face
+- Status is a labelled chip, never a shape and never a hue alone
+- Tabular figures on every time, count, capacity and amount
 
-### Primary
+## Colours
 
-- **Court Green** (`#17614A`): the blue-leaning green of a badminton mat. The identity, and the colour of every act of commitment — claim a Seat, submit Proof, Confirm a Payment. On the painted board it lifts to **Court Green Lit** (`#4FBF8E`) so it stays the brightest intent against a dark green-family ground (6.00:1 on board tile; white on `#17614A` is 7.42:1, and the tile ink the action actually pairs with is 6.98:1). Re-measured against the shipped tokens in TESTING.md `TC-DS-002`, which corrects the prototype's 5.9:1.
+### Roles
 
-  *Known risk, accepted deliberately:* this green sits closer to the `#0F766E` teal it replaces than the alternatives did. Checked in the `prototype/board-palette` prototype, which renders the same board under both greens: the swap alone is a **small** perceived change — visible in a filled nav tile and in the Ink wash, not enough to read as a new product on its own. What carries the redesign is the structure (lattice, visible rules, square corners, marks, one lettering system), which reads as a different product under *either* green. The identity colour is therefore not load-bearing, which is a reason to keep it rather than escalate it.
+| Role | Value | What it is for |
+|---|---|---|
+| **Black Green** | `#0E1F17` | The dark theme's ground; primary ink on light grounds; the ink on Lime and on PBP Green |
+| **Lime** | `#D8F25E` | The highlight surface — active navigation, a selected option, a focused menu row. Ink on the dark theme's olive accent |
+| **PBP Green** | `#3ED27E` | The primary action's ground, in both themes. Carries Black Green and nothing else |
+| **White** | `#FFFFFF` | Card and popover faces in the light theme |
+| **Shells — cream** | `#FBF8F1` | The lightest warm neutral; raised surfaces |
+| **Shells — beige** | `#F0E9DB` | The light theme's page ground, and its muted and secondary fills |
+| **Shells — taupe** | `#8B7E68` | Rules, dividers and input edges in the light theme |
+| **Purple** | `#6C4CF0` | The reference value. Charts and decoration; fills that carry white at heading sizes |
+| **Purple ink** | `#4B31B8` | Purple darkened for running text: links, focus ring, selected state, on light grounds |
+| **Purple lit** | `#B7A4F7` | The same role on the dark ground |
+| **Orange** | `#E8701A` | The reference value. Charts and decoration |
+| **Orange ink** | `#8A4708` / `#F2A24A` | Provisional — pending payment, a seat held on unverified money. Ink step per theme |
+| **Dark Red** | `#9E2B25` / `#F08078` | Void or failed — rejected payment, cancelled session, no-show. Ink step per theme |
 
-### Secondary
+Purple and orange each carry two values on purpose. The reference values are
+what the brand looks like; the ink values are what survives being read at 15px
+on an off-white ground. A role that is both a fill and a piece of running text
+needs two numbers, and pretending otherwise is how a palette ships a link
+nobody can read.
 
-Mark colours. Each is bound to one mark and to nothing else — never navigation, never branding, never emphasis.
+### The banned pairing
 
-- **Tape Ochre** (`#8A5A0B`, lit `#DFA83E`): provisional. A Payment awaiting Confirm; a Seat held on unverified money.
-- **Struck Red** (`#A62F26`, lit `#EE7B72`): void or failed. A Rejected Payment, a cancelled Session, a No-Show.
+**White or off-white on PBP Green.** It measures 1.96:1 and 1.69:1. The action
+carries Black Green at 8.74:1 and the token layer cannot produce the other
+direction — `--primary-solid-foreground` is Black Green in both themes, and
+`design-tokens.test.ts` asserts that the label is the darker of the two. There
+is no size at which a light label on this green becomes acceptable.
 
-### Neutral
+### Measured pairs
 
-- **Enamel Ground** (`#E8EBEA`) / **Enamel Tile** (`#F7F9F8`): the painted board and the tile face on it. Deliberately near-neutral rather than green-tinted, so Court Green is the only green on the surface. Never cream.
-- **Graphite Ink** (`#151E1B`): all primary lettering.
-- **Ruled Line** (`#7F8B87`): the lattice, at 3.4:1 on tile — dark enough to read as drawn ink.
-- **Secondary Ink** (`#54615B`) / **Quiet Ink** (`#66726D`): supporting and de-emphasised lettering; both clear 4.5:1 on tile. Quiet Ink clears tile but **not** ground — it measures **4.17:1** on Enamel Ground, so anything sitting on the ground (the Erased mark) takes Secondary Ink at 5.41:1 instead. Re-measured against the shipped tokens in TESTING.md `TC-DS-001`, which corrects the prototype's 4.20:1; the number moved, the routing rule it justifies did not.
-- **Mark washes on the painted board** (`#1E3A2E` / `#3A2E14` / `#3A211E`): the three mark fills in board material, each carrying its lit mark colour at 5.4:1, 6.2:1, and 5.4:1. Derived in the prototype, not from the enamel washes — an inverted light wash goes muddy against a green ground.
-- **Board Ground** (`#1B2621`) / **Board Tile** (`#243029`) / **Board Rule** (`#6E7D76`) / **Chalk Ink** (`#E7ECE9`): the same four roles in painted board.
+Every pair the shipped surfaces can produce, both themes, with the ratio it
+has to clear. The full table is generated from the committed tokens by
+`src/lib/theme-contrast.ts`; the worst case in each family is below.
 
-### Named Rules
+| Pair | Light | Dark | Floor |
+|---|---|---|---|
+| body ink on the page ground | 14.17 | 14.75 | 4.5 |
+| body ink on a card | 17.11 | 12.73 | 4.5 |
+| supporting ink on the ground | 7.01 | 9.14 | 4.5 |
+| muted ink on a muted fill | 5.90 | 7.03 | 4.5 |
+| quiet ink on the ground | 4.99 | 7.36 | 4.5 |
+| link on a card | 8.64 | 6.80 | 4.5 |
+| link on an accent hover | 6.90 | 5.79 | 4.5 |
+| active navigation label on its fill | 13.68 | 10.06 | 4.5 |
+| **the primary action's label** | **8.74** | **8.74** | 4.5 |
+| settled ink on the ground | 5.43 | 8.74 | 4.5 |
+| provisional chip | 6.00 | 6.73 | 4.5 |
+| void chip | 6.04 | 5.88 | 4.5 |
+| the value beside a void chip | 5.80 | 8.19 | 4.5 |
+| **rule on an accent fill** (worst rule case) | **3.18** | **3.54** | 3 |
+| rule and input edge on a card | 3.98 | 4.15 | 3 |
+| focus ring on the ground | 7.15 | 7.88 | 3 |
 
-**The Cell-Scale Rule.** Colour fills a whole cell or it does not appear. A coloured accent line on an otherwise neutral cell is forbidden — including the `border-left` and `border-top` device this system explicitly replaces.
+Three pairs are measured and published but deliberately not asserted, because
+none of them is a WCAG pairing:
 
-**The Mark-Not-Hue Rule.** No state is ever communicated by colour alone. Every state has a distinct mark form; its colour is reinforcement. Remove all colour and every state must still be readable.
+| Pair | Light | Dark | Why it is not a floor |
+|---|---|---|---|
+| card face on the page ground | 1.21 | 1.16 | A tonal step. The card is identified by `--border` at 3.98:1 and by `--shadow-lift` |
+| action fill on a card | 1.96 | 7.54 | The control is identified by its 8.74:1 label and its shadow. Darkening PBP Green until the *fill* cleared 3:1 on white lands back on the court green this system retired |
+| accent fill on the ground | 1.04 | 1.36 | A hue step, not a lightness one. A caller that needs the state identifiable without colour draws the 3.18:1 rule on it, or sets the weight — which is what the navigation does |
 
-**The One Green Rule.** Court Green is the only green in the system. Nothing else — no success state, no activity livery, no chart series — may be green, or the identity stops meaning anything.
+### Named rules
 
-**The Visible Rule Rule.** Lattice rules hold ≥3:1 against the cell they border, in both board materials. A hairline that disappears is not a rule, and a board without rules is a pile of cards.
+**The Label Rule.** No state is ever communicated by colour alone. Every chip
+carries a written label, in both locales, and the test suite asserts it rather
+than trusting convention. This is what makes it legitimate to have dropped the
+six mark forms.
 
-**The Material-Is-Not-Mode Rule.** The two board materials are objects, not themes. `.dark` in this codebase names the **painted-board material**; the theme toggle is one caller of that class, not its definition — which is already how `board-materials.css` reads, describing materials rather than modes. The public route's hero band is the first surface where the two part: it renders painted board **regardless of the visitor's theme**, because a logged-out stranger has never set a preference and a page whose force depends on a coin flip has no force. Forcing the whole route dark was refused for the opposite reason — it hides a working control and overrides a preference the visitor *did* set. Renaming the class to name the material is correct in principle, touches every surface in the app, and has not been done; until it is, this rule is what makes the overload honest.
+**The Two-Value Rule.** A colour that is both a fill and running text carries
+two values — the reference value and a measured ink step — and the token layer
+names both. `--primary` is the ink, `--primary-solid` is the fill; the same
+split runs through warning and destructive. A call site never picks between
+them: the token it reaches for already is the right one.
+
+**The Measured-Pair Rule.** A pair enters the palette by measurement, not by
+eye, and every pair the product can render is in `AA_PAIRS` with its floor.
+Text clears 4.5:1, a rule or a ring or a state edge clears 3:1, in both themes.
+A pair that cannot clear its floor is not tuned until it looks fine — it is
+either re-coloured or banned, and the ban is written down.
+
+**The One Action Rule.** PBP Green means *do this*, and nothing else is that
+green. It does not become a success state, a chart series or a brand surface,
+because a member who has learned where the button is should not have to unlearn
+it on the next page. Settled-and-confirmed is a green too, but it is the ink
+step (`#136B3F` / `#3ED27E`) inside a chip with a label on it, never a bare
+green fill competing with an action.
+
+**The Theme-Is-Not-An-Inversion Rule.** The dark theme is a Black Green ground
+with card faces one step *lighter*, washes darkened and their inks lifted —
+computed as its own set of pairs, not derived by inverting the light theme.
+`.dark` is also the class the public hero band forces regardless of the
+visitor's theme, so every dark value has to hold inside a light-themed page as
+well: a logged-out stranger has never set a preference, and a page whose force
+depends on a coin flip has no force.
 
 ## Typography
 
-**Display / Body / Label Font:** Archivo (fallback `system-ui, sans-serif`) — *provisional; no build has confirmed it.*
+**One family: Archivo** (fallback `system-ui, sans-serif`), loaded as a
+variable font on both of its axes — weight 100–900 and **width 62–125**. The
+width axis is the whole reason there is no second family: a condensed heavy
+display face and a neutral grotesque come out of one download.
 
-**Character:** One lettering system, as a real board has. A grotesque with signage bones: it holds at 900 for a stencilled community mark and stays quiet at 400 in a dense admin table, and its tabular figures carry the times, counts, capacities, and Rupiah amounts this product is mostly made of.
+Width is set with `font-stretch` *and* `font-variation-settings` on the one
+role that condenses, both to the same 66. `font-stretch` is the property that
+belongs in a stylesheet; the variation setting is the belt to its braces,
+because `font-stretch` only reaches the axis if the `@font-face` Google returns
+carries a range descriptor, and nothing in this repository can assert that it
+does. Both properties inherit, so every other role resets both.
 
 ### Hierarchy
 
-- **Mark** (900, `clamp(1.125rem, 2.4vw, 1.5rem)`, 0.14em tracked caps): the community name — in the board's header rail, and again as the wordmark on the public route. The same size in both; there is no second Mark size, because the name is runtime configuration with no length cap and every step up in size is a step further from surviving one. Weight 900 is shared with **Hero** and with nothing else.
-- **Hero** (900, `clamp(2.25rem, 8vw, 5rem)`, 0.95, `-0.03em`, uppercase, `text-wrap: balance`): the pitch on the public route, and nothing else. The one role scoped to a single route, kept off `(main)` and `(admin)` by an ESLint restriction rather than by convention — utilities are global, so file placement guarantees nothing. It renders larger than Display at every viewport, minimum **1.29×**, at widths ≤450px where both roles sit on their floors; that separation is a **property, not the guard**, and the lint is the guard. `0.95` is legal to crowd only because the role is caps: no descenders, so lines that would collide in sentence case sit clean — this is not licence to tighten sentence-case display type. `text-wrap: balance` belongs to the role, not to the instance: it sets the slabs as a tapering silhouette that funnels into the action beneath, and the budget below was measured with it on.
-- **Display** (800, `clamp(1.75rem, 5vw, 3rem)`, 1.02): page-owning statements on board surfaces. Capped at 3rem — a board is read, not shouted at — and that cap is scoped to boards rather than to the whole system; the public route's shout is **Hero**. Display copy is authored short enough to hold at two lines at the cap. Two lines is Display's budget alone, not a shared law: Hero's is four, because the sizes and the measures differ. What sets the break is the container the type sits in — never a per-instance `line-height`, and never a hardcoded `<br>`, since the two locales break at different words and any manual break is right in one language and wrong in the other.
-- **Title** (700, `1.0625rem`): cell and section headings.
-- **Body** (400, `0.9375rem`, 1.55): prose, at 65–75ch measure.
-- **Caption** (400, `0.8125rem`, 1.45): the dense supporting line inside a cell — time and venue, a note under an action. A board runs tight; this step is structural, not an afterthought.
-- **Label** (700, `0.6875rem`, 0.1em, uppercase): rail labels, column heads, marks.
-- **Figure** (600, `1.0625rem`, `tabular-nums`): every time, count, capacity, and amount.
-- **Figure Lead** (800, `1.375rem`, `tabular-nums`): the day-of-month numeral anchoring a Slot Cell. The one figure that outranks its own cell heading, because on a board you find the date first.
-
-### Named Rules
-
-**The One Hand Rule.** One family across the whole system. No serif, no second sans, and no monospace — figures take `tabular-nums` from the one family instead, because a real board is lettered by one hand.
-
-**The Tracked-Caps-Are-Structural Rule.** Tracked caps mark the board's own furniture: rail labels, column heads, marks. Never an eyebrow above a section. **Tight caps are a different device and this rule does not reach them:** Mark is `0.14em` tracked *out* and reads as stencilled furniture, Hero is `-0.03em` drawn *in* and reads as a shouted slab. Two settings that happen to share capitals. Do not merge them into one rule, and do not read either as licence for the other.
-
-**The Pitch Budget Rule.** The Hero pitch is authored to two independent limits, because two different things break and neither predicts the other: **≤ 48 characters, measured on the Indonesian string**, and **no word longer than 12 characters, in either locale**. Total length drives line count and therefore the fold — 54 characters is the first value that runs to five lines, whatever its longest word. Longest word drives horizontal overflow at *both* ends of the clamp, independent of total length — a sixteen-letter Indonesian compound overruns the desktop measure by a fifth of its width at the cap. Both limits are checked by Vitest against both locales: length needs no judgement, which is why it escapes the false-positive problem that rules out testing whether a string has actually been translated. English is authored second and lands shorter; that is slack, not a target. The budget belongs to this role and **does not extend to page metadata** — a crawler sends no locale cookie, so a title is always read in English and is sized against a search result, not against a hero.
-
-**The Never-Bleed Rule.** The community name is runtime configuration of unknown length, and tracked caps at `0.14em` make it the widest element per character in the system — so it is the **first** thing to fail an unfamiliar name, not the last. Any surface rendering it at Mark carries a shrinkable box and word-breaking, in the header rail and in the hero alike; the Hero pitch carries the same guarantee under the Pitch Budget Rule. The order of preference is fixed: **hold the budget → wrap at spaces → break mid-word → never bleed, and never paint over a control.** A mid-word break in a 900-weight slab is a visible defect, which is the point — the guarantee exists to make a violation degrade instead of breaking the page. An unreachable control is a functional failure where a broken word is a cosmetic one, and a glyph is not clipped by the box that owns it, so measuring element boxes will report no collision while one is on screen.
-
-## Layout
-
-The page is a ruled lattice. Cells sit adjacent and share a single rule between them; structure comes from a 1px `Ruled Line` grid, never from gaps between floating panels. Spacing rhythm is `2 / 10 / 16 / 28 / 56 / 112` — hairline separation inside a tile, `10px` inside a cell, `16px` between cell groups, `28px` between bays, then two steps that exist only for air *between* full-bleed bands and **never appear inside a cell**: `56` and `112`, continuing the scale's own doubling rather than inventing numbers. Below `768px` the two band steps collapse one place — `112 → 56`, `56 → 28` — landing back exactly on `bay`, so mobile inherits board density and no new number enters the scale. More space above a heading than below it — a heading that opens its container already has that space in the container's own top padding.
-
-Containers max at `72rem` for board surfaces and `40rem` for single-task columns (Proof upload, sign-in, an Applicant's waiting page). That `72rem` is a shared gutter, not only a cap: every board surface aligns to the same one, rail and footer included — with exactly one exception, the public route's hero band, whose content is centred rather than gutter-aligned (see *The public band-stack surface*). Board surfaces top-anchor their content below the identity rail. Vertical centring is reserved for interstitials that own the whole viewport. Density is deliberately high: this is a board, and a board is full.
-
-Every day in a displayed range gets a cell, whether or not anything is on it. Skipping empty days turns the board into a short list of cards, which is the arrangement this world exists to refuse.
-
-Responsive: **the board lattice** collapses **by axis, not by flattening**. Wide screens carry the full grid. Below `768px` the board becomes a single-column day rail — each day keeps its rule-bounded row, cells stack inside it, and column heads become the row's tracked-caps label. It must never degrade into an unruled list; losing the rules loses the world. This governs the lattice: a centred single-column band has no axes to collapse and is exempt. Said out loud because the rule otherwise reads as universal and invites someone to give a hero a day rail.
-
-### The public band-stack surface
-
-A third layout category, alongside the board surface and the interstitial. It exists on the public route and nowhere else — not as an unnamed exception to the board surface, because an unnamed exception is copied by the next surface that wants air, and not as an interstitial, because an interstitial owns the viewport with nothing below it while this surface exists to put substance below the fold.
-
-- **A vertical stack of full-bleed bands.** Each band's content is horizontally centred *or* gutter-aligned according to that band's job.
-- **The hero band is full-bleed; its content is centred at `48rem` and top-anchored.** The band itself cannot be capped — a painted-board band floating at `72rem` inside enamel is exactly the floating panel this system refuses. `72rem` is wrong for the *content* too, at roughly 110 characters where prose caps at 65–75, and big type only stacks as slabs against a narrow measure. `48rem` is a **text measure**, the same kind of thing Body's 65–75ch already is, and the measure is what decides where the pitch breaks. The shared left edge is abandoned in this band deliberately and resumes for every band below the seam; this is not the misalignment it resembles, where a narrow column was *accidentally* centred while the rail stayed gutter-aligned — here the centring is the band's own composition and the rail sits across a material seam from it. Note what is *not* changed: the content is top-anchored, so the vertical-centring reservation above stands untouched.
-- **One rule, at the band's top edge only.** The identity rail's bottom rule *is* the hero band's top edge — one rule, not two. The bottom edge, where painted board returns to enamel, carries **no** rule: a material change is a harder boundary than any hairline, and a rule that disappears is not a rule. The top edge keeps its rule even though it is redundant in light mode, because in dark mode rail and band are both painted board and the rail would dissolve into the hero without it. A rule that appears and vanishes by theme is worse than one that is sometimes redundant.
-- **Density is positional, not per-section.** The seam is not "hero airy, bands dense". It is *between bands is air, inside cells is board*: `2 / 10 / 16 / 28` governs the inside of cells everywhere on the page, below the seam included, and `56 / 112` govern only the air between bands — `112` on the hero, `56` on every band below it. The bands below the seam are genuinely dense ruled cells inside generous band padding, which is what makes them look like the product rather than like marketing.
-- **The fold law, which replaces any `min-height`.** No `min-height` and no `100dvh` on a band; its height is content plus band padding, nothing more. Instead: **no band may be sized such that the next band's top edge falls below the fold at a 900px viewport.** That turns "substance below the fold" from an aspiration into a measurement, and hands whoever composes the bands a real budget — the hero spends about two thirds of it. The law is stated in **pixels and stays that way.** It is deliberately *not* restated as a line count: the lines a pitch may run are a consequence of every other element in the hero, so a line number written here would freeze something this rule does not control. Pixels are the law, characters are what an author controls, lines are only the bridge between them.
-- **The route is two bands and a footer.** The painted hero, then one enamel band of the community's real Activities, then the footer. There is no separate schedule band — each Activity is one row carrying both its standing weekly slot and its own next scheduled date, which is also why the Slot Cell does not appear on this surface at all. The page is short on purpose: a page that scrolls with nothing to say is worse than one that stops.
-- **Board register below the seam, not marketing register.** The band head is **Title**, not Display. The seam is the material change and nothing else — painted board and Hero above it, the product at its own density below — and that is the whole answer to a page reading as two websites stapled together. Display heads are an asset when the band has data and a liability when it does not, since they announce a section that then says nothing is posted yet.
-- **The substance band never disappears.** A community with nothing configured renders it as a single **Blank**-marked strip with one line, never as a dropped band: dropping it leaves a generic poster, and Blank means *expected but not yet placed*, which is the honest state of a community that has just been set up. Per row, the same — an Activity with no scheduled session keeps its row and shows Blank where the date goes.
-
-## Elevation & Depth
-
-Tonal, plus one physical device: a **tile on a board**. Cells are flat at rest against the ground's tonal step. Anything that is genuinely a movable tile — an action, a claimed Seat — carries a hard bottom edge for material thickness plus a tight contact shadow. Nothing floats, nothing glows.
-
-### Shadow Vocabulary
-
-- **Tile rest** (`0 1px 0 <rule>, 0 2px 3px -1px rgb(21 30 27 / 0.14)`): a tile lying on the board. The `0 1px 0` is the tile's own edge; the offset blur is its contact shadow.
-- **Tile pressed** (`inset 0 1px 2px rgb(21 30 27 / 0.18)`): a tile pushed into the board on `:active`.
-
-### Named Rules
-
-**The No-Halo Rule.** No zero-offset shadows, no coloured glows, no backdrop blur. Depth is a tile's thickness and the shadow it casts.
-
-## Shapes
-
-Square. `2px` on tiles and cells, `3px` on the header rail — enough to read as a stamped edge, never as a rounded card. Borders are the primary form device: 1px `Ruled Line` around and between cells. No pills except a mark, which is a `2px` hard rectangle. No circles except member avatars — the one genuinely round object on a board, a photo pinned to it.
-
-## Components
-
-*Specified with the user; not yet built. Values here are provisional until a first implementation settles them.*
-
-### The Six Marks
-
-The system's most important component family. Each mark is distinguished by **form first**, colour second, so state survives with colour removed.
-
-| Mark | Form | Colour | Means |
-|---|---|---|---|
-| **Ink** | Filled rectangle, full-weight label | Court Green wash + ink | Settled and true — a Confirmed Payment, a Present Participant |
-| **Tape** | Filled rectangle with a visible torn edge | Tape Ochre wash + ink | Provisional and held — a Pending Payment, a Seat on unverified money |
-| **Strike** | Rectangle whose **own label carries a real line-through**; the value beside it recedes to Secondary Ink and is **not** struck | Struck Red wash + ink | Void — a Rejected Payment, a cancelled Session |
-| **Erased** | Flat, no wash, ground-coloured, label in Secondary Ink | Neutral only | Withdrawn by the member — **Opted Out**. Deliberately colourless: it is a choice, not a failure |
-| **Blank** | Dashed outline, no fill | Rule colour only | Expected but not yet placed — an unposted Session, an empty day |
-| **Hollow** | Dashed outline in Struck Red, no fill | Struck Red edge only | Expected and failed to happen — a **No-Show**. The shape of a tile that should have been filled |
-
-**Blank and Hollow are never interchangeable.** One means nobody has acted yet; the other means someone should have and didn't.
-
-### Actions
-
-- **Shape:** square tile (`2px`), `12px 20px`, Label typography — tracked caps
-- **Primary:** Court Green ground, Enamel Tile text, tile-rest shadow
-- **Primary on painted board:** the polarity inverts — Court Green Lit ground carrying **Board Ground ink, never Chalk Ink.** Ground-on-green and its ink both measure 6.82:1; chalk on lit green measures **1.92:1 and is banned** — worse than the prototype's recorded 2.29:1, re-measured in TESTING.md `TC-DS-005`. This is the one way the public route's action can be got wrong, and the token layer already encodes the correct pairing, so it needs no new token — only not being overridden. The action keeps the square tile at every size: a loud action is a **large** tile, never a rounded pill, whatever it gets called in conversation.
-- **Hover / Focus:** ground darkens to Graphite Ink; `:focus-visible` draws a 2px Court Green ring offset 2px from the tile edge
-- **Active:** tile-pressed inset shadow, no transform
-- **Blank action:** Enamel Tile ground, 1px Ruled Line border, Quiet Ink text — an empty slot waiting to be filled
-- **A disclosure the label defers to is not fine print.** Where an action's label does not state a condition and a sentence beneath it does, that sentence renders at **Body** in Chalk Secondary or Secondary Ink — **never Caption, never the subtle or muted step** — and is tied to the control with `aria-describedby`. A condition disclosed in the fine print is not disclosed, and a screen-reader user who hears only the label has been told exactly the thing the disclosure exists to prevent.
-
-### Cells / Containers
-
-- **Corner:** `2px` · **Background:** Enamel Tile on Enamel Ground · **Border:** 1px Ruled Line, shared with adjacent cells · **Shadow:** none at rest · **Padding:** `10px`, rising to `16px` for a bay
-
-### Inputs / Fields
-
-- **Style:** Enamel Tile ground, 1px Ruled Line, `2px` corner, `10px` padding — a cell you write in
-- **Focus:** border goes Court Green, plus a 2px offset ring
-- **Error:** border and helper text Struck Red; the message names the problem *and* the fix
-- **Read-only:** Enamel Ground fill, so a server-set amount visibly is not yours to edit
-
-### Navigation
-
-Header rail: full-bleed, 1px bottom rule, stencilled community Mark at left, controls at right in tracked caps. **The rail does not wrap.** The mark group shrinks and the controls stay pinned right on one row, at every width — letting it wrap costs 48px of vertical budget on a phone and leaves a ragged gap under the wordmark, and the shrinking mark is why the Never-Bleed Rule exists. The active item is a filled Court Green tile, not an underline. Mobile navigation is a bottom rail of equal cells divided by rules.
-
-### Signature Component: the Slot Cell
-
-The recurring unit of the whole system — one Session on the board. A rule-bounded **row of three columns**, in fixed positions:
-
-1. **when** — the start time as Figure in a fixed 5.5rem leading column, with the end time as Caption beneath it, so times line up down the whole week. A caller with no day band above the row to carry the date puts it in this same column, above the time: the day as Label, the date as Figure Lead. The sessions board leaves it out, because its band says the date once for every row under it.
-2. **what** — the Session title as Title on the first line; then venue and the Activity's livery as Caption on the second, with the unposted sentence or the quota below that. Only one of those two can ever apply.
-3. **standing** — free Seats as `n/max` in Figure, **or** a mark, hard right of the first line, so every mark on the surface lands on one edge.
-
-Measured on the shipped board: the time column, the title column and the standing edge each hold a single value down all eight rows of a week, at 1440px and at 390px alike.
-
-**Livery is a magnet tile bearing the Activity's initial, with no colour.** Not a coloured square, and never an edge stripe. Two reasons, both decided: Court Green is the only green permitted, so a member-configured Activity colour would compete with or dissolve into the identity; and an arbitrary hex can never be trusted to carry legible lettering or to clear contrast on both board materials. An initial in ink solves both.
-
-**The cell is a seam, not a pattern.** `src/components/sessions/slot-cell.tsx` is the only place in the app that draws a Session, and it takes **data, never nodes** — no `children`, no slot props, no ordering prop. A caller that can pass a node can reorder the cell, and a cell that reorders is a board whose two-second read is gone. The dashboard, the sessions board and the session detail header are all callers of it. Only the middle of the cell varies in height; the livery is pinned to the bottom, so nothing below a longer title moves.
-
-**The top-right slot holds exactly one thing.** Free Seats *or* a mark — which is what the "or" above is doing — resolved in a fixed precedence: a cancelled Session (Strike) overrides everything, including the reader's own Seat; the reader's own Seat overrides where the Session is in its life; then Ongoing and Completed; then a Session with no Seats left, which takes a **Blank** mark rather than the figure, because nobody has placed those Seats and nobody now can; then the figure. Opted Out is deliberately absent from that list — the member released that Seat, so the free-Seat figure is the fact they now need. An Admin-recorded No-Show (spec #30, ADR 0001) is **Hollow**'s producer: the reader's own No-Show draws it in the standing column, outranking the seat figure and the lifecycle mark exactly like any other own-Seat state. It is never inferred from a row that is merely missing, or from a Session that ended with rows still Registered.
-
-**Free Seats means free, not taken.** The figure is `free/max`, so a full Session reads `0/16`. Taken-over-max makes "full" a comparison the reader has to perform; free-over-max makes it a zero. The figure carries a spoken form beside it, because `2/16` on its own does not say which number is which.
-
-#### The action is a sibling of the link, never a child of it
-
-Claiming a Seat is the commonest thing a member does, so it happens in the row they are already reading. That collides with the cell as it stood: the whole row was one `<Link>`, and a control inside a link is invalid markup — it is not reliably reachable in the tab order, screen readers announce one thing where there are two, and browsers disagree about which of the two a click activates. A button dropped into the old cell would have been a broken cell.
-
-Three routes were available. **Making the title the only link** and the row a plain container was refused: it throws away the row-wide tap target, which on a phone is the difference between hitting a Session and hitting the 16px of text inside it. **Letting the caller pass the action in** was refused harder — it is `children` by another name, and the cell takes data and never nodes for the reason stated above.
-
-The route taken: **the cell is a ground with two children.** The first is the anchor, covering the three columns exactly as before. The second — rendered only where the caller resolved an action — is an action row beneath it, on the same `grid-cols-[5.5rem_minmax(0,1fr)]` template, so the control starts on the Session column's own left edge and the `when` rail stays a column of times and nothing else. The two are siblings, so nothing is ever nested in the anchor, and both are one grid child of the lattice, so the shared rules are untouched.
-
-What this buys, and what it costs:
-
-- **The three columns never move.** The action is on its own row, so no mark leaves the shared right edge and the standing column's precedence is exactly what it was. A cell with no action renders the arrangement it rendered before there were any actions at all — which is what lets the dashboard and the detail header keep composing the same seam without opting into anything.
-- **The row-wide tap target survives.** Tapping the row still opens the Session; tapping the control still claims the Seat. Two tab stops per cell, in reading order.
-- **The hover tint belongs to the ground, not to the anchor.** Tinting only the anchor would light up the top two-thirds of a cell and leave the action strip behind, which reads as two objects rather than one. Only a cell with something to open takes the tint at all.
-- **The action carries an id and two facts, not a callback.** A cell that accepted a handler would let one surface claim and another cancel from an identical-looking control. Which action applies is resolved once, server-side, by `slotActionFor` — a row cannot work it out, because the answer needs the RSVP window and the seat-holding rule.
-
-**The offer is not the permission.** Both actions call the routes the session page has always called, and the server re-checks status, window and capacity under a row lock before it writes. So the board deciding what to *offer* can, at worst, cost a member one refused tap on a stale row — never a wrong write. That is also why the offer is deliberately narrow: a Session that is not Scheduled, or whose window has closed, gets no control rather than one that always fails.
-
-**Opted Out is said on the Session's own line, not in the standing column.** That column still holds exactly one thing, and for a member who released a Seat the free-Seat figure is the fact they now need — so their withdrawal takes the note position under the venue instead, as an **erased** mark reading *Opted Out* beside a plain sentence. Erased, because a member's own choice is not a failure and must not be drawn as one; and it outranks the quota there, because the reader's own standing matters more to them than the community's floor. The forfeit is stated where the money is known: a member on Dues who releases a Seat is told plainly that Dues cover the month rather than the Session, so nothing comes back.
-
-### The board reads down the page, not across it
-
-**The week is one column of ruled day rows, at every width.** One row per day, top to bottom, each keeping its rule-bounded cell with the day's own tracked-caps label at its head. There are no column heads, no horizontal scrolling, and no board-specific container width: the surface takes the same reading column as the payments history and the profile.
-
-This replaced a seven-column week lattice, and the record of why is below, because the constraints it hit are real and anyone proposing to bring the lattice back should read them first.
-
-The lattice put a whole week on one screen. It paid for that with a column floor of `12.5rem`, a horizontally scrolling rail, and a surface `88rem` wide — wider than this document's own `72rem` board cap — which left the board visibly out of step with the heading, filters and week nav sitting above it in a narrower column. Reading the week downward needs none of that: a day row is as wide as the page, so no mark can collide with a seat figure, nothing scrolls sideways, and there is no second layout to keep in step.
-
-The cell became a row when the board became a list of days: a square tile with the date at its top-left made sense inside a seven-column week, and reads as wasted space and a repeated date inside a day band that already carries one. What did not change is the contract — fixed positions, data and never nodes, no `children` and no ordering prop — and the dashboard and the session detail header still compose the same seam.
-
-#### What the lattice ran into, kept on the record
-
-A seven-column week cannot fit the day, the date and a tracked-caps mark on one line at the container width. The line wraps, and a cell that reflows under pressure breaks the fixed-position promise for **every** cell, not only its own.
-
-**The binding string is not a session status.** The first estimate here assumed the worst case was `DIJADWALKAN` or `BERLANGSUNG` at about 105px. Measured in the browser, the real worst case is the Indonesian **Blank** label `BELUM DIPASANG` at **133.8px** — and Blank is also the *most common* mark on this board, because every standing slot an Admin has not posted yet carries one. Against a stacked day-and-date block of 27.8px and a `10px` cell gap, that is **171.6px** of content in a cell whose inner row had only 156px. At an `11rem` floor the mark overflowed the cell's right edge by about 6px on every unposted day — the promise breaking on the commonest case, not an exotic one.
-
-So the floor is the measurement, not the guess: 171.6px of content plus `10px` of padding on each side needs 191.6px, which is `11.98rem`. The floor is **`12.5rem`** (200px), leaving 8.4px of headroom. Spec #30 has given Hollow its producer; `TIDAK HADIR` (No-Show, 11 glyphs) lands inside that headroom.
-
-Three routes were identified. Two are refused, on the record:
-
-- **Shortening the mark labels.** Mark labels live in one shared dictionary block and resolve through one seam, so the payments history and the admin queue read the same strings. Trimming them to fit one cell degrades every surface to solve a problem none of the others have.
-- **Dropping the tracking inside cells.** It contradicts *The Tracked-Caps-Are-Structural Rule*, which names marks as the board's own furniture; and it would set a mark inside a cell differently from the identical mark everywhere else, which is two mark appearances in one product.
-
-The third route was the one taken while the lattice stood: the columns carried a floor of `12.5rem` and the week scrolled rather than the cells reflowing. It was the only one of the three that held **by construction rather than by fitting today's strings** — Activity names are runtime configuration and mark labels are translated, so any route that buys its margin in pixels is one long string away from wrapping again, silently.
-
-**Reading down the page dissolves the collision rather than paying for it.** A day row is the width of the column, so the mark and the seat figure never compete for the same 200px, whatever an Activity is named and whatever language it is read in. The `12.5rem` floor, the scrolling rail and the `88rem` measure all went with the lattice. What stays worth knowing is the measurement: the widest mark this product sets is `BELUM DIPASANG`, and any future arrangement that puts a mark beside a figure inside a fixed-width cell has to budget 133.8px for it, not the ~105px a session status suggests.
-
-**The container question the lattice forced is closed.** It needed `88rem`, against this document's `72rem` board cap and the member layout's own `42rem` column — three numbers that could not all be right. `src/app/(main)/layout.tsx` no longer imposes any width: it sets the gutter and the mobile-rail clearance, and each surface names the measure its content needs from `src/components/layout/measure.ts`. With the board reading downward there is no board-width measure at all, so the `72rem` cap in this document now governs nothing and no surface contradicts it.
-
-**One arrangement, one DOM.** One grid, `gap-px` over a rule-coloured ground so cells share their rules with their neighbours rather than sitting in gaps, one column at every width. Each day names itself at the head of its own row, so heading order is identical at every viewport and there is no second layout to keep in step. What must not happen is the rules going away: an unruled list of day cards is the arrangement this world exists to refuse, on a phone or a desktop alike.
-
-### The Register
-
-The admin side's counterpart to the Slot Cell, and its seam in the same sense: `src/components/admin/register.tsx` is the only place in the app that draws an admin table. Six hand-rolled tables would drift into six idioms the way two card renderings would, so the surfaces — Payments, Sessions, Members, Applicants, Activities, Settings — compose one component rather than each inventing its own.
-
-A register is a ruled table read at a desk, on a wide screen, by someone deciding about money. One row per thing; shared 1px `Ruled Line` rules between rows and between columns rather than gaps between floating panels; tabular figures down every column of numbers; and a standing column that holds one mark and nothing else, on the register's shared right edge, so every mark on the surface lands on one line. Density is the point: this is desktop work, the inverse of the member side.
-
-**It takes data, never nodes.** A caller passes a `columns` array — each column a `key`, a translated `head`, a `kind`, an optional `sortKey`, and one `render` for the value — and a `rows` array of plain records. There is no `children`, no slot prop, no ordering prop and no per-cell class name. `render` is the one escape, and it is scoped to a **value**: a Proof thumbnail and a Rupiah amount are different kinds of thing and the register cannot know how to draw either. Where the value sits, how it is ruled, and how it collapses are the register's, because a caller that can pass a node can reorder the lattice, and a lattice that reorders is a register whose whole point — the same fact in the same place down forty rows — is gone.
-
-**Five column kinds, and the kind decides the treatment.** `text` reads left at Body. `figure` and `amount` are tabular and sit hard right, `amount` additionally unbreakable, because half an amount is a different number. `standing` holds one mark from the resolver — never a hand-picked mark kind, never a colour chosen at the call site. `actions` holds the row's own controls, on that same right edge. Alignment and type role are derived from the kind and are never passed in, so two registers cannot set the same kind of value two different ways.
-
-**The empty state is a ruled row, not a blank panel.** Nothing to show is still a register: one row spanning the columns, carrying a **Blank** mark — *expected but not yet placed* — and one sentence saying what is missing. A blank area says nothing at all, and on a surface that is empty on most days that is most of what the surface is.
-
-**Sort and pagination are the controls the list pages already use** — `SortableTh` and `DataTablePagination`, composed by the register so no caller reinvents them.
-
-**Below `768px` it collapses by axis, not by flattening.** Each row stays a rule-bounded row and its cells stack inside it, each under the column's own tracked-caps label. It must never become an unruled card list: the stacked-card fallback the admin tables used to share is the arrangement this world exists to refuse, and this component is what replaces it.
-
-**One DOM, two label sources, exactly one live at a time.** At `md` and up the register is a real `<table>` with `<th scope="col">` heads and native header association. Below `md` the table's parts are set to `display: block`, which drops the table role in every browser and takes `scope` association with it. Rather than pretend otherwise, each cell carries its column's label as **real text** immediately before its value: that label is `md:hidden` at full width, where the `<thead>` does the work, and the `<thead>` is `hidden` below it, where the inline label does. Nothing is announced twice, and the DOM order is the reading order at both widths. The alternative — a second `<dl>`-shaped DOM tree for the narrow width — was refused: it duplicates every value in the document, and two trees drift the same way two tables would.
+- **Display** (900, condensed to `wdth` 66, `clamp(2rem, 4.6vw, 3.5rem)`, 0.94,
+  `-0.01em`, uppercase, `text-wrap: balance`): the hero pitch, page titles
+  inside the app, section heads on the public page. **One role, system-wide.**
+  Condensed uppercase is what carries a headline here, which is why the role
+  does not need the 5rem the retired Hero role took to land with the same
+  weight, and why there is no longer a lint rule keeping it off the app.
+  `0.94` is legal to crowd only because the role is caps — no descenders, so
+  lines that would collide in sentence case sit clean. That is not licence to
+  tighten sentence-case display type.
+- **Statement** (600, regular width, `clamp(1.25rem, 2.6vw, 1.875rem)`, 1.28):
+  the large line that is not a headline. Display shouts a name; Statement says
+  a sentence, so it keeps its lower case, its descenders and room to breathe.
+- **Title** (700, `1.0625rem`, 1.3): card and section headings.
+- **Body** (400, `0.9375rem`, 1.55): prose, at a 65–75ch measure.
+- **Caption** (400, `0.8125rem`, 1.45): the dense supporting line inside a card
+  — time and venue, a note under an action.
+- **Label** (700, `0.6875rem`, `0.1em`, uppercase): column heads and chip text.
+- **Figure** (600, `1.0625rem`, `tabular-nums`): every time, count, capacity
+  and amount.
+- **Figure Lead** (800, `1.375rem`, `tabular-nums`): the one figure that
+  outranks its own heading.
+
+### Named rules
+
+**The One Family Rule.** One family across the whole system. No serif, no
+second sans and no monospace — figures take `tabular-nums` from the one family,
+and the display face is the same family at a narrower width. A second download
+is a second voice, and this product does not have two things to say.
+
+**The Figures-Never-Condense Rule.** Figure and Figure Lead reset the width
+axis explicitly, because condensed numerals break tabular alignment and the
+tables are most of this product. Half an amount read as a different number is
+the failure this rule exists to prevent.
+
+**The Pitch Budget Rule.** The public pitch is authored to two independent
+limits, because two different things break and neither predicts the other:
+**≤ 48 characters, measured on the Indonesian string**, and **no word longer
+than 12 characters, in either locale**. Total length drives line count and
+therefore the fold; longest word drives horizontal overflow at both ends of the
+clamp. Both are asserted in `src/lib/__tests__/pitch-budget.test.ts` against
+both locales. Condensing the role only made the budget more conservative, so it
+carries over unchanged. It does **not** extend to page metadata: a crawler
+sends no locale cookie, so a title is always read in English and is sized
+against a search result.
+
+**The Never-Bleed Rule.** The community name is runtime configuration of
+unknown length, so any surface rendering it carries a shrinkable box and
+word-breaking. The order of preference is fixed: **hold the budget → wrap at
+spaces → break mid-word → never bleed, and never paint over a control.** A
+mid-word break in a heavy slab is a visible defect, which is the point — the
+guarantee exists to make a violation degrade instead of breaking the page. An
+unreachable control is a functional failure where a broken word is a cosmetic
+one, and a glyph is not clipped by the box that owns it, so measuring element
+boxes will report no collision while one is on screen.
+
+## Shape and depth
+
+**Two radii and a pill.** `8px` on controls — buttons, inputs, selects,
+checkboxes. `12px` on surfaces — cards, dialogs, sheets. `rounded-full` on
+chips and avatars. Every Tailwind radius alias resolves to one of the two, so a
+call site cannot invent a third: a third step is a change to the ladder in
+`src/app/globals.css`, not a class name somebody picks.
+
+**Depth is a card lifted off the ground**, on a soft, low, offset shadow in two
+layers — a tight contact and a wide diffusion. There are two shadow tokens and
+a `none`:
+
+- **`shadow-lift`** — a card at rest.
+- **`shadow-lift-hover`** — the same card under a pointer, lifted slightly.
+- **pressed** takes `shadow-none`. There is no third token, because a control
+  that is being pressed is not lifted.
+
+The tints are per-theme. In the light theme the shadow is the ink colour at low
+alpha, so it warms rather than greys; on Black Green it is neutral and deeper,
+because a tinted shadow disappears on a dark ground.
+
+**Borders are for controls and dividers, not for cards.** A card is bounded by
+its shadow and its own face. Where a border is drawn — an input, a divider
+inside a card, a selected option — it is `--border`, and it clears 3:1 against
+every surface it can land on, including Lime. One value serves all of them
+deliberately: a hairline that disappears against one of the washes is not a
+boundary, and a control without a boundary fails 1.4.11.
+
+### Named rules
+
+**The No-Glow Rule.** No zero-offset shadows, no coloured glows, no backdrop
+blur, no gradients and no gradient text. Depth is an offset shadow and nothing
+else.
+
+**The Boundary Rule.** Every control and every selected state is identifiable
+without relying on its fill. Either the fill clears 3:1 against what is behind
+it, or the control carries a `--border`, a `--shadow-lift` or a weight change
+that does. Stated because two of Rally's own fills — the Lime highlight and the
+PBP Green action — are hue steps rather than lightness steps, and both would
+otherwise fail a reader who cannot see the hue.
+
+## Chips
+
+*Owned by #149; this section is a placeholder for what that ticket settles.*
+
+One chip component replaces the six marks. Anatomy: a pill, a tinted wash, a
+small filled dot in the chip's colour, and the label in Label type. Five
+variants by semantic, each resolved from a domain state by the existing shared
+resolver so that no call site picks a colour:
+
+| Variant | Colour | Means |
+|---|---|---|
+| **settled** | PBP Green family | Confirmed payment, present participant |
+| **provisional** | Orange | Pending payment, a seat held on unverified money |
+| **void** | Dark Red | Rejected payment, cancelled session, no-show |
+| **neutral** | Shells | Withdrawn, opted out, nothing placed yet |
+| **info** | Purple | Informational |
+
+**The label is mandatory** — see The Label Rule. The de-emphasis behaviour the
+old system carried survives: the value beside a void chip recedes to the muted
+ink rather than being struck through.
+
+## Patterns
+
+*Owned by #151; this section is a placeholder for what that ticket settles.*
+
+Four decorative backgrounds as CSS or inline SVG, each a component with a size
+and a colour resolved from tokens: thin grid lines, concentric rings, diagonal
+dashed lines, a row of thin arrows. They render behind content only, are
+`aria-hidden`, and never carry information. No sport-specific shapes — the
+product must not name a sport, so the reference's ball outlines are rings.
+
+**Motion**, when it arrives: hover and focus transitions on interactive
+elements at 150–200ms, honouring `prefers-reduced-motion`. No entrance or
+scroll animations.
 
 ## Do's and Don'ts
 
-### Do:
+### Do
 
-- **Do** build structure from shared 1px `Ruled Line` borders forming a lattice.
-- **Do** keep every corner at `2px` (`3px` on the header rail).
-- **Do** give every time, count, capacity, and Rupiah amount `tabular-nums`.
-- **Do** give every state a mark whose **form** identifies it, with colour as reinforcement only.
-- **Do** render every day in a displayed range, including empty ones.
-- **Do** treat the painted board as a second real material, with rules still ≥3:1 and identity separated from ground on both lightness and chroma.
-- **Do** collapse the board by axis on mobile, keeping day rows ruled.
-- **Do** use the vocabulary in `CONTEXT.md` in component names and user-facing copy — Session, Seat, Dues, Fee, Payment, Proof, Participant, Opted Out, No-Show.
+- **Do** give every state a chip with a written label, in both locales.
+- **Do** take radius, shadow, colour and type from tokens and shared
+  primitives, so a later surface cannot invent its own card.
+- **Do** keep the action PBP Green with Black Green on it, in both themes.
+- **Do** give every time, count, capacity and Rupiah amount `tabular-nums` at
+  regular width.
+- **Do** compute both themes as their own sets of pairs, and add the pair to
+  `AA_PAIRS` when a surface creates a new one.
+- **Do** give a control or a selected state a boundary that does not depend on
+  seeing its hue.
+- **Do** use the vocabulary in `CONTEXT.md` in component names and user-facing
+  copy — Session, Seat, Dues, Fee, Payment, Proof, Participant, Opted Out,
+  No-Show.
 
-### Don't:
+### Don't
 
-- **Don't** ship same-size icon-plus-heading-plus-text cards as page structure. That is the arrangement this world exists to refuse.
-- **Don't** use gaps between floating panels where a shared rule belongs.
-- **Don't** introduce a second type family, a serif, or a monospace.
-- **Don't** use gradients, gradient text, glass, backdrop blur, or any zero-offset glow.
-- **Don't** use green for anything but the identity — no green success state, no green livery, no green chart series.
-- **Don't** communicate any state by colour alone, and don't let a mark colour carry navigation or branding.
-- **Don't** put a coloured accent line on a neutral cell, in any direction, at any width.
-- **Don't** exceed `3rem` display type **on a board surface**, or track tighter than `-0.04em` anywhere. The public route's Hero role runs to `5rem`; nothing else does, and lint is what keeps it there.
-- **Don't** repeat the painted board anywhere but the public route's hero band. One material change is a statement, two is a pattern, and a pattern stops reading as emphasis — which bars the obvious closing bookend at the page foot.
-- **Don't** put this document's own metaphor — board, tile, rail, lattice — into user-facing copy. It names the design, not the product.
-- **Don't** let the mobile board become an unruled card list.
+- **Don't** put a light label on PBP Green, at any size.
+- **Don't** communicate a state by colour alone, and don't let a call site pick
+  a chip's colour.
+- **Don't** use the action green for anything that is not an action.
+- **Don't** introduce a second type family, a serif or a monospace.
+- **Don't** use gradients, gradient text, glass, backdrop blur or any
+  zero-offset glow.
+- **Don't** set figures, labels or body text at a condensed width.
+- **Don't** invent a third radius or a third shadow at a call site.
+- **Don't** add a consumer of a retired token name — see *Retired rules*.
+- **Don't** put this document's vocabulary — Rally, Display, Shells — into
+  user-facing copy. It names the design, not the product.
+
+## Retired rules
+
+Papan Jadwal was a deliberate system, shipped across two delivery runs and
+internally consistent. It is retired in full, for the reasons in
+[ADR 0003](docs/adr/0003-retire-papan-jadwal-for-rally.md). Its rules are kept
+here with one reason each so that the reasoning survives and nobody re-opens
+the argument in six months. **None of these is in force.**
+
+### Colour
+
+| Retired rule | Why it no longer applies |
+|---|---|
+| **The Cell-Scale Rule** — colour fills a whole cell or it does not appear | Rally's colour arrives as a chip wash, a highlight surface and one action fill on a neutral card. A rule written to ban accent lines on a lattice has no lattice to govern |
+| **The Mark-Not-Hue Rule** — state survives colour removal, carried by form | Replaced by *The Label Rule*. The obligation (WCAG 1.4.1) is unchanged; the channel is a word rather than a shape, which is legible to a reader who has learned nothing |
+| **The One Green Rule** — Court Green is the only green in the system | Rally has two greens on purpose: the action and the settled-state ink. Replaced by *The One Action Rule*, which protects what the old rule actually cared about — that the action means one thing |
+| **The Visible Rule Rule** — lattice rules hold ≥3:1 against the cell they border | The lattice is gone; the 3:1 obligation is not. Restated as *The Boundary Rule*, which covers input edges, dividers and selected states rather than a grid |
+| **The Material-Is-Not-Mode Rule** — `.dark` names a painted-board material, not a mode | Kept in substance, retired in vocabulary: `.dark` still names a ground the public hero forces regardless of preference, but the ground is Black Green rather than a painted object. Restated in *The Theme-Is-Not-An-Inversion Rule* |
+
+### Typography
+
+| Retired rule | Why it no longer applies |
+|---|---|
+| **The One Hand Rule** — one family, because a real board is lettered by one hand | Kept in substance as *The One Family Rule*. The reason changed: Rally has one family because its width axis makes a second unnecessary, not because a board has one hand |
+| **The Tracked-Caps-Are-Structural Rule** — tracked caps mark the board's own furniture | The furniture is gone. Tracked caps are now simply the Label role, used for column heads and chip text; there is no rule left to state |
+| **The Pitch Budget Rule** | **Still in force**, restated above unchanged. Condensing Display only widened the margin, and the Vitest assertions were never about the board |
+| **The Never-Bleed Rule** | **Still in force**, restated above unchanged. It is about a runtime-configured name of unknown length, which no change of design system affects |
+
+### Elevation, shape and layout
+
+| Retired rule | Why it no longer applies |
+|---|---|
+| **The No-Halo Rule** — no zero-offset shadows, no glows, no backdrop blur | Kept as *The No-Glow Rule*. Rally adds offset shadows, which the old rule permitted; what it banned is still banned |
+| **Square corners** — `2px` on tiles and cells, `3px` on the header rail | Directly contradicted by the reference. Replaced by two radii and a pill |
+| **Tile rest / tile pressed shadows** — a hard bottom edge plus a contact shadow | The tile is not the object any more. Replaced by `shadow-lift`, `shadow-lift-hover` and `shadow-none` |
+| **The ruled lattice** — shared 1px borders, never gaps between floating panels | Replaced by card grids on member surfaces and tables inside cards on admin surfaces, per ADR 0003. Cards on soft shadows are exactly what the lattice existed to refuse, and that refusal is what the owner overruled |
+| **Every day in a displayed range gets a cell** | A property of the board, which is gone. What survives is that an empty state is still a state and still says what is missing — restated by the chips' `neutral` variant |
+| **The board reads down the page, not across it** — one column of ruled day rows at every width | Retired with the board. The measurement behind it is worth keeping: the widest label this product sets is the Indonesian *BELUM DIPASANG* at 133.8px, and any future fixed-width cell that puts a label beside a figure has to budget for that, not for the ~105px a session status suggests |
+| **The public band-stack surface** — the fold law, positional density, one rule at the band's top edge, board register below the seam, the substance band never disappears | Retired here and re-decided by the public spec (#143), which owns that route's composition under Rally |
+| **Containers max at `72rem` / `40rem`** | Retired as a document-level cap. Surfaces already name their own measure through `src/components/layout/measure.ts`, and the four surface specs settle the rest |
+
+### Components
+
+| Retired rule | Why it no longer applies |
+|---|---|
+| **The Six Marks** — Ink, Tape, Strike, Erased, Blank, Hollow, distinguished by form first | Replaced by five labelled chip variants (#149). The owner chose colour-plus-label over form; the accessibility obligation moves to the mandatory label, and the test asserts it |
+| **Blank and Hollow are never interchangeable** | The distinction survives in the domain — nobody has acted yet is not the same as somebody should have — but it is now carried by two labels rather than two outlines |
+| **The Slot Cell is a seam, not a pattern** — one component draws every Session, taking data and never nodes | Retired per ADR 0003: each surface composes its own card. The *resolvers* that decide state and available action stay shared, so behaviour still has one source even though drawing does not |
+| **The top-right slot holds exactly one thing** — free Seats or a mark, in a fixed precedence | Retired with the cell. The precedence itself is server-side logic and is unaffected |
+| **Free Seats means free, not taken** — the figure is `free/max` | **Still in force** as a product rule, and it belongs in `CONTEXT.md` rather than here: it is about what a number means, not about how it is drawn |
+| **The action is a sibling of the link, never a child of it** | **Still in force** as an accessibility rule, and it outlives the cell: a control inside a link is invalid markup on any card, in any design system |
+| **Livery is a magnet tile bearing the Activity's initial, with no colour** | Retired. `Activity.icon` returns with a renderer under the admin spec (#145) as a new decision, not a revert |
+| **Opted Out is said on the Session's own line, not in the standing column** | Retired with the cell's fixed columns. That a member's own choice is not drawn as a failure survives as the chips' `neutral` variant |
+| **The offer is not the permission** | **Still in force**, and it is a server rule: the board deciding what to offer can cost a refused tap, never a wrong write, because the routes re-check under a row lock |
+| **The Register takes data, never nodes** — one component draws every admin table, five column kinds decide the treatment | Retired per ADR 0003: admin surfaces compose tables inside cards. The kind-decides-alignment discipline is worth carrying forward and is the admin spec's (#145) to place |
+| **The Register's empty state is a ruled row, not a blank panel** | Restated in Rally's terms: an empty table still renders a row carrying a `neutral` chip and one sentence saying what is missing. A blank area says nothing at all |
+| **One DOM, two label sources, exactly one live at a time** | **Still in force** as an accessibility rule for any responsive table: below `md` the table role is dropped and `scope` goes with it, so each cell carries its column's label as real text. A second DOM tree is still refused |
+
+### Retired token names
+
+These resolve to their nearest Rally value in `src/app/globals.css` so that the
+roughly sixty files still naming them keep rendering. **#174 removes the
+aliases and the last call sites with them. Nothing new may consume one.**
+
+| Retired name | Resolves to |
+|---|---|
+| `bg-board`, `ring-offset-board` | `--background` |
+| `bg-tile` | `--card` |
+| `border-rule`, `divide-rule`, `bg-rule` | `--border` |
+| `bg-wash-ink` | `--success-soft` |
+| `bg-wash-tape` | `--warning-soft` |
+| `bg-wash-strike` | `--destructive-soft` |
+| `shadow-tile` | `--shadow-lift` |
+| `shadow-tile-pressed` | a no-op shadow, i.e. `shadow-none` |
+| `type-hero` | Display |
+| `type-mark` | its own former letterforms, until the public spec gives the wordmark a Rally role |
+
+`--radius-rail` is gone rather than aliased: it had no consumer.
