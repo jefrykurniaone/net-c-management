@@ -231,6 +231,7 @@ export default async function DashboardPage() {
             {myActivities.length === 0 ? (
                 <EmptyState
                     icon={Shapes}
+                    chipLabel={t.common.empty}
                     title={t.activity.noneJoined}
                     action={
                         <Link href='/sessions'>
