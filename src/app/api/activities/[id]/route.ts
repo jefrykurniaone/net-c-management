@@ -10,6 +10,8 @@ import {
     updateActivityWithDuesRate,
     type DuesRateRefusalReason,
 } from '@/lib/dues-rate-writes';
+import { queueDuesChangeEmail } from '@/lib/dues-change-mail';
+import { duesChangeEventOf } from '@/lib/dues-notice';
 import { invalidatePublicLanding } from '@/lib/public-landing';
 import { isAdminRole } from '@/lib/utils';
 import { Prisma } from '@prisma/client';
@@ -111,6 +113,11 @@ export async function PATCH(
         }
         // Name, weekly slot, fees and `isActive` all publish.
         invalidatePublicLanding();
+        // A queued, replaced or withdrawn Dues change is money the members on
+        // Dues will be asked for, so they hear it from the write that made it.
+        // Classified from the outcome the write reported — never from a second
+        // read of the rate rows — and sent after this response.
+        queueDuesChangeEmail(id, duesChangeEventOf(outcome.duesRateChange));
         return NextResponse.json(outcome.activity);
     } catch (err) {
         const answer = activityWriteError(err, t);
