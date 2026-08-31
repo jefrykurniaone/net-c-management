@@ -14,9 +14,17 @@ export const THURSDAY = 4;
 export const FRIDAY = 5;
 export const SATURDAY = 6;
 
+/**
+ * Two Activities carry a livery icon and two carry none, so a reseeded database
+ * shows both render paths side by side on every surface that names an Activity:
+ * the icon tile and the initial-letter fallback. Every value here is a key from
+ * `src/lib/activity-icons.ts` or null — `seed-config.test.ts` asserts it, so a
+ * key retired from the set cannot go on quietly seeding a tile nothing draws.
+ */
 const BADMINTON = {
     slug: 'badminton',
     name: 'Badminton',
+    icon: 'feather',
     duesRate: 75_000,
     sessionFee: 25_000,
     allowsMonthly: true,
@@ -36,6 +44,7 @@ const BADMINTON = {
 const FUTSAL = {
     slug: 'futsal',
     name: 'Futsal',
+    icon: 'goal',
     duesRate: 40_000,
     sessionFee: 15_000,
     allowsMonthly: true,
@@ -55,6 +64,9 @@ const FUTSAL = {
 const BASKET = {
     slug: 'basket',
     name: 'Basket',
+    // Null on purpose: the initial-letter fallback needs a fixture too, and
+    // re-seeding puts an Activity a tester gave an icon back without one.
+    icon: null,
     duesRate: 60_000,
     sessionFee: 20_000,
     allowsMonthly: true,
@@ -74,6 +86,7 @@ const BASKET = {
 const TENNIS = {
     slug: 'tennis',
     name: 'Tennis',
+    icon: null,
     duesRate: 55_000,
     sessionFee: 20_000,
     allowsMonthly: true,

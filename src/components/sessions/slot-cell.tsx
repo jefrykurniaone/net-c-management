@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ActivityTile } from '@/components/activity/activity-badge';
+import { ActivityTile } from '@/components/activity/activity-tile';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { cn } from '@/lib/utils';
 import type { SlotCellAction, SlotCellData } from './slot-cell-data';
@@ -39,8 +39,10 @@ import { TopRight } from './slot-standing';
  * and the row-wide tap target that opens the Session survives. A cell with no
  * action renders exactly the arrangement it did before there were any.
  *
- * Livery is a magnet tile bearing the Activity's initial, with no colour
- * ({@link ActivityTile}) — never a coloured square and never an edge stripe.
+ * Livery is one shared tile ({@link ActivityTile}) — never an edge stripe, and
+ * never a colour this cell picks. This cell hands it the Activity's name and
+ * nothing else, so it draws the initial; the Session surfaces wire the chosen
+ * icon through under #159.
  *
  * Every state here comes from the chip resolver — see `slot-standing.tsx` for
  * the standing column's fixed precedence and `slot-lines.tsx` for the note.
@@ -106,7 +108,10 @@ function SlotCellBody({
                         {data.location}
                     </span>
                     <span className='flex items-center gap-hair'>
-                        <ActivityTile name={data.activityName} />
+                        <ActivityTile
+                            name={data.activityName}
+                            size='inline'
+                        />
                         <span className='type-caption truncate text-muted-foreground'>
                             {data.activityName}
                         </span>

@@ -1,5 +1,5 @@
 import { format, type Locale as DateFnsLocale } from 'date-fns';
-import { ActivityTile } from '@/components/activity/activity-badge';
+import { ActivityTile } from '@/components/activity/activity-tile';
 import { StatusChip, StatusValue } from '@/components/ui/chip';
 import type { RegisterColumn } from '@/components/admin/register-columns';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
@@ -28,7 +28,7 @@ function ActivityName({
 }: Readonly<{ row: MemberActivityRow }>) {
     return (
         <span className='flex items-center gap-cell'>
-            <ActivityTile name={row.activityName} />
+            <ActivityTile name={row.activityName} size='inline' />
             <span className='type-body text-foreground'>
                 {row.activityName}
             </span>

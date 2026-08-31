@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ACTIVITY_ICON_KEYS } from '@/lib/activity-icons';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 const SLUG_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -22,10 +23,25 @@ function activityObjectSchema(t: Dictionary) {
             .min(1, t.validation.activitySlugRequired)
             .max(50)
             .regex(SLUG_REGEX, t.validation.activitySlugFormat),
-        // No `color`: the livery is the Activity's initial on a tile, and the
-        // column is gone. A stale client still posting one has it stripped
-        // here rather than rejected, so a cached bundle keeps working.
+        // No `color`: an admin-chosen hex clears neither contrast nor
+        // legibility on both themes, and the column is gone. A stale client
+        // still posting one has it stripped here rather than rejected, so a
+        // cached bundle keeps working.
         description: z.string().max(1000).optional(),
+        // The Activity's livery: one key from the curated set, or null for the
+        // initial. `.catch` is what makes an unknown key **stripped rather
+        // than refused** — the same courtesy `color` and `monthlyFee` get, and
+        // the reason a client that knows a key this build has retired (or has
+        // not learned yet) still saves the rest of the form.
+        //
+        // The fallback is `undefined`, never `null`, and the difference
+        // matters: `undefined` reaches no column, so a bad key leaves whatever
+        // icon is stored alone, where `null` would silently clear it.
+        icon: z
+            .enum(ACTIVITY_ICON_KEYS)
+            .nullable()
+            .optional()
+            .catch(() => undefined),
         // Explicit-required money fields — a blank submit is a validation error,
         // never a silent 0 (UX-DR14, FR-8). `min(0)` still allows a deliberate 0.
         // The initial Dues Rate: the create path writes this as the Activity's

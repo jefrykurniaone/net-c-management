@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { Plus, Pencil } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary } from '@/lib/i18n/dictionaries';
+import { toActivityIconKey } from '@/lib/activity-icons';
 import { buildDuesRateFieldView } from '@/lib/dues-rate-view';
 import { resolveDuesRate, type DuesRateRow } from '@/lib/dues-rate';
 import { currentPeriod } from '@/lib/billing-period';
@@ -37,6 +38,13 @@ export interface ActivityRow {
     name: string;
     slug: string;
     description: string | null;
+    /**
+     * `Activity.icon` as stored. Widened to `string` on purpose: this mirrors
+     * the column, and the form narrows it through `toActivityIconKey` so a key
+     * the set no longer offers falls back to "no icon" rather than pre-selecting
+     * a tile the grid cannot draw.
+     */
+    icon: string | null;
     /** The Activity's Dues Rate history, which the Dues field resolves through. */
     duesRates: readonly DuesRateRow[];
     sessionFee: number;
@@ -91,6 +99,7 @@ function ActivityFormDialog({
             name: activity?.name ?? '',
             slug: activity?.slug ?? '',
             description: activity?.description ?? '',
+            icon: toActivityIconKey(activity?.icon),
             // Empty (undefined) on create so the admin must enter a fee
             // explicitly — a blank submit is rejected, never a silent 0. On edit
             // it is the Dues Rate: the queued figure when one is queued, so an
