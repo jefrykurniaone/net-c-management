@@ -128,10 +128,16 @@ export function MemberTopBar({ communityName, logoUrl }: ShellProps) {
                             href={href}
                             aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-2 px-3 min-h-11 rounded-sm text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2',
+                                'flex items-center gap-2 px-3 min-h-11 rounded-sm text-sm font-medium transition-rally focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 active
-                                    ? 'bg-primary-solid text-primary-solid-foreground font-semibold focus-visible:ring-primary-solid-foreground'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring',
+                                    ? // Active item: Lime tile, Black Green text — the
+                                      // highlight surface, not the action green (DESIGN.md,
+                                      // The One Action Rule). Lime is a hue step rather than
+                                      // a lightness one against the ground, so the state is
+                                      // also carried by weight, per The Boundary Rule's own
+                                      // note that this navigation draws it that way.
+                                      'bg-accent text-accent-foreground font-semibold'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                             )}>
                             <Icon className='w-4 h-4 shrink-0' aria-hidden='true' />
                             {label}
@@ -149,9 +155,10 @@ export function MemberTopBar({ communityName, logoUrl }: ShellProps) {
 /**
  * Fixed bottom rail — mobile only (< md). A rail of equal cells divided by
  * 1px rules (never floating pills with gaps between them, per the Cell-Scale
- * Rule), full-bleed to both screen edges. The active cell is a filled Court
- * Green identity tile — a filled cell, not colour alone, is what marks it, so
- * the active item survives a reader who cannot see the hue.
+ * Rule), full-bleed to both screen edges. The active cell is a filled Lime
+ * tile carrying Black Green — the highlight surface (DESIGN.md, The One
+ * Action Rule keeps PBP Green for the action alone), never colour by itself:
+ * the fill is also what marks the cell, and the label's weight lifts with it.
  */
 export function MemberBottomNav() {
     const pathname = usePathname();
@@ -162,7 +169,7 @@ export function MemberBottomNav() {
     return (
         <nav
             aria-label={t.nav.mainLabel}
-            className='md:hidden fixed bottom-0 inset-x-0 z-30 flex divide-x divide-rule border-t border-rule bg-tile pb-[max(env(safe-area-inset-bottom),0.375rem)]'>
+            className='md:hidden fixed bottom-0 inset-x-0 z-30 flex divide-x divide-border border-t border-border bg-card pb-[max(env(safe-area-inset-bottom),0.375rem)]'>
             {items.map(({ label, shortLabel, href, icon: Icon }) => {
                 const active = isNavActive(pathname, href);
                 return (
@@ -175,10 +182,10 @@ export function MemberBottomNav() {
                             // a flex item's default `min-width: auto` floors it
                             // at its own min-content, so without this the wider
                             // labels claim more than their share of the rail.
-                            'type-label flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset',
+                            'type-label flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-1.5 transition-rally focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
                             active
-                                ? 'bg-primary-solid text-primary-solid-foreground focus-visible:ring-primary-solid-foreground'
-                                : 'text-secondary-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring',
+                                ? 'bg-accent text-accent-foreground font-semibold'
+                                : 'text-secondary-foreground hover:bg-muted hover:text-foreground',
                         )}>
                         <Icon className='w-5 h-5 shrink-0' aria-hidden='true' />
                         {/* No padding of its own: the cell already carries
