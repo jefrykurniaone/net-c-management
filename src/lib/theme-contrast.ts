@@ -207,6 +207,21 @@ export const AA_PAIRS: readonly ContrastPair[] = [
     uiPair('warning-soft-border', 'warning-soft', 'provisional chip edge'),
     uiPair('destructive-soft-border', 'destructive-soft', 'void chip edge'),
     uiPair('destructive-soft-border', 'card', 'destructive outline button edge'),
+    // The admin shell (#165): forced dark regardless of the page theme (see
+    // `AdminLayout`), so its own ink pairs reuse `background`/`foreground`/etc
+    // — already asserted above for the dark theme — except the active nav
+    // item, which stays Lime-with-Black-Green-text in both themes rather than
+    // inverting the way the page's own `--accent` does.
+    textPair(
+        'sidebar-accent-foreground',
+        'sidebar-accent',
+        'admin sidebar active item on Lime',
+    ),
+    uiPair(
+        'sidebar-accent-border',
+        'sidebar-accent',
+        'admin sidebar active-item boundary on Lime',
+    ),
 ];
 
 /**

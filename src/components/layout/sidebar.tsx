@@ -54,7 +54,16 @@ export function Sidebar({
     const memberViewLink = getMemberViewLink(t);
 
     return (
-        <aside className='flex flex-col h-full w-64 bg-card border-r border-border'>
+        // `dark` is forced here rather than left to the page theme: the shell
+        // renders Black Green in both themes (DESIGN.md, Implementation
+        // Decisions → Shell), so every generic token below (`background`,
+        // `foreground`, `muted-foreground`, `border`, `ring`, `primary`,
+        // `destructive`) resolves to its already-asserted dark-theme pair
+        // regardless of which theme the rest of the page is in. Only the
+        // active nav item diverges from the dark theme's own `--accent`
+        // (which inverts to olive-on-lime) and reaches for the dedicated
+        // `sidebar-accent*` tokens instead — see board-materials.css.
+        <aside className='dark flex flex-col h-full w-64 bg-background text-foreground border-r border-border'>
             {/* Logo */}
             <div className='flex items-center gap-3 px-5 py-5'>
                 <CommunityIdentityMark
@@ -66,7 +75,7 @@ export function Sidebar({
                     <p className='font-semibold text-foreground text-[13px] leading-tight truncate'>
                         {communityName}
                     </p>
-                    <p className='text-[10px] font-medium text-subtle-foreground uppercase tracking-wider'>
+                    <p className='text-[10px] font-medium text-muted-foreground uppercase tracking-wider'>
                         {t.nav.adminLabel}
                     </p>
                 </div>
@@ -84,10 +93,17 @@ export function Sidebar({
                             href={href}
                             aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-2.5 px-3 min-h-10 rounded-sm text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                'flex items-center gap-2.5 px-3 min-h-10 rounded-sm text-[13px] transition-rally focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 active
-                                    ? 'bg-accent text-accent-foreground font-semibold'
-                                    : 'text-secondary-foreground font-medium hover:bg-muted hover:text-foreground',
+                                    ? // Active item: Lime tile, Black Green text (spec). The fill
+                                      // alone clears 13.68:1 against the Black Green shell — nowhere
+                                      // near the 1.04:1 Lime-on-beige trap the page's own accent can
+                                      // hit — but it still carries an explicit boundary
+                                      // (`sidebar-accent-border`, 3.18:1 on Lime) per The Boundary
+                                      // Rule, in case this state is ever reused against a lighter
+                                      // ground.
+                                      'bg-sidebar-accent text-sidebar-accent-foreground font-semibold border border-sidebar-accent-border'
+                                    : 'text-foreground font-medium border border-transparent hover:bg-white/5',
                             )}>
                             <Icon className='w-4 h-4 shrink-0' />
                             <span className='flex-1'>{label}</span>
@@ -105,7 +121,7 @@ export function Sidebar({
             <nav aria-label={t.nav.mainLabel} className='px-3 pb-3'>
                 <Link
                     href={memberViewLink.href}
-                    className='flex items-center gap-2 px-3 min-h-10 rounded-lg text-[13px] font-semibold text-primary hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                    className='flex items-center gap-2 px-3 min-h-10 rounded-lg text-[13px] font-semibold text-primary hover:bg-white/5 transition-rally focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                     <memberViewLink.icon className='w-4 h-4 shrink-0' />
                     {memberViewLink.label}
                 </Link>
@@ -114,13 +130,13 @@ export function Sidebar({
             {/* User block — compact row that opens a menu (profile, language, theme, sign out) */}
             <div className='border-t border-border p-3'>
                 <DropdownMenu>
-                    <DropdownMenuTrigger className='flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                    <DropdownMenuTrigger className='flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-white/5 transition-rally focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                         <Avatar className='w-8 h-8'>
                             <AvatarImage
                                 src={session?.user?.image ?? ''}
                                 alt={session?.user?.name ?? ''}
                             />
-                            <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
+                            <AvatarFallback className='bg-white/10 text-primary text-xs font-semibold'>
                                 {initials}
                             </AvatarFallback>
                         </Avatar>
@@ -128,12 +144,14 @@ export function Sidebar({
                             <p className='text-[13px] font-semibold text-foreground truncate'>
                                 {session?.user?.name ?? '—'}
                             </p>
-                            <p className='text-[11px] text-subtle-foreground truncate'>
+                            <p className='text-[11px] text-muted-foreground truncate'>
                                 {formatRole(session?.user?.role) || t.nav.admin}
                             </p>
                         </div>
-                        <ChevronsUpDown className='w-4 h-4 shrink-0 text-subtle-foreground' />
+                        <ChevronsUpDown className='w-4 h-4 shrink-0 text-muted-foreground' />
                     </DropdownMenuTrigger>
+                    {/* The popover itself is not the shell — it floats on the
+                        page's own theme, like every other menu in the app. */}
                     <DropdownMenuContent
                         side='top'
                         align='start'

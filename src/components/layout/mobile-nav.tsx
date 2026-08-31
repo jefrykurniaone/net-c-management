@@ -76,10 +76,12 @@ function NavLinks({
                             onClick={onClose}
                             aria-current={active ? 'page' : undefined}
                             className={cn(
-                                'flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                'flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium transition-rally focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                                 active
-                                    ? 'bg-accent text-accent-foreground font-semibold'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                    ? // See sidebar.tsx: Lime tile, Black Green text, plus an
+                                      // explicit boundary against a lighter ground.
+                                      'bg-sidebar-accent text-sidebar-accent-foreground font-semibold border border-sidebar-accent-border'
+                                    : 'text-foreground border border-transparent hover:bg-white/5',
                             )}>
                             <Icon className='w-4 h-4 shrink-0' />
                             <span className='flex-1'>{label}</span>
@@ -98,7 +100,7 @@ function NavLinks({
                 <Link
                     href={memberViewLink.href}
                     onClick={onClose}
-                    className='flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                    className='flex items-center gap-3 px-3 min-h-11 rounded-lg text-sm font-medium text-primary hover:bg-white/5 transition-rally focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                     <memberViewLink.icon className='w-4 h-4 shrink-0' />
                     {memberViewLink.label}
                 </Link>
@@ -111,7 +113,7 @@ function NavLinks({
                             src={session?.user?.image ?? ''}
                             alt={session?.user?.name ?? ''}
                         />
-                        <AvatarFallback className='bg-primary/10 text-primary text-xs font-semibold'>
+                        <AvatarFallback className='bg-white/10 text-primary text-xs font-semibold'>
                             {initials}
                         </AvatarFallback>
                     </Avatar>
@@ -126,13 +128,13 @@ function NavLinks({
                 <Link
                     href='/profile'
                     onClick={onClose}
-                    className='flex items-center gap-2 px-2 py-1.5 min-h-11 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                    className='flex items-center gap-2 px-2 py-1.5 min-h-11 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-white/5 transition-rally w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                     <User className='w-4 h-4 shrink-0' />
                     {t.nav.profile}
                 </Link>
                 <button
                     onClick={() => signOut({ callbackUrl: '/' })}
-                    className='flex items-center gap-2 text-sm text-destructive hover:bg-destructive/10 px-1 mt-1 w-full min-h-11 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                    className='flex items-center gap-2 text-sm text-destructive hover:bg-white/5 px-1 mt-1 w-full min-h-11 rounded transition-rally focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                     <LogOut className='w-4 h-4' />
                     {t.nav.signOut}
                 </button>
@@ -164,7 +166,12 @@ export function MobileNav({
                     <span className='sr-only'>{t.nav.navigationMenu}</span>
                 </Button>
             </SheetTrigger>
-            <SheetContent side='left' className='p-0 w-64'>
+            {/* `dark` forces the sheet's own subtree — including its default
+                close button — to the shell's Black Green rendering in both
+                themes, the same way sidebar.tsx forces the desktop rail. */}
+            <SheetContent
+                side='left'
+                className='dark p-0 w-64 bg-background text-foreground border-border'>
                 <SheetTitle className='sr-only'>{t.nav.navigationMenu}</SheetTitle>
                 <NavLinks
                     onClose={() => setOpen(false)}
