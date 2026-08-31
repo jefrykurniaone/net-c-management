@@ -20,6 +20,7 @@ function activity(overrides: Partial<PublicActivity> = {}): PublicActivity {
     return {
         id: 'a1',
         name: 'Badminton',
+        icon: null,
         recurringDay: TUESDAY,
         recurringStartTime: '19:00',
         recurringEndTime: '21:00',
@@ -148,18 +149,26 @@ describe('buildBoardRows', () => {
         expect(row.feeSecondary).toBeNull();
     });
 
-    it('always produces a livery letter, even for an unlettered name', () => {
+    it('carries the stored icon key through untouched, null included', () => {
         const rows = buildBoardRows(
             {
                 activities: [
-                    activity({ name: ' badminton' }),
-                    activity({ id: 'a2', name: '   ' }),
+                    activity({ icon: 'feather' }),
+                    activity({ id: 'a2', icon: null }),
+                    // A key this build no longer offers is not resolved here:
+                    // `ActivityTile` is the one seam that falls back to the
+                    // Activity's initial, so this module must not pre-empt it.
+                    activity({ id: 'a3', icon: 'retired-key' }),
                 ],
                 nextSessions: [],
             },
             en,
         );
 
-        expect(rows.map((row) => row.initial)).toEqual(['B', '·']);
+        expect(rows.map((row) => row.icon)).toEqual([
+            'feather',
+            null,
+            'retired-key',
+        ]);
     });
 });

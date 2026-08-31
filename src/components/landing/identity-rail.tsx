@@ -1,22 +1,27 @@
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { Button } from '@/components/ui/button';
+import { continueWithGoogle } from '@/lib/auth-actions';
+import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { BOARD_GUTTER_CLASS } from './band';
 
 /**
- * The public route's header rail: themed enamel, above the seam, and carrying
- * **no navigation** — there is nowhere for a stranger to go but in, and the
- * join action lives in the hero. Its bottom rule *is* the hero band's top edge;
- * one rule, not two, which is why the band below adds no border of its own.
+ * The public route's header rail: the community's identity, the two controls a
+ * visitor may want before they read anything, and sign-in. It carries **no
+ * navigation** — there is nowhere for a stranger to go but in.
  *
- * The rail stays enamel rather than joining the painted board so the theme
- * toggle it holds has a visible effect where it sits. The rule keeps its ink in
- * both materials, so in dark mode the rail does not dissolve into the hero.
+ * The rail follows the visitor's theme rather than joining the hero's forced
+ * dark ground, so the theme toggle it holds has a visible effect where it sits.
+ * Its bottom rule is the hero band's top edge; one rule, not two, which is why
+ * the band below adds no border of its own, and the rule keeps its ink in both
+ * themes so the rail does not dissolve into the hero in the dark one.
  */
 export function IdentityRail({
     communityName,
     logoUrl,
-}: Readonly<{ communityName: string; logoUrl: string }>) {
+    t,
+}: Readonly<{ communityName: string; logoUrl: string; t: Dictionary }>) {
     return (
         <header className='border-b border-rule bg-background'>
             {/* The rail does not wrap. Letting it wrap pushes the two controls
@@ -53,8 +58,36 @@ export function IdentityRail({
                 <div className='flex shrink-0 items-center gap-hair'>
                     <ThemeToggle compact />
                     <LanguageSwitcher compact />
+                    <RailSignIn t={t} />
                 </div>
             </div>
         </header>
+    );
+}
+
+/**
+ * Sign-in in the rail: the **same** server action the hero's loud tile and the
+ * page's quiet links fire, so there is one door and no second one to drift out
+ * of step with it.
+ *
+ * It is `outline` rather than the default variant on purpose. PBP Green means
+ * *do this* and the page has exactly one of those, in the hero; a second green
+ * tile 40 pixels above it would make a stranger choose between two identical
+ * promises. `outline` is a real control rather than an underlined line of text,
+ * which is what a tap target in a rail needs to be, and it takes its focus
+ * ring and its hover from the primitive.
+ *
+ * `h-8` overrides the `sm` size's own `h-7` so the button stands exactly as
+ * tall as the two controls beside it, which resolve to 32px from their
+ * `py-1.5` and a 16px glyph. It is in the same tailwind-merge group as `h-7`,
+ * so it wins rather than sitting silently beside it.
+ */
+function RailSignIn({ t }: Readonly<{ t: Dictionary }>) {
+    return (
+        <form action={continueWithGoogle}>
+            <Button type='submit' variant='outline' size='sm' className='h-8'>
+                {t.landing.rail.signIn}
+            </Button>
+        </form>
     );
 }

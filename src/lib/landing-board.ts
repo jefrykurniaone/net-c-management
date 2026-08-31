@@ -8,27 +8,34 @@ import type {
 /**
  * The public route's one band of substance, shaped for rendering.
  *
- * There is no separate schedule band: each Activity is **one row** carrying
+ * There is no separate schedule band: each Activity is **one card** carrying
  * both its standing weekly slot and its own next scheduled date. That is what
- * removes the Slot Cell from this surface entirely, and with it the conflict
- * between the Slot Cell's `n/max` Seats figure and the standing rule that no
- * capacity number reaches an unauthenticated page.
+ * keeps the shared Session card off this surface entirely, and with it the
+ * conflict between that card's `n/max` Seats figure and the standing rule that
+ * no capacity number reaches an unauthenticated page.
  *
- * Every string a row shows is built here rather than in the component, so the
+ * Every string a card shows is built here rather than in the component, so the
  * band renders plain text it cannot get wrong and this file is unit-testable
- * without a DOM. Nothing here reads the database — {@link PublicLandingData}
- * arrives from the one module allowed to.
+ * without a DOM. The one exception is the livery, which is a component's
+ * business rather than a string: the raw `Activity.icon` key passes straight
+ * through to {@link ActivityTile}. Nothing here reads the database —
+ * {@link PublicLandingData} arrives from the one module allowed to.
  */
 export interface BoardRow {
     readonly id: string;
     readonly name: string;
-    /** The livery's letter. Livery is a magnet tile bearing the initial, with no colour. */
-    readonly initial: string;
+    /**
+     * `Activity.icon` as stored — a curated key, or `null` for the initial.
+     * Carried through untouched rather than resolved here: {@link ActivityTile}
+     * is the one seam that turns a key into a glyph and a name into a letter,
+     * and a second resolution in this module would be a second answer.
+     */
+    readonly icon: string | null;
     /** The standing arrangement, or `null` where an Activity has no recurring day. */
     readonly weeklySlot: string | null;
     /** `Activity.defaultLocation` only — a per-session location never publishes. */
     readonly location: string;
-    /** `null` means no scheduled session, which the row marks Blank rather than hiding. */
+    /** `null` means no scheduled session, which the card chips neutral rather than hiding. */
     readonly nextDate: string | null;
     readonly feePrimary: string;
     readonly feeSecondary: string | null;
@@ -99,21 +106,13 @@ function nextDateLabel(session: PublicSession, t: Dictionary): string {
 }
 
 /**
- * The first letter, uppercased. A name that is entirely punctuation or
- * whitespace still has to produce a tile, so the fallback is a mark rather
- * than an empty box.
- */
-function initialOf(name: string): string {
-    return name.trim().charAt(0).toUpperCase() || '·';
-}
-
-/**
  * Fuse the Activities with their next sessions into one row each.
  *
  * Every active Activity gets a row, in the order the read returned them —
  * weekly slot, then name. An Activity with no scheduled session keeps its row
- * and is marked Blank where the date goes; the row is never dropped, because a
- * board that hides its empty places is a short list of cards.
+ * and carries the neutral chip where the date goes; the row is never dropped,
+ * because a community that hides the Activity nobody has posted a session for
+ * yet is advertising less than it runs.
  */
 export function buildBoardRows(
     data: PublicLandingData,
@@ -129,7 +128,7 @@ export function buildBoardRows(
         return {
             id: activity.id,
             name: activity.name,
-            initial: initialOf(activity.name),
+            icon: activity.icon,
             weeklySlot: weeklySlot(activity, t),
             location: activity.defaultLocation,
             nextDate: next ? nextDateLabel(next, t) : null,

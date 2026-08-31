@@ -1,37 +1,35 @@
 import { Button } from '@/components/ui/button';
 import { GoogleMark } from '@/components/auth/GoogleMark';
+import { GridPattern } from '@/components/patterns/GridPattern';
 import { continueWithGoogle } from '@/lib/auth-actions';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { QuietJoin } from './quiet-join';
 
 /**
- * The painted board, and the page's one loud action.
+ * The hero band: a dark full-bleed ground, the community's pitch in Display
+ * type, and the page's one loud action.
  *
- * `dark` here is the **material**, not the mode. The class names the painted
- * dark-green board in this codebase and the theme toggle is one caller of it,
- * not its definition — so applying it to this band renders painted board
- * regardless of the visitor's theme. That is deliberate: a logged-out stranger
- * has never set a preference, and a page whose force depends on a coin flip has
- * no force. Forcing the whole route dark was refused for the opposite reason —
- * it would hide a working control and override a preference the visitor *did*
- * set — which is why the rail above stays themed enamel.
- *
- * Naming the class for the material it is would be correct and touches every
- * surface in the app; until that happens, this comment is what makes the
- * overload honest.
+ * `dark` here forces the theme rather than following it. The band renders on a
+ * Black Green ground whatever the visitor has set, which is DESIGN.md's
+ * Theme-Is-Not-An-Inversion Rule in its second half: every dark value has to
+ * hold inside a light-themed page, because a logged-out stranger has never set
+ * a preference and a page whose ground depends on a coin flip has no ground.
+ * Forcing the *whole* route dark was refused for the opposite reason — it
+ * would override a preference the visitor did set and hide a working control —
+ * so the rail above and every band below stay themed.
  */
-const PAINTED_BOARD_CLASS = 'dark';
+const FORCED_DARK_CLASS = 'dark';
 
 /**
  * The band's content measure. Not the shared 72rem gutter, which is roughly 110
- * characters where prose caps at 65–75 and leaves big type as a single long
+ * characters where prose caps at 65–75 and leaves the headline as a single long
  * line instead of stacked slabs. This is a text measure, and the measure — never
- * a hardcoded `<br>` — is what decides where the pitch breaks, because the two
- * locales break at different words.
+ * a hardcoded `<br>` — is what decides where the headline breaks, because the
+ * two locales break at different words.
  */
 const HERO_MEASURE_CLASS = 'max-w-[48rem]';
 
-/** Band air one step above the bands below the seam, collapsing on a phone. */
+/** Band air one step above the bands below it, collapsing on a phone. */
 const HERO_AIR_CLASS = 'py-band md:py-band-lead';
 
 /**
@@ -41,9 +39,10 @@ const HERO_AIR_CLASS = 'py-band md:py-band-lead';
 const DISCLOSURE_ID = 'landing-hero-disclosure';
 
 /**
- * Six elements, in this order: the wordmark, the pitch, the sentence that
- * explains it, the action, the disclosure the action defers to, and the quiet
- * way in for someone who is already a member.
+ * Five elements, in this order: the headline, the sentence that explains it,
+ * the action, the disclosure the action defers to, and the quiet way in for
+ * someone who is already a member. The community's name and logo are the
+ * header rail's, not a second wordmark here.
  *
  * The band is full-bleed and its content is centred and **top-anchored** —
  * vertical centring stays reserved for interstitials. No `min-height`: the fold
@@ -51,12 +50,10 @@ const DISCLOSURE_ID = 'landing-hero-disclosure';
  */
 export function HeroBand({
     t,
-    communityName,
     headline,
     subline,
 }: Readonly<{
     t: Dictionary;
-    communityName: string;
     /** Resolved copy, never empty — `getPublicCopy` has already applied the
      *  dictionary fallback, so this band never asks whether one is needed. */
     headline: string;
@@ -64,37 +61,47 @@ export function HeroBand({
 }>) {
     return (
         <section
-            className={`${PAINTED_BOARD_CLASS} w-full bg-board px-block ${HERO_AIR_CLASS}`}>
+            className={`${FORCED_DARK_CLASS} relative isolate w-full overflow-hidden bg-background px-block ${HERO_AIR_CLASS}`}>
+            <HeroBackdrop />
+            {/* The headline and the action are **siblings in one flow column**,
+                never stacked layers. That is what makes "the headline never
+                paints over the action" a structural guarantee rather than a
+                measurement that has to be rechecked at every viewport: the only
+                thing an over-long value can do here is make the band taller.
+                The single positioned layer on this band is the backdrop, and it
+                sits behind everything at `-z-10`. */}
             <div
-                className={`mx-auto flex ${HERO_MEASURE_CLASS} flex-col items-center gap-block text-center`}>
-                {/* Identity in the hero is the community name as a wordmark,
-                    never the mark scaled up: the name has no length cap, and
-                    every step up in size is a step further from surviving one.
-                    Same overflow guarantee as the rail's, and found the same
-                    way — a long single-word name walked the wordmark off both
-                    edges of the screen. */}
-                <p className='type-mark min-w-0 max-w-full break-words text-foreground'>
-                    {communityName}
-                </p>
+                className={`relative mx-auto flex ${HERO_MEASURE_CLASS} flex-col items-center gap-block text-center`}>
+                {/* Display, the same role the app's page titles and this page's
+                    band heads take. The fit rules are three, in a fixed order
+                    of preference — DESIGN.md, The Never-Bleed Rule:
 
-                {/* Display, the same role the app's page titles take.
-                    Rally has one condensed heavy uppercase role and it is
-                    system-wide, so the pitch and an admin page heading are
-                    the same thing at the same size — which is why the
-                    ESLint restriction that used to confine the retired
-                    Hero role to this route is gone.
+                      1. hold the budget: 48 characters, no word over 12,
+                         enforced on the Admin's input by `public-copy.ts` and
+                         on the dictionary fallback by `pitch-budget.test.ts`;
+                      2. shrink: the role's own `clamp(2rem, 4.6vw, 3.5rem)`
+                         plus `text-wrap: balance`, both properties of the role
+                         rather than of this instance;
+                      3. break mid-word, last: `break-words` breaks only a word
+                         that cannot fit its line, so a value that got past the
+                         caps through an older client or a direct API call
+                         degrades visibly instead of bleeding out of the band.
 
-                    Since #153 the words are the Admin's when they have written
-                    any and the dictionary's when they have not, resolved before
-                    they reach this band. `break-words` is still here for the
-                    same reason it always was, and now covers a second case: a
-                    value that got past the caps through an older client
-                    degrades visibly instead of painting over the action. */}
+                    `min-w-0` is what makes step 3 reachable at all — a flex
+                    child's automatic minimum size is its content, so without it
+                    the column widens to the longest word instead of breaking
+                    it. */}
                 <h1 className='type-display min-w-0 max-w-full break-words text-foreground'>
                     {headline}
                 </h1>
 
-                <p className='type-body min-w-0 max-w-full break-words text-secondary-foreground'>
+                {/* Statement, not Body: this is the large line that is not a
+                    headline, and the hero is the one surface with the room for
+                    it. Body is what the about band below runs at, so the two
+                    do not read as the same paragraph twice. Capped at 120
+                    characters, which is three lines here at the small end of
+                    the clamp. */}
+                <p className='type-statement min-w-0 max-w-full break-words text-secondary-foreground'>
                     {subline}
                 </p>
 
@@ -112,11 +119,32 @@ export function HeroBand({
 
                 {/* The returning member fires the *same* action inline — no
                     navigation and no Google mark, so it stays quiet next to the
-                    primary. This is why the rail above needs no sign-in
-                    affordance of its own. */}
+                    primary. */}
                 <QuietJoin label={t.landing.hero.alreadyMember} />
             </div>
         </section>
+    );
+}
+
+/**
+ * The hero's background layer, and the slot the Admin's photograph fills.
+ *
+ * Today it is the grid-lines pattern over the dark ground. #155 puts the
+ * uploaded photograph in this layer — `object-fit: cover`, centred, with a
+ * dark scrim over it — and keeps the pattern as the fallback when no image is
+ * set. Everything the layer needs is already true of it: it is the band's own
+ * positioned backdrop, it is out of the accessibility tree, it takes no
+ * pointer events, and it clips at the band's edges.
+ *
+ * The pattern draws in `--border` at `PATTERN_OPACITY`, which blends the dark
+ * ground to `#1d2e26` where a line sits directly behind a glyph. The headline
+ * still measures 12.31:1 there and the subline 7.63:1, against floors of 4.5.
+ */
+function HeroBackdrop() {
+    return (
+        <div aria-hidden='true' className='absolute inset-0 -z-10 bg-background'>
+            <GridPattern isStretched colorToken='border' />
+        </div>
     );
 }
 
@@ -126,6 +154,12 @@ export function HeroBand({
  * Black Green, at 8.74:1. Off-white on that green measures 1.69:1 and white
  * 1.96:1: both are banned, and the token layer cannot produce either, so this
  * pairing is the one thing on the public route that must not be overridden.
+ *
+ * The focus indicator is the `Button` primitive's own — a full-opacity 1px
+ * `--ring` border at 7.88:1 on this ground plus a 3px `--ring/50` halo — so
+ * this call site sets size and typography and nothing else. The band adds no
+ * ring offset: an offset ring needs a colour to sit on, and the previous one
+ * named a retired token to get it.
  */
 function HeroAction({ t }: Readonly<{ t: Dictionary }>) {
     return (
@@ -133,7 +167,7 @@ function HeroAction({ t }: Readonly<{ t: Dictionary }>) {
             <Button
                 type='submit'
                 aria-describedby={DISCLOSURE_ID}
-                className='type-label h-auto w-full gap-cell px-bay py-block shadow-tile hover:bg-foreground hover:text-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-board active:shadow-tile-pressed active:not-aria-[haspopup]:translate-y-0 sm:w-auto'>
+                className='type-label h-auto w-full gap-cell px-bay py-block sm:w-auto'>
                 <GoogleMark className='size-5' />
                 {t.landing.hero.cta}
             </Button>

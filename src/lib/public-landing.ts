@@ -92,15 +92,24 @@ const REVALIDATE_SECONDS = 60 * 60;
  * Published `Activity` fields. `id` is a cuid carrying no information; it is
  * here as the row key and the join key for the next-date fuse below.
  *
- * No `color`: `DESIGN.md:316` makes livery a magnet tile bearing the initial
- * with no colour, because an admin-chosen hex can be trusted neither to carry
- * legible lettering nor to clear contrast on both materials, and the column has
- * been dropped. No `icon` either — that column is gone too, for the same
- * reason: nothing ever rendered it.
+ * No `color`: an admin-chosen hex can be trusted neither to carry legible
+ * lettering nor to clear contrast on both themes, and the column has been
+ * dropped.
+ *
+ * `icon` **is** published, since #154. It was absent while the column had no
+ * renderer; #164 gave it one (`ActivityTile`) and the public Activity cards
+ * draw it. Publishing it is safe on this route's own allow-list terms: the
+ * value is one key from the closed, curated set in `src/lib/activity-icons.ts`
+ * — the API strips anything else before the write — so unlike the admin free
+ * text Rule 4 bans, it cannot carry a phone number, a bank line or a member's
+ * name. A key this build no longer offers reads back as the Activity's initial
+ * rather than breaking the card, which is also what a warm cache entry written
+ * before this field existed resolves to.
  */
 export const PUBLIC_ACTIVITY_SELECT = {
     id: true,
     name: true,
+    icon: true,
     recurringDay: true,
     recurringStartTime: true,
     recurringEndTime: true,
