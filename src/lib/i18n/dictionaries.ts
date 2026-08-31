@@ -229,6 +229,8 @@ const en = {
         errorMessage:
             'An error occurred during the login process. Please try again.',
         backToSignIn: 'Back to sign in page',
+        // The OAuth-bypass shortcut shown outside production only (#156).
+        devSignInLink: 'Dev login →',
     },
     onboarding: {
         title: 'Complete Your Profile',
@@ -1452,6 +1454,7 @@ const id: typeof en = {
         errorTitle: 'Gagal Masuk',
         errorMessage: 'Terjadi kesalahan saat proses login. Silakan coba lagi.',
         backToSignIn: 'Kembali ke halaman login',
+        devSignInLink: 'Login dev →',
     },
     onboarding: {
         title: 'Lengkapi Profil',

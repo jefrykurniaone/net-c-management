@@ -9,11 +9,11 @@ import type { ActivityOption } from '@/types/activity';
 import { ACTIVITY_ERROR_KEYS, FieldErrorMessage } from './field-error-message';
 
 const CHIP_BASE_CLASS =
-    'inline-flex min-h-11 items-center gap-2 rounded-[2px] border py-1.5 pl-2 pr-4 type-body transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
+    'inline-flex min-h-11 items-center gap-2 rounded-lg border py-1.5 pl-2 pr-4 type-body transition-colors motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 const CHIP_SELECTED_CLASS =
     'border-transparent bg-primary-solid text-primary-solid-foreground';
 const CHIP_UNSELECTED_CLASS =
-    'border-rule bg-tile text-secondary-foreground hover:bg-accent hover:text-accent-foreground';
+    'border-border bg-card text-secondary-foreground hover:bg-accent hover:text-accent-foreground';
 
 /** Toggles one Activity id in the selection, keeping the rest in place. */
 function toggleSelection(current: string[] | undefined, id: string): string[] {
