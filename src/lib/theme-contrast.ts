@@ -220,6 +220,21 @@ export const AA_PAIRS: readonly ContrastPair[] = [
     uiPair('chart-3', 'card', 'third series mark on a chart card'),
     uiPair('chart-4', 'card', 'fourth series mark on a chart card'),
     uiPair('chart-5', 'card', 'fifth series mark on a chart card'),
+    // The admin shell (#165): forced dark regardless of the page theme (see
+    // `AdminLayout`), so its own ink pairs reuse `background`/`foreground`/etc
+    // — already asserted above for the dark theme — except the active nav
+    // item, which stays Lime-with-Black-Green-text in both themes rather than
+    // inverting the way the page's own `--accent` does.
+    textPair(
+        'sidebar-accent-foreground',
+        'sidebar-accent',
+        'admin sidebar active item on Lime',
+    ),
+    uiPair(
+        'sidebar-accent-border',
+        'sidebar-accent',
+        'admin sidebar active-item boundary on Lime',
+    ),
 ];
 
 /**

@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { PaymentMode, PaymentStatus, Role } from '@prisma/client';
-import { ActivityTile } from '@/components/activity/activity-badge';
+import { ActivityTile } from '@/components/activity/activity-tile';
 import { Chip, StatusChip } from '@/components/ui/chip';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { DuesStanding } from '@/lib/member-standing';
@@ -214,7 +214,7 @@ function MembershipLine({
     return (
         <span className='flex flex-wrap items-center gap-cell'>
             <span className='flex items-center gap-hair'>
-                <ActivityTile name={membership.activityName} />
+                <ActivityTile name={membership.activityName} size='inline' />
                 <span className='type-body text-foreground'>
                     {membership.activityName}
                 </span>

@@ -130,6 +130,16 @@
   --sidebar-accent-foreground: #0E1F17;
   --sidebar-border: #8B7E68;
   --sidebar-ring: #4B31B8;
+  /* Appended for #165, not reordered into the group above: the admin shell's
+     active nav item is a Lime tile with Black Green text, invariant across
+     both themes like the shell itself — see the `.dark` override below and
+     `AdminLayout`, which forces the shell's own subtree dark regardless of
+     the page theme. Taupe is the boundary drawn on the tile: 3.18:1 on Lime,
+     4.30:1 on Black Green, so the tile is identifiable by more than its fill
+     wherever it renders (The Boundary Rule) — the shell's own `--border`
+     (#7B8C80 once forced dark) only clears 2.84:1 on Lime, which is why this
+     is its own token rather than a reused one. */
+  --sidebar-accent-border: #8B7E68;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -220,8 +230,16 @@
   --sidebar-foreground: #F1EEE5;
   --sidebar-primary: #3ED27E;
   --sidebar-primary-foreground: #0E1F17;
-  --sidebar-accent: #27381C;
-  --sidebar-accent-foreground: #D8F25E;
+  /* #165 changed the two values below (were #27381C / #D8F25E — the same
+     olive-carries-Lime inversion `--accent` uses a few lines up). Unlike the
+     page's own accent, the admin shell's active item does not invert here:
+     it stays the Lime tile with Black Green text in both themes, because the
+     shell it sits on is forced dark regardless of the page theme (see
+     `:root`'s comment on `--sidebar-accent-border`, appended below). */
+  --sidebar-accent: #D8F25E;
+  --sidebar-accent-foreground: #0E1F17;
   --sidebar-border: #7B8C80;
   --sidebar-ring: #B7A4F7;
+  /* Appended for #165, not reordered into the group above. */
+  --sidebar-accent-border: #8B7E68;
 }

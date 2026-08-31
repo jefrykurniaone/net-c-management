@@ -2,8 +2,14 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 type ActivityOption = Readonly<{ id: string; name: string }>;
 
+/**
+ * Each filter reads as a chip: a pill, a hairline border, a tinted neutral
+ * wash. It is a real `<select>` underneath — the native control keeps the
+ * dropdown keyboard- and screen-reader-complete — the pill is a skin over it,
+ * never a second, decorative control standing in for the real one.
+ */
 const SELECT_CLASS =
-    'h-8 rounded-sm border border-rule bg-tile px-2.5 type-caption text-secondary-foreground';
+    'h-8 rounded-full border border-border bg-muted px-3 type-caption text-muted-foreground transition-rally hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
 /** Which standing to show. Its meaning is its text, never its colour. */
 function StatusSelect({
@@ -54,8 +60,8 @@ function ActivitySelect({
 
 /**
  * Filters over the payments history: status, and — once a member belongs to
- * more than one Activity — which one. Plain `<select>` controls, so a filter's
- * meaning is carried by its text, never by colour.
+ * more than one Activity — which one. Each renders as a chip-styled
+ * `<select>`, so a filter's meaning is carried by its text, never by colour.
  */
 export function PaymentHistoryFilters({
     t,
@@ -89,7 +95,7 @@ export function PaymentHistoryFilters({
             )}
             <button
                 type='submit'
-                className='h-8 rounded-sm border border-rule bg-tile px-3 type-caption font-semibold text-secondary-foreground transition-colors hover:bg-muted'>
+                className='h-8 rounded-full border border-border bg-card px-3 type-caption font-semibold text-card-foreground transition-rally hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
                 {t.table.search.btn}
             </button>
         </form>

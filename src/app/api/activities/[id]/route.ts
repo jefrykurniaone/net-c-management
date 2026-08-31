@@ -111,7 +111,10 @@ export async function PATCH(
         if (outcome.kind === 'refused') {
             return duesRateRefused(outcome.reason, t);
         }
-        // Name, weekly slot, fees and `isActive` all publish.
+        // Name, weekly slot, fees, the livery icon and `isActive` all publish,
+        // so every save drops the landing cache rather than each field
+        // deciding for itself. One invalidation covers the icon too (#164) —
+        // there is deliberately no second call for it.
         invalidatePublicLanding();
         // A queued, replaced or withdrawn Dues change is money the members on
         // Dues will be asked for, so they hear it from the write that made it.

@@ -3,14 +3,22 @@
 import { useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { ChevronRight } from 'lucide-react';
+import { signOut } from 'next-auth/react';
+import { ChevronRight, LogOut } from 'lucide-react';
 import { useLocale } from '@/components/providers/locale-provider';
 import {
     getDictionary,
     type Dictionary,
     type Locale,
 } from '@/lib/i18n/dictionaries';
-import { Lattice, SectionHead } from './BoardCells';
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 // Hydration-safe flag: false during SSR and the first client render, true
 // after — so a client-only value (resolved theme) never triggers a mismatch.
@@ -23,7 +31,7 @@ function useIsHydrated(): boolean {
     );
 }
 
-/** One ruled cell you can press: what the setting is, what it is set to, and a way in. */
+/** One row you can press: what the setting is, what it is set to, and a way in. */
 function Row({
     label,
     value,
@@ -33,7 +41,7 @@ function Row({
         <button
             type='button'
             onClick={onClick}
-            className='flex min-h-14 w-full items-center gap-cell p-block text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'>
+            className='flex min-h-14 w-full items-center gap-cell p-block text-left transition-rally hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'>
             <span className='type-body flex-1 text-card-foreground'>
                 {label}
             </span>
@@ -76,6 +84,11 @@ async function switchLocale(
     refresh();
 }
 
+/**
+ * The account actions card: phone, language and theme as rows sharing the
+ * card's own dividers, and Sign Out as the card's one footer action — the
+ * ends the auth session, not a Session, which is a thing you turn up to.
+ */
 export function AccountSettings({
     phone,
     onEditPhone,
@@ -88,9 +101,11 @@ export function AccountSettings({
     const isDark = resolvedTheme === 'dark';
 
     return (
-        <section className='flex flex-col gap-block'>
-            <SectionHead label={t.profile.accountLabel} />
-            <Lattice>
+        <Card className='gap-0 py-0' size='sm'>
+            <CardHeader className='border-b py-block'>
+                <CardTitle>{t.profile.accountLabel}</CardTitle>
+            </CardHeader>
+            <CardContent className='divide-y divide-border p-0'>
                 <Row
                     label={t.profile.phoneRow}
                     value={phone || t.profile.phoneNotSet}
@@ -108,7 +123,16 @@ export function AccountSettings({
                     value={themeValue(hydrated, isDark, t)}
                     onClick={() => setTheme(isDark ? 'light' : 'dark')}
                 />
-            </Lattice>
-        </section>
+            </CardContent>
+            <CardFooter className='py-block'>
+                <Button
+                    variant='destructive-outline'
+                    className='w-full'
+                    onClick={() => signOut({ callbackUrl: '/' })}>
+                    <LogOut />
+                    {t.nav.signOut}
+                </Button>
+            </CardFooter>
+        </Card>
     );
 }

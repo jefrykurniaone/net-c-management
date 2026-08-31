@@ -25,6 +25,7 @@ import { parseIntInput } from '@/lib/form-utils';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { CreateActivityFormData } from '@/lib/validations/activity';
 import { DuesRateField, type DuesRateFieldProps } from './dues-rate-field';
+import { ActivityIconField } from './activity-icon-field';
 
 type ActivityForm = UseFormReturn<CreateActivityFormData>;
 
@@ -117,7 +118,11 @@ function IntField({
     );
 }
 
-/** Name, slug, and description. No colour: the livery is the initial on a tile. */
+/**
+ * Name, slug, description and the livery icon. No colour: an admin-chosen hex
+ * clears neither contrast nor legibility on both themes, so the livery is a
+ * curated icon on the highlight tile, or the name's initial on the same tile.
+ */
 export function BasicInfoSection({
     form,
     t,
@@ -171,6 +176,7 @@ export function BasicInfoSection({
                     </FormItem>
                 )}
             />
+            <ActivityIconField form={form} t={t} />
         </FormSection>
     );
 }

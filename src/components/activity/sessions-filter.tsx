@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { ActivityTile } from './activity-badge';
+import { ActivityTile } from './activity-tile';
 
 /**
  * What the board is scoped to: the reader's own Activities or every one the
@@ -121,7 +121,7 @@ function ActivityChips({
                         key={activity.id}
                         href={href({ activityId: activity.id })}
                         isOn={selected === activity.id}>
-                        <ActivityTile name={activity.name} />
+                        <ActivityTile name={activity.name} size='inline' />
                         {activity.name}
                     </FilterCell>
                 ))}

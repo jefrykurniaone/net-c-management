@@ -207,9 +207,15 @@ is no size at which a light label on this green becomes acceptable.
 ### Measured pairs
 
 Every pair the shipped surfaces can produce, both themes, with the ratio it
-has to clear. All **60** live in `AA_PAIRS` in `src/lib/theme-contrast.ts` and
+has to clear. All **62** live in `AA_PAIRS` in `src/lib/theme-contrast.ts` and
 are asserted twice each — once per theme — against the hex values parsed out of
 `src/app/styles/board-materials.css`. The worst case in each family is below.
+
+Of those 62, the last two are the admin shell's own: the active navigation
+item's label and its boundary, both measured against `--sidebar-accent`. They
+are separate rows because the admin shell is forced dark whatever the page
+theme, so its active item stays a Lime tile carrying Black Green in both
+themes rather than inverting the way the page's own `--accent` does.
 
 | Pair | Light | Dark | Floor |
 |---|---|---|---|

@@ -57,13 +57,19 @@ const en = {
         darkMode: 'Themes',
     },
     /**
-     * The public route, and the only namespace on it. The dictionary authors
-     * every string here: there is no `Settings` key for the pitch and none may
-     * be added without reopening that decision — the blank-config version has
-     * to be good enough to ship alone, an unbounded admin textarea against
-     * `type-hero` breaks the hero, and admin-authored free text is barred from
-     * this route anyway. What makes the page feel like *this* community is
-     * data, not prose: the community name, the logo, and the board below.
+     * The public route's dictionary copy. It used to be the only namespace on
+     * that route, on a decision that no `Settings` key may author the pitch;
+     * `docs/spec-rally-public-v1.md` reopened exactly that and #153 carried it
+     * out, so the block below is now the **fallback set**, not the whole of the
+     * page's prose. An Admin who writes a headline in Settings replaces
+     * `hero.pitch` for every visitor; one who writes nothing gets these
+     * strings, which is why they still have to be good enough to ship alone.
+     * The three objections that produced the old decision are answered rather
+     * than dropped: the copy is capped (`src/lib/public-copy.ts`), the caps are
+     * enforced at the form and again at the API, and the Display role's clamp
+     * degrades a value that slips past both instead of painting over the
+     * action. What still makes the page feel like *this* community without a
+     * word of admin copy is data: the community name, the logo, and the board.
      *
      * One sub-block per band, mirroring the route's composition — hero, board,
      * footer — so a band added or cut is a block added or cut here. Only
@@ -169,6 +175,46 @@ const en = {
             // lattice, so the material is named by its colour.
             ogAlt: 'The community name, set large in white lettering on dark green.',
         },
+    },
+    /**
+     * The Settings section where an Admin writes the public page's copy, and
+     * the refusals that section answers with (#153).
+     *
+     * A block of its own rather than more keys inside `admin`, for one reason:
+     * every string here is about the *public* page, and the block above is the
+     * fallback set the same page falls back to. Keeping the two adjacent is
+     * what makes "empty headline shows `landing.hero.pitch`" readable in one
+     * screen instead of two.
+     *
+     * What is here is labels, help text and refusals — never the values. The
+     * values are the Admin's own words, one per field, shown in both locales
+     * by decision, and they never enter this file.
+     */
+    publicCopy: {
+        sectionTitle: 'Public Page',
+        heroHeadlineLabel: 'Headline',
+        heroHeadlineHelper:
+            'The first line a stranger reads. Leave it empty to use the default.',
+        heroSublineLabel: 'Subline',
+        heroSublineHelper:
+            'One sentence under the headline. Leave it empty to use the default.',
+        aboutLabel: 'About this community',
+        aboutHelper:
+            'A short paragraph in your own words. Line breaks are kept. Leave it empty to leave it out.',
+        featureTitleLabel: 'Card {n} title',
+        featureLineLabel: 'Card {n} line',
+        featureHelper: 'A card with no title is not shown.',
+        // Read by everyone, so the ratio is a fraction rather than a
+        // subtraction: "40 left" hides the cap the refusal names.
+        counter: '{count} / {max}',
+        // Spoken before the fraction, so the counter is not two bare numbers to
+        // a screen-reader user.
+        counterLabel: 'Characters used',
+        // Both name the cap, because a refusal that does not say the number
+        // leaves the Admin deleting characters until it stops complaining. The
+        // same two strings are used by the form and by the API.
+        lengthCapRefusal: 'Too long — {max} characters at most.',
+        wordCapRefusal: 'One word is too long — {max} letters at most.',
     },
     auth: {
         signInTitle: 'Sign In',
@@ -1100,6 +1146,39 @@ const en = {
         notMember: 'You are not a member of this activity',
         membersCount: 'members',
     },
+    /**
+     * The curated Activity icon set (#164). One entry in `names` per key in
+     * `src/lib/activity-icons.ts` — the picker indexes this by key, so a key
+     * without a display name is a type error rather than an unlabelled button,
+     * and `activity-icon-names.test.ts` asserts both locales cover the set.
+     *
+     * The names say what the glyph *is*, not what sport it stands for: the
+     * library has no racket and one ball, so an Admin picking `feather` for
+     * badminton has to be able to see that a feather is what they picked.
+     */
+    activityIcon: {
+        label: 'Icon',
+        hint: 'Shown wherever this activity is named. Leave it on no icon to show the first letter of the name instead.',
+        none: 'No icon',
+        names: {
+            ball: 'Ball',
+            goal: 'Goal net',
+            feather: 'Feather',
+            target: 'Target',
+            dumbbell: 'Dumbbell',
+            weight: 'Weight',
+            bike: 'Bicycle',
+            shoe: 'Sports shoe',
+            footprints: 'Footprints',
+            pool: 'Swimming pool',
+            waves: 'Waves',
+            mountain: 'Mountain',
+            trees: 'Trees',
+            trophy: 'Trophy',
+            timer: 'Timer',
+            users: 'People',
+        },
+    },
     paymentMode: {
         choosePrompt: 'Choose how you pay for this activity',
         monthly: 'Monthly',
@@ -1344,6 +1423,25 @@ const id: typeof en = {
                 'Ini halaman satu komunitas dan cara untuk minta gabung. Masuk dengan Google, dan pengelola yang memutuskan siapa yang masuk.',
             ogAlt: 'Nama komunitas, tercetak besar dengan huruf putih di atas hijau tua.',
         },
+    },
+    publicCopy: {
+        sectionTitle: 'Halaman Publik',
+        heroHeadlineLabel: 'Judul Utama',
+        heroHeadlineHelper:
+            'Baris pertama yang dibaca pengunjung. Kosongkan untuk memakai teks bawaan.',
+        heroSublineLabel: 'Kalimat Pendukung',
+        heroSublineHelper:
+            'Satu kalimat di bawah judul utama. Kosongkan untuk memakai teks bawaan.',
+        aboutLabel: 'Tentang komunitas ini',
+        aboutHelper:
+            'Satu paragraf singkat dengan kata-katamu sendiri. Ganti baris tetap dipertahankan. Kosongkan untuk tidak menampilkannya.',
+        featureTitleLabel: 'Judul kartu {n}',
+        featureLineLabel: 'Kalimat kartu {n}',
+        featureHelper: 'Kartu tanpa judul tidak ditampilkan.',
+        counter: '{count} / {max}',
+        counterLabel: 'Karakter terpakai',
+        lengthCapRefusal: 'Terlalu panjang — maksimal {max} karakter.',
+        wordCapRefusal: 'Ada kata yang terlalu panjang — maksimal {max} huruf.',
     },
     auth: {
         signInTitle: 'Masuk',
@@ -2102,6 +2200,29 @@ const id: typeof en = {
         actionFailed: 'Aksi gagal',
         notMember: 'Kamu bukan anggota aktivitas ini',
         membersCount: 'anggota',
+    },
+    activityIcon: {
+        label: 'Ikon',
+        hint: 'Tampil di mana pun aktivitas ini disebut. Biarkan tanpa ikon untuk menampilkan huruf pertama namanya.',
+        none: 'Tanpa ikon',
+        names: {
+            ball: 'Bola',
+            goal: 'Gawang',
+            feather: 'Bulu',
+            target: 'Sasaran',
+            dumbbell: 'Dumbel',
+            weight: 'Beban',
+            bike: 'Sepeda',
+            shoe: 'Sepatu olahraga',
+            footprints: 'Jejak kaki',
+            pool: 'Kolam renang',
+            waves: 'Ombak',
+            mountain: 'Gunung',
+            trees: 'Pepohonan',
+            trophy: 'Piala',
+            timer: 'Pengatur waktu',
+            users: 'Orang',
+        },
     },
     paymentMode: {
         choosePrompt: 'Pilih cara kamu membayar aktivitas ini',
