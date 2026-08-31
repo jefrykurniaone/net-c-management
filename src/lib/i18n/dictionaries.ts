@@ -175,6 +175,32 @@ const en = {
             // lattice, so the material is named by its colour.
             ogAlt: 'The community name, set large in white lettering on dark green.',
         },
+        // The two bands #154 added, plus the rail's own control. They sit at
+        // the end of the block rather than in composition order — about and
+        // features belong between `hero` and `board` by the one-block-per-band
+        // rule — because several surface tickets append to this file in
+        // parallel and an append merges where a reorder conflicts. Composition
+        // order is `src/app/page.tsx`'s to state, and it does.
+        //
+        // Both heads are the *product* naming its own sections; the paragraph
+        // and the cards under them are the Admin's, shown as written in both
+        // locales. Voice as above: plain, second person, no superlatives, no
+        // claim about size or history, and no sport named.
+        about: {
+            head: 'About this community',
+        },
+        features: {
+            // What a member gets, not what the software does. Authored to sit
+            // above cards whose text this dictionary does not control, so it
+            // introduces them without asserting what they say.
+            head: 'What you get once you are in',
+        },
+        rail: {
+            // The header's own way in, firing the same action as the hero's
+            // tile. Two words, because the rail does not wrap and a long label
+            // is what pushes its controls onto a second row.
+            signIn: 'Sign in',
+        },
     },
     /**
      * The Settings section where an Admin writes the public page's copy, and
@@ -1422,6 +1448,15 @@ const id: typeof en = {
             description:
                 'Ini halaman satu komunitas dan cara untuk minta gabung. Masuk dengan Google, dan pengelola yang memutuskan siapa yang masuk.',
             ogAlt: 'Nama komunitas, tercetak besar dengan huruf putih di atas hijau tua.',
+        },
+        about: {
+            head: 'Tentang komunitas ini',
+        },
+        features: {
+            head: 'Yang kamu dapat begitu masuk',
+        },
+        rail: {
+            signIn: 'Masuk',
         },
     },
     publicCopy: {

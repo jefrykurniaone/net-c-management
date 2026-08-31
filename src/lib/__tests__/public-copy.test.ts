@@ -239,9 +239,16 @@ describe('Public copy fallback resolution', () => {
             getDictionary('en'),
         );
 
+        // The surviving cards keep the slot they were written in, so slot 4 is
+        // still position 4 after slots 2 and 3 have been dropped — which is
+        // what makes the rendered list's key stable (#154).
         expect(copy.features).toEqual([
-            { title: 'A standing slot', line: 'The same time every week.' },
-            { title: 'One place for dues', line: '' },
+            {
+                position: 1,
+                title: 'A standing slot',
+                line: 'The same time every week.',
+            },
+            { position: 4, title: 'One place for dues', line: '' },
         ]);
     });
 

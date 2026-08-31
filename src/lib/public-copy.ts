@@ -205,6 +205,13 @@ export function publicCopyRefusalMessage(
 }
 
 export interface PublicFeatureCard {
+    /**
+     * The slot the card was written in, 1 to {@link PUBLIC_FEATURE_CARD_COUNT}.
+     * Carried so the rendered list has a stable key that is not its array
+     * index: the untitled slots are dropped, so position 3 can be the second
+     * card, and two cards may legitimately carry the same title.
+     */
+    readonly position: number;
     readonly title: string;
     readonly line: string;
 }
@@ -231,7 +238,11 @@ function resolveFeatureCards(
         if (title === '') {
             continue;
         }
-        cards.push({ title, line: stored[slot.lineKey]?.trim() ?? '' });
+        cards.push({
+            position: slot.position,
+            title,
+            line: stored[slot.lineKey]?.trim() ?? '',
+        });
     }
     return cards;
 }

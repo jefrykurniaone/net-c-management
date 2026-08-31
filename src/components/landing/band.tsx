@@ -2,31 +2,36 @@ import type { ReactNode } from 'react';
 
 /**
  * Primitives of the public route's band stack — a third layout category
- * alongside the board surface and the interstitial, and one that exists on this
- * route and nowhere else.
+ * alongside the member surfaces and the interstitial, and one that exists on
+ * this route and nowhere else.
  *
- * A vertical stack of full-bleed bands. The hero is painted board and centres
- * its content at its own text measure; every band below the seam is themed
- * material, gutter-aligned to the same 72rem as the header rail and the footer,
- * and genuinely dense inside generous band padding. That positional split —
- * air *between* bands, board density *inside* cells — is what keeps the page
- * from reading as two websites stapled together.
+ * A vertical stack of full-bleed bands. The hero carries its own dark ground
+ * and centres its content at a text measure; every band below it is themed
+ * material, gutter-aligned to the same 72rem as the header rail and the
+ * footer, with cards on that ground inside generous band padding. That split
+ * — air *between* bands, density *inside* cards — is what keeps the page from
+ * reading as two websites stapled together.
+ *
+ * ADR 0003 retired the ruled lattice these bands used to draw, so the row
+ * primitives that served it (`Lattice`, `Livery`) are gone with it: a band's
+ * content is a card grid now, and an Activity's livery is the one shared
+ * {@link ActivityTile} rather than a second initial-only tile.
  */
 
-/** The shared gutter. Every surface above and below the seam aligns to it — the hero band alone does not. */
+/** The shared gutter. Every surface except the hero band aligns to it. */
 export const BOARD_GUTTER_CLASS = 'max-w-[72rem]';
 
 /**
- * Band air: `56px`, collapsing to `28px` below 768px so mobile lands back on
- * `bay` and inherits board density. The hero takes the step above this one.
+ * Band air: `56px`, collapsing to `28px` below 768px so a phone lands back on
+ * `bay`. The hero takes the step above this one.
  */
 const BAND_AIR_CLASS = 'py-bay md:py-band';
 
 /**
- * A full-bleed enamel band. No bottom rule and no top rule: below the seam the
- * bands are the same material as each other, and the boundary that matters —
- * painted board returning to enamel — is a material change, which is a harder
- * edge than any hairline.
+ * A full-bleed band on the page ground. No top or bottom rule: below the hero
+ * every band is the same material as its neighbours, and the one boundary that
+ * matters — the hero's dark ground returning to the themed page — is a
+ * material change, which is a harder edge than any hairline.
  *
  * No `min-height` and no `100dvh`. A band's height is its content plus its
  * padding, because the law that replaces a minimum height is a budget: no band
@@ -40,10 +45,8 @@ export function Band({ children }: Readonly<{ children: ReactNode }>) {
                 and the footer. Outside it the band's content lands 16px left of
                 both — the gutter caps the wrapper at 72rem and then the padding
                 insets everything else, so the shared left edge silently breaks
-                at any viewport wide enough to reach the cap. That is the same
-                family of defect as the misalignment this route was rebuilt to
-                stop, and it is invisible on a phone, where no surface reaches
-                the gutter. */}
+                at any viewport wide enough to reach the cap. It is invisible on
+                a phone, where no surface reaches the gutter. */}
             <div className={`mx-auto ${BOARD_GUTTER_CLASS} px-block`}>
                 {children}
             </div>
@@ -52,48 +55,58 @@ export function Band({ children }: Readonly<{ children: ReactNode }>) {
 }
 
 /**
- * A band's opening, in **board register**: the head is Title, not Display. The
- * seam is the material change and nothing else. Display heads are an asset when
- * the band has data and a liability when it does not, since they announce a
- * section that then says nothing has been posted yet.
+ * A band's opening. The head is **Display** — Rally has one condensed heavy
+ * uppercase role and DESIGN.md gives it the public page's section heads as
+ * well as the hero pitch and the app's page titles, so a band head and the
+ * hero headline are the same role on two different grounds.
+ *
+ * `body` is optional: the Activities band explains what a card holds, and the
+ * about and features bands have the Admin's own words directly beneath the
+ * head with nothing for the product to add.
  */
 export function BandHead({
     head,
     body,
-}: Readonly<{ head: string; body: string }>) {
+}: Readonly<{ head: string; body?: string }>) {
     return (
-        <div className='mb-block flex flex-col gap-hair'>
-            <h2 className='type-title text-balance text-foreground'>{head}</h2>
-            <p className='type-body max-w-[65ch] text-secondary-foreground'>
-                {body}
-            </p>
+        <div className='mb-bay flex flex-col gap-cell'>
+            <h2 className='type-display min-w-0 max-w-full break-words text-foreground'>
+                {head}
+            </h2>
+            {body ? (
+                <p className='type-body max-w-[65ch] text-secondary-foreground'>
+                    {body}
+                </p>
+            ) : null}
         </div>
     );
 }
 
 /**
- * Cells sharing a single rule with their neighbours, which is what a grid
- * physically is. Never gaps between floating panels.
+ * How many cards a band puts across a desktop viewport. A closed union rather
+ * than a class string, so a band cannot invent a fifth column count and the
+ * two grids on this route stay comparable.
  */
-export function Lattice({ children }: Readonly<{ children: ReactNode }>) {
-    return (
-        <div className='divide-y divide-rule overflow-hidden rounded-sm border border-rule bg-card'>
-            {children}
-        </div>
-    );
-}
+export type BandGridKind = 'activities' | 'features';
+
+const GRID_COLUMNS: Readonly<Record<BandGridKind, string>> = {
+    /** Activity cards carry four lines each, so three across is the ceiling. */
+    activities: 'sm:grid-cols-2 lg:grid-cols-3',
+    /** Feature cards carry two, so the whole set of four fits one row. */
+    features: 'sm:grid-cols-2 lg:grid-cols-4',
+};
 
 /**
- * An Activity's livery: a magnet tile bearing its initial, **with no colour.**
- * Not a coloured square and never an edge stripe. There is no Activity colour to
- * read — Court Green is the only green the system permits, and an arbitrary
- * admin-chosen hex can be trusted neither to carry legible lettering nor to
- * clear contrast on both board materials, so the column was dropped outright.
+ * A band's card grid. One column on a phone, two from `sm`, and the band's own
+ * count from `lg`; the gap is `block`, so cards read as separate objects on the
+ * ground rather than as cells sharing a rule — which is exactly what ADR 0003
+ * chose over the lattice.
  */
-export function Livery({ initial }: Readonly<{ initial: string }>) {
+export function BandGrid({
+    kind,
+    children,
+}: Readonly<{ kind: BandGridKind; children: ReactNode }>) {
     return (
-        <span className='type-figure flex size-9 shrink-0 items-center justify-center rounded-sm border border-rule bg-background text-secondary-foreground'>
-            {initial}
-        </span>
+        <div className={`grid gap-block ${GRID_COLUMNS[kind]}`}>{children}</div>
     );
 }
