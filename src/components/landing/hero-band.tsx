@@ -113,14 +113,17 @@ export function HeroBand({
                     characters, which is three lines here at the small end of
                     the clamp.
 
-                    Ink is conditional on the backdrop, not fixed (#155 review):
+                    Ink is conditional on the backdrop, not fixed (#155 review
+                    — round two: the *same* switch belongs on every text
+                    element the backdrop sits behind, not only this one; the
+                    disclosure paragraph and `QuietJoin` below carry it too).
                     `--secondary-foreground` is deliberately muted, tuned for
                     the *known*, fixed ground the pattern backdrop draws — over
                     an Admin's photograph the ground is unknown and only ever
-                    guaranteed down to a worst-case white, so the subline
-                    switches to the same `--foreground` the headline uses.
-                    Same colour, same scrim, same guaranteed ratio — see
-                    `SCRIM_OPACITY_CLASS` below for the arithmetic. */}
+                    guaranteed down to a worst-case white, so every one of
+                    these switches to the same `--foreground` the headline
+                    uses. One colour, one composite, one guaranteed ratio —
+                    see `SCRIM_OPACITY_CLASS` below for the arithmetic. */}
                 <p
                     className={`type-statement min-w-0 max-w-full break-words ${hasPhoto ? 'text-foreground' : 'text-secondary-foreground'}`}>
                     {subline}
@@ -128,20 +131,29 @@ export function HeroBand({
 
                 <HeroAction t={t} />
 
-                {/* Body weight and secondary ink, never Caption and never the
-                    muted step. The label defers to this sentence, so it is not
-                    fine print — a condition disclosed in fine print is not
-                    disclosed. */}
+                {/* Body weight, never Caption and never the muted step — and,
+                    over a photograph, `--foreground` rather than the pattern
+                    hero's `--secondary-foreground`, for the reason on the
+                    subline above. The label defers to this sentence, so it is
+                    not fine print — a condition disclosed in fine print is
+                    not disclosed. */}
                 <p
                     id={DISCLOSURE_ID}
-                    className='type-body text-secondary-foreground'>
+                    className={`type-body ${hasPhoto ? 'text-foreground' : 'text-secondary-foreground'}`}>
                     {t.landing.hero.disclosure}
                 </p>
 
                 {/* The returning member fires the *same* action inline — no
                     navigation and no Google mark, so it stays quiet next to the
-                    primary. */}
-                <QuietJoin label={t.landing.hero.alreadyMember} />
+                    primary. `onPhotograph` carries the same colour switch as
+                    the subline and the disclosure — `QuietJoin`'s other call
+                    site (`activities-band.tsx`) never sets it, so it keeps its
+                    muted colour on that band's ordinary, photograph-free
+                    ground. */}
+                <QuietJoin
+                    label={t.landing.hero.alreadyMember}
+                    onPhotograph={hasPhoto}
+                />
             </div>
         </section>
     );
@@ -153,19 +165,27 @@ export function HeroBand({
  * (measured with `src/lib/theme-contrast.ts`'s own `contrastRatio`,
  * arithmetic in the pull request that revised this).
  *
- * Both headline and subline draw `--foreground` (#F1EEE5 forced-dark) over a
- * photograph (see the subline's own comment above for why), so there is
- * exactly one pairing to clear rather than two — and this is the least
- * whole percent that clears it: composited over white, `#F1EEE5` on `65`
+ * Every text element this band draws over a photograph — the headline, the
+ * subline, the disclosure paragraph and `QuietJoin`'s link — draws the same
+ * `--foreground` (#F1EEE5 forced-dark; see the subline's own comment above
+ * for why none of them uses `--secondary-foreground` here). One colour means
+ * exactly one pairing to clear rather than four, and this is the least whole
+ * percent that clears it: composited over white, `#F1EEE5` on `65`
  * (`#626D68`) measures **4.63:1**; one point lower, `64` (`#65706B`), is
  * 4.43:1 and fails. `65` is the minimum with a safety margin the rounding at
  * the boundary would not give.
  *
- * An earlier version of this band used `--secondary-foreground` for the
- * subline and an 85% scrim to clear it, which left only 15% of the
- * photograph visible — defeating the feature the acceptance criteria asked
- * for. That version is gone; see the pull request for the arithmetic this
- * one replaced.
+ * `HeroAction`'s button label and `GoogleMark` are not in this inventory:
+ * the button carries its own opaque `--primary-solid` fill (asserted
+ * elsewhere, unaffected by whatever sits behind the band), and the mark is
+ * Google's fixed brand colours, not a token.
+ *
+ * An earlier version of this band promoted only the headline and the subline
+ * and left the disclosure paragraph and `QuietJoin` on `--secondary-foreground`
+ * (#B3C1B6), which measures 2.87:1 on this composite — well under the 4.5:1
+ * floor. A version before that used `--secondary-foreground` for the subline
+ * and an 85% scrim to clear it, hiding 85% of the photograph. Both are gone;
+ * see the pull request for the arithmetic each one replaced.
  */
 const SCRIM_OPACITY_CLASS = 'bg-background/65';
 
