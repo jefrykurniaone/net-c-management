@@ -44,6 +44,24 @@ export function wibDayKey(now: Date): string {
     return wibDayStart(now).toISOString().slice(0, 'YYYY-MM-DD'.length);
 }
 
+/** Two digits, so a clock label never reads `9:5`. */
+const CLOCK_DIGITS = 2;
+
+/**
+ * An instant as its WIB wall clock, `HH:MM`.
+ *
+ * Used for a deadline a member has to act before — a payment hold's expiry on a
+ * Session card. Rendered server-side on purpose: `toLocaleTimeString` would read
+ * the machine's zone on the server and the visitor's in the browser, so the same
+ * deadline would render twice with two different numbers and hydrate mismatched.
+ */
+export function wibClockLabel(instant: Date): string {
+    const wib = toWibTime(instant);
+    const hours = String(wib.getUTCHours()).padStart(CLOCK_DIGITS, '0');
+    const minutes = String(wib.getUTCMinutes()).padStart(CLOCK_DIGITS, '0');
+    return `${hours}:${minutes}`;
+}
+
 /** The `Date` a `wibDayKey()` string names — UTC midnight of that WIB day. */
 export function wibDayStartFromKey(dayKey: string): Date {
     return new Date(`${dayKey}T00:00:00.000Z`);

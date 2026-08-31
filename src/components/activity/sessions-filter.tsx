@@ -17,8 +17,11 @@ import { ActivityTile } from './activity-tile';
  * says an Admin has not posted — a search result quietly lying about the state
  * of the week.
  *
- * Controls are square ruled tiles in tracked caps, and the active one is a
- * filled Court Green tile rather than an underline (DESIGN.md, Navigation).
+ * Controls are pills in tracked caps, and the selected one is a filled Lime
+ * tile carrying Black Green — the highlight surface, not the action green. It
+ * is a *selected option*, and The One Action Rule (DESIGN.md) keeps PBP Green
+ * for the thing that writes. Lime is a hue step rather than a lightness one, so
+ * every pill carries a `--border` as well, per The Boundary Rule.
  */
 
 export type SessionView = 'mine' | 'all';
@@ -26,24 +29,18 @@ export type SessionView = 'mine' | 'all';
 type Activity = { id: string; name: string };
 
 const CHIP_BASE = [
-    'inline-flex min-h-11 shrink-0 items-center gap-cell px-block type-label',
-    'whitespace-nowrap transition-colors',
+    'inline-flex min-h-11 shrink-0 items-center gap-cell rounded-full border',
+    'border-border px-block type-label whitespace-nowrap transition-rally',
     'focus-visible:outline-2 focus-visible:outline-ring',
-    'focus-visible:[outline-offset:-2px]',
+    'focus-visible:outline-offset-2',
 ].join(' ');
 
-const CHIP_ON = 'bg-primary-solid text-primary-solid-foreground';
-const CHIP_OFF = 'bg-tile text-secondary-foreground hover:bg-board hover:text-foreground';
+const CHIP_ON = 'bg-accent text-accent-foreground';
+const CHIP_OFF =
+    'bg-card text-secondary-foreground shadow-lift hover:bg-muted hover:text-foreground';
 
-/**
- * `inline-flex` is not enough on its own: a flex item is blockified to `flex`,
- * and the column's own `align-items: stretch` then pulls the group to the full
- * width of the surface — which put 383px of empty bordered box to the right of
- * the last chip. `w-fit` and `self-start` are what actually hold it to its
- * content.
- */
-const RULED_GROUP =
-    'inline-flex w-fit self-start divide-x divide-rule rounded-sm border border-rule';
+/** One row of pills, each sized to its own content and wrapping rather than scrolling. */
+const CHIP_GROUP = 'flex w-fit flex-wrap items-center gap-cell self-start';
 
 /** Builds the href for one filter state, holding the rest of the board's. */
 type HrefFor = (next: { activityId?: string; view?: SessionView }) => string;
@@ -85,7 +82,7 @@ function ViewSwitch({
     labels: Readonly<{ viewMine: string; viewAll: string }>;
 }>) {
     return (
-        <div className={RULED_GROUP}>
+        <div className={CHIP_GROUP}>
             {(['mine', 'all'] as const).map((value) => (
                 <FilterCell
                     key={value}
@@ -111,21 +108,19 @@ function ActivityChips({
     allLabel: string;
 }>) {
     return (
-        <div className='flex overflow-x-auto'>
-            <div className={RULED_GROUP}>
-                <FilterCell href={href({ activityId: '' })} isOn={selected === undefined}>
-                    {allLabel}
+        <div className={CHIP_GROUP}>
+            <FilterCell href={href({ activityId: '' })} isOn={selected === undefined}>
+                {allLabel}
+            </FilterCell>
+            {activities.map((activity) => (
+                <FilterCell
+                    key={activity.id}
+                    href={href({ activityId: activity.id })}
+                    isOn={selected === activity.id}>
+                    <ActivityTile name={activity.name} size='inline' />
+                    {activity.name}
                 </FilterCell>
-                {activities.map((activity) => (
-                    <FilterCell
-                        key={activity.id}
-                        href={href({ activityId: activity.id })}
-                        isOn={selected === activity.id}>
-                        <ActivityTile name={activity.name} size='inline' />
-                        {activity.name}
-                    </FilterCell>
-                ))}
-            </div>
+            ))}
         </div>
     );
 }

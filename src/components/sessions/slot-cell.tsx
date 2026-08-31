@@ -41,11 +41,16 @@ import { TopRight } from './slot-standing';
  *
  * Livery is one shared tile ({@link ActivityTile}) — never an edge stripe, and
  * never a colour this cell picks. This cell hands it the Activity's name and
- * nothing else, so it draws the initial; the Session surfaces wire the chosen
- * icon through under #159.
+ * nothing else, so it draws the initial. The week strip (#159) wires
+ * `Activity.icon` through to the tile; this cell's two remaining callers, the
+ * dashboard and the detail header, do not, and #160 and #161 replace them.
  *
- * Every state here comes from the chip resolver — see `slot-standing.tsx` for
- * the standing column's fixed precedence and `slot-lines.tsx` for the note.
+ * **This cell is retired and awaiting its last two callers.** ADR 0003 replaced
+ * the one shared Slot Cell with a card per surface; the week strip has moved off
+ * it already. What survives the move is the *deciding*: the standing's
+ * precedence now lives in `src/lib/session-standing.ts`, which `slot-standing.tsx`
+ * only draws, and the action's in `slot-action.ts`. See `slot-lines.tsx` for the
+ * note.
  */
 
 export type {

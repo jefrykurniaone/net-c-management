@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { COLUMN_MEASURE } from '@/components/layout/measure';
+import { STRIP_MEASURE } from '@/components/layout/measure';
 import { auth } from '@/lib/auth';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
@@ -12,26 +12,25 @@ import {
     SessionsFilter,
     type SessionView,
 } from '@/components/activity/sessions-filter';
-import {
-    BoardNotice,
-    SessionsBoard,
-} from '@/components/sessions/sessions-board';
+import { StripNotice, WeekStrip } from '@/components/sessions/week-strip';
 import { BoardWeekNav } from '@/components/sessions/board-week-nav';
+import { weekStripDays } from '@/components/sessions/week-strip-view';
 import {
-    boardDayViews,
     monthDayLabel,
     monthDayYearLabel,
-} from '@/components/sessions/board-view';
+} from '@/components/sessions/day-labels';
 
 /**
- * The sessions board. Every day of the displayed week gets a cell, whether or
- * not anything is on it — a day with nothing posted carries a neutral chip and
- * says so, so a member knows an Admin has not posted rather than that they are
- * missing something.
+ * The sessions surface: the chosen week as a strip of seven day columns on a
+ * wide screen, one column on a phone. Every day of the week gets a column
+ * whether or not anything is on it — a day with nothing posted carries a
+ * neutral chip and says so, so a member knows an Admin has not posted rather
+ * than that they are missing something.
  *
- * The page reads and composes; it renders no cell of its own. One Session is
- * drawn in exactly one place in this app, the Slot Cell, and this surface is
- * one of its callers.
+ * The page reads and composes; it draws no card of its own. Each member surface
+ * composes its own Session card (ADR 0003) and every one of them resolves state
+ * through `resolveSessionStanding` and the available action through
+ * `slotActionFor`, so behaviour has one source even though drawing does not.
  */
 
 const SESSIONS_PATH = '/sessions';
@@ -58,8 +57,8 @@ function weekHref(scope: URLSearchParams, week: string): string {
 }
 
 /**
- * The board's own designed states, both of them a neutral-chipped strip above a
- * board that still draws every day. Neutral means *expected but not yet placed*,
+ * The surface's own designed states, both of them a neutral-chipped card above a
+ * strip that still draws every day. Neutral means *expected but not yet placed*,
  * which is the honest state of a community that has just been set up — and a
  * dropped surface would read as broken rather than as quiet.
  */
@@ -160,7 +159,7 @@ export default async function SessionsPage({
     });
 
     return (
-        <BoardSurface
+        <StripSurface
             board={board}
             view={view}
             activityId={activityId}
@@ -170,8 +169,8 @@ export default async function SessionsPage({
     );
 }
 
-/** The board surface itself, once the page has read what it draws. */
-function BoardSurface({
+/** The sessions surface itself, once the page has read what it draws. */
+function StripSurface({
     board,
     view,
     activityId,
@@ -185,16 +184,17 @@ function BoardSurface({
     t: Dictionary;
 }>) {
     const notice = noticeFor(board, view, t);
-    const days = boardDayViews(board.days, {
+    const days = weekStripDays(board.days, {
         t,
         seatsBySession: board.seatsBySession,
         ownBySession: board.ownBySession,
+        holdBySession: board.holdBySession,
         joinedActivityIds: board.joinedActivityIds,
         duesCoveredSessionIds: board.duesCoveredSessionIds,
     });
 
     return (
-        <div className={`${COLUMN_MEASURE} flex flex-col gap-bay`}>
+        <div className={`${STRIP_MEASURE} flex flex-col gap-bay`}>
             <h1 className='type-display text-foreground'>{t.sessions.title}</h1>
             <BoardFilters
                 board={board}
@@ -208,8 +208,8 @@ function BoardSurface({
                 scope={scopeParams(view, activityId)}
                 t={t}
             />
-            {notice && <BoardNotice label={notice.label} body={notice.body} />}
-            <SessionsBoard days={days} t={t} />
+            {notice && <StripNotice label={notice.label} body={notice.body} />}
+            <WeekStrip days={days} t={t} />
         </div>
     );
 }

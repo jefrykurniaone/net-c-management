@@ -57,6 +57,13 @@ export interface SessionsBoardData {
     readonly nextWeekKey: string;
     readonly seatsBySession: ReadonlyMap<string, BoardSeats>;
     readonly ownBySession: ReadonlyMap<string, AttendanceStatus>;
+    /**
+     * `Attendance.holdExpiresAt` for the reader's own rows that carry one — a
+     * Seat claimed against money nobody has confirmed yet. Absent from the map
+     * once the money is behind the Seat, which is what makes the strip's
+     * Reserved chip and its deadline disappear on their own.
+     */
+    readonly holdBySession: ReadonlyMap<string, Date>;
     readonly quotas: ReadonlyMap<string, SessionQuota>;
     /** The Activities the board drew, after any single-Activity filter. */
     readonly activities: readonly BoardActivity[];
@@ -128,6 +135,9 @@ export function resolveWeekStart(
 const BOARD_ACTIVITY_SELECT = {
     id: true,
     name: true,
+    // The Activity's chosen livery (#145), drawn by `ActivityTile` (#164). Null
+    // for an Activity that has none, which the tile answers with the initial.
+    icon: true,
     recurringDay: true,
     recurringStartTime: true,
     recurringEndTime: true,
@@ -216,16 +226,36 @@ function duesCoveredOf(
     return covered;
 }
 
+interface OwnSeats {
+    readonly statuses: Map<string, AttendanceStatus>;
+    readonly holds: Map<string, Date>;
+}
+
+/**
+ * The reader's own rows on this week's Sessions: what each one is, and the
+ * payment deadline on the ones still held against unverified money. The hold
+ * sweep has already run by the time this is called, so a deadline in the map is
+ * one that has not lapsed.
+ */
 async function readOwnSeats(
     userId: string,
     sessionIds: readonly string[],
-): Promise<Map<string, AttendanceStatus>> {
-    if (sessionIds.length === 0) return new Map();
+): Promise<OwnSeats> {
+    if (sessionIds.length === 0) {
+        return { statuses: new Map(), holds: new Map() };
+    }
     const rows = await prisma.attendance.findMany({
         where: { userId, sessionId: { in: [...sessionIds] } },
-        select: { sessionId: true, status: true },
+        select: { sessionId: true, status: true, holdExpiresAt: true },
     });
-    return new Map(rows.map((row) => [row.sessionId, row.status]));
+    const holds = new Map<string, Date>();
+    for (const row of rows) {
+        if (row.holdExpiresAt !== null) holds.set(row.sessionId, row.holdExpiresAt);
+    }
+    return {
+        statuses: new Map(rows.map((row) => [row.sessionId, row.status])),
+        holds,
+    };
 }
 
 /**
@@ -293,7 +323,7 @@ async function readBoard(
         weekStart,
         weekEnd,
     );
-    const [quotas, ownBySession, freeClaimKeys] = await Promise.all([
+    const [quotas, ownSeats, freeClaimKeys] = await Promise.all([
         getSessionQuotas(sessions),
         readOwnSeats(
             params.userId,
@@ -317,7 +347,8 @@ async function readBoard(
         sessions,
         hasAnySession,
         quotas,
-        ownBySession,
+        ownBySession: ownSeats.statuses,
+        holdBySession: ownSeats.holds,
         duesCoveredSessionIds: duesCoveredOf(sessions, freeClaimKeys),
     };
 }
@@ -344,6 +375,7 @@ export async function getSessionsBoard(
         ...weekKeys(weekStart, now),
         seatsBySession: seatsOf(read.sessions),
         ownBySession: read.ownBySession,
+        holdBySession: read.holdBySession,
         quotas: read.quotas,
         activities: read.activities,
         offered: read.offered,
