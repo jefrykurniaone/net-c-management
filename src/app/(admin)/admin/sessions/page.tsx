@@ -44,22 +44,30 @@ function readQuery(sp: RawSearchParams) {
 
 function SessionsHeading({ t }: Readonly<{ t: Dictionary }>) {
     return (
-        <div className='flex flex-wrap items-start justify-between gap-cell'>
-            <div>
-                <h1 className='type-display text-foreground'>
-                    {t.admin.sessionsTitle}
-                </h1>
-                <p className='mt-cell type-caption text-muted-foreground'>
-                    {t.admin.sessionsSubtitle}
-                </p>
-            </div>
-            <Button asChild className='gap-2'>
-                <Link href='/admin/sessions/new'>
-                    <Plus className='w-4 h-4' />
-                    {t.admin.newSession}
-                </Link>
-            </Button>
+        <div>
+            <h1 className='type-display text-foreground'>
+                {t.admin.sessionsTitle}
+            </h1>
+            <p className='mt-cell type-caption text-muted-foreground'>
+                {t.admin.sessionsSubtitle}
+            </p>
         </div>
+    );
+}
+
+/**
+ * Posting a Session is what an Admin comes to this surface to do, so it sits in
+ * the register's card header rather than beside the page title (#166) — one
+ * place to look for the action on every register.
+ */
+function NewSessionButton({ t }: Readonly<{ t: Dictionary }>) {
+    return (
+        <Button asChild className='gap-2'>
+            <Link href='/admin/sessions/new'>
+                <Plus className='w-4 h-4' />
+                {t.admin.newSession}
+            </Link>
+        </Button>
     );
 }
 
@@ -103,6 +111,14 @@ export default async function AdminSessionsPage({
                 rows={rows}
                 caption={t.admin.sessionsCaption}
                 searchParams={sp}
+                header={{
+                    title: t.admin.registerTitleSessions,
+                    count: t.admin.registerCountSessions.replace(
+                        '{n}',
+                        String(total),
+                    ),
+                    action: <NewSessionButton t={t} />,
+                }}
                 empty={emptyRow(t, query)}
                 pagination={{
                     total,

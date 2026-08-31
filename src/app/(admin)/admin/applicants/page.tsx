@@ -118,17 +118,18 @@ function emptyRow(t: Dictionary): Readonly<{ mark: string; text: string }> {
     return { mark: t.admin.applicantsEmptyMark, text: t.admin.applicantsEmpty };
 }
 
-function ApplicantsHeading({
-    t,
-    total,
-}: Readonly<{ t: Dictionary; total: number }>) {
+/**
+ * The page's own title. How many are waiting moved to the register's card
+ * header with #166; what the subtitle keeps is the thing the count does not
+ * say — that an Applicant sees nothing until an Admin lets them in.
+ */
+function ApplicantsHeading({ t }: Readonly<{ t: Dictionary }>) {
     return (
         <div>
             <h1 className='type-display text-foreground'>
                 {t.admin.applicantsTitle}
             </h1>
             <p className='mt-cell type-caption text-muted-foreground'>
-                {t.admin.applicantsSubtitle.replace('{n}', String(total))} ·{' '}
                 {t.admin.applicantsHint}
             </p>
         </div>
@@ -170,12 +171,19 @@ export default async function AdminApplicantsPage({
 
     return (
         <div className='space-y-bay'>
-            <ApplicantsHeading t={t} total={total} />
+            <ApplicantsHeading t={t} />
             <Register
                 columns={applicantColumns(t, getDateFnsLocale(locale))}
                 rows={applicants}
                 caption={t.admin.applicantsCaption}
                 searchParams={sp}
+                header={{
+                    title: t.admin.registerTitleApplicants,
+                    count: t.admin.applicantsSubtitle.replace(
+                        '{n}',
+                        String(total),
+                    ),
+                }}
                 empty={emptyRow(t)}
                 pagination={{ total, page, pageSize, labels: t.table.pagination }}
             />
