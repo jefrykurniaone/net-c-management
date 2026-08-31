@@ -29,4 +29,33 @@
   .transition-rally {
     transition-duration: 0ms;
   }
+
+  /* The overlay layers are the one place Rally keeps a keyframe animation:
+     Dialog, Sheet, Select content and Dropdown-menu content fade, zoom and
+     slide on open and close (#152 kept them — they answer a tap rather than
+     entering on load or on scroll, and Radix needs the exit keyframe to keep
+     the node mounted while it plays). `tw-animate-css` ships no
+     reduced-motion guard and the `motion-reduce:` variant cannot reach these:
+     the enter utilities are emitted as `[data-state='open']` selectors, which
+     outrank a plain class. Rules here are unlayered, so they beat every
+     `@layer utilities` rule whatever its specificity.
+
+     `1ms` rather than `none`: the keyframe still runs and still fires
+     `animationend`, so nothing depends on how a browser treats a zero-length
+     animation, and the reader sees the end state immediately.
+
+     `animate-spin` is deliberately untouched. A spinner reports that work is
+     in progress, which WCAG 2.3.3 treats as essential motion rather than
+     decoration, and stopping it would remove the only signal that the app is
+     still doing something. */
+  [data-slot='dialog-overlay'],
+  [data-slot='dialog-content'],
+  [data-slot='sheet-overlay'],
+  [data-slot='sheet-content'],
+  [data-slot='select-content'],
+  [data-slot='dropdown-menu-content'],
+  [data-slot='dropdown-menu-sub-content'] {
+    animation-duration: 1ms;
+    transition-duration: 0ms;
+  }
 }

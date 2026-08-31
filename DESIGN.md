@@ -115,9 +115,11 @@ components:
     padding: "{spacing.block}"
 ---
 
-<!-- First draft for the Rally system (#148). Chips (#149), primitives (#150)
-     and patterns (#151) fill in the sections marked as theirs; #152 finalises
-     this document against what actually shipped. -->
+<!-- Finalised by #152 against the code that shipped in #148, #149, #150, #151,
+     #157 and #169. Every ratio below is computed from the committed tokens by
+     `src/lib/theme-contrast.ts`; every class name and component fact was read
+     out of the file it names. A rule here that the product breaks is a defect
+     in one of the two, and the one to change is whichever is wrong. -->
 
 # Design System: Rally
 
@@ -176,6 +178,7 @@ reads them back out of the stylesheet, so a nudged token fails on a number.
 | **Black Green** | `#0E1F17` | The dark theme's ground; primary ink on light grounds; the ink on Lime and on PBP Green |
 | **Lime** | `#D8F25E` | The highlight surface — active navigation, a selected option, a focused menu row. Ink on the dark theme's olive accent |
 | **PBP Green** | `#3ED27E` | The primary action's ground, in both themes. Carries Black Green and nothing else |
+| **Green ink** | `#136B3F` / `#3ED27E` | Settled and confirmed. The green that is read rather than filled: chip ink, the settled state, and the first chart series on a light card. Ink step per theme, and on the dark ground it *is* PBP Green |
 | **White** | `#FFFFFF` | Card and popover faces in the light theme |
 | **Shells — cream** | `#FBF8F1` | The lightest warm neutral; raised surfaces |
 | **Shells — beige** | `#F0E9DB` | The light theme's page ground, and its muted and secondary fills |
@@ -204,8 +207,15 @@ is no size at which a light label on this green becomes acceptable.
 ### Measured pairs
 
 Every pair the shipped surfaces can produce, both themes, with the ratio it
-has to clear. The full table is generated from the committed tokens by
-`src/lib/theme-contrast.ts`; the worst case in each family is below.
+has to clear. All **62** live in `AA_PAIRS` in `src/lib/theme-contrast.ts` and
+are asserted twice each — once per theme — against the hex values parsed out of
+`src/app/styles/board-materials.css`. The worst case in each family is below.
+
+Of those 62, the last two are the admin shell's own: the active navigation
+item's label and its boundary, both measured against `--sidebar-accent`. They
+are separate rows because the admin shell is forced dark whatever the page
+theme, so its active item stays a Lime tile carrying Black Green in both
+themes rather than inverting the way the page's own `--accent` does.
 
 | Pair | Light | Dark | Floor |
 |---|---|---|---|
@@ -218,6 +228,7 @@ has to clear. The full table is generated from the committed tokens by
 | link on an accent hover | 6.90 | 5.79 | 4.5 |
 | active navigation label on its fill | 13.68 | 10.06 | 4.5 |
 | **the primary action's label** | **8.74** | **8.74** | 4.5 |
+| the secondary action's label | 14.75 | 14.75 | 4.5 |
 | settled ink on the ground | 5.43 | 8.74 | 4.5 |
 | provisional chip | 6.00 | 6.73 | 4.5 |
 | void chip | 6.04 | 5.88 | 4.5 |
@@ -235,6 +246,52 @@ none of them is a WCAG pairing:
 | action fill on a card | 1.96 | 7.54 | The control is identified by its 8.74:1 label and its shadow. Darkening PBP Green until the *fill* cleared 3:1 on white lands back on the court green this system retired |
 | accent fill on the ground | 1.04 | 1.36 | A hue step, not a lightness one. A caller that needs the state identifiable without colour draws the 3.18:1 rule on it, or sets the weight — which is what the navigation does |
 
+### Two actions that do not move with the theme
+
+`--primary-solid` / `--primary-solid-foreground` is PBP Green carrying Black
+Green, identical in both themes, at **8.74:1**. `--secondary-solid` /
+`--secondary-solid-foreground` is Black Green carrying off-white, also identical
+in both themes, at **14.75:1**. A button that changes colour when the light
+changes is not *the action* any more, and the second action is the same promise
+as the first.
+
+`--secondary-solid` is a separate token from `--secondary` on purpose, and the
+two must not be merged. `--secondary` stays a light neutral because
+`--secondary-foreground` runs body text at 54 sites; turning it into an inverted
+fill would take every one of them with it.
+
+### Chart series
+
+Series colours are **not** free. Each of the five clears **3:1** against
+`--card`, and all ten pairs are asserted:
+
+| Series | Light | Dark | Value (light / dark) |
+|---|---|---|---|
+| `--chart-1` | 6.56 | 7.54 | `#136B3F` / `#3ED27E` |
+| `--chart-2` | 5.34 | 6.80 | `#6C4CF0` / `#B7A4F7` |
+| `--chart-3` | 3.10 | 7.06 | `#E8701A` / `#F2A24A` |
+| `--chart-4` | 7.43 | 5.67 | `#9E2B25` / `#F08078` |
+| `--chart-5` | 17.11 | 11.80 | `#0E1F17` / `#D8F25E` |
+
+The floor is 3:1 rather than 4.5:1 because a plotted mark is a non-text
+graphical object under WCAG 1.4.11, and the surface is `--card` because
+`ChartFigure` composes every Rally chart onto a Card. **A series is never drawn
+straight onto the page ground**, where `--chart-3` would measure 2.57:1 and
+`--chart-2` 4.42:1 — a figure that escapes its card breaks this table.
+`--chart-3` at 3.10 light is the tightest pair in the system; it clears, and it
+has no room to be nudged.
+
+This replaces an earlier decision that colour was free for charts because the
+figure carries its numbers as text as well. That was load-bearing on a real
+problem: `--chart-1` was PBP Green in both themes, which measures **1.96:1** on
+a white card, and #169's first render showed a green line that was barely there.
+Two things were wrong with it and one fix answers both — *The One Action Rule*
+already forbids the action green from becoming a chart series, so the light
+theme now takes the settled green **ink** instead. On the dark ground the ink
+step and the bright value are the same colour, so the dark theme is unchanged.
+The text list stays; it is what makes a chart readable to someone who cannot see
+it at all, and it was never an argument for an illegible mark.
+
 ### Named rules
 
 **The Label Rule.** No state is ever communicated by colour alone. Every chip
@@ -245,8 +302,10 @@ six mark forms.
 **The Two-Value Rule.** A colour that is both a fill and running text carries
 two values — the reference value and a measured ink step — and the token layer
 names both. `--primary` is the ink, `--primary-solid` is the fill; the same
-split runs through warning and destructive. A call site never picks between
-them: the token it reaches for already is the right one.
+split runs through secondary, warning and destructive. A call site never picks
+between them: the token it reaches for already is the right one. The rule
+reaches the chart ramp too — `--chart-1` is the green *ink*, because a series is
+a mark to be seen rather than an action to be pressed.
 
 **The Measured-Pair Rule.** A pair enters the palette by measurement, not by
 eye, and every pair the product can render is in `AA_PAIRS` with its floor.
@@ -326,7 +385,22 @@ than 12 characters, in either locale**. Total length drives line count and
 therefore the fold; longest word drives horizontal overflow at both ends of the
 clamp. Both are asserted in `src/lib/__tests__/pitch-budget.test.ts` against
 both locales. Condensing the role only made the budget more conservative, so it
-carries over unchanged. It does **not** extend to page metadata: a crawler
+carries over unchanged.
+
+**The budget now has a second author, and that is why it is a rule rather than
+an editorial habit.** #153 reopened the 2026-08-19 decision that no `Settings`
+key writes public copy, for the public route only: the landing headline and
+subline are Admin-authored through `publicHeroHeadline` and `publicHeroSubline`,
+with the dictionary's `landing.hero.pitch` and `landing.hero.lead` as the
+fallback when a key is blank. The caps are enforced on the way in, in
+`src/lib/public-copy.ts` — `heroHeadline: 48`, `heroHeadlineWord: 12`,
+`heroSubline: 120` — and the word rule applies to the **headline only**, because
+the subline is Body and does not run at the display clamp. An Admin's copy is
+refused with the reason they will see first, rather than accepted and allowed to
+overflow. A design rule that only the dictionary obeyed would have been a
+comment; one the write path enforces survives a stranger typing into a form.
+
+It does **not** extend to page metadata: a crawler
 sends no locale cookie, so a title is always read in English and is sized
 against a search result.
 
@@ -361,18 +435,26 @@ The tints are per-theme. In the light theme the shadow is the ink colour at low
 alpha, so it warms rather than greys; on Black Green it is neutral and deeper,
 because a tinted shadow disappears on a dark ground.
 
-**Borders are for controls and dividers, not for cards.** A card is bounded by
-its shadow and its own face. Where a border is drawn — an input, a divider
-inside a card, a selected option — it is `--border`, and it clears 3:1 against
-every surface it can land on, including Lime. One value serves all of them
-deliberately: a hairline that disappears against one of the washes is not a
+**Borders are for controls, dividers and overlays, not for cards.** A card is
+bounded by its shadow and its own face. Where a border is drawn — an input, a
+divider inside a card, a selected option — it is `--border`, and it clears 3:1
+against every surface it can land on, including Lime. One value serves all of
+them deliberately: a hairline that disappears against one of the washes is not a
 boundary, and a control without a boundary fails 1.4.11.
+
+An **overlay** surface — a dialog, a sheet, a popover, a menu — carries
+`--border` as well as `shadow-lift`, and that is not an exception being smuggled
+in. A card sits on a ground this system chose; an overlay floats over whatever
+happened to be underneath it, so its own face cannot be relied on to separate it
+from that.
 
 ### Named rules
 
 **The No-Glow Rule.** No zero-offset shadows, no coloured glows, no backdrop
 blur, no gradients and no gradient text. Depth is an offset shadow and nothing
-else.
+else. A **focus ring** is not depth and is not covered: it is a state indicator
+that WCAG 1.4.11 requires, it is drawn at zero offset because that is what a
+ring is, and every control has one.
 
 **The Boundary Rule.** Every control and every selected state is identifiable
 without relying on its fill. Either the fill clears 3:1 against what is behind
@@ -383,38 +465,155 @@ otherwise fail a reader who cannot see the hue.
 
 ## Chips
 
-*Owned by #149; this section is a placeholder for what that ticket settles.*
+One chip component (`src/components/ui/chip.tsx`) replaces the six marks.
+Anatomy: a `rounded-full` pill, a tinted wash, a 1px edge in the chip's own
+ink, a `size-1.5` filled dot taking `bg-current`, and the label in Label type
+with `tabular-nums`. The dot is `aria-hidden`: it is the label that carries the
+state, and the dot cannot drift off a measured pair because it is the label's
+own colour.
 
-One chip component replaces the six marks. Anatomy: a pill, a tinted wash, a
-small filled dot in the chip's colour, and the label in Label type. Five
-variants by semantic, each resolved from a domain state by the existing shared
-resolver so that no call site picks a colour:
+Five variants by semantic. No call site picks one — `resolveStatusChip` in
+`src/lib/status-chip.ts` maps a `DomainState` to a variant and a dictionary key,
+and every branch is a `Record` over a closed Prisma enum, so a new state fails
+the build until somebody decides what it looks like.
 
-| Variant | Colour | Means |
-|---|---|---|
-| **settled** | PBP Green family | Confirmed payment, present participant |
-| **provisional** | Orange | Pending payment, a seat held on unverified money |
-| **void** | Dark Red | Rejected payment, cancelled session, no-show |
-| **neutral** | Shells | Withdrawn, opted out, nothing placed yet |
-| **info** | Purple | Informational |
+| Variant | Tokens (wash / ink / edge) | Light | Dark | Producers |
+|---|---|---|---|---|
+| **settled** | `--success-soft` / `--success-soft-foreground` / `--success-soft-border` | 5.59 | 7.06 | Confirmed Payment, Present, Registered, a posted Session |
+| **provisional** | `--warning-soft` / `--warning-soft-foreground` / `--warning-soft-border` | 6.00 | 6.73 | Payment in review, a Seat held on money not yet verified, Maybe |
+| **void** | `--destructive-soft` / `--destructive` / `--destructive-soft-border` | 6.04 | 5.88 | Rejected Payment, cancelled Session, No-Show |
+| **neutral** | `--muted` / `--muted-foreground` / `--border` | 5.90 | 7.03 | Opted Out, nothing placed yet, an empty register or chart |
+| **info** | `--primary-soft` / `--primary` / `--primary-soft-border` | 6.93 | 7.14 | Informational |
 
-**The label is mandatory** — see The Label Rule. The de-emphasis behaviour the
-old system carried survives: the value beside a void chip recedes to the muted
-ink rather than being struck through.
+Each chip's **edge** clears 3:1 against its own wash on the same numbers, except
+the neutral chip, whose taupe edge measures **3.29 / 3.70** — still past the
+floor, and the reason `--border` is as dark as it is.
+
+**The label is mandatory.** `ChipProps` omits `children` and requires `label`,
+so there is no second way to put text in a chip and no way to put none. That is
+what makes it legitimate to have dropped the six mark forms — see *The Label
+Rule*. `StatusChip` takes its labels as `t.chips`, so a label can only be one
+that ships in both English and Indonesian.
+
+**Nothing is ever struck through.** The de-emphasis the old system carried
+survives as `StatusValue`: the value a void state applies to — a Session's
+title, a Payment's amount — recedes to `--muted-foreground`. Measured **7.13 /
+7.89** on a card and **5.90 / 9.14** on the page ground, and **5.80 / 8.19**
+where it sits inside the void wash itself. A line drawn through a row's own
+title reads as damage to the row rather than as a state, and the chip beside it
+already says *cancelled* or *rejected* in words.
+
+One widening to know about: the retired `MarkedValue` keyed off the Strike mark
+and No-Show was Hollow, so a No-Show value was never dimmed. No-Show is void
+now, so a caller passing an `attendanceState` to `StatusValue` **would** dim it.
+Nothing does today — every call site passes `paymentState` or `sessionState` —
+but a surface that wants a No-Show row at full strength has to say so.
+
+**The email chips are a hand-kept copy, and the tokens are authoritative.** An
+email client cannot read a CSS custom property, so `src/lib/email/layout.ts`
+inlines its own hexes — `#136B3F` on `#DDF2E4` for settled, `#9E2B25` on
+`#F8E3E1` for void. That is the one permitted duplication in this repository.
+Today those four values are exactly the light theme's `--success-soft-foreground`,
+`--success-soft`, `--destructive` and `--destructive-soft`, and **nothing keeps
+them agreeing**: no test reads both. A chip colour that moves in the token layer
+has to be carried across to that file by hand, in the same change.
 
 ## Patterns
 
-*Owned by #151; this section is a placeholder for what that ticket settles.*
+Four decorative backgrounds, one component each under
+`src/components/patterns/`: `GridPattern` (thin grid lines), `RingPattern`
+(concentric rings), `DashPattern` (diagonal dashed lines) and `ArrowRowPattern`
+(a row of thin arrows). They render behind content only, are `aria-hidden`,
+take no pointer events, and never carry information. No sport-specific shapes —
+the product must not name a sport, so the reference's ball outlines are rings.
 
-Four decorative backgrounds as CSS or inline SVG, each a component with a size
-and a colour resolved from tokens: thin grid lines, concentric rings, diagonal
-dashed lines, a row of thin arrows. They render behind content only, are
-`aria-hidden`, and never carry information. No sport-specific shapes — the
-product must not name a sport, so the reference's ball outlines are rings.
+Their shared contract is `pattern-tokens.ts`:
 
-**Motion**, when it arrives: hover and focus transitions on interactive
-elements at 150–200ms, honouring `prefers-reduced-motion`. No entrance or
-scroll animations.
+- **Colour comes from a closed union**, not a `string`. `PatternColorToken` is
+  `border | muted-foreground | accent | primary | success | warning |
+  destructive`, resolved to `var(--<token>)`. A call site cannot hand a pattern
+  an arbitrary CSS colour, because decoration behind content may only draw from
+  values this system has already measured.
+- **`PATTERN_OPACITY` is `0.14` and is not a prop.** It was chosen so that even
+  where a line sits directly behind a headline glyph the blended ground still
+  clears the 4.5:1 text floor by a wide margin — measured about 12.3:1 against a
+  14.2:1 baseline for the grid pattern behind the hero headline, in both themes.
+  A caller that could raise it could put a pattern in front of the text.
+- **`DEFAULT_PATTERN_SIZE_PX` is `240`**, and what the size means is each
+  component's own business.
+
+## Motion
+
+**One duration token and one utility.** `--duration-rally: 175ms`, in the middle
+of the 150–200ms band, and `.transition-rally`, both in
+`src/app/styles/motion.css`. The utility transitions `color`,
+`background-color`, `border-color`, `box-shadow` and `transform` on `ease-out`.
+It is the token new work reaches for; the primitives restyled by #150 predate it
+and carry Tailwind's own `transition-colors duration-150` (the button and the
+tab take `transition-all duration-150`, the sheet `transition duration-200`),
+which is inside the same band. **No consumer of `.transition-rally` has shipped
+yet** — the surface runs are what adopt it.
+
+**Motion is hover, focus and state, never arrival.** There are no entrance
+animations on content and no scroll animations anywhere. The one keyframe
+animation Rally keeps is the overlay layer: Dialog, Sheet, Select content and
+Dropdown-menu content fade, zoom and slide on open and close, at `duration-100`
+(`duration-200` on the Sheet). Those stay, deliberately — they answer a tap
+rather than entering on load or on scroll, they tell a reader a layer arrived
+instead of the page having been replaced, and Radix needs the exit keyframe to
+keep the node mounted while it plays. An element that animates because the page
+loaded, or because it came into view, is what the rule bans.
+
+**Reduced motion is honoured everywhere motion is decorative.** Every
+transition in the primitives carries `motion-reduce:transition-none`; the
+skeleton carries `motion-reduce:animate-none`; `motion.css` collapses
+`.transition-rally` to `0ms` and the seven overlay slots to a `1ms` animation
+under `prefers-reduced-motion: reduce`. That last rule is written against
+`[data-slot='…']` rather than as a `motion-reduce:` variant because the enter
+utilities are emitted as `[data-state='open']` selectors, which outrank a plain
+class; the rules are unlayered, so they win over `@layer utilities` whatever its
+specificity.
+
+**The one exemption is the spinner.** `animate-spin` on a loading `Loader2`
+keeps turning under reduced motion. A spinner reports that work is in progress,
+which WCAG 2.3.3 treats as essential rather than decorative, and stopping it
+would remove the only signal that the app is still doing something.
+
+## Components
+
+What the restyled primitives actually resolve. A surface composes these; it does
+not restate their treatment.
+
+| Primitive | At rest | Focus / state |
+|---|---|---|
+| **Button** — `default` | `--primary-solid` fill, `--primary-solid-foreground` ink, `shadow-lift`, `rounded-lg` = 8px | `focus-visible` paints a 1px `--ring` border **and** a 3px `--ring/50` halo; `active` drops to `shadow-none` and nudges `translate-y-px` |
+| **Button** — `secondary-solid` | `--secondary-solid` / `--secondary-solid-foreground`, `shadow-lift` | as above. No call site consumes it yet |
+| **Button** — `destructive`, `destructive-outline`, `outline`, `ghost`, `secondary`, `link` | fills and edges from the matching token family; `outline` and `ghost` hover to `--muted` | as above, with `--destructive` tinting the ring on the two destructive variants |
+| **Card** | `--card` face, `rounded-xl` = 12px, `shadow-lift`, **no border** | the footer takes `border-t` and a `--muted/50` wash |
+| **Input**, **Textarea**, **Select** trigger, **native select** | `--card` fill, 1px `--input` edge, `rounded-md` = 8px | `focus-visible` resolves a `--ring` border plus a 2px `--ring` ring offset 2px; `aria-invalid` resolves a `--destructive` border and a `--destructive/20` ring; `read-only` falls back to `--background` |
+| **Checkbox** | 1px `--input` edge, `rounded-sm` = 8px | checked fills `--primary` with `--primary-foreground`; focus takes a `--ring/50` 3px ring |
+| **Table** | rows ruled with `border-b`, hover `--muted/50` | column heads take the Label role and `--muted-foreground` from the base layer |
+| **Tabs** | `rounded-full` triggers, `--foreground/60` ink | active raises the ink and paints a 2px `--foreground` underline |
+| **Stat card**, **Empty state** | `--card`, `rounded-xl`, `shadow-lift` | the stat card lifts to `shadow-lift-hover`; the empty state carries a `neutral` chip and one sentence |
+| **Chart figure** | a Card carrying a title, the drawn chart, a caption and a `<details>` list of every plotted value | the value list is the accessibility contract: a chart is never the only representation of its numbers |
+
+**A utility passed to a primitive does not always win, and nothing tells you
+when it loses.** `cn()` is `tailwind-merge`, which resolves a conflict only
+between classes in the **same group**. `display` and `flex-direction` are
+different groups, so passing `flex-row` to a primitive whose base class already
+says `grid` leaves the `grid` in place and silently drops the intent —
+`CardHeader`'s base begins `grid auto-rows-min items-start`, and #162 found a
+card header rendering stacked instead of side-by-side for exactly that reason.
+Lint, `tsc`, Vitest and `next build` were all green while it was wrong, because
+none of them renders anything. Pass the `display` utility as well as the one
+that depends on it (`flex flex-row`), or change the primitive.
+
+Two more shapes worth stating on their own. **A card is bounded by its shadow
+and its own face, not by a border** — #150 removed the card border, which is why
+`card` on `background` is measured and published rather than asserted. And
+**every control's focus indicator has a full-opacity part**: the 1px
+`border-ring`, at 7.15 / 7.88 against the page ground. The 3px halo is at 50%
+alpha and is not what a reader who needs the indicator is relying on.
 
 ## Do's and Don'ts
 
@@ -433,6 +632,14 @@ scroll animations.
 - **Do** use the vocabulary in `CONTEXT.md` in component names and user-facing
   copy — Session, Seat, Dues, Fee, Payment, Proof, Participant, Opted Out,
   No-Show.
+- **Do** let a state reach a chip through `resolveStatusChip`, and take the
+  label from `t.chips`.
+- **Do** draw every chart inside a `ChartFigure`, so the series sit on a card
+  face and the numbers are also present as text.
+- **Do** give a new transition `.transition-rally`, or Tailwind's own
+  `duration-150` with `motion-reduce:transition-none` beside it.
+- **Do** carry a chip colour change across to `src/lib/email/layout.ts` by hand,
+  in the same commit.
 
 ### Don't
 
@@ -446,6 +653,19 @@ scroll animations.
 - **Don't** set figures, labels or body text at a condensed width.
 - **Don't** invent a third radius or a third shadow at a call site.
 - **Don't** add a consumer of a retired token name — see *Retired rules*.
+- **Don't** strike a value through to say it was rejected or cancelled. Dim it
+  with `StatusValue` and let the chip carry the word.
+- **Don't** animate anything on load or on scroll, and don't add a keyframe
+  animation without a reduced-motion rule beside it. A loading spinner is the
+  one exemption.
+- **Don't** hand a pattern a colour that is not in `PatternColorToken`, and
+  don't raise `PATTERN_OPACITY` at a call site — it is not a prop.
+- **Don't** put a chart on the page ground, and don't let a series be the only
+  way to read a number.
+- **Don't** assume a utility handed to a shared primitive beats the primitive's
+  own base class. `tailwind-merge` only resolves classes in the same group, so a
+  `flex-row` on a `grid` base is a silent no-op that every gate passes. Look at
+  the primitive's base string, and pass the `display` utility too.
 - **Don't** put this document's vocabulary — Rally, Display, Shells — into
   user-facing copy. It names the design, not the product.
 
@@ -456,6 +676,12 @@ internally consistent. It is retired in full, for the reasons in
 [ADR 0003](docs/adr/0003-retire-papan-jadwal-for-rally.md). Its rules are kept
 here with one reason each so that the reasoning survives and nobody re-opens
 the argument in six months. **None of these is in force.**
+
+Reviewed against the shipped code on 2026-08-31 (#152). Two entries needed
+correcting rather than restating, and both are marked below: the six marks and
+the strike went further than "replaced" — no element in `src/` carries a
+strike-through utility any more — and the wash aliases have already lost every
+call site. Everything else retired as written.
 
 ### Colour
 
@@ -473,7 +699,7 @@ the argument in six months. **None of these is in force.**
 |---|---|
 | **The One Hand Rule** — one family, because a real board is lettered by one hand | Kept in substance as *The One Family Rule*. The reason changed: Rally has one family because its width axis makes a second unnecessary, not because a board has one hand |
 | **The Tracked-Caps-Are-Structural Rule** — tracked caps mark the board's own furniture | The furniture is gone. Tracked caps are now simply the Label role, used for column heads and chip text; there is no rule left to state |
-| **The Pitch Budget Rule** | **Still in force**, restated above unchanged. Condensing Display only widened the margin, and the Vitest assertions were never about the board |
+| **The Pitch Budget Rule** | **Still in force**, restated above with one addition. Condensing Display only widened the margin, and the Vitest assertions were never about the board. The addition is not Rally's: #153 gave the headline and subline a second author, so the same numbers are now enforced on an Admin's input as well as on the dictionary |
 | **The Never-Bleed Rule** | **Still in force**, restated above unchanged. It is about a runtime-configured name of unknown length, which no change of design system affects |
 
 ### Elevation, shape and layout
@@ -493,7 +719,7 @@ the argument in six months. **None of these is in force.**
 
 | Retired rule | Why it no longer applies |
 |---|---|
-| **The Six Marks** — Ink, Tape, Strike, Erased, Blank, Hollow, distinguished by form first | Replaced by five labelled chip variants (#149). The owner chose colour-plus-label over form; the accessibility obligation moves to the mandatory label, and the test asserts it |
+| **The Six Marks** — Ink, Tape, Strike, Erased, Blank, Hollow, distinguished by form first | Replaced by five labelled chip variants (#149). The owner chose colour-plus-label over form; the accessibility obligation moves to the mandatory label, and the test asserts it. **Reviewed 2026-08-31:** the forms are gone outright — no strike-through utility, no decoration-thickness override, no `data-mark` attribute and no torn-edge class anywhere in `src/`, and `mark-forms.css` is deleted |
 | **Blank and Hollow are never interchangeable** | The distinction survives in the domain — nobody has acted yet is not the same as somebody should have — but it is now carried by two labels rather than two outlines |
 | **The Slot Cell is a seam, not a pattern** — one component draws every Session, taking data and never nodes | Retired per ADR 0003: each surface composes its own card. The *resolvers* that decide state and available action stay shared, so behaviour still has one source even though drawing does not |
 | **The top-right slot holds exactly one thing** — free Seats or a mark, in a fixed precedence | Retired with the cell. The precedence itself is server-side logic and is unaffected |
@@ -508,21 +734,39 @@ the argument in six months. **None of these is in force.**
 
 ### Retired token names
 
-These resolve to their nearest Rally value in `src/app/globals.css` so that the
-roughly sixty files still naming them keep rendering. **#174 removes the
-aliases and the last call sites with them. Nothing new may consume one.**
+These resolve to their nearest Rally value in `src/app/globals.css` and
+`src/app/styles/type-roles.css` so that the files still naming them keep
+rendering. **#174 removes the aliases and the last call sites with them.
+Nothing new may consume one.** Counted in `src/` on 2026-08-31:
 
-| Retired name | Resolves to |
-|---|---|
-| `bg-board`, `ring-offset-board` | `--background` |
-| `bg-tile` | `--card` |
-| `border-rule`, `divide-rule`, `bg-rule` | `--border` |
-| `bg-wash-ink` | `--success-soft` |
-| `bg-wash-tape` | `--warning-soft` |
-| `bg-wash-strike` | `--destructive-soft` |
-| `shadow-tile` | `--shadow-lift` |
-| `shadow-tile-pressed` | a no-op shadow, i.e. `shadow-none` |
-| `type-hero` | Display |
-| `type-mark` | its own former letterforms, until the public spec gives the wordmark a Rally role |
+| Retired name | Resolves to | Call sites left |
+|---|---|---|
+| `bg-board` | `--background` | 20 in 15 files |
+| `ring-offset-board` | `--background` | 1, in `landing/hero-band.tsx` |
+| `bg-tile` | `--card` | 31 in 25 files |
+| `border-rule` | `--border` | 56 in 39 files |
+| `divide-rule` | `--border` | 5 in 5 files |
+| `bg-rule` | `--border` | 4 in 3 files |
+| `bg-wash-ink` | `--success-soft` | **0** |
+| `bg-wash-tape` | `--warning-soft` | **0** |
+| `bg-wash-strike` | `--destructive-soft` | **0** |
+| `shadow-tile` | `--shadow-lift` | 2 |
+| `shadow-tile-pressed` | a no-op shadow, i.e. `shadow-none` | 2 |
+| `type-hero` | Display | 1 outside tests and comments |
+| `type-mark` | its own former letterforms, until the public spec gives the wordmark a Rally role | 4 |
+
+The three wash aliases already have **no consumer at all**: the chips took their
+call sites with them in #149, and only the alias itself is left to delete.
 
 `--radius-rail` is gone rather than aliased: it had no consumer.
+
+Three retired *class* names have no consumer either and are not aliases: the
+strike-through utility, the 1.5px decoration-thickness override beside it, and
+the torn-edge class the Tape mark drew. The torn edge cannot render at all —
+`src/app/styles/mark-forms.css`, which defined it, is deleted. The other two are
+Tailwind utilities, and until #152 rewrote `TESTING.md` they were still being
+emitted into the built stylesheet: Tailwind v4's automatic source detection
+scans markdown, and the old TC-DS-006 quoted the class strings verbatim, so a
+test document was keeping dead CSS alive on its own. **This is why neither
+document spells those two class names any more.** Worth remembering the next
+time one of these tables says a name has no consumer.
