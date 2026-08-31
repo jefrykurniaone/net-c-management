@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { GoogleMark } from '@/components/auth/GoogleMark';
 import { GridPattern } from '@/components/patterns/GridPattern';
@@ -52,17 +53,27 @@ export function HeroBand({
     t,
     headline,
     subline,
+    heroImageUrl,
 }: Readonly<{
     t: Dictionary;
     /** Resolved copy, never empty — `getPublicCopy` has already applied the
      *  dictionary fallback, so this band never asks whether one is needed. */
     headline: string;
     subline: string;
+    /** The Admin's uploaded photograph, or `''` for the pattern (#155). */
+    heroImageUrl: string;
 }>) {
+    // Trimmed once, here, rather than separately in `HeroBackdrop`: a
+    // whitespace-only Settings value is a missing photograph, and the
+    // subline's colour and the backdrop's branch must never disagree about
+    // which case they are in.
+    const photoUrl = heroImageUrl.trim();
+    const hasPhoto = photoUrl !== '';
+
     return (
         <section
             className={`${FORCED_DARK_CLASS} relative isolate w-full overflow-hidden bg-background px-block ${HERO_AIR_CLASS}`}>
-            <HeroBackdrop />
+            <HeroBackdrop photoUrl={photoUrl} />
             {/* The headline and the action are **siblings in one flow column**,
                 never stacked layers. That is what makes "the headline never
                 paints over the action" a structural guarantee rather than a
@@ -100,47 +111,122 @@ export function HeroBand({
                     it. Body is what the about band below runs at, so the two
                     do not read as the same paragraph twice. Capped at 120
                     characters, which is three lines here at the small end of
-                    the clamp. */}
-                <p className='type-statement min-w-0 max-w-full break-words text-secondary-foreground'>
+                    the clamp.
+
+                    Ink is conditional on the backdrop, not fixed (#155 review
+                    — round two: the *same* switch belongs on every text
+                    element the backdrop sits behind, not only this one; the
+                    disclosure paragraph and `QuietJoin` below carry it too).
+                    `--secondary-foreground` is deliberately muted, tuned for
+                    the *known*, fixed ground the pattern backdrop draws — over
+                    an Admin's photograph the ground is unknown and only ever
+                    guaranteed down to a worst-case white, so every one of
+                    these switches to the same `--foreground` the headline
+                    uses. One colour, one composite, one guaranteed ratio —
+                    see `SCRIM_OPACITY_CLASS` below for the arithmetic. */}
+                <p
+                    className={`type-statement min-w-0 max-w-full break-words ${hasPhoto ? 'text-foreground' : 'text-secondary-foreground'}`}>
                     {subline}
                 </p>
 
                 <HeroAction t={t} />
 
-                {/* Body weight and secondary ink, never Caption and never the
-                    muted step. The label defers to this sentence, so it is not
-                    fine print — a condition disclosed in fine print is not
-                    disclosed. */}
+                {/* Body weight, never Caption and never the muted step — and,
+                    over a photograph, `--foreground` rather than the pattern
+                    hero's `--secondary-foreground`, for the reason on the
+                    subline above. The label defers to this sentence, so it is
+                    not fine print — a condition disclosed in fine print is
+                    not disclosed. */}
                 <p
                     id={DISCLOSURE_ID}
-                    className='type-body text-secondary-foreground'>
+                    className={`type-body ${hasPhoto ? 'text-foreground' : 'text-secondary-foreground'}`}>
                     {t.landing.hero.disclosure}
                 </p>
 
                 {/* The returning member fires the *same* action inline — no
                     navigation and no Google mark, so it stays quiet next to the
-                    primary. */}
-                <QuietJoin label={t.landing.hero.alreadyMember} />
+                    primary. `onPhotograph` carries the same colour switch as
+                    the subline and the disclosure — `QuietJoin`'s other call
+                    site (`activities-band.tsx`) never sets it, so it keeps its
+                    muted colour on that band's ordinary, photograph-free
+                    ground. */}
+                <QuietJoin
+                    label={t.landing.hero.alreadyMember}
+                    onPhotograph={hasPhoto}
+                />
             </div>
         </section>
     );
 }
 
 /**
+ * `bg-background` at this opacity, over the worst case a photograph can be —
+ * a plain white test image — still holds text to its AA floor of 4.5:1
+ * (measured with `src/lib/theme-contrast.ts`'s own `contrastRatio`,
+ * arithmetic in the pull request that revised this).
+ *
+ * Every text element this band draws over a photograph — the headline, the
+ * subline, the disclosure paragraph and `QuietJoin`'s link — draws the same
+ * `--foreground` (#F1EEE5 forced-dark; see the subline's own comment above
+ * for why none of them uses `--secondary-foreground` here). One colour means
+ * exactly one pairing to clear rather than four, and this is the least whole
+ * percent that clears it: composited over white, `#F1EEE5` on `65`
+ * (`#626D68`) measures **4.63:1**; one point lower, `64` (`#65706B`), is
+ * 4.43:1 and fails. `65` is the minimum with a safety margin the rounding at
+ * the boundary would not give.
+ *
+ * `HeroAction`'s button label and `GoogleMark` are not in this inventory:
+ * the button carries its own opaque `--primary-solid` fill (asserted
+ * elsewhere, unaffected by whatever sits behind the band), and the mark is
+ * Google's fixed brand colours, not a token.
+ *
+ * An earlier version of this band promoted only the headline and the subline
+ * and left the disclosure paragraph and `QuietJoin` on `--secondary-foreground`
+ * (#B3C1B6), which measures 2.87:1 on this composite — well under the 4.5:1
+ * floor. A version before that used `--secondary-foreground` for the subline
+ * and an 85% scrim to clear it, hiding 85% of the photograph. Both are gone;
+ * see the pull request for the arithmetic each one replaced.
+ */
+const SCRIM_OPACITY_CLASS = 'bg-background/65';
+
+/**
  * The hero's background layer, and the slot the Admin's photograph fills.
  *
- * Today it is the grid-lines pattern over the dark ground. #155 puts the
- * uploaded photograph in this layer — `object-fit: cover`, centred, with a
- * dark scrim over it — and keeps the pattern as the fallback when no image is
- * set. Everything the layer needs is already true of it: it is the band's own
- * positioned backdrop, it is out of the accessibility tree, it takes no
- * pointer events, and it clips at the band's edges.
+ * With no photograph set, it is the grid-lines pattern over the dark ground:
+ * the pattern draws in `--border` at `PATTERN_OPACITY`, which blends the dark
+ * ground to `#1d2e26` where a line sits directly behind a glyph, and the
+ * headline still measures 12.31:1 there and the subline 7.63:1.
  *
- * The pattern draws in `--border` at `PATTERN_OPACITY`, which blends the dark
- * ground to `#1d2e26` where a line sits directly behind a glyph. The headline
- * still measures 12.31:1 there and the subline 7.63:1, against floors of 4.5.
+ * With one set (#155), the photograph fills the layer — `object-fit: cover`,
+ * centred, `priority` since it is always above the fold — with the dark
+ * scrim above it for the contrast a photograph cannot promise on its own.
+ * Everything the layer needs is already true of it: it is the band's own
+ * positioned backdrop, it is out of the accessibility tree (the wrapping
+ * `aria-hidden`, kept from before), it takes no pointer events, and it clips
+ * at the band's edges (`overflow-hidden` here, `overflow-hidden` on the
+ * section already).
  */
-function HeroBackdrop() {
+function HeroBackdrop({
+    photoUrl,
+}: Readonly<{ photoUrl: string }>) {
+    if (photoUrl) {
+        return (
+            <div
+                aria-hidden='true'
+                className='absolute inset-0 -z-10 overflow-hidden bg-background'>
+                <Image
+                    src={photoUrl}
+                    alt=''
+                    fill
+                    priority
+                    sizes='100vw'
+                    className='object-cover object-center'
+                />
+                <div className={`absolute inset-0 ${SCRIM_OPACITY_CLASS}`} />
+            </div>
+        );
+    }
+
     return (
         <div aria-hidden='true' className='absolute inset-0 -z-10 bg-background'>
             <GridPattern isStretched colorToken='border' />

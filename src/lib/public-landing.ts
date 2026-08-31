@@ -349,10 +349,14 @@ export async function getPublicSessionCard(
  *
  * Explicitly `string[]`, never a `readonly`/`as const` array: Prisma's `in`
  * filter takes a mutable array.
+ *
+ * `heroImageUrl` joined the set in #155, alongside `logoUrl`: both are public
+ * URLs an Admin uploads through Settings, invalidated by the same routes.
  */
 const PUBLIC_SETTINGS_KEYS: string[] = [
     'communityName',
     'logoUrl',
+    'heroImageUrl',
     ...PUBLIC_COPY_KEYS,
 ];
 
@@ -361,6 +365,7 @@ const PUBLIC_SETTINGS_KEYS: string[] = [
 interface StoredPublicSettings {
     communityName: string;
     logoUrl: string;
+    heroImageUrl: string;
     copy: StoredPublicCopy;
 }
 
@@ -402,6 +407,7 @@ const readCachedPublicSettings = unstable_cache(
         return {
             communityName: map.communityName?.trim() ?? '',
             logoUrl: map.logoUrl ?? '',
+            heroImageUrl: map.heroImageUrl ?? '',
             copy: pickStoredCopy(map),
         };
     },
@@ -412,12 +418,16 @@ const readCachedPublicSettings = unstable_cache(
 export interface PublicIdentity {
     communityName: string;
     logoUrl: string;
+    /** The hero photograph's public URL, or `''` — the hero renders the
+     *  grid-lines pattern instead (#155). */
+    heroImageUrl: string;
 }
 
 /**
- * Community name and logo for any unauthenticated surface. The neutral name
- * default is locale-resolved (AD-10), and that resolution happens **here**,
- * outside the cache scope — a cookie may not be read inside one.
+ * Community name, logo and hero photograph for any unauthenticated surface.
+ * The neutral name default is locale-resolved (AD-10), and that resolution
+ * happens **here**, outside the cache scope — a cookie may not be read
+ * inside one.
  */
 export async function getPublicIdentity(
     locale: Locale,
@@ -427,6 +437,7 @@ export async function getPublicIdentity(
         communityName:
             stored.communityName || getDictionary(locale).brand.unnamedCommunity,
         logoUrl: stored.logoUrl,
+        heroImageUrl: stored.heroImageUrl,
     };
 }
 

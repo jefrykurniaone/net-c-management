@@ -13,13 +13,16 @@ import {
     type PublicFeatureSlot,
 } from '@/lib/public-copy';
 import type { SettingsMap } from './use-settings-form';
+import { HeroImageControl, type HeroImageProps } from './hero-image-control';
 
 /**
- * The Settings section where an Admin writes what the public page says (#153).
+ * The Settings section where an Admin writes what the public page says (#153)
+ * and, since #155, uploads the hero photograph (`HeroImageControl`, in its
+ * own file to keep this one under the 300-line cap).
  *
  * Additive: it composes the same `SettingsSection` / `SettingsRow` pair the
  * three sections beside it use, and changes none of them. #167 restyles the
- * whole form and #155 adds the hero image control to this section.
+ * whole form.
  *
  * The caps come from `src/lib/public-copy.ts` and nowhere else, so the number
  * the counter counts against, the number in the refusal below a field, and the
@@ -181,15 +184,23 @@ export function PublicCopySection({
     t,
     settings,
     update,
+    heroImageProps,
 }: Readonly<{
     t: Dictionary;
     settings: SettingsMap;
     update: (key: PublicCopyKey, value: string) => void;
+    heroImageProps: HeroImageProps;
 }>) {
     const lastSlot = PUBLIC_FEATURE_SLOTS.length - 1;
 
     return (
         <SettingsSection title={t.publicCopy.sectionTitle}>
+            <SettingsRow
+                id='heroImage'
+                label={t.publicCopy.heroImageLabel}
+                helper={t.publicCopy.heroImageHelper}>
+                <HeroImageControl t={t} {...heroImageProps} />
+            </SettingsRow>
             <CopyField
                 t={t}
                 settingKey='publicHeroHeadline'

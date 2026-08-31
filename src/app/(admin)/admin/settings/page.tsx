@@ -49,6 +49,43 @@ function buildLogoProps({
     };
 }
 
+type HeroImageDeps = Pick<
+    ReturnType<typeof useSettingsForm>,
+    | 'heroImagePreview'
+    | 'uploadingHeroImage'
+    | 'removingHeroImage'
+    | 'heroImageButtonLabel'
+    | 'heroImageInputRef'
+    | 'handleHeroImageUpload'
+    | 'handleHeroImageRemove'
+> & { heroImageUrl?: string };
+
+/** Assembles `SettingsForm`'s `heroImageProps` from the hook's return values
+ *  (#155), mirroring `buildLogoProps` plus the remove action. */
+function buildHeroImageProps({
+    heroImagePreview,
+    heroImageUrl,
+    uploadingHeroImage,
+    removingHeroImage,
+    heroImageButtonLabel,
+    heroImageInputRef,
+    handleHeroImageUpload,
+    handleHeroImageRemove,
+}: Readonly<HeroImageDeps>) {
+    return {
+        heroImageSrc: heroImagePreview ?? heroImageUrl ?? null,
+        uploadingHeroImage,
+        removingHeroImage,
+        heroImageButtonLabel: heroImageButtonLabel(),
+        heroImageInputRef,
+        onUploadClick: () => heroImageInputRef.current?.click(),
+        onHeroImageChange: handleHeroImageUpload,
+        onRemoveClick: () => {
+            void handleHeroImageRemove();
+        },
+    };
+}
+
 export default function AdminSettingsPage() {
     const form = useSettingsForm();
 
@@ -86,6 +123,16 @@ function SettingsPageBody({
                     logoButtonLabel: form.logoButtonLabel,
                     logoInputRef: form.logoInputRef,
                     handleLogoUpload: form.handleLogoUpload,
+                })}
+                heroImageProps={buildHeroImageProps({
+                    heroImagePreview: form.heroImagePreview,
+                    heroImageUrl: settings.heroImageUrl,
+                    uploadingHeroImage: form.uploadingHeroImage,
+                    removingHeroImage: form.removingHeroImage,
+                    heroImageButtonLabel: form.heroImageButtonLabel,
+                    heroImageInputRef: form.heroImageInputRef,
+                    handleHeroImageUpload: form.handleHeroImageUpload,
+                    handleHeroImageRemove: form.handleHeroImageRemove,
                 })}
             />
         </div>

@@ -9,6 +9,7 @@ import {
     publicCopyRefusalMessage,
     type StoredPublicCopy,
 } from '@/lib/public-copy';
+import { useHeroImageUpload } from './use-hero-image-upload';
 
 export const DEFAULT_HOLD_DURATION_MINUTES = '60';
 
@@ -22,11 +23,12 @@ export interface SettingsMap extends StoredPublicCopy {
     defaultLocation?: string;
     adminWhatsapp?: string;
     logoUrl?: string;
+    heroImageUrl?: string;
     holdDurationMinutes?: string;
 }
 
-type AppRouter = ReturnType<typeof useRouter>;
-type SetSettings = Dispatch<SetStateAction<SettingsMap>>;
+export type AppRouter = ReturnType<typeof useRouter>;
+export type SetSettings = Dispatch<SetStateAction<SettingsMap>>;
 
 function initialSettings(t: Dictionary): SettingsMap {
     return {
@@ -34,6 +36,7 @@ function initialSettings(t: Dictionary): SettingsMap {
         defaultLocation: '',
         adminWhatsapp: '',
         logoUrl: '',
+        heroImageUrl: '',
         holdDurationMinutes: DEFAULT_HOLD_DURATION_MINUTES,
     };
 }
@@ -196,9 +199,11 @@ function useSettingsSave({
 
 /**
  * All state and network calls for the Settings page — loading, saving, the
- * logo upload and its preview. The page component stays presentation-only;
- * saving behaviour, validation and the `/api/settings*` calls are unchanged
- * from before this ticket. Composes the three hooks above, one per concern.
+ * logo upload and its preview, and (#155) the hero-image upload/remove pair
+ * from `use-hero-image-upload.ts`. The page component stays
+ * presentation-only; saving behaviour, validation and the `/api/settings*`
+ * calls are unchanged from before this ticket. Composes the hooks above, one
+ * per concern.
  */
 export function useSettingsForm() {
     const router = useRouter();
@@ -212,6 +217,15 @@ export function useSettingsForm() {
         handleLogoUpload,
         logoButtonLabel,
     } = useLogoUpload({ t, router, setSettings });
+    const {
+        uploadingHeroImage,
+        removingHeroImage,
+        heroImagePreview,
+        heroImageInputRef,
+        handleHeroImageUpload,
+        handleHeroImageRemove,
+        heroImageButtonLabel,
+    } = useHeroImageUpload({ t, router, setSettings });
     const { saving, handleSubmit } = useSettingsSave({ t, router, settings });
 
     function update(key: keyof SettingsMap, value: string) {
@@ -225,10 +239,17 @@ export function useSettingsForm() {
         uploadingLogo,
         logoPreview,
         logoInputRef,
+        uploadingHeroImage,
+        removingHeroImage,
+        heroImagePreview,
+        heroImageInputRef,
         settings,
         handleLogoUpload,
+        handleHeroImageUpload,
+        handleHeroImageRemove,
         handleSubmit,
         update,
         logoButtonLabel: () => logoButtonLabel(settings.logoUrl),
+        heroImageButtonLabel: () => heroImageButtonLabel(settings.heroImageUrl),
     };
 }

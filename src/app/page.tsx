@@ -117,6 +117,7 @@ export default async function LandingPage() {
                     t={t}
                     headline={copy.heroHeadline}
                     subline={copy.heroSubline}
+                    heroImageUrl={identity.heroImageUrl}
                 />
                 {copy.about === null ? null : (
                     <AboutBand t={t} about={copy.about} />
