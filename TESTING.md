@@ -4600,3 +4600,471 @@ pointed at a dead host for `TC-AR-022` and restored to `NULL`; Tennis's
   `tsc --noEmit` through `npm run build`, plus ESLint at zero warnings, stood in,
   as they did in every earlier wave and in §18.6. This remains the one acceptance
   criterion of the map that no wave has satisfied.
+
+---
+
+## 20. Admin surfaces — shell, dashboard, tables in cards, Activity icon (`TC-AD-*`)
+
+Spec [#145](https://github.com/jefrykurniaone/net-c-management/issues/145)
+(`spec:rally-admin`, repo copy `docs/spec-rally-admin-v1.md`) restyled the admin
+shell and every admin surface onto Rally — a dark sidebar, stat cards and an
+Activity-cards grid on the dashboard, every register as a table inside a card
+with a chip for every state, and forms and dialogs on the shared primitives —
+while keeping every column, sort, filter and business rule exactly as it was.
+Separately, `Activity.icon` returns as a nullable field holding one of sixteen
+curated keys, picked from a grid in the Activity form and rendered as a Lime
+tile — or the Activity's initial where it has none — on the four surfaces that
+name an Activity: the Activities register, Session cards and rows, the public
+Activity cards, and the member dashboard.
+
+This area tests exactly that: that the restyle changed nothing an Admin can see
+happen (the Payments queue's order and its row actions, the Owner's
+immutability, the fee-locked and capacity-below-held guards), that every
+surface actually sits on the new tokens, and that the icon picks, clears and
+renders — or degrades to the initial — everywhere the spec names. It does not
+re-test business rules `TC-AR-*` and `TC-DR-*` already cover in full; where this
+run touches the same guard it is a spot re-run, named as such.
+
+### TC-AD-001 · P0 · Positive — The admin shell is Black Green in both themes, with a Lime active item
+
+**Preconditions:** `/admin` as `admin@xclub.local`, at 1440×900 and 390×844, in
+both themes.
+
+**Steps:**
+
+1. At 1440, read the sidebar's `class` list and its computed background, in the
+   light theme and in the dark theme.
+2. Read the active nav item's fill, ink and border.
+3. At 390, read what the header collapses to.
+4. Open the mobile nav and read what it carries.
+
+**Expected result:**
+
+- The sidebar carries a `dark` class of its own and computes `background-color:
+  rgb(14, 31, 23)` (`#0E1F17`, Black Green) regardless of which theme the page
+  itself is in — confirmed by toggling the page theme with the sidebar still
+  present.
+- The active nav item (`Dashboard` on `/admin`) draws the `sidebar-accent`
+  tokens — a Lime fill with a matching border — never the page's own `--accent`,
+  which would invert to olive-on-lime here.
+- At 390 the header collapses to a "Navigation Menu" hamburger button beside the
+  community mark and name; the full nav moves into the mobile sheet.
+- The community identity mark, name and the "Admin" sub-label sit at the top of
+  the sidebar in both cases.
+
+### TC-AD-002 · P0 · Positive — The dashboard is a stat row, an attention card, a reserved gap, then Activity cards
+
+**Preconditions:** `/admin` as `admin@xclub.local`, on the §2 seed.
+
+**Steps:**
+
+1. Read the page in order: header, stat row, attention card, the space between
+   it and the Activity cards, then the cards themselves.
+2. Read each stat tile's label and figure against what the seed computes.
+3. Search the DOM for any node between the attention card and the Activity
+   cards.
+
+**Expected result:**
+
+- The header is a Display greeting plus a caption line, with **New Session** as
+  the one action.
+- Four stat tiles, in order: **Active members** (`31`, `+20 this month`),
+  **Sessions this week** (`0`, `across 4 activities`), **Pending Payments**
+  (`2`, `need review`), **Collected · August** (`Rp 2.17M`, `of Rp 3.06M due`) —
+  every figure the page's own `loadDashboardData` computes, none invented here.
+- **Needs attention** reads "2 payment proofs waiting for review" with a
+  **Review** link to `/admin/payments`.
+- The region reserved for the insights spec (`DashboardInsightsSlot`) renders
+  **nothing** — confirmed empty in the DOM, exactly as its own comment says
+  ("Reserved for #170/#171 ... renders nothing until either lands").
+- Four Activity cards follow, one per seeded Activity, each carrying its tile,
+  name, member count, attendance rate, Sessions/week and a Dues-collected bar.
+
+### TC-AD-003 · P0 · Positive — Every register is one table inside one card, chips for every state
+
+**Preconditions:** `/admin/sessions`, `/admin/payments`, `/admin/members`,
+`/admin/activities`, `/admin/applicants` and one attendance register, at 1440.
+
+**Steps:**
+
+1. Measure the register's outer card: `border-radius`, `box-shadow`, `border`,
+   background.
+2. Measure a body cell's rule and a head cell's fill, font size, weight,
+   transform and letter-spacing.
+3. Read one status chip's background, ink, border and its dot's
+   `aria-hidden`.
+4. Read the card header: title, count sentence, primary action.
+
+**Expected result:**
+
+- The card measures `border-radius: 12px`, a two-layer `box-shadow` (`rgba(14,
+  31, 23, 0.07) 0 1px 2px -1px, rgba(14, 31, 23, 0.13) 0 6px 16px -6px` —
+  `shadow-lift`), `border: 0px` (identified by its shadow, not a border), face
+  `rgb(255, 255, 255)`.
+- A body cell's rule is `0.8px solid rgb(139, 126, 104)` (`--border`, taupe); a
+  head cell fills `rgb(240, 233, 219)` (`--muted`, beige) at `11px / 700 /
+  uppercase / 1.1px` letter-spacing (Label type).
+- A **settled** chip (Scheduled / Confirmed) reads `background: rgb(221, 242,
+  228)`, `color: rgb(19, 107, 63)`, a matching `0.8px` border, `border-radius`
+  effectively `9999px`, and its dot carries `aria-hidden="true"`.
+- Every register's card header carries a title (`<h2>`), a worded count
+  ("25 sessions", "43 payments", "4 activities" …) and the surface's one action
+  on the trailing edge (**New Session**, **New Activity** …) — never a fourth
+  field.
+- The attendance register is the same card shell: one `<table>`, one **Save
+  attendance** action, no second idiom.
+
+### TC-AD-004 · P0 · Positive — The Payments queue's order and row actions are unchanged; its dialogs are restyled
+
+**Preconditions:** `/admin/payments` as `admin@xclub.local`, on the §2 seed
+plus this run's two seeded `IN REVIEW` rows.
+
+**Steps:**
+
+1. Read the first ten rows' standing chips in order.
+2. Read a pending row's action buttons.
+3. Open **Confirm** on a pending row and read the dialog's radius, border,
+   content and its Confirm button's fill and ink.
+4. Escape it, open **Reject**, and read its button's fill and ink and whether a
+   reason textarea is present.
+
+**Expected result:**
+
+- The awaiting-decision rows draw first (`In review`, `In review`), then the
+  decided rows (`Confirmed` ×8 on this page) — the same ordering `TC-AR-020`
+  asserts, unchanged by the restyle.
+- A pending row carries exactly **Open the Proof from `<name>`**, **Confirm**
+  and **Reject**; a decided row carries no action buttons, only "Decided
+  `<date>`".
+- The Confirm dialog measures `border-radius: 12px`, `border: 0.8px solid
+  rgb(139, 126, 104)`, and restates Member / Activity / Billing Period /
+  Amount; its Confirm button fills `rgb(62, 210, 126)` (`#3ED27E`, PBP Green)
+  with `rgb(14, 31, 23)` ink (Black Green) at `border-radius: 8px` — the one
+  action colour, on the primitive.
+- The Reject dialog's Reject button fills `rgb(158, 43, 37)` (`#9E2B25`, Dark
+  Red) with white ink, and a rejection-reason textarea is present — both
+  dialogs keep the content and rules `TC-AR-024` / `TC-AR-025` assert; nothing
+  was confirmed or rejected by this case (both dialogs closed with Escape).
+
+### TC-AD-005 · P0 · Positive — Forms and dialogs sit on the shared primitives: 8px controls, read-only fields on the beige ground
+
+**Preconditions:** the Session edit form for a Session with a held Seat
+(`Morning Drills`), the Activity edit dialog for Badminton.
+
+**Steps:**
+
+1. Read the locked Fee input's `readOnly`, `border-radius`, background and
+   `aria-describedby`, beside an open field's background.
+2. Read the Activity dialog's fieldsets and its Save button.
+
+**Expected result:**
+
+- The Fee input is `readOnly: true`, `border-radius: 8px`, background
+  `rgb(240, 233, 219)` (beige) against an open field's `rgb(255, 255, 255)`
+  (white/card), and still carries `aria-describedby="session-fee-note"` — the
+  restyle changed the surface, not the locking contract `TC-AR-003` asserts.
+- The Activity dialog groups its fields into named fieldsets (Basic Info,
+  Payment & Fees, Sessions & Schedule, Admin Contact) and ends in one **Save
+  Changes** button.
+
+### TC-AD-006 · P0 · Positive — Picking, saving and clearing an Activity icon renders and degrades correctly
+
+**Preconditions:** a sentinel Activity created through `POST /api/activities`
+for this case, deleted at the end of it.
+
+**Steps:**
+
+1. `POST /api/activities` with `icon: "trophy"` and read the response and the
+   Activities register.
+2. `PATCH` the same Activity with `icon: null` and read the register again.
+3. `PATCH` with `icon: "not-a-real-key"` (a key outside the curated sixteen)
+   and read the stored value.
+4. `DELETE` the sentinel.
+
+**Expected result:**
+
+- The create call returns **201** with `icon: "trophy"` stored verbatim; the
+  Activities register draws a **Trophy** `<svg>` glyph in the tile, labelled
+  with the Activity's name (`aria-label`), not the initial.
+- Clearing to `null` returns **200**, `icon: null`; the register now draws the
+  Activity's initial letter, no `<svg>` — the documented fallback.
+- Posting an unknown key returns **200** with the column left at `null` — the
+  request is accepted and the value **silently dropped**, never refused,
+  exactly as `src/lib/activity-icons.ts`'s doc comment describes ("An unknown
+  key is dropped, never refused").
+- The `DELETE` returns **200**; no sentinel Activity or its icon survives the
+  run.
+
+### TC-AD-007 · P0 · Negative — Two of the icon's four named consuming surfaces never render it
+
+**Preconditions:** the seed's own `Badminton` (icon `feather`) and `Futsal`
+(icon set) Activities — no fixture needed, since both already carry a real
+icon and `Basket` / `Tennis` carry none, giving a live positive and negative
+case on every surface at once.
+
+**Steps:**
+
+1. Read the Activities register's tile for each of the four Activities.
+2. Read a Badminton or Futsal row's Activity cell on `/admin/sessions`.
+3. Read a Badminton or Futsal member's Session card on `/sessions` (member
+   week strip).
+4. Read the public landing page's Activity card for Badminton
+   (`curl http://localhost:3000/`, signed out).
+5. Read `member@xclub.local`'s (Adi Pratama, a Badminton member) Activity card
+   on `/dashboard`.
+
+**Expected result — measured, not assumed:**
+
+- **Activities register:** Pass. Badminton and Futsal draw a glyph `<svg>`;
+  Basket and Tennis draw their initial (`B` / `T`). The fallback and the render
+  both work.
+- **Session cards (member week strip):** Pass. `week-session-card.tsx` passes
+  `card.activityIcon` through; `<svg>` tiles are present on the board.
+- **Public Activity cards:** Pass. The unauthenticated landing page's Badminton
+  card renders `<span role="img" aria-label="Badminton" ...><svg ...>` —
+  read directly from the served HTML.
+- **Session rows (admin Sessions register): Fail.** Every row for a Badminton
+  or Futsal Session still draws the plain initial (`B` / `F`, `hasSvg: false`)
+  in its Activity cell, regardless of the Activity's real icon —
+  `session-rows.ts`'s `SESSION_SELECT` never selects `activity.icon`, and
+  `SessionActivity` never passes one to `ActivityBadge`. Filed as
+  [#198](https://github.com/jefrykurniaone/net-c-management/issues/198)
+  (`type:bug`, `spec:rally-admin`); not fixed here — it is `src/app/(admin)/admin/sessions/*`,
+  owned by ticket #166, not #168.
+- **Member dashboard: Fail.** Adi Pratama's Badminton card on `/dashboard`
+  also draws the plain initial (`hasSvg: false`) — `dashboard/page.tsx` never
+  selects `activity.icon` and `ActivitySummaryCard` never passes one to
+  `ActivityInitial`. Filed as
+  [#199](https://github.com/jefrykurniaone/net-c-management/issues/199)
+  (`type:bug`, `spec:rally-admin`); not fixed here — it is
+  `src/components/dashboard/*` and `src/app/(main)/dashboard/*`, outside this
+  admin-surfaces ticket.
+- **Observation, not a defect:** the *admin* dashboard's own Activity cards
+  (`dashboard-activity-cards.tsx`) also draw only the initial, but that
+  surface is not one of the spec's four named consuming surfaces, and the
+  component's own doc comment records it as ticket #165's deliberate,
+  documented deferral to #164 — left alone.
+
+### TC-AD-008 · P1 · Positive — The icon grid and the Payments queue's row actions are reachable and visibly focused from the keyboard
+
+**Preconditions:** the Activity edit dialog (Badminton) for the icon grid; the
+Payments queue for row actions.
+
+**Steps:**
+
+1. Tab from the Description field into the icon grid and read what receives
+   focus.
+2. Press ArrowRight and read the newly-focused option's `checked` state and
+   its tile's fill and border.
+3. On the Payments queue, tab from the search box through the filters, the
+   card header's action, the four sortable heads, and into the first row.
+
+**Expected result:**
+
+- Tab lands on the **currently checked** radio (`Feather`, Badminton's own
+  icon) — a native `<input type=radio>` group, so the browser supplies roving
+  focus for free.
+- ArrowRight moves to the next option (`Target`) and **commits it immediately**
+  (`checked: true`, native radio behaviour); the newly-selected tile fills
+  `rgb(216, 242, 94)` (Lime) with a `1.6px` focus/selection border in the
+  purple-ink ring colour — visibly distinct from an unselected tile. The
+  dialog was closed with Escape afterwards, so Badminton's own icon
+  (`Feather`) was never changed.
+- The queue's tab order is `search → month → year → status → activity →
+  Filter → Export CSV → Member → Amount → Billing Period → Sent → [row 1]
+  Open the Proof → Confirm → Reject` — a straight DOM-order walk, nothing
+  trapped or skipped. **Confirm**, once focused, carries a full-opacity `0.8px`
+  ring plus a `3px` `ring/50` halo (`box-shadow` measured), matching the
+  Button primitive's documented focus treatment.
+
+### TC-AD-009 · P0 · Negative — The Owner's row is still immutable after the restyle
+
+**Preconditions:** the Members register as `admin@xclub.local`, the Owner's
+own account.
+
+**Steps:**
+
+1. Read the Owner's row: contact cell, role cell, action cell.
+2. `PATCH /api/users` with `{ "id": "<owner-id>", "role": "MEMBER" }`.
+
+**Expected result:**
+
+- The row reads Contact **Withheld**, Role **Owner**, no promote/demote/edit
+  control, and the sentence "This account cannot be changed." — unchanged from
+  `TC-AR-027`.
+- The route still answers **403** `{"error":"Cannot modify an OWNER
+  account"}`; nothing was written.
+
+### TC-AD-010 · P0 · Positive — Every register collapses by axis at 390, and every control stays pressable
+
+**Preconditions:** `/admin/sessions`, `/admin/payments`, `/admin/members`,
+`/admin/activities`, `/admin/applicants`, `/admin/settings`, `/admin` and one
+attendance register, at 390×844.
+
+**Steps:**
+
+1. Read `document.documentElement.scrollWidth` and the `<thead>`'s computed
+   `display` on each surface.
+2. Read one row's inline column label.
+3. Click a row's own action link (**Take attendance**) and confirm it
+   navigates.
+
+**Expected result:**
+
+- `scrollWidth` is `390` or less (never more — no horizontal page scroll) on
+  every surface measured; `<thead>` is `display: none` on every register.
+- Each cell carries its own column label as visible text immediately before
+  its value (e.g. "Date", "Session", "Activity" on the Sessions register).
+- **Take attendance** on row 1 of the collapsed Sessions register navigates to
+  `/admin/sessions/{id}/attendance` when clicked — the control is a real link
+  inside the collapsed block, not a decoration.
+
+### TC-AD-011 · P1 · Positive — The dark theme is Black Green throughout, computed as its own set of pairs
+
+**Preconditions:** `/admin/sessions`, page theme toggled to dark.
+
+**Steps:**
+
+1. Toggle the page theme from the sidebar's user menu.
+2. Read the register card's face, a body cell's rule and a settled chip's
+   fill/ink.
+
+**Expected result:**
+
+- `<html>` gains a `dark` class; the register card face reads `rgb(24, 44,
+  34)`, a body cell's rule reads `0.8px solid rgb(123, 140, 128)`, and the
+  settled chip reads `background: rgb(18, 51, 31)`, `color: rgb(62, 210,
+  126)` (`#3ED27E` — PBP Green as the settled *ink* on the dark ground, per
+  DESIGN.md's Two-Value Rule) — none of these are the light-theme values
+  inverted, they are the dark theme's own measured pairs. The sidebar itself
+  was already Black Green in the light theme (`TC-AD-001`), so toggling the
+  page theme does not change it at all.
+
+### TC-AD-012 · P1 · Positive — No English leaks into the Indonesian build on the restyled shell, registers or the icon picker
+
+**Preconditions:** the same surfaces as `TC-AD-001`–`TC-AD-003`, `id` locale.
+
+**Steps:**
+
+1. Switch locale to `id` from the user menu and re-read the sidebar nav, the
+   Sessions register's header/columns/actions, and the Activity edit dialog's
+   icon field.
+
+**Expected result:**
+
+- Sidebar: `Sesi, Pembayaran, Pendaftar, Anggota, Aktivitas, Pengaturan,
+  Tampilan Anggota`.
+- Sessions register: heading "Kelola Sesi", count "25 sesi", action "Buat
+  Sesi", columns `Tanggal, Sesi, Aktivitas, Lokasi, Kapasitas, Batas Minimum,
+  Status, Aksi` (`Status` is one of the three documented loanwords,
+  `TC-AR-034`), row actions `Catat kehadiran, Edit, Detail, CSV, Batalkan
+  sesi`, floor cells "Tanpa batas minimum" / "Di bawah batas minimum".
+- Icon field: legend "Ikon", the currently-checked option's accessible name
+  "Bulu" (Feather) and the clear option "Tanpa ikon" — both pulled from
+  `t.activityIcon`, matching `dictionaries.ts`.
+- No metaphor word (Rally, Display, Shells) and no stray English string was
+  found on any surface read for this case.
+
+### TC-AD-013 · P1 · Positive — Representative `TC-AR-*` guards still pass at the API, unchanged by the restyle
+
+**Preconditions:** `Morning Drills` (a Session with 6 held Seats).
+
+**Steps:**
+
+1. `PATCH` its `fee` to a new value.
+2. `PATCH` its `maxPlayers` below the held count.
+
+**Expected result:**
+
+- `{ "fee": 26000 }` → **409** `FEE_LOCKED`, "This session already has a
+  payment or a held seat, so its fee cannot be changed. Post a new session at
+  the new fee instead." — `TC-AR-003`'s sentence, verbatim.
+- `{ "maxPlayers": 3 }` → **409** `CAPACITY_BELOW_HELD`, "Capacity cannot go
+  below the 6 seats already held. Set it to 6 or higher, or release a seat
+  first." — `TC-AR-004`'s sentence, verbatim. Neither call wrote anything.
+
+### 20.6 Recorded run — 2026-08-31
+
+Executed once against `main` at **`b55e16b`** (the merge of #154, the last
+Rally wave-4 PR — carrying #164 Activity icon, #165 admin shell/dashboard,
+#166 registers-in-cards and #167 forms/dialogs), on the §2 seed, on Next.js
+16, at **1440 × 900** and **390 × 844**, in **both themes** and **both
+locales**, through Playwright (MCP) against the dev server, signed in from
+`/auth/dev`. Route-level assertions went through `fetch` from the signed-in
+page context.
+
+**The seed was left as it was found.** The only fixture this run created was
+one sentinel Activity (`TC-AD Sentinel`, `POST /api/activities`) for
+`TC-AD-006`, deleted (`DELETE /api/activities/{id}` → **200**) at the end of
+that case; nothing else was written. The two 409 guard calls in `TC-AD-013`
+wrote nothing (confirmed by their own error responses). No seeded Session,
+Activity, Payment or Attendance row was touched.
+
+| Case | Priority | Result |
+|---|---|---|
+| TC-AD-001 | P0 | **Pass** — sidebar `background-color: rgb(14, 31, 23)` in both page themes; active item `sidebar-accent` (Lime) fill and border; at 390 the header collapses to a "Navigation Menu" button beside the community mark |
+| TC-AD-002 | P0 | **Pass** — stats `31 / +20 this month`, `0 / across 4 activities`, `2 / need review`, `Rp 2.17M / of Rp 3.06M due`; attention card "2 payment proofs waiting for review"; the reserved insights region renders no DOM node; four Activity cards follow |
+| TC-AD-003 | P0 | **Pass** — card `border-radius: 12px`, two-layer `shadow-lift`, `border: 0px`, face `rgb(255, 255, 255)`; cell rule `0.8px solid rgb(139, 126, 104)`; head cell `rgb(240, 233, 219)` at `11px/700/uppercase/1.1px`; settled chip `rgb(221, 242, 228)` on `rgb(19, 107, 63)`, dot `aria-hidden="true"`; every header carries title, worded count and one action; attendance register is the same card shell |
+| TC-AD-004 | P0 | **Pass** — queue order `In review ×2` then `Confirmed ×8`; pending row carries Proof/Confirm/Reject, decided row carries none; Confirm dialog `12px` radius, `0.8px` border, Confirm button `rgb(62, 210, 126)` on `rgb(14, 31, 23)`; Reject button `rgb(158, 43, 37)` on white, reason textarea present. Both dialogs closed with Escape, nothing decided |
+| TC-AD-005 | P0 | **Pass** — locked Fee input `readOnly: true`, `border-radius: 8px`, `rgb(240, 233, 219)` against an open field's `rgb(255, 255, 255)`, `aria-describedby="session-fee-note"` intact; Activity dialog carries four named fieldsets and one Save Changes button |
+| TC-AD-006 | P0 | **Pass** — sentinel created with `icon: "trophy"` → **201**, register draws a Trophy `<svg>`; `PATCH icon: null` → **200**, register falls back to the initial; `PATCH icon: "not-a-real-key"` → **200**, stored value stays `null` (dropped, not refused); `DELETE` → **200** |
+| TC-AD-007 | P0 | **Fail on 2 of 4 named surfaces** — Activities register and public Activity cards and member Session cards all Pass (glyph on Badminton/Futsal, initial on Basket/Tennis, `<svg>` present); the admin Sessions register and the member dashboard both draw only the initial for Badminton/Futsal rows and cards, regardless of the Activity's real icon. Filed as [#198](https://github.com/jefrykurniaone/net-c-management/issues/198) and [#199](https://github.com/jefrykurniaone/net-c-management/issues/199), both `type:bug` + `spec:rally-admin`. Neither fixed here — both are outside `#168`'s owned files |
+| TC-AD-008 | P1 | **Pass** — Tab lands on the checked radio (`Feather`); ArrowRight moves to and commits `Target` with a visible Lime fill and `1.6px` ring border (dialog closed unsaved); Payments queue tab order `search → month → year → status → activity → Filter → Export CSV → Member → Amount → Billing Period → Sent → Open the Proof → Confirm → Reject`, each with a full-opacity ring plus a `3px` halo |
+| TC-AD-009 | P0 | **Pass** — Owner row: Contact Withheld, Role Owner, no action controls, "This account cannot be changed."; `PATCH /api/users {"id":"<owner>","role":"MEMBER"}` → **403** `Cannot modify an OWNER account` |
+| TC-AD-010 | P0 | **Pass** — `scrollWidth` ≤ 390 and `<thead> display: none` on all eight surfaces measured (Sessions 375, Payments/Members/Activities/Applicants/Dashboard 390, Settings 375, attendance register 390); inline column labels present; **Take attendance** navigated on click at 390 |
+| TC-AD-011 | P1 | **Pass** — dark-theme card face `rgb(24, 44, 34)`, cell rule `0.8px solid rgb(123, 140, 128)`, settled chip `rgb(18, 51, 31)` on `rgb(62, 210, 126)` (PBP Green as ink); sidebar unchanged by the toggle, already Black Green |
+| TC-AD-012 | P1 | **Pass** — sidebar and Sessions register fully translated (`Kelola Sesi`, `Batas Minimum`, `Catat kehadiran`, `Batalkan sesi` …), `Status` the one documented loanword on this surface; icon field "Ikon" / checked option "Bulu" / clear option "Tanpa ikon"; no stray English or Rally vocabulary found |
+| TC-AD-013 | P1 | **Pass** — `{"fee":26000}` → **409** `FEE_LOCKED` verbatim sentence; `{"maxPlayers":3}` → **409** `CAPACITY_BELOW_HELD` verbatim sentence; neither call wrote anything |
+
+**Summary.** 13 cases, all written by this ticket. **13 executed, 12 Pass, 1
+Fail (on 2 of its 4 sub-assertions), 0 Not run.** Every P0 case's own
+assertions about the *restyle* pass; the one failing case is `TC-AD-007`,
+whose fail is entirely in the icon feature's rendering coverage, not in
+anything ticket #168 touched. Both defects it found are filed:
+[#198](https://github.com/jefrykurniaone/net-c-management/issues/198) (admin
+Sessions register never renders the icon) and
+[#199](https://github.com/jefrykurniaone/net-c-management/issues/199) (member
+dashboard never renders the icon), both `type:bug` + `spec:rally-admin`.
+
+**Regression net — behavioural `TC-AR-*`, spot re-run.**
+
+| Case | Result |
+|---|---|
+| TC-AR-003 (fee-locked) | **Pass** — `409 FEE_LOCKED`, sentence verbatim, re-run directly against `Morning Drills` |
+| TC-AR-004 (capacity below held) | **Pass** — `409 CAPACITY_BELOW_HELD`, sentence verbatim, same Session |
+| TC-AR-020 (queue order) | **Pass** — re-observed live in `TC-AD-004`: awaiting rows first, decided rows after |
+| TC-AR-024 / TC-AR-025 (Confirm/Reject dialog content) | **Pass** — re-observed live in `TC-AD-004`: low-amount note absent where amount is not short, reason-required textarea present on Reject |
+| TC-AR-027 (Owner immutable) | **Pass** — re-observed live in `TC-AD-009`, UI and route both |
+| TC-AR-035 (queue keyboard order) | **Pass** — re-observed live in `TC-AD-008`, same DOM-order walk |
+| TC-AR-034 (no English in `id`) | **Pass on the surfaces re-read** — `TC-AD-012` |
+
+The full 36-case `TC-AR-*` suite was **not** re-executed end to end this run;
+the seven rows above are the guards this ticket's restyle could plausibly have
+broken (registers, dialogs, keyboard order, Owner rule, locale), each
+confirmed live against the restyled surface rather than assumed from reading
+the diff.
+
+**Not met.**
+
+- **A full `TC-AR-*` re-run (all 36 cases)** was not repeated; see the spot
+  re-run table above for what was checked and why those seven were chosen.
+- **`playwright-mobile` was not available in this environment** — only one
+  Playwright MCP server was connected this run. The 390 px checks in
+  `TC-AD-010` used `browser_resize` on the desktop-emulation server, which is
+  sound for the reflow/overflow/label assertions made (no touch-specific
+  claim is made), and pressability was confirmed with a real click that
+  navigated, not with touch-event synthesis. Tap-versus-hover behaviour was
+  not separately verified.
+- **Dark theme and `id` locale were each spot-checked on one surface**
+  (`/admin/sessions`), not swept across all seven admin surfaces at both
+  widths the way `TC-AR-036` swept the geometric claims. `TC-AD-011` and
+  `TC-AD-012` are representative checks, not a full cross-product.
+- **The admin dashboard's own Activity cards** (`dashboard-activity-cards.tsx`)
+  also never render the icon, but that surface is not one of the spec's four
+  named consuming surfaces and the code's own comment records the omission as
+  ticket #165's deliberate deferral to #164 — noted in `TC-AD-007`, not filed
+  as a defect.
+- **SonarLint has still been consulted on no ticket in this spec.** No source
+  file was touched by this ticket (`TESTING.md` only), so there is nothing new
+  for it to have found here; the observation is carried forward for
+  completeness, as every wave before it has done.
