@@ -2,7 +2,7 @@
 
 import type { Control } from 'react-hook-form';
 import { FormField, FormItem } from '@/components/ui/form';
-import { ActivityTile } from '@/components/activity/activity-badge';
+import { ActivityTile } from '@/components/activity/activity-tile';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { OnboardingFormData } from '@/lib/validations/user';
 import type { ActivityOption } from '@/types/activity';
@@ -67,7 +67,10 @@ export function ActivityField({
                                         }
                                         aria-pressed={isSelected}
                                         className={`${CHIP_BASE_CLASS} ${isSelected ? CHIP_SELECTED_CLASS : CHIP_UNSELECTED_CLASS}`}>
-                                        <ActivityTile name={activity.name} />
+                                        <ActivityTile
+                                            name={activity.name}
+                                            size='inline'
+                                        />
                                         {activity.name}
                                     </button>
                                 );

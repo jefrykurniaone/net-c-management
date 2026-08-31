@@ -144,9 +144,21 @@ model Activity {
   name            String
   slug            String   @unique // e.g. "badminton"
   description     String?  @db.Text
-  // No colour: the livery is a magnet tile bearing the Activity's initial, so
-  // an admin-chosen hex has nowhere to render and could clear neither contrast
-  // nor legibility on both board materials (DESIGN.md:316).
+  // No colour: an admin-chosen hex can clear neither contrast nor legibility
+  // on both themes, and the livery carries no free colour of its own.
+  //
+  // The livery it does carry is this icon: one key from the curated set in
+  // `src/lib/activity-icons.ts`, or null for the Activity's initial. Dropped
+  // by #65 because nothing rendered it, and returning under spec #145 with a
+  // renderer on five surfaces — a new decision, not a revert
+  // (docs/adr/0003-retire-papan-jadwal-for-rally.md).
+  //
+  // Deliberately a nullable String rather than an enum: the set is a product
+  // choice that will move, and an enum would need a migration every time it
+  // did. The API is the gate — an unknown key is stripped before the write, so
+  // no unknown key is ever stored — and a key later retired from the set
+  // renders as the initial rather than breaking the row.
+  icon            String?
   sessionFee       Int     @default(0) // default per-session price inherited by new Sessions (FR-8)
   allowsMonthly    Boolean @default(true) // Activity offers the Monthly payment mode (FR-9)
   allowsPerSession Boolean @default(false) // Activity offers the Per-Session payment mode (FR-9)

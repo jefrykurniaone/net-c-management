@@ -77,7 +77,8 @@ export function activityWeeklySlotLabel(activity: Activity, t: Dictionary): stri
 }
 
 /**
- * Who they are: the initial tile, the name, and the slug beneath it. An
+ * Who they are: the livery tile — the Activity's chosen icon, or its initial
+ * when it has none — the name, and the slug beneath it. An
  * inactive Activity's name is dimmed the way `StatusValue` treats a value
  * beside a void chip; the chip in the standing column carries the word.
  * `StatusValue` itself takes a `DomainState`, and Activity active/inactive
@@ -87,7 +88,7 @@ export function activityWeeklySlotLabel(activity: Activity, t: Dictionary): stri
 export function ActivityIdentity({ activity }: Readonly<{ activity: Activity }>) {
     return (
         <span className='flex min-w-0 items-center gap-cell'>
-            <ActivityInitial name={activity.name} />
+            <ActivityInitial name={activity.name} icon={activity.icon} />
             <span className='flex min-w-0 flex-col gap-hair'>
                 <span
                     className={cn(

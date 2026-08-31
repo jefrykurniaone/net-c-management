@@ -1100,6 +1100,39 @@ const en = {
         notMember: 'You are not a member of this activity',
         membersCount: 'members',
     },
+    /**
+     * The curated Activity icon set (#164). One entry in `names` per key in
+     * `src/lib/activity-icons.ts` — the picker indexes this by key, so a key
+     * without a display name is a type error rather than an unlabelled button,
+     * and `activity-icon-names.test.ts` asserts both locales cover the set.
+     *
+     * The names say what the glyph *is*, not what sport it stands for: the
+     * library has no racket and one ball, so an Admin picking `feather` for
+     * badminton has to be able to see that a feather is what they picked.
+     */
+    activityIcon: {
+        label: 'Icon',
+        hint: 'Shown wherever this activity is named. Leave it on no icon to show the first letter of the name instead.',
+        none: 'No icon',
+        names: {
+            ball: 'Ball',
+            goal: 'Goal net',
+            feather: 'Feather',
+            target: 'Target',
+            dumbbell: 'Dumbbell',
+            weight: 'Weight',
+            bike: 'Bicycle',
+            shoe: 'Sports shoe',
+            footprints: 'Footprints',
+            pool: 'Swimming pool',
+            waves: 'Waves',
+            mountain: 'Mountain',
+            trees: 'Trees',
+            trophy: 'Trophy',
+            timer: 'Timer',
+            users: 'People',
+        },
+    },
     paymentMode: {
         choosePrompt: 'Choose how you pay for this activity',
         monthly: 'Monthly',
@@ -2102,6 +2135,29 @@ const id: typeof en = {
         actionFailed: 'Aksi gagal',
         notMember: 'Kamu bukan anggota aktivitas ini',
         membersCount: 'anggota',
+    },
+    activityIcon: {
+        label: 'Ikon',
+        hint: 'Tampil di mana pun aktivitas ini disebut. Biarkan tanpa ikon untuk menampilkan huruf pertama namanya.',
+        none: 'Tanpa ikon',
+        names: {
+            ball: 'Bola',
+            goal: 'Gawang',
+            feather: 'Bulu',
+            target: 'Sasaran',
+            dumbbell: 'Dumbel',
+            weight: 'Beban',
+            bike: 'Sepeda',
+            shoe: 'Sepatu olahraga',
+            footprints: 'Jejak kaki',
+            pool: 'Kolam renang',
+            waves: 'Ombak',
+            mountain: 'Gunung',
+            trees: 'Pepohonan',
+            trophy: 'Piala',
+            timer: 'Pengatur waktu',
+            users: 'Orang',
+        },
     },
     paymentMode: {
         choosePrompt: 'Pilih cara kamu membayar aktivitas ini',
