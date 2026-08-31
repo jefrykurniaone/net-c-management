@@ -207,6 +207,19 @@ export const AA_PAIRS: readonly ContrastPair[] = [
     uiPair('warning-soft-border', 'warning-soft', 'provisional chip edge'),
     uiPair('destructive-soft-border', 'destructive-soft', 'void chip edge'),
     uiPair('destructive-soft-border', 'card', 'destructive outline button edge'),
+    /**
+     * Chart series (#152). A plotted mark is a non-text graphical object, so
+     * its floor is 1.4.11's 3:1 rather than 4.5:1, and the surface it is
+     * measured against is `--card`: `ChartFigure` composes every Rally chart
+     * onto a Card, and no series is ever drawn straight onto the page ground
+     * (`--chart-3` would be 2.57:1 there). Asserted rather than left free,
+     * because #169 shipped a series at 1.96:1 that nothing failed on.
+     */
+    uiPair('chart-1', 'card', 'first series mark on a chart card'),
+    uiPair('chart-2', 'card', 'second series mark on a chart card'),
+    uiPair('chart-3', 'card', 'third series mark on a chart card'),
+    uiPair('chart-4', 'card', 'fourth series mark on a chart card'),
+    uiPair('chart-5', 'card', 'fifth series mark on a chart card'),
 ];
 
 /**

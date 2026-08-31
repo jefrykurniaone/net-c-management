@@ -100,7 +100,13 @@
   --input: #8B7E68;
   --ring: #4B31B8;
 
-  --chart-1: #3ED27E;
+  /* Series colours. Each one clears 3:1 against `--card`, which is the only
+     ground a chart is drawn on (`ChartFigure` composes onto a Card), and each
+     is asserted in `design-tokens.test.ts` — colour is not free for charts.
+     `--chart-1` is the settled green *ink*, not PBP Green: the bright green
+     measures 1.96:1 on a white card, and The One Action Rule reserves it for
+     the action anyway. #152 changed it after #169 rendered the faint bars. */
+  --chart-1: #136B3F;
   --chart-2: #6C4CF0;
   --chart-3: #E8701A;
   --chart-4: #9E2B25;
@@ -196,6 +202,8 @@
   --input: #7B8C80;
   --ring: #B7A4F7;
 
+  /* On this ground PBP Green reads at 7.54:1 on a card, so the settled ink and
+     the bright value are the same colour here and `--chart-1` keeps it. */
   --chart-1: #3ED27E;
   --chart-2: #B7A4F7;
   --chart-3: #F2A24A;
