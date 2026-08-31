@@ -24,6 +24,7 @@ export const supabaseAdmin = createClient(
 export const PAYMENT_PROOFS_BUCKET = 'payment-proofs';
 export const AVATARS_BUCKET = 'avatars';
 export const LOGOS_BUCKET = 'logos';
+export const HERO_IMAGES_BUCKET = 'hero-images';
 
 /**
  * Upload a file to Supabase Storage and return the public URL.
@@ -116,4 +117,64 @@ export async function uploadLogo(
         .getPublicUrl(path);
 
     return urlData.publicUrl;
+}
+
+/**
+ * Every object currently in the hero-images bucket — normally at most one,
+ * "one object per community" per the spec (#155). Upload and remove both
+ * start by clearing whatever is there, so re-uploading under a different
+ * file extension (jpeg replaced by png) never leaves an orphaned object no
+ * Settings key points at.
+ */
+async function clearHeroImageObjects(): Promise<void> {
+    const { data, error } = await supabaseAdmin.storage
+        .from(HERO_IMAGES_BUCKET)
+        .list();
+
+    if (error) {
+        throw new Error(`Hero image list failed: ${error.message}`);
+    }
+    if (!data || data.length === 0) {
+        return;
+    }
+
+    const { error: removeError } = await supabaseAdmin.storage
+        .from(HERO_IMAGES_BUCKET)
+        .remove(data.map((object) => object.name));
+
+    if (removeError) {
+        throw new Error(`Hero image cleanup failed: ${removeError.message}`);
+    }
+}
+
+/**
+ * Upload the public page's hero photograph and return its public URL.
+ * Always uploads to a fixed-name path so the old photograph is replaced.
+ */
+export async function uploadHeroImage(
+    file: Buffer,
+    contentType: string,
+): Promise<string> {
+    const ext = contentType.split('/')[1] ?? 'jpg';
+    const path = `community-hero.${ext}`;
+
+    await clearHeroImageObjects();
+    const { error } = await supabaseAdmin.storage
+        .from(HERO_IMAGES_BUCKET)
+        .upload(path, file, { contentType, upsert: true });
+
+    if (error) {
+        throw new Error(`Hero image upload failed: ${error.message}`);
+    }
+
+    const { data: urlData } = supabaseAdmin.storage
+        .from(HERO_IMAGES_BUCKET)
+        .getPublicUrl(path);
+
+    return urlData.publicUrl;
+}
+
+/** Remove the hero photograph from storage. A no-op when none is set. */
+export async function deleteHeroImage(): Promise<void> {
+    await clearHeroImageObjects();
 }

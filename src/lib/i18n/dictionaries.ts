@@ -241,6 +241,21 @@ const en = {
         // same two strings are used by the form and by the API.
         lengthCapRefusal: 'Too long — {max} characters at most.',
         wordCapRefusal: 'One word is too long — {max} letters at most.',
+        // The hero image control (#155): preview, upload, remove, in the same
+        // section as the text fields above. The mime/size refusal itself
+        // reuses `validation.fileTypeInvalid` / `validation.fileSizeProof`
+        // rather than a new pair of strings — the same rule the payment-proof
+        // upload already enforces.
+        heroImageLabel: 'Hero Image',
+        heroImageHelper:
+            'JPG, PNG, WebP · Max 5MB. The centre of the photo is what survives on a phone, so keep the important part there.',
+        heroImageUpload: 'Upload Image',
+        heroImageChange: 'Change Image',
+        heroImageRemove: 'Remove',
+        heroImageUploadSuccess: 'Hero image updated!',
+        heroImageUploadFail: 'Failed to upload hero image',
+        heroImageRemoveSuccess: 'Hero image removed.',
+        heroImageRemoveFail: 'Failed to remove hero image',
     },
     auth: {
         signInTitle: 'Sign In',
@@ -1517,6 +1532,16 @@ const id: typeof en = {
         counterLabel: 'Karakter terpakai',
         lengthCapRefusal: 'Terlalu panjang — maksimal {max} karakter.',
         wordCapRefusal: 'Ada kata yang terlalu panjang — maksimal {max} huruf.',
+        heroImageLabel: 'Gambar Hero',
+        heroImageHelper:
+            'JPG, PNG, WebP · Maks 5MB. Bagian tengah foto adalah yang tetap terlihat di layar HP, jadi letakkan bagian penting di sana.',
+        heroImageUpload: 'Upload Gambar',
+        heroImageChange: 'Ganti Gambar',
+        heroImageRemove: 'Hapus',
+        heroImageUploadSuccess: 'Gambar hero berhasil diperbarui!',
+        heroImageUploadFail: 'Gagal mengupload gambar hero',
+        heroImageRemoveSuccess: 'Gambar hero dihapus.',
+        heroImageRemoveFail: 'Gagal menghapus gambar hero',
     },
     auth: {
         signInTitle: 'Masuk',

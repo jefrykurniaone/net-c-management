@@ -10,6 +10,7 @@ import { HoldDurationField } from '@/components/admin/hold-duration-field';
 import { SettingsSection } from '@/components/admin/settings-sections';
 import { SettingsRow, settingsHelperId } from '@/components/admin/settings-rows';
 import { PublicCopySection } from './public-copy-section';
+import type { HeroImageProps } from './hero-image-control';
 import type { SettingsMap } from './use-settings-form';
 
 /**
@@ -181,6 +182,7 @@ export function SettingsForm({
     update,
     onSubmit,
     logoProps,
+    heroImageProps,
     defaultHoldDurationMinutes,
 }: Readonly<{
     t: Dictionary;
@@ -189,6 +191,7 @@ export function SettingsForm({
     update: (key: keyof SettingsMap, value: string) => void;
     onSubmit: (e: React.SyntheticEvent) => void;
     logoProps: LogoProps;
+    heroImageProps: HeroImageProps;
     defaultHoldDurationMinutes: string;
 }>) {
     return (
@@ -205,7 +208,12 @@ export function SettingsForm({
                     row (#153). Added beside the three sections above rather
                     than inside one of them: nothing here configures how the
                     community runs, it is what a stranger reads. */}
-                <PublicCopySection t={t} settings={settings} update={update} />
+                <PublicCopySection
+                    t={t}
+                    settings={settings}
+                    update={update}
+                    heroImageProps={heroImageProps}
+                />
             </Card>
             <Button type='submit' className='mt-bay w-full' loading={saving}>
                 {t.admin.saveSettings}

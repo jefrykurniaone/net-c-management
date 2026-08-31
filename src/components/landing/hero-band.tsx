@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { GoogleMark } from '@/components/auth/GoogleMark';
 import { GridPattern } from '@/components/patterns/GridPattern';
@@ -52,17 +53,20 @@ export function HeroBand({
     t,
     headline,
     subline,
+    heroImageUrl,
 }: Readonly<{
     t: Dictionary;
     /** Resolved copy, never empty — `getPublicCopy` has already applied the
      *  dictionary fallback, so this band never asks whether one is needed. */
     headline: string;
     subline: string;
+    /** The Admin's uploaded photograph, or `''` for the pattern (#155). */
+    heroImageUrl: string;
 }>) {
     return (
         <section
             className={`${FORCED_DARK_CLASS} relative isolate w-full overflow-hidden bg-background px-block ${HERO_AIR_CLASS}`}>
-            <HeroBackdrop />
+            <HeroBackdrop heroImageUrl={heroImageUrl} />
             {/* The headline and the action are **siblings in one flow column**,
                 never stacked layers. That is what makes "the headline never
                 paints over the action" a structural guarantee rather than a
@@ -127,20 +131,60 @@ export function HeroBand({
 }
 
 /**
+ * `bg-background` at this opacity, over the worst case a photograph can be —
+ * a plain white test image — still holds both text pairings this band draws
+ * to their AA floor of 4.5:1 (measured with `src/lib/theme-contrast.ts`'s own
+ * `contrastRatio`, arithmetic in the pull request that added this): the
+ * headline (`--foreground`, #F1EEE5 forced-dark) at 9.27:1 and the subline
+ * (`--secondary-foreground`, #B3C1B6 forced-dark) at 5.75:1. `85` rather than
+ * a lower value because the subline is the tighter margin of the two — the
+ * headline alone would clear AA well below it (7.79:1 at 80%).
+ */
+const SCRIM_OPACITY_CLASS = 'bg-background/85';
+
+/**
  * The hero's background layer, and the slot the Admin's photograph fills.
  *
- * Today it is the grid-lines pattern over the dark ground. #155 puts the
- * uploaded photograph in this layer — `object-fit: cover`, centred, with a
- * dark scrim over it — and keeps the pattern as the fallback when no image is
- * set. Everything the layer needs is already true of it: it is the band's own
- * positioned backdrop, it is out of the accessibility tree, it takes no
- * pointer events, and it clips at the band's edges.
+ * With no photograph set, it is the grid-lines pattern over the dark ground:
+ * the pattern draws in `--border` at `PATTERN_OPACITY`, which blends the dark
+ * ground to `#1d2e26` where a line sits directly behind a glyph, and the
+ * headline still measures 12.31:1 there and the subline 7.63:1.
  *
- * The pattern draws in `--border` at `PATTERN_OPACITY`, which blends the dark
- * ground to `#1d2e26` where a line sits directly behind a glyph. The headline
- * still measures 12.31:1 there and the subline 7.63:1, against floors of 4.5.
+ * With one set (#155), the photograph fills the layer — `object-fit: cover`,
+ * centred, `priority` since it is always above the fold — with the dark
+ * scrim above it for the contrast a photograph cannot promise on its own.
+ * Everything the layer needs is already true of it: it is the band's own
+ * positioned backdrop, it is out of the accessibility tree (the wrapping
+ * `aria-hidden`, kept from before), it takes no pointer events, and it clips
+ * at the band's edges (`overflow-hidden` here, `overflow-hidden` on the
+ * section already).
  */
-function HeroBackdrop() {
+function HeroBackdrop({
+    heroImageUrl,
+}: Readonly<{ heroImageUrl: string }>) {
+    // A blank Settings value is a missing photograph, not a source: trimmed
+    // so a whitespace-only value degrades to the pattern rather than asking
+    // `next/image` to fetch an empty string.
+    const src = heroImageUrl.trim();
+
+    if (src) {
+        return (
+            <div
+                aria-hidden='true'
+                className='absolute inset-0 -z-10 overflow-hidden bg-background'>
+                <Image
+                    src={src}
+                    alt=''
+                    fill
+                    priority
+                    sizes='100vw'
+                    className='object-cover object-center'
+                />
+                <div className={`absolute inset-0 ${SCRIM_OPACITY_CLASS}`} />
+            </div>
+        );
+    }
+
     return (
         <div aria-hidden='true' className='absolute inset-0 -z-10 bg-background'>
             <GridPattern isStretched colorToken='border' />
