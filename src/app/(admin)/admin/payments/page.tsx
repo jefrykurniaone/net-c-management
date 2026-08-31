@@ -17,6 +17,7 @@ import {
     type RawSearchParams,
 } from '@/lib/table-params';
 import { Register } from '@/components/admin/register';
+import { Button } from '@/components/ui/button';
 import { paymentColumns } from './payment-columns';
 import {
     PaymentFilters,
@@ -69,15 +70,20 @@ function exportHref(values: PaymentFilterValues, now: Date): string {
     return `/api/payments/export?${params.toString()}`;
 }
 
+/**
+ * The queue's own action, so it sits in the register's card header (#166). It
+ * exports what the filters currently select, which is why it belongs to the
+ * register rather than to the page. Still a real `<a download>` — a browser
+ * download needs the anchor — wearing the shared button through `asChild`.
+ */
 function ExportLink({ t, href }: Readonly<{ t: Dictionary; href: string }>) {
     return (
-        <a
-            href={href}
-            download
-            className='inline-flex min-h-11 items-center gap-cell border border-rule bg-tile px-block type-label text-foreground hover:bg-board focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-            <Download aria-hidden className='size-4' />
-            {t.admin.exportCSV}
-        </a>
+        <Button asChild variant='outline' className='gap-cell'>
+            <a href={href} download>
+                <Download aria-hidden className='size-4' />
+                {t.admin.exportCSV}
+            </a>
+        </Button>
     );
 }
 
@@ -122,32 +128,27 @@ function PaymentsHeading({
     t,
     waiting,
     resetHref,
-    href,
 }: Readonly<{
     t: Dictionary;
     waiting: string | null;
     resetHref: string | null;
-    href: string;
 }>) {
     return (
-        <div className='flex flex-wrap items-start justify-between gap-cell'>
-            <div>
-                <h1 className='type-display text-foreground'>
-                    {t.admin.paymentsTitle}
-                </h1>
-                <p className='mt-cell type-caption text-muted-foreground'>
-                    {t.admin.paymentsSubtitle}
-                    {waiting !== null && ` · ${waiting}`}
-                </p>
-                {resetHref !== null && (
-                    <Link
-                        href={resetHref}
-                        className='mt-cell inline-flex min-h-11 items-center type-label text-primary underline underline-offset-4'>
-                        {t.admin.paymentsQueueOrder}
-                    </Link>
-                )}
-            </div>
-            <ExportLink t={t} href={href} />
+        <div>
+            <h1 className='type-display text-foreground'>
+                {t.admin.paymentsTitle}
+            </h1>
+            <p className='mt-cell type-caption text-muted-foreground'>
+                {t.admin.paymentsSubtitle}
+                {waiting !== null && ` · ${waiting}`}
+            </p>
+            {resetHref !== null && (
+                <Link
+                    href={resetHref}
+                    className='mt-cell inline-flex min-h-11 items-center type-label text-primary underline underline-offset-4'>
+                    {t.admin.paymentsQueueOrder}
+                </Link>
+            )}
         </div>
     );
 }
@@ -174,6 +175,7 @@ function PaymentsRegister({
     values,
     queue,
     table,
+    exportUrl,
 }: Readonly<{
     t: Dictionary;
     dateLocale: DateFnsLocale;
@@ -181,6 +183,7 @@ function PaymentsRegister({
     values: PaymentFilterValues;
     queue: QueuePage;
     table: TableState;
+    exportUrl: string;
 }>) {
     return (
         <Register
@@ -188,6 +191,14 @@ function PaymentsRegister({
             rows={queue.rows}
             caption={t.admin.paymentsCaption}
             searchParams={sp}
+            header={{
+                title: t.admin.registerTitlePayments,
+                count: t.admin.registerCountPayments.replace(
+                    '{n}',
+                    String(queue.total),
+                ),
+                action: <ExportLink t={t} href={exportUrl} />,
+            }}
             empty={{
                 mark: t.admin.paymentsEmptyMark,
                 text: isPaymentsFiltered(values)
@@ -231,7 +242,6 @@ function PaymentsQueue({
                 resetHref={
                     table.sortBy === QUEUE_SORT ? null : queueOrderHref(sp)
                 }
-                href={exportHref(values, now)}
             />
             <PaymentFilters
                 t={t}
@@ -247,6 +257,7 @@ function PaymentsQueue({
                 values={values}
                 queue={queue}
                 table={table}
+                exportUrl={exportHref(values, now)}
             />
         </div>
     );

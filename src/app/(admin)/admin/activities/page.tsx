@@ -126,22 +126,19 @@ function emptyRow(
     };
 }
 
-function ActivitiesHeading({
-    t,
-    total,
-}: Readonly<{ t: Dictionary; total: number }>) {
+/**
+ * The page's own title. The count and the "add an Activity" action moved to the
+ * register's card header with #166, so neither is said twice.
+ */
+function ActivitiesHeading({ t }: Readonly<{ t: Dictionary }>) {
     return (
-        <div className='flex flex-wrap items-start justify-between gap-cell'>
-            <div>
-                <h1 className='type-display text-foreground'>
-                    {t.admin.activityTitle}
-                </h1>
-                <p className='mt-cell type-caption text-muted-foreground'>
-                    {total} {t.admin.activityRegistered} ·{' '}
-                    {t.admin.activitySubtitle}
-                </p>
-            </div>
-            <NewActivityButton />
+        <div>
+            <h1 className='type-display text-foreground'>
+                {t.admin.activityTitle}
+            </h1>
+            <p className='mt-cell type-caption text-muted-foreground'>
+                {t.admin.activitySubtitle}
+            </p>
         </div>
     );
 }
@@ -227,7 +224,7 @@ export default async function AdminActivityPage({
 
     return (
         <div className='space-y-bay'>
-            <ActivitiesHeading t={t} total={total} />
+            <ActivitiesHeading t={t} />
             <ActivitySearchForm
                 t={t}
                 search={search}
@@ -240,6 +237,14 @@ export default async function AdminActivityPage({
                 rows={rows}
                 caption={t.admin.activitiesCaption}
                 searchParams={sp}
+                header={{
+                    title: t.admin.registerTitleActivities,
+                    count: t.admin.registerCountActivities.replace(
+                        '{n}',
+                        String(total),
+                    ),
+                    action: <NewActivityButton />,
+                }}
                 empty={emptyRow(t, Boolean(search))}
                 pagination={{ total, page, pageSize, labels: t.table.pagination }}
             />

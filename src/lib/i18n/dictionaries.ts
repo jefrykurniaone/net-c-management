@@ -847,7 +847,6 @@ const en = {
         noPayments: 'No payments found.',
         activityTitle: 'Manage Activities',
         activitySubtitle: 'Create and manage activities',
-        activityRegistered: 'activities',
         newActivity: 'New Activity',
         editActivity: 'Edit Activity',
         activityName: 'Name',
@@ -1131,6 +1130,32 @@ const en = {
             'A new rate starts from next month at the earliest and twelve months ahead at the latest. Pick a month in that range.',
         duesRateNothingQueuedRefusal:
             'There is no queued dues change to withdraw. Reload the page to see what this activity charges now.',
+        /**
+         * Each register's card-header title (#166). It names the **rows**, which
+         * is not what the page title says: a page is called "Manage Sessions"
+         * because managing them is the job, and a card inside it holding forty
+         * of them is called "Sessions". The member-detail registers need none of
+         * these — `colMemberships`, `duesHistory` and `attendanceHistory`
+         * already name their rows.
+         */
+        registerTitlePayments: 'Payments',
+        registerTitleSessions: 'Sessions',
+        registerTitleActivities: 'Activities',
+        registerTitleMembers: 'Members',
+        registerTitleApplicants: 'Applicants',
+        registerTitleParticipants: 'Participants',
+        /**
+         * The row count in each register's card header (#166). A worded count
+         * rather than a bare figure: the number sits beside a title, and "40"
+         * alone does not say whether the filter is narrowing it. Members and
+         * Applicants have their own count sentences already — `membersSubtitle`
+         * and `applicantsSubtitle` — and the member-detail registers reuse the
+         * three below, because their rows are payments, sessions and activities.
+         */
+        registerCountPayments: '{n} payments',
+        registerCountSessions: '{n} sessions',
+        registerCountActivities: '{n} activities',
+        registerCountParticipants: '{n} participants',
     },
     activity: {
         label: 'Activity',
@@ -1997,7 +2022,6 @@ const id: typeof en = {
         noPayments: 'Tidak ada pembayaran ditemukan.',
         activityTitle: 'Kelola Aktivitas',
         activitySubtitle: 'Buat dan kelola aktivitas',
-        activityRegistered: 'aktivitas',
         newActivity: 'Buat Aktivitas',
         editActivity: 'Edit Aktivitas',
         activityName: 'Nama',
@@ -2187,6 +2211,16 @@ const id: typeof en = {
             'Tarif baru paling cepat mulai bulan depan dan paling lambat dua belas bulan ke depan. Pilih bulan dalam rentang itu.',
         duesRateNothingQueuedRefusal:
             'Tidak ada perubahan iuran yang antre untuk ditarik kembali. Muat ulang halaman untuk melihat tarif aktivitas ini sekarang.',
+        registerTitlePayments: 'Pembayaran',
+        registerTitleSessions: 'Sesi',
+        registerTitleActivities: 'Aktivitas',
+        registerTitleMembers: 'Anggota',
+        registerTitleApplicants: 'Pendaftar',
+        registerTitleParticipants: 'Peserta',
+        registerCountPayments: '{n} pembayaran',
+        registerCountSessions: '{n} sesi',
+        registerCountActivities: '{n} aktivitas',
+        registerCountParticipants: '{n} peserta',
     },
     activity: {
         label: 'Aktivitas',

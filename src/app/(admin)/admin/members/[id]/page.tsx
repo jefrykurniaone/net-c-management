@@ -70,29 +70,33 @@ function MemberHeader({
     );
 }
 
-/** A ruled heading over one of the page's registers. */
-function SectionHeading({ label }: Readonly<{ label: string }>) {
-    return <h2 className='type-title text-foreground'>{label}</h2>;
-}
-
+/**
+ * The three registers each carry their own name in their card header (#166), so
+ * the standalone `<h2>` that used to sit above them is gone — one heading per
+ * register, inside the card it names.
+ */
 function ActivitiesSection({
     member,
     t,
 }: Readonly<{ member: MemberDetail; t: Dictionary }>) {
     return (
-        <section className='flex flex-col gap-cell'>
-            <SectionHeading label={t.admin.colMemberships} />
-            <Register
-                columns={activityColumns(t)}
-                rows={member.activities}
-                caption={t.admin.memberDetailCaption}
-                searchParams={{}}
-                empty={{
-                    mark: t.admin.membersEmptyMark,
-                    text: t.admin.memberNoActivities,
-                }}
-            />
-        </section>
+        <Register
+            columns={activityColumns(t)}
+            rows={member.activities}
+            caption={t.admin.memberDetailCaption}
+            searchParams={{}}
+            header={{
+                title: t.admin.colMemberships,
+                count: t.admin.registerCountActivities.replace(
+                    '{n}',
+                    String(member.activities.length),
+                ),
+            }}
+            empty={{
+                mark: t.admin.membersEmptyMark,
+                text: t.admin.memberNoActivities,
+            }}
+        />
     );
 }
 
@@ -101,19 +105,23 @@ function DuesSection({
     t,
 }: Readonly<{ member: MemberDetail; t: Dictionary }>) {
     return (
-        <section className='flex flex-col gap-cell'>
-            <SectionHeading label={t.admin.duesHistory} />
-            <Register
-                columns={duesColumns(t)}
-                rows={member.dues}
-                caption={t.admin.memberDuesCaption}
-                searchParams={{}}
-                empty={{
-                    mark: t.admin.membersEmptyMark,
-                    text: t.admin.noDuesData,
-                }}
-            />
-        </section>
+        <Register
+            columns={duesColumns(t)}
+            rows={member.dues}
+            caption={t.admin.memberDuesCaption}
+            searchParams={{}}
+            header={{
+                title: t.admin.duesHistory,
+                count: t.admin.registerCountPayments.replace(
+                    '{n}',
+                    String(member.dues.length),
+                ),
+            }}
+            empty={{
+                mark: t.admin.membersEmptyMark,
+                text: t.admin.noDuesData,
+            }}
+        />
     );
 }
 
@@ -127,19 +135,23 @@ function AttendanceSection({
     dateLocale: DateFnsLocale;
 }>) {
     return (
-        <section className='flex flex-col gap-cell'>
-            <SectionHeading label={t.admin.attendanceHistory} />
-            <Register
-                columns={attendanceColumns(t, dateLocale)}
-                rows={member.attendances}
-                caption={t.admin.memberAttendanceCaption}
-                searchParams={{}}
-                empty={{
-                    mark: t.admin.membersEmptyMark,
-                    text: t.admin.noAttendanceData,
-                }}
-            />
-        </section>
+        <Register
+            columns={attendanceColumns(t, dateLocale)}
+            rows={member.attendances}
+            caption={t.admin.memberAttendanceCaption}
+            searchParams={{}}
+            header={{
+                title: t.admin.attendanceHistory,
+                count: t.admin.registerCountSessions.replace(
+                    '{n}',
+                    String(member.attendances.length),
+                ),
+            }}
+            empty={{
+                mark: t.admin.membersEmptyMark,
+                text: t.admin.noAttendanceData,
+            }}
+        />
     );
 }
 

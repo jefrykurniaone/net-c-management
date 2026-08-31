@@ -116,19 +116,13 @@ function actionsColumn(
     };
 }
 
-function MembersHeading({
-    t,
-    total,
-}: Readonly<{ t: Dictionary; total: number }>) {
+/**
+ * The page's own title. The roster's count moved to the register's card header
+ * with #166, so the subtitle that carried it is gone rather than said twice.
+ */
+function MembersHeading({ t }: Readonly<{ t: Dictionary }>) {
     return (
-        <div>
-            <h1 className='type-display text-foreground'>
-                {t.admin.membersTitle}
-            </h1>
-            <p className='mt-cell type-caption text-muted-foreground'>
-                {t.admin.membersSubtitle.replace('{n}', String(total))}
-            </p>
-        </div>
+        <h1 className='type-display text-foreground'>{t.admin.membersTitle}</h1>
     );
 }
 
@@ -162,6 +156,10 @@ function MembersRegister({
             rows={rows}
             caption={t.admin.membersCaption}
             searchParams={searchParams}
+            header={{
+                title: t.admin.registerTitleMembers,
+                count: t.admin.membersSubtitle.replace('{n}', String(total)),
+            }}
             empty={{
                 mark: t.admin.membersEmptyMark,
                 text: isMembersFiltered(query)
@@ -212,7 +210,7 @@ export default async function AdminMembersPage({
 
     return (
         <div className='space-y-bay'>
-            <MembersHeading t={t} total={total} />
+            <MembersHeading t={t} />
             <MemberSearch
                 filters={query}
                 activities={activities}

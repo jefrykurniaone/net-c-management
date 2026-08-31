@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import type { AttendanceStatus } from '@prisma/client';
@@ -171,7 +171,12 @@ interface SaveBarProps {
     onMarkAllPresent: () => void;
 }
 
-/** The prefill and the one Save, with how much is waiting on it said plainly. */
+/**
+ * The prefill and the one Save, with how much is waiting on it said plainly.
+ * It rides in the register's card header (#166), which keeps it inside the
+ * `<form>` — so the submit is still the form's own and the write is still one
+ * request for the whole list.
+ */
 function SaveBar({
     t,
     changedCount,
@@ -206,23 +211,34 @@ interface DraftRegisterProps {
     rows: readonly AttendanceRegisterRow[];
     searchParams: RawSearchParams;
     deps: ColumnDeps;
+    saveBar: ReactNode;
 }
 
-/** The shared register, described as data and nothing else. */
+/** The shared register, described as data and one control. */
 function DraftRegister({
     rows,
     searchParams,
     deps,
+    saveBar,
 }: Readonly<DraftRegisterProps>) {
+    const { t } = deps;
     return (
         <Register
             columns={attendanceColumns(deps)}
             rows={rows}
-            caption={deps.t.admin.attendanceCaption}
+            caption={t.admin.attendanceCaption}
             searchParams={searchParams}
+            header={{
+                title: t.admin.registerTitleParticipants,
+                count: t.admin.registerCountParticipants.replace(
+                    '{n}',
+                    String(rows.length),
+                ),
+                action: saveBar,
+            }}
             empty={{
-                mark: deps.t.admin.attendanceEmptyMark,
-                text: deps.t.admin.attendanceEmpty,
+                mark: t.admin.attendanceEmptyMark,
+                text: t.admin.attendanceEmpty,
             }}
         />
     );
@@ -269,17 +285,18 @@ export function AttendanceRegister({
     return (
         <form
             onSubmit={submitHandler(changed, save)}
-            aria-describedby={isUntaken ? UNTAKEN_NOTICE_ID : undefined}
-            className='space-y-bay'>
-            <SaveBar
-                t={t}
-                changedCount={changed.length}
-                isSaving={isSaving}
-                onMarkAllPresent={markAllPresent}
-            />
+            aria-describedby={isUntaken ? UNTAKEN_NOTICE_ID : undefined}>
             <DraftRegister
                 rows={rows}
                 searchParams={searchParams}
+                saveBar={
+                    <SaveBar
+                        t={t}
+                        changedCount={changed.length}
+                        isSaving={isSaving}
+                        onMarkAllPresent={markAllPresent}
+                    />
+                }
                 deps={{
                     t,
                     hasFee,
