@@ -13,9 +13,7 @@ import {
 } from '@/lib/public-landing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { CommunityIdentityMark } from '@/components/community/identity-mark';
-import { TASK_MEASURE } from '@/components/layout/measure';
-import { cn } from '@/lib/utils';
+import { ThresholdRail } from '@/components/layout/threshold-rail';
 
 // The shared-session page — the link a member actually pastes into WhatsApp, and
 // an **unauthenticated** route: `src/proxy.ts` builds `isProtectedRoute` from
@@ -109,35 +107,6 @@ export async function generateMetadata(
     };
 }
 
-/**
- * The shared card's own identity header — the same shape the other threshold
- * pages carry (#156): the community's mark and name, nothing else, since a
- * stranger following this link has nowhere else on this page to go but in.
- */
-function IdentityRail({
-    communityName,
-    logoUrl,
-}: Readonly<{ communityName: string; logoUrl: string }>) {
-    return (
-        <header className='border-b border-border bg-background'>
-            <div
-                className={cn(
-                    TASK_MEASURE,
-                    'flex items-center gap-cell px-block py-cell',
-                )}>
-                <CommunityIdentityMark
-                    communityName={communityName}
-                    logoUrl={logoUrl}
-                    size='md'
-                />
-                <span className='type-mark min-w-0 break-words text-foreground'>
-                    {communityName}
-                </span>
-            </div>
-        </header>
-    );
-}
-
 const FACT_ROW_CLASS = 'flex items-center gap-cell';
 const FACT_ICON_CLASS = 'w-[18px] h-[18px] shrink-0 text-primary';
 
@@ -159,7 +128,7 @@ export default async function PublicSessionPage({
 
     return (
         <div className='flex min-h-screen flex-col bg-background'>
-            <IdentityRail
+            <ThresholdRail
                 communityName={identity.communityName}
                 logoUrl={identity.logoUrl}
             />

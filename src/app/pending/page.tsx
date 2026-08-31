@@ -9,7 +9,9 @@ import { resolveAdmissionState, type AdmissionState } from '@/lib/admission';
 import type { ChipVariant } from '@/lib/status-chip';
 import { Chip } from '@/components/ui/chip';
 import { Button } from '@/components/ui/button';
-import { CommunityIdentityMark } from '@/components/community/identity-mark';
+import { ThresholdRail } from '@/components/layout/threshold-rail';
+import { TASK_MEASURE } from '@/components/layout/measure';
+import { cn } from '@/lib/utils';
 import { SignOutAction } from './sign-out-action';
 
 /**
@@ -31,9 +33,6 @@ import { SignOutAction } from './sign-out-action';
 export const metadata: Metadata = {
     robots: { index: false, follow: false },
 };
-
-/** The 40rem single-task column. */
-const COLUMN_CLASS = 'max-w-[40rem]';
 
 /**
  * What the reader is told, chosen by the state the two columns resolve to.
@@ -78,33 +77,6 @@ function statementFor(state: AdmissionState, t: Dictionary): Statement {
 }
 
 /**
- * The rail is identity only: no navigation, because there is nowhere for an
- * Applicant to go, and no controls, because the page has exactly two.
- */
-function IdentityRail({
-    communityName,
-    logoUrl,
-}: Readonly<{ communityName: string; logoUrl: string }>) {
-    return (
-        <header className='border-b border-border bg-background'>
-            <div
-                className={`mx-auto flex w-full ${COLUMN_CLASS} items-center gap-cell px-block py-cell`}>
-                <CommunityIdentityMark
-                    communityName={communityName}
-                    logoUrl={logoUrl}
-                    size='md'
-                />
-                {/* Same never-bleed guarantee the other rails carry: the
-                    community name is runtime configuration of unknown length. */}
-                <span className='type-mark min-w-0 break-words text-foreground'>
-                    {communityName}
-                </span>
-            </div>
-        </header>
-    );
-}
-
-/**
  * WhatsApp is the incumbent channel and, for a declined Applicant, the *only*
  * recourse — there is no appeal button and no re-apply flow, because the
  * organizer decided and the organizer can change their mind. Absent a configured
@@ -145,7 +117,10 @@ function Interstitial({
     return (
         <main className='flex flex-1 items-center justify-center px-block py-bay'>
             <div
-                className={`flex w-full ${COLUMN_CLASS} flex-col items-center gap-block text-center`}>
+                className={cn(
+                    TASK_MEASURE,
+                    'flex flex-col items-center gap-block text-center',
+                )}>
                 <Chip variant={statement.variant} label={statement.chipLabel} />
                 <h1 className='type-display min-w-0 max-w-full text-balance text-foreground'>
                     {statement.title}
@@ -197,7 +172,7 @@ export default async function PendingPage() {
 
     return (
         <div className='flex min-h-screen flex-col bg-background'>
-            <IdentityRail
+            <ThresholdRail
                 communityName={settings.communityName}
                 logoUrl={settings.logoUrl}
             />

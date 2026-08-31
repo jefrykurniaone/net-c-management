@@ -4,10 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
-import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { GoogleMark } from '@/components/auth/GoogleMark';
-import { TASK_MEASURE } from '@/components/layout/measure';
-import { cn } from '@/lib/utils';
+import { ThresholdRail } from '@/components/layout/threshold-rail';
 
 /**
  * Sign-in, restyled onto Rally (#156): identity header, a Display page
@@ -21,32 +19,6 @@ import { cn } from '@/lib/utils';
  * is `bg-background`, the same off-white / Black Green ground every other
  * threshold page sits on, not a tinted wash.
  */
-function IdentityRail({
-    communityName,
-    logoUrl,
-}: Readonly<{ communityName: string; logoUrl: string }>) {
-    return (
-        <header className='border-b border-border bg-background'>
-            <div
-                className={cn(
-                    TASK_MEASURE,
-                    'flex items-center gap-cell px-block py-cell',
-                )}>
-                <CommunityIdentityMark
-                    communityName={communityName}
-                    logoUrl={logoUrl}
-                    size='md'
-                />
-                {/* Same never-bleed guarantee every other rail carries: the
-                    community name is runtime configuration of unknown length. */}
-                <span className='type-mark min-w-0 break-words text-foreground'>
-                    {communityName}
-                </span>
-            </div>
-        </header>
-    );
-}
-
 export default async function SignInPage() {
     const [{ communityName, logoUrl }, locale] = await Promise.all([
         getSettings(),
@@ -56,7 +28,7 @@ export default async function SignInPage() {
 
     return (
         <div className='flex min-h-screen flex-col bg-background'>
-            <IdentityRail communityName={communityName} logoUrl={logoUrl} />
+            <ThresholdRail communityName={communityName} logoUrl={logoUrl} />
             <main className='flex flex-1 items-center justify-center px-block py-bay'>
                 <div className='flex w-full max-w-sm flex-col items-center gap-block text-center'>
                     <h1 className='type-display text-balance text-foreground'>
