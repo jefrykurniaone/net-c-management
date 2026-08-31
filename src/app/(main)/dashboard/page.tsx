@@ -20,7 +20,10 @@ import { releaseExpiredHolds } from '@/lib/holds';
 import { getDashboardSessionsBoard } from '@/lib/dashboard-sessions';
 import { DuesBanner } from '@/components/dashboard/dues-banner';
 import { ActivitySummaryCard } from '@/components/dashboard/activity-summary-card';
-import type { DashboardSlotContext } from '@/components/dashboard/dashboard-slot-data';
+import {
+    dashboardActivityCards,
+    type DashboardCardContext,
+} from '@/components/dashboard/activity-card-view';
 
 export default async function DashboardPage() {
     const [session, locale] = await Promise.all([auth(), getLocale()]);
@@ -61,6 +64,7 @@ export default async function DashboardPage() {
                     select: {
                         id: true,
                         name: true,
+                        icon: true,
                         duesRates: { select: { amount: true, effectiveFrom: true } },
                         allowsMonthly: true,
                         allowsPerSession: true,
@@ -125,29 +129,35 @@ export default async function DashboardPage() {
             resolveDuesRate(m.activity.duesRates, period) ?? 0,
         ]),
     );
+    // What each Activity bills this member by — Monthly, Per-Session, or not
+    // yet chosen — resolved once so the header chip (#160) and the Monthly-dues
+    // filter below read the same answer.
+    const paymentModeByActivity = new Map(
+        memberships.map((m) => [
+            m.activity.id,
+            resolvePaymentMode(
+                m,
+                {
+                    allowsMonthly: m.activity.allowsMonthly,
+                    allowsPerSession: m.activity.allowsPerSession,
+                },
+                currentMonth,
+                currentYear,
+            ),
+        ]),
+    );
     // Activities the member owes MONTHLY dues on this period (mode-resolved, fee
     // set). PER_SESSION / unselected memberships are billed elsewhere / not yet.
     const monthlyActivityIds = new Set(
-        memberships
+        myActivities
             .filter(
-                (m) =>
-                    resolvePaymentMode(
-                        m,
-                        {
-                            allowsMonthly: m.activity.allowsMonthly,
-                            allowsPerSession: m.activity.allowsPerSession,
-                        },
-                        currentMonth,
-                        currentYear,
-                    ) === 'MONTHLY' && (duesAmountByActivity.get(m.activity.id) ?? 0) > 0,
+                (a) =>
+                    paymentModeByActivity.get(a.id) === 'MONTHLY' &&
+                    (duesAmountByActivity.get(a.id) ?? 0) > 0,
             )
-            .map((m) => m.activity.id),
+            .map((a) => a.id),
     );
     const paymentByActivity = new Map(monthPayments.map((p) => [p.activityId, p]));
-    const billsByActivity = new Map<string, number>();
-    for (const bill of outstandingBills) {
-        billsByActivity.set(bill.activity.id, (billsByActivity.get(bill.activity.id) ?? 0) + 1);
-    }
     // A CONFIRMED payment is settled; a PENDING one is in review (member already
     // acted) — neither counts as an unpaid due that still needs the member's
     // attention, so both drop out of the banner/count (matches /payments).
@@ -173,10 +183,13 @@ export default async function DashboardPage() {
     const boardsByActivity = new Map(
         dashboardBoard.boards.map((board) => [board.activityId, board]),
     );
-    const slotContext: DashboardSlotContext = {
+    const cardContext: DashboardCardContext = {
         t,
         seatsBySession: dashboardBoard.seatsBySession,
         ownBySession: dashboardBoard.ownBySession,
+        holdBySession: dashboardBoard.holdBySession,
+        duesCoveredSessionIds: dashboardBoard.duesCoveredSessionIds,
+        now,
     };
 
     return (
@@ -254,17 +267,22 @@ export default async function DashboardPage() {
                         </Link>
                     </div>
                     {myActivities.map((activity) => {
-                        const payment = paymentByActivity.get(activity.id);
                         const board = boardsByActivity.get(activity.id);
+                        const cards = dashboardActivityCards(
+                            board?.days ?? [],
+                            cardContext,
+                        );
                         return (
                             <ActivitySummaryCard
                                 key={activity.id}
-                                activity={activity}
-                                days={board?.days ?? []}
-                                isMonthlyDue={monthlyActivityIds.has(activity.id)}
-                                paymentStatus={payment?.status}
-                                outstanding={billsByActivity.get(activity.id) ?? 0}
-                                slotContext={slotContext}
+                                activity={{
+                                    id: activity.id,
+                                    name: activity.name,
+                                    icon: activity.icon ?? null,
+                                }}
+                                paymentMode={paymentModeByActivity.get(activity.id) ?? null}
+                                cards={cards}
+                                t={t}
                             />
                         );
                     })}

@@ -1,55 +1,92 @@
-import type { PaymentStatus } from '@prisma/client';
-import type { BoardDay } from '@/lib/board-days';
-import { ActivityInitial } from '@/components/activity/activity-badge';
-import { MoneyChip } from './money-chip';
-import { ActivityDayCells } from './activity-day-cells';
-import type { DashboardSlotContext } from './dashboard-slot-data';
+import type { PaymentMode } from '@prisma/client';
+import { ActivityTile } from '@/components/activity/activity-tile';
+import { Chip } from '@/components/ui/chip';
+import type { Dictionary } from '@/lib/i18n/dictionaries';
+import type { DashboardCardView } from './activity-card-view';
+import { ActivitySessionCard } from './activity-session-card';
 
-/** The Activity fields this card's own header needs — a name beside its tile. */
+/** The Activity fields this card's own header needs. */
 export interface DashboardActivity {
     readonly id: string;
     readonly name: string;
+    /** `Activity.icon` as stored, or null for the initial tile. */
+    readonly icon: string | null;
 }
 
 /**
- * One Activity's card on the dashboard: identity and dues in its own header
- * (unchanged by this ticket), its Sessions rendered through the Slot Cell
- * beneath it (the ticket's own rebuild). The header keeps the plain bordered
- * card it already had — this ticket's coloured top border was removed from
- * it in #36, before this ticket, and never returns.
+ * One Activity's card on the dashboard: identity and how the member pays for
+ * it in the header, that Activity's next Sessions as compact cards in the
+ * body (`spec-rally-member-v1.md`, Dashboard). Per-Activity Payment standing —
+ * paid, pending, rejected, to pay — moved out of this header with #160: it now
+ * surfaces through the dues notice card above every Activity's own card and
+ * the dashboard's own Dues stat, so this header says only what a member pays
+ * *by*, never whether this period is settled.
  */
 export function ActivitySummaryCard({
     activity,
-    days,
-    isMonthlyDue,
-    paymentStatus,
-    outstanding,
-    slotContext,
+    paymentMode,
+    cards,
+    t,
 }: Readonly<{
     activity: DashboardActivity;
-    days: readonly BoardDay[];
-    isMonthlyDue: boolean;
-    paymentStatus: PaymentStatus | undefined;
-    outstanding: number;
-    slotContext: DashboardSlotContext;
+    paymentMode: PaymentMode | null;
+    cards: readonly DashboardCardView[];
+    t: Dictionary;
 }>) {
     return (
-        <div className='bg-card rounded-xl border border-border overflow-hidden'>
-            <div className='flex items-center gap-2.5 p-4 pb-3'>
-                <ActivityInitial name={activity.name} />
-                <span className='flex-1 text-[15px] font-semibold text-foreground truncate'>
+        <div className='flex flex-col gap-cell rounded-xl bg-card p-block shadow-lift'>
+            <div className='flex items-center gap-cell'>
+                <ActivityTile name={activity.name} icon={activity.icon} size='lead' />
+                <span className='type-title min-w-0 flex-1 truncate text-card-foreground'>
                     {activity.name}
                 </span>
-                <MoneyChip
-                    isMonthlyDue={isMonthlyDue}
-                    paymentStatus={paymentStatus}
-                    outstanding={outstanding}
-                    t={slotContext.t}
-                />
+                <PaymentModeChip mode={paymentMode} t={t} />
             </div>
-            <div className='px-4 pb-4'>
-                <ActivityDayCells days={days} context={slotContext} />
-            </div>
+            {cards.length === 0 ? (
+                <ActivityEmptyNotice t={t} />
+            ) : (
+                <div className='flex flex-col gap-cell'>
+                    {cards.map(({ key, card }) => (
+                        <ActivitySessionCard key={key} card={card} t={t} />
+                    ))}
+                </div>
+            )}
         </div>
     );
+}
+
+/**
+ * This Activity's body when its next-Sessions list is empty — nothing posted
+ * and no standing weekly slot landing in the range. A sentence beside the
+ * neutral chip, drawn directly rather than through `StripNotice`
+ * (`sessions/week-strip.tsx`): that component is its own `bg-card
+ * shadow-lift` box, and nesting one inside this card's would double the
+ * shadow rather than reading as one card with one sentence in it.
+ */
+function ActivityEmptyNotice({ t }: Readonly<{ t: Dictionary }>) {
+    return (
+        <div className='flex flex-wrap items-center gap-cell'>
+            <Chip variant='neutral' label={t.chips.unposted} />
+            <p className='type-caption text-secondary-foreground'>
+                {t.dashboard.noUpcoming}
+            </p>
+        </div>
+    );
+}
+
+/**
+ * What a member pays this Activity *by* — Monthly or Per-Session — never
+ * whether this period is settled. `null` covers both an Activity offering no
+ * mode and one offering both to a member who has not chosen yet; neither has
+ * anything to say beyond "not chosen", so the two collapse into one chip.
+ */
+function PaymentModeChip({
+    mode,
+    t,
+}: Readonly<{ mode: PaymentMode | null; t: Dictionary }>) {
+    if (mode === null) {
+        return <Chip variant='neutral' label={t.profile.modeNoneChosen} />;
+    }
+    const label = mode === 'MONTHLY' ? t.paymentMode.monthly : t.paymentMode.perSession;
+    return <Chip variant='info' label={label} />;
 }
