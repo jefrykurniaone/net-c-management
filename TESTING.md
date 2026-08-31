@@ -385,488 +385,604 @@ Notes:
 
 ## 16. Design-system verification (`TC-DS-*`)
 
-The design system (`DESIGN.md`, *Papan Jadwal*) makes two promises that rot
-silently: every text and mark pair clears WCAG AA in **both** board materials,
-and every state survives having its colour removed. This area turns both into
-cases that fail on a **number** or on a **screenshot**, not on an opinion, so a
-nudged token is a failed case rather than a matter of taste.
+Rally (`DESIGN.md`) makes five promises that rot silently: every pair of colours
+the product can put on screen clears its floor in **both** themes; every state
+arrives as a chip carrying a written label in **both** locales; every control
+shows the keyboard where it is; motion stops for a reader who asked it to; and
+the retired system leaves nothing behind in the built stylesheet. This area
+turns each of them into a case that fails on a **number**, a **string** or a
+**file**, never on an opinion — so a nudged token is a failed case rather than a
+matter of taste.
 
-Every case below is stated as something a person can see. Nothing asserts that a
-component rendered with a class name — such a case passes forever while the
-design breaks.
+Nothing here asserts that a component rendered with a class name. Such a case
+passes forever while the design breaks.
+
+The suite was rewritten for Rally by #152 and is numbered from **TC-DS-101**, so
+that the Papan Jadwal ids stay unambiguous rather than being reused. The old
+`TC-DS-001` … `TC-DS-017` are kept in §16.5, superseded, with a pointer each.
 
 ### 16.0 Conventions, vocabulary and shared preconditions
 
 Each case carries an id (`TC-DS-NNN`), a priority (**P0** ships nothing broken,
-**P1** ships with a known note, **P2** is cosmetic), a type (Positive / Negative /
-Edge), its own preconditions, numbered steps, and an expected result. Where a
+**P1** ships with a known note, **P2** is cosmetic), a type (Positive / Negative
+/ Edge), its own preconditions, numbered steps, and an expected result. Where a
 case touches an API the expected result names the **HTTP status**.
 
-The two board materials are objects, not themes (`DESIGN.md`, *The
-Material-Is-Not-Mode Rule*):
+**Two themes, not two materials.** The painted-board vocabulary went with Papan
+Jadwal (ADR 0003):
 
-- **enamel** — the light material. `:root` in `src/app/styles/board-materials.css`.
-- **painted board** — the dark green material. `.dark` in the same file. The
-  public route's hero band renders it in **both** materials, deliberately.
+- **light** — warm off-white grounds carrying Black Green ink. `:root` in
+  `src/app/styles/board-materials.css`.
+- **dark** — a real Black Green ground carrying off-white ink, with card faces
+  stepping *up* from it. `.dark` in the same file. The public route's hero band
+  forces `.dark` regardless of the visitor's preference, deliberately, so every
+  dark value has to hold inside a light-themed page as well.
 
-Shared preconditions for every case in this area:
+**How a case is executed** is part of the case, because three kinds live here:
+
+- **Computed** — the ratio is calculated from the two committed hex values. No
+  browser, no server, no seed. `src/lib/__tests__/design-tokens.test.ts` already
+  asserts every one of these on every `npm test`; running the case by hand is
+  reading the same numbers back off the same file.
+- **Static** — the answer is in a file on disk: a grep over `src/`, or a scan of
+  the stylesheet `npm run build` emits.
+- **Rendered** — the answer only exists in a browser with the app running, and
+  the case says which route, which theme and which locale.
+
+Shared preconditions for the **rendered** cases only:
 
 1. §1 prerequisites done and `npm run dev` running on `http://localhost:3000`.
 2. §2 seed loaded (`npm run db:seed`) — these cases use the §3 accounts
    (`member@xclub.local` = Adi, `owner@xclub.local`), the four seeded activities
    (Badminton, Basket, Futsal, Tennis) and the §4 sessions. No fixture of their
-   own, and no fixture invented in a case.
-3. Material switched with the **theme toggle** in the header rail (or the OS
-   colour scheme, which `system` follows).
+   own, and none invented in a case.
+3. Theme switched with the **theme toggle** in the header rail (or the OS colour
+   scheme, which `system` follows).
 4. Locale switched on `/profile` → Language, or by setting the `NEXT_LOCALE`
    cookie to `en` / `id`.
 5. Viewport set with the browser's device toolbar: **390 × 844** (phone) and
    **1440 × 900** (desktop).
 
-Contrast is read the same way in every case: inspect the element, and read the
-ratio DevTools prints in the colour picker beside `color` — or compute it from
-the two token values. Ratios below are the measured values of the shipped
-tokens; a case fails when the measurement is **below its target**, not when it
-differs from the value printed here.
+Contrast is read the same way everywhere: inspect the element and read the ratio
+DevTools prints in the colour picker beside `color`, or compute it from the two
+token values with the WCAG formula in `src/lib/theme-contrast.ts`. **The ratios
+below are the measured values of the committed tokens.** A case fails when the
+measurement is below its **floor**, not when it differs from the value printed
+here — but a value that has drifted from the table is a change somebody has to
+own, and the table is updated in the same commit as the token.
 
-### TC-DS-001 · P0 · Positive — Enamel text-on-surface pairs clear WCAG AA
+The floors are WCAG 2.1 AA: **4.5:1** for text (1.4.3), **3:1** for a rule, a
+ring, a state edge or a plotted mark (1.4.11). A role at ≥24px, or ≥18.66px and
+bold, would only have to clear 3:1; no pair below relies on that concession.
 
-**Preconditions:** signed in as Adi; material = enamel; locale = en.
+### 16.1 The token layer — computed cases
+
+#### TC-DS-101 · P0 · Positive — Every text pair clears AA in both themes
+
+**Preconditions:** none. Computed from `src/app/styles/board-materials.css`.
 
 **Steps:**
-1. Open `/dashboard`, `/sessions`, `/payments` and `/profile`.
-2. For each text role on a cell (tile) and on the page ground, read the contrast
-   ratio of `color` against the surface behind it.
+1. For each row below, read the two token values out of `:root` and out of
+   `.dark`.
+2. Compute the contrast ratio of each pair in each theme.
+3. Open `/dashboard`, `/sessions`, `/payments`, `/profile`, `/admin` and `/` in
+   both themes and confirm each pair is one a surface actually produces — a
+   pair in the table that no surface can render is dead weight, and a pair a
+   surface renders that is **not** in the table is the failure this step exists
+   to find.
 
-**Expected result:** every pair clears **4.5:1** (AA, body text; a role at
-≥24px, or ≥18.66px and bold, only has to clear 3:1):
+**Expected result:** every pair clears **4.5:1** in both themes.
 
-| Pair | Tokens | Target | Measured |
+*Ink on grounds and faces*
+
+| Pair | Tokens | Light | Dark |
 |---|---|---|---|
-| Graphite Ink on tile | `--foreground` on `--card` | 4.5 | **16.10** |
-| Graphite Ink on ground | `--foreground` on `--background` | 4.5 | **14.19** |
-| Secondary Ink on tile | `--muted-foreground` on `--card` | 4.5 | **6.13** |
-| Secondary Ink on ground | `--muted-foreground` on `--background` | 4.5 | **5.41** |
-| Quiet Ink on tile | `--subtle-foreground` on `--card` | 4.5 | **4.74** |
-| Court Green on tile | `--primary` on `--card` | 4.5 | **6.98** |
-| Court Green on ground | `--primary` on `--background` | 4.5 | **6.15** |
-| Primary action | `--primary-solid-foreground` on `--primary-solid` | 4.5 | **6.98** |
+| body ink on the page ground | `--foreground` on `--background` | **14.17** | **14.75** |
+| body ink on a card | `--foreground` on `--card` | **17.11** | **12.73** |
+| card ink on a card | `--card-foreground` on `--card` | **17.11** | **12.73** |
+| menu and dialog ink | `--popover-foreground` on `--popover` | **17.11** | **12.73** |
+| ink on a muted fill | `--foreground` on `--muted` | **14.17** | **11.34** |
+| ink on a secondary fill | `--foreground` on `--secondary` | **14.17** | **12.73** |
+| supporting ink on the ground | `--secondary-foreground` on `--background` | **7.01** | **9.14** |
+| supporting ink on a card | `--secondary-foreground` on `--card` | **8.47** | **7.89** |
+| secondary button label | `--secondary-foreground` on `--secondary` | **7.01** | **7.89** |
+| muted ink on the ground | `--muted-foreground` on `--background` | **5.90** | **9.14** |
+| muted ink on a card | `--muted-foreground` on `--card` | **7.13** | **7.89** |
+| menu label and shortcut | `--muted-foreground` on `--popover` | **7.13** | **7.89** |
+| quiet ink on the ground | `--subtle-foreground` on `--background` | **4.99** | **7.36** |
+| quiet ink on a card | `--subtle-foreground` on `--card` | **6.03** | **6.35** |
 
-And one constraint that is part of the same case: **Quiet Ink on the enamel
-ground measures 4.17:1 and does not clear AA.** No surface may put
-`--subtle-foreground` text on `--background` or `--muted`; text sitting on the
-ground takes Secondary Ink instead (5.41:1). A page where Quiet Ink lands on the
-ground fails this case.
+*Ink on brand fills and washes*
 
-### TC-DS-002 · P0 · Positive — Painted-board text-on-surface pairs clear WCAG AA
-
-**Preconditions:** signed in as Adi; material = painted board; locale = en.
-
-**Steps:** as TC-DS-001, over the same four routes.
-
-**Expected result:** every pair clears **4.5:1**:
-
-| Pair | Tokens | Target | Measured |
+| Pair | Tokens | Light | Dark |
 |---|---|---|---|
-| Chalk Ink on tile | `--foreground` on `--card` | 4.5 | **11.49** |
-| Chalk Ink on ground | `--foreground` on `--background` | 4.5 | **13.06** |
-| Chalk Secondary on tile | `--muted-foreground` on `--card` | 4.5 | **5.45** |
-| Chalk Secondary on ground | `--muted-foreground` on `--background` | 4.5 | **6.19** |
-| Chalk Quiet on tile | `--subtle-foreground` on `--card` | 4.5 | **4.70** |
-| Chalk Quiet on ground | `--subtle-foreground` on `--background` | 4.5 | **5.35** |
-| Court Green Lit on tile | `--primary` on `--card` | 4.5 | **6.00** |
-| Court Green Lit on ground | `--primary` on `--background` | 4.5 | **6.82** |
-| Primary action | `--primary-solid-foreground` on `--primary-solid` | 4.5 | **6.82** |
+| active navigation, menu focus | `--accent-foreground` on `--accent` | **13.68** | **10.06** |
+| selected option label | `--foreground` on `--accent` | **13.68** | **10.85** |
+| link on an accent hover | `--primary` on `--accent` | **6.90** | **5.79** |
+| link on the ground | `--primary` on `--background` | **7.15** | **7.88** |
+| link on a card | `--primary` on `--card` | **8.64** | **6.80** |
+| checkbox tick, avatar badge | `--primary-foreground` on `--primary` | **8.64** | **7.88** |
+| settled ink on the ground | `--success` on `--background` | **5.43** | **8.74** |
+| settled ink on a card | `--success` on `--card` | **6.56** | **7.54** |
+| ink on a settled fill | `--success-foreground` on `--success` | **6.56** | **8.74** |
+| provisional ink on the ground | `--warning` on `--background` | **5.82** | **8.18** |
+| provisional ink on a card | `--warning` on `--card` | **7.03** | **7.06** |
+| count badge on a provisional fill | `--warning-foreground` on `--warning` | **7.03** | **7.98** |
+| dues-banner action | `--warning-solid-foreground` on `--warning-solid` | **7.03** | **7.98** |
+| void ink on the ground | `--destructive` on `--background` | **6.15** | **6.57** |
+| void ink on a card | `--destructive` on `--card` | **7.43** | **5.67** |
+| ink on a void fill | `--destructive-foreground` on `--destructive` | **7.43** | **6.68** |
+| destructive action | `--destructive-solid-foreground` on `--destructive-solid` | **7.43** | **6.68** |
 
-### TC-DS-003 · P0 · Positive — Mark-on-wash pairs clear AA, enamel
+*The two actions, which do not move with the theme*
 
-**Preconditions:** signed in as Adi; material = enamel. Marks with a live
-producer: **Ink** (a Confirmed Payment on `/payments`), **Tape** (the pending
-payment on **Hold Lab**, and the MAYBE RSVP on **Free Play**), **Strike** (the
-rejected payment under `/payments?historyStatus=REJECTED`, and **Rained Out
-(Cancelled)**), **Blank** (the RSVP-not-yet-given pill on `/dashboard`, and
-`Unposted` on `/`).
-
-**Steps:**
-1. Open each surface above and find the mark.
-2. Read the mark label's contrast against the wash it sits on.
-
-**Expected result:** every mark clears **4.5:1** — worst case for a mark that can
-sit on either surface is listed:
-
-| Mark | Pair | Target | Measured |
+| Pair | Tokens | Light | Dark |
 |---|---|---|---|
-| Ink | Court Green on ink wash | 4.5 | **6.31** |
-| Tape | Tape Ochre on tape wash | 4.5 | **5.36** |
-| Strike | Struck Red on strike wash | 4.5 | **5.97** |
-| Erased | Secondary Ink on ground | 4.5 | **5.41** |
-| Blank | Secondary Ink on ground (worst) / tile | 4.5 | **5.41** / 6.13 |
-| Hollow | Struck Red on ground (worst) / tile | 4.5 | **5.73** / 6.50 |
+| **the primary action's label** | `--primary-solid-foreground` on `--primary-solid` | **8.74** | **8.74** |
+| the secondary action's label | `--secondary-solid-foreground` on `--secondary-solid` | **14.75** | **14.75** |
 
-### TC-DS-004 · P0 · Positive — Mark-on-wash pairs clear AA, painted board
+The five chip pairs and the value beside a void chip are text pairs too and are
+read in TC-DS-102 instead, where a reader can see them together. Thirty-nine
+text pairs in all.
 
-**Preconditions:** as TC-DS-003, material = painted board.
+#### TC-DS-102 · P0 · Positive — Every chip's ink and edge clear their floors, both themes
 
-**Expected result:** every mark clears **4.5:1**:
+**Preconditions:** none for the numbers. Computed the same way as TC-DS-101.
 
-| Mark | Pair | Target | Measured |
+**Steps:**
+1. Read the wash, ink and edge token of each of the five variants out of
+   `src/components/ui/chip.tsx`.
+2. Compute the ink-on-wash ratio and the edge-on-wash ratio, per theme.
+3. Compute the ratio of the de-emphasised value beside a void chip, on the wash
+   it can sit in.
+
+**Expected result:** every **ink** clears **4.5:1** and every **edge** clears
+**3:1**, in both themes.
+
+| Variant | Ink on wash, light | dark | Edge on wash, light | dark |
+|---|---|---|---|---|
+| **settled** | **5.59** | **7.06** | **5.59** | **7.06** |
+| **provisional** | **6.00** | **6.73** | **6.00** | **6.73** |
+| **void** | **6.04** | **5.88** | **6.04** | **5.88** |
+| **neutral** | **5.90** | **7.03** | **3.29** | **3.70** |
+| **info** | **6.93** | **7.14** | **6.93** | **7.14** |
+
+The neutral chip is the only one whose edge is a different colour from its ink —
+it takes `--border`, the taupe that serves every rule in the system — which is
+why its edge row is the tightest of the five at **3.29**. It clears.
+
+And one reading that is part of the same case: **the value a void state applies
+to is dimmed, never struck.** `--muted-foreground` measures **5.80 / 8.19** on
+the void wash, **7.13 / 7.89** on a card and **5.90 / 9.14** on the page ground.
+A `text-decoration` strike anywhere on a value fails the case; so does a value
+left at full strength beside a void chip, because the de-emphasis is the
+behaviour the retired Strike mark carried and Rally kept.
+
+#### TC-DS-103 · P0 · Positive — Every rule, edge and focus ring clears 3:1 in both themes
+
+**Preconditions:** none. Computed.
+
+**Steps:** compute each pair below in both themes.
+
+**Expected result:** every pair clears **3:1** (WCAG 1.4.11).
+
+| Pair | Tokens | Light | Dark |
 |---|---|---|---|
-| Ink | Court Green Lit on ink wash | 4.5 | **5.40** |
-| Tape | Tape Ochre Lit on tape wash | 4.5 | **6.20** |
-| Strike | Struck Red Lit on strike wash | 4.5 | **5.45** |
-| Erased | Chalk Secondary on ground | 4.5 | **6.19** |
-| Blank | Chalk Secondary on tile (worst) / ground | 4.5 | **5.45** / 6.19 |
-| Hollow | Struck Red Lit on tile (worst) / ground | 4.5 | **5.04** / 5.73 |
+| rule and input edge on the ground | `--border` on `--background` | **3.29** | **4.81** |
+| rule and input edge on a card | `--border` on `--card` | **3.98** | **4.15** |
+| rule on a muted fill | `--border` on `--muted` | **3.29** | **3.70** |
+| **rule on an accent fill** | `--border` on `--accent` | **3.18** | **3.54** |
+| rule on the link wash | `--border` on `--primary-soft` | **3.19** | **4.36** |
+| rule on the settled wash | `--border` on `--success-soft` | **3.39** | **3.89** |
+| rule on the provisional wash | `--border` on `--warning-soft` | **3.39** | **3.96** |
+| rule on the void wash | `--border` on `--destructive-soft` | **3.23** | **4.31** |
+| focus ring on the ground | `--ring` on `--background` | **7.15** | **7.88** |
+| focus ring on a card | `--ring` on `--card` | **8.64** | **6.80** |
+| info chip edge, link wash edge | `--primary-soft-border` on `--primary-soft` | **6.93** | **7.14** |
+| link wash edge on a card | `--primary-soft-border` on `--card` | **8.64** | **6.80** |
+| settled chip edge | `--success-soft-border` on `--success-soft` | **5.59** | **7.06** |
+| provisional chip edge | `--warning-soft-border` on `--warning-soft` | **6.00** | **6.73** |
+| void chip edge | `--destructive-soft-border` on `--destructive-soft` | **6.04** | **5.88** |
+| destructive outline button edge | `--destructive-soft-border` on `--card` | **7.43** | **5.67** |
 
-### TC-DS-005 · P0 · Negative — The banned action pairing never renders
+`--border` on `--accent` at **3.18** is the worst rule case in the system and the
+reason the taupe is as dark as it is. Lightening `--border` to taste is what this
+row exists to catch.
 
-**Preconditions:** any material; `/` open (its hero band is painted board in both
-materials).
+Three pairs are measured and **published without a floor**, because none is a
+WCAG pairing and each thing is identified by something the rows above already
+cover: the card face on the page ground (**1.21 / 1.16** — the card is bounded
+by `--border` where drawn and by `--shadow-lift`), the action fill on a card
+(**1.96 / 7.54** — the control is identified by its 8.74:1 label and its
+shadow), and the accent fill on the ground (**1.04 / 1.36** — a hue step, not a
+lightness one). They are in `RECORDED_PAIRS` rather than `AA_PAIRS`. Moving one
+of them into `AA_PAIRS` without re-colouring it is what would fail.
 
-**Steps:**
-1. Inspect the hero's primary action.
-2. Read its label colour and its ground.
+#### TC-DS-104 · P0 · Negative — The banned pairing never renders
 
-**Expected result:** the label is **Board Ground ink on Court Green Lit**
-(`--primary-solid-foreground` on `--primary-solid`) at **6.82:1**. Chalk Ink on
-Court Green Lit measures **1.92:1** and is banned — if the label resolves to
-`--foreground` on the lit green, the case fails. This is the one pairing on the
-public route that can be got wrong by an override, and the token layer already
-pairs it correctly, so the case is watching for exactly that override.
-
-### TC-DS-006 · P0 · Positive — The six marks survive colour removal
-
-**Preconditions:** signed in as Adi; run once per material.
-
-**Steps:**
-1. Open `/dashboard` and paste the following in the browser console — it renders
-   the six marks together, using the shipped variant classes from
-   `src/components/ui/mark.tsx`, at label size and again enlarged:
-   ```js
-   (() => {
-     const B = 'inline-flex w-fit shrink-0 items-center justify-center gap-1 rounded-[2px] px-2 py-[3px] type-label whitespace-nowrap';
-     const K = [
-       ['ink', 'border border-success-soft-border bg-success-soft text-success-soft-foreground', 'Confirmed'],
-       ['tape', 'mark-torn pr-3.5 bg-warning-soft text-warning-soft-foreground', 'Pending'],
-       ['strike', 'border border-destructive-soft-border bg-destructive-soft text-destructive line-through decoration-[1.5px]', 'Rejected'],
-       ['erased', 'border border-transparent bg-board text-muted-foreground', 'Opted Out'],
-       ['blank', 'border border-dashed border-rule text-muted-foreground', 'Unposted'],
-       ['hollow', 'border-2 border-dashed border-destructive text-destructive', 'No-Show'],
-     ];
-     document.getElementById('mark-strip')?.remove();
-     const h = document.createElement('div');
-     h.id = 'mark-strip';
-     h.className = 'bg-card';
-     h.style = 'position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;gap:28px;padding:28px;height:max-content;width:max-content';
-     const row = () => { const r = document.createElement('div'); r.style = 'display:flex;gap:16px;align-items:center';
-       K.forEach(([k, c, l]) => { const s = document.createElement('span'); s.className = `${B} ${c}`; s.dataset.mark = k; s.textContent = l; r.appendChild(s); }); return r; };
-     h.appendChild(row());
-     const big = document.createElement('div'); big.style = 'zoom:2.4'; big.appendChild(row()); h.appendChild(big);
-     document.body.appendChild(h);
-   })();
-   ```
-2. Screenshot the strip.
-3. Remove the colour: `$('#mark-strip').style.filter = 'grayscale(1)'`, and
-   screenshot again.
-4. Compare the two screenshots.
-
-**Expected result:** in the greyscale screenshot all six marks are still tellable
-apart, by **form** alone:
-
-- **Ink** — solid 1px border around a filled rectangle.
-- **Tape** — filled rectangle whose right edge is three ink teeth. The teeth
-  read at label size, which is the point: the prototype found a torn edge cut out
-  of the *fill* nearly invisible there, so the tear is drawn **in ink** instead
-  (`src/app/styles/mark-forms.css`). Provisional (Tape) versus settled (Ink)
-  must be distinguishable, and this edge is what distinguishes them.
-- **Strike** — bordered rectangle with a line through the label.
-- **Erased** — flat, ground-coloured, **no** border.
-- **Blank** — **1px** dashed outline, no fill.
-- **Hollow** — **2px** dashed outline, no fill.
-
-Blank and Hollow are never interchangeable, so the dash weight is load-bearing:
-if the two are indistinguishable in greyscale the case fails.
-
-### TC-DS-007 · P1 · Positive — Lattice rules stay visible, enamel
-
-**Preconditions:** signed in as owner; material = enamel.
+**Preconditions:** for the numbers, none. For step 3, `/` open in either theme —
+its hero band forces the dark theme in both.
 
 **Steps:**
-1. Open `/admin` (KPI lattice), `/admin/sessions` (table rules) and `/` (the
-   activities lattice below the seam).
-2. Read each 1px rule against the cell it borders, including a rule bordering a
-   **wash** cell (the marks' fills are the lightest cells a rule touches).
+1. Compute white and off-white against `--primary-solid` in both themes.
+2. Read `src/lib/__tests__/design-tokens.test.ts`, which asserts the *direction*
+   rather than a hex: the action's label is the darker of the two, and white on
+   the action ground is below 4.5:1.
+3. Inspect the hero's primary action and read its label colour and its ground.
 
-**Expected result:** every rule clears **3:1** against its cell:
+**Expected result:**
 
-| Rule against | Target | Measured |
+- White on PBP Green measures **1.96:1**; the off-white `--foreground` the dark
+  theme uses measures **1.69:1**; the beige page ground measures **1.62:1**.
+  **There is no size at which any of them is acceptable.**
+- The action carries Black Green at **8.74:1**, identically in both themes.
+- The token layer cannot produce the other direction:
+  `--primary-solid-foreground` is `#0E1F17` in `:root` and in `.dark`, and the
+  test asserts the label's relative luminance is lower than the ground's. A
+  surface that overrides the label colour on a primary action is what this case
+  is watching for, and it fails on the reading in step 3 rather than on the
+  tokens.
+
+#### TC-DS-105 · P0 · Positive — Every chart series clears 3:1 on the card it is drawn on
+
+**Preconditions:** none for the numbers. For step 3, any surface rendering a
+`ChartFigure`.
+
+**Steps:**
+1. Compute each `--chart-N` against `--card` in both themes.
+2. Compute `--chart-2` and `--chart-3` against `--background` as well.
+3. Confirm every chart on every surface is inside a `ChartFigure`, and that the
+   figure's `<details>` list carries every plotted value as text.
+
+**Expected result:** all five series clear **3:1** against `--card`:
+
+| Series | Light | Dark | Values |
+|---|---|---|---|
+| `--chart-1` | **6.56** | **7.54** | `#136B3F` / `#3ED27E` |
+| `--chart-2` | **5.34** | **6.80** | `#6C4CF0` / `#B7A4F7` |
+| `--chart-3` | **3.10** | **7.06** | `#E8701A` / `#F2A24A` |
+| `--chart-4` | **7.43** | **5.67** | `#9E2B25` / `#F08078` |
+| `--chart-5` | **17.11** | **11.80** | `#0E1F17` / `#D8F25E` |
+
+And the constraint that goes with them: **a series is never drawn on the page
+ground.** There `--chart-3` measures **2.57** and `--chart-2` **4.42**, so a
+figure that escapes its card fails this case even though every series still
+clears its floor on a card. `ChartFigure` composing onto a `Card` is what makes
+the floor true, not a convention.
+
+`--chart-3` at **3.10** light is the tightest pair in the system. It clears, and
+it has no room left.
+
+#### TC-DS-106 · P0 · Negative — The built stylesheet carries no retired class outside the alias block
+
+**Preconditions:** a clean `npm run build`. Static, no browser.
+
+**Steps:**
+1. Run `npm run build`.
+2. Find the emitted stylesheet — `.next/static/chunks/*.css`, the one of any
+   size.
+3. Search it for each retired Papan Jadwal utility.
+4. For every name found, confirm it is declared in the alias block of
+   `src/app/globals.css` or in the aliased utilities at the foot of
+   `src/app/styles/type-roles.css`, each of which names **#174** as the ticket
+   that removes it.
+5. Search `src/` for the three mark-form class names — the strike utility, the
+   decoration-thickness override beside it, and the torn-edge class — and for
+   the `data-mark` attribute.
+
+**Expected result:**
+
+- The **alias** utilities are present and are expected to be, until #174 runs:
+  `.bg-board`, `.ring-offset-board`, `.bg-tile`, `.border-rule`, `.divide-rule`,
+  `.bg-rule`, the three wash aliases, `.shadow-tile`, `.shadow-tile-pressed`,
+  `.type-hero`, `.type-mark`. Every one of them resolves to a Rally token and
+  every one carries a removal note.
+- The three **mark-form** names are **absent from the stylesheet and from
+  `src/`**, and so is `data-mark`. The torn-edge class cannot render at all:
+  `src/app/styles/mark-forms.css`, which defined it, is deleted.
+- No retired name is emitted that is not in the alias block.
+
+**Why this case is not obvious.** Tailwind v4's automatic source detection scans
+markdown as well as code, so a class name **quoted in this document** is enough
+to emit its rule into the built stylesheet even when no element in `src/` uses
+it. The retired TC-DS-006 quoted the six marks' class strings verbatim, which is
+why the strike utility and the decoration override survived in the CSS long after
+their last call site was deleted. That is also why neither this document nor
+`DESIGN.md` spells those two names any more: a test document was keeping dead
+CSS alive on its own.
+
+Three **recorded-run** rows named the strike utility by its class name as well —
+§17.10's TC-MS-017 and TC-MS-021 rows and §18.6's TC-AR-002 row. #152 replaced
+the class name with a description of it in those three places and changed nothing
+else in them: every ratio, every figure, every negation and every result stands
+exactly as it was recorded. A run's record is not editable; the spelling of a
+dead class name inside it is, and it had to be, because the spelling was
+shipping CSS.
+
+### 16.2 The rendered surfaces
+
+#### TC-DS-107 · P0 · Positive — Every chip carries a visible label, both locales, both themes
+
+**Preconditions:** signed in as Adi for the member surfaces and as
+`owner@xclub.local` for the admin ones; run once per locale, in both themes.
+
+**Steps:**
+1. Visit `/dashboard`, `/sessions`, a Session's own page, `/payments`,
+   `/profile`, `/admin`, `/admin/sessions`, `/admin/payments` and
+   `/admin/members`.
+2. Find every element carrying `data-slot="chip"` and read its text.
+3. Confirm none is empty, none is an abbreviation, and none is the stored enum.
+4. Switch locale and read the same chips again.
+5. Apply `filter: grayscale(1)` to the page and confirm every state is still
+   readable.
+
+**Expected result:** every chip carries a written label, and it is one of the
+thirteen the dictionary ships in both locales:
+
+| Key | en | id |
 |---|---|---|
-| tile (`--rule` on `--card`) | 3 | **3.72** |
-| ground (`--rule` on `--background`) | 3 | **3.28** |
-| tape wash — lightest wash | 3 | **3.56** |
-| strike wash | 3 | **3.42** |
-| ink wash | 3 | **3.36** |
+| `scheduled` | Scheduled | Terjadwal |
+| `ongoing` | Ongoing | Berlangsung |
+| `completed` | Completed | Selesai |
+| `cancelled` | Cancelled | Dibatalkan |
+| `confirmed` | Confirmed | Lunas |
+| `pending` | In review | Ditinjau |
+| `rejected` | Rejected | Ditolak |
+| `registered` | Registered | Terdaftar |
+| `maybe` | Maybe | Mungkin |
+| `present` | Present | Hadir |
+| `optedOut` | Opted Out | Batal Ikut |
+| `noShow` | No-Show | Tidak Hadir |
+| `unposted` | Unposted | Belum Dipasang |
 
-A wrapper painted the rule colour to open hairline gaps between its children
-(`bg-border` with `gap-px`, as in `src/components/ui/stat-card.tsx`) is **not** a
-failure: the edge a person sees there is the wrapper against the surface outside
-it, which is the `--rule` on `--background` row above.
+- A chip with no text cannot be built — `ChipProps` requires `label` and omits
+  `children` — so this case is watching for a label that is present but wrong:
+  a stored enum (`ABSENT` must never reach a member as "Absent"), an English
+  string in the Indonesian build, or a truncated one.
+- **In greyscale every state is still readable**, because the word carries it.
+  This is what replaced the six mark forms, and it is the whole reason dropping
+  them was legitimate (`DESIGN.md`, *The Label Rule*).
+- The dot inside a chip is `aria-hidden` and takes `bg-current`, so a screen
+  reader hears the label alone and the dot cannot drift off a measured pair.
+- No chip label clips: `scrollWidth === clientWidth` at 390px, in `id`, where
+  `Belum Dipasang` is the longest label the product sets.
 
-### TC-DS-008 · P1 · Positive — Lattice rules stay visible, painted board
+#### TC-DS-108 · P0 · Positive — Focus ring visible on every control, both themes
 
-**Preconditions:** as TC-DS-007, material = painted board.
-
-**Expected result:** every rule clears **3:1**:
-
-| Rule against | Target | Measured |
-|---|---|---|
-| tile | 3 | **3.74** |
-| ground | 3 | **4.25** |
-| ink wash — worst case on this material | 3 | **3.37** |
-| tape wash | 3 | **3.62** |
-| strike wash | 3 | **4.04** |
-
-### TC-DS-009 · P0 · Positive — The landing action is reachable without scrolling on a phone
-
-**Preconditions:** signed **out**; viewport 390 × 844; run once per locale and
-once per material.
-
-**Steps:**
-1. Open `/`.
-2. Without scrolling, find the primary action.
-3. Measure the bottom edge of the action against the viewport height.
-
-**Expected result:** the action reads `Ask to join this community` (en) /
-`Minta gabung ke komunitas ini` (id) and its bottom edge lands at **415px**, well
-inside the 844px viewport, in both locales and both materials. Any value above
-844 fails the case.
-
-### TC-DS-010 · P1 · Positive — The fold law holds at 1440 × 900
-
-**Preconditions:** signed out; viewport 1440 × 900; both locales.
+**Preconditions:** signed in as Adi, then as the owner; run in both themes.
 
 **Steps:**
-1. Open `/`.
-2. Measure the primary action's bottom edge, then the **top edge of the second
-   band** (the activities band below the seam).
+1. From the top of each of `/dashboard`, `/sessions`, `/payments/upload`,
+   `/profile`, `/admin/sessions/new` and `/`, press `Tab` repeatedly.
+2. At each stop, read the computed `border-color`, `box-shadow` and
+   `outline` of the focused element, and confirm the stop matches
+   `:focus-visible`.
+3. On a `Button`, wait for its **150ms** transition to settle before judging the
+   ring — a ring read in the first frames still measures transparent.
+4. Repeat inside a Dialog, a Sheet, a Select's listbox and a Dropdown menu, and
+   confirm focus is trapped where the overlay traps it.
 
-**Expected result:** the action's bottom edge is at **556px**, and the second
-band's top edge is at **770px** — above the 900px fold, which is the law that
-replaces any `min-height` on a band (`DESIGN.md`, *The fold law*). A band sized so
-the next band's top edge falls below 900px fails the case. At 390 × 844 the same
-edge lands at **596px** (en) / **620px** (id), which is the Indonesian copy
-running longer, not a defect.
+**Expected result:** every stop paints an indicator, and every indicator has a
+**full-opacity part**:
 
-### TC-DS-011 · P0 · Positive — The landing is keyboard-reachable with a visible focus ring
+- **Button** — `focus-visible` resolves a 1px `--ring` border **and** a 3px
+  `--ring` ring at 50% alpha. The border is the part that carries the
+  requirement: `--ring` measures **7.15 / 7.88** against the page ground and
+  **8.64 / 6.80** on a card, against a 3:1 floor. The halo is decoration.
+- **Input, Textarea, Select trigger, native select** — a `--ring` border plus a
+  2px `--ring` ring offset 2px from the field edge, both at full opacity.
+- **Checkbox** — a `--ring/50` 3px ring with the `--ring` border beneath it.
+- **Tab** — a `--ring` border, a 3px `--ring/50` ring and a 1px `--ring`
+  outline.
+- **Link** — the shared `outline-ring/50` from the base layer.
 
-**Preconditions:** signed out; `/` open; either material.
+A stop with no visible indicator fails the case. So does an indicator whose only
+full-opacity part is a colour the reader cannot distinguish from the surface —
+which is what the ratios above are there to rule out.
 
-**Steps:**
-1. Press `Tab` repeatedly from the top of the document.
-2. Note each stop and whether it paints a visible ring.
-3. On the primary action, wait for the transition to settle before judging the
-   ring — the button carries `transition-all` at **150ms**, so a ring read in the
-   first frames still measures transparent.
+#### TC-DS-109 · P0 · Positive — Reduced motion is honoured
 
-**Expected result:** the tab order is theme toggle → locale → **primary action**
-→ `Already a member? Sign in` → the band's second `Ask to join` link, every stop
-matching `:focus-visible`. The primary action paints a **2px Court Green Lit ring
-(`--ring`) offset 2px** by a board-coloured gap, which measures **6.82:1** against
-the hero's ground — comfortably past the 3:1 that a non-text indicator needs. A
-stop with no visible indicator fails the case.
-
-### TC-DS-012 · P0 · Positive — The account-creation statement is present in both locales
-
-**Preconditions:** signed out; `/` open; run once per locale.
-
-**Steps:**
-1. Read the sentence beneath the primary action.
-2. Inspect the action and check what it is described by.
-
-**Expected result:** the sentence is present and says that signing in **creates
-an account** and that an organizer decides:
-
-- en — “Signing in with Google creates your account the first time you do it, and
-  asks an organizer to let you in. They decide, and you get an email when they
-  do.”
-- id — “Masuk dengan Google membuatkan akunmu saat pertama kali, dan mengajukan
-  permintaanmu ke pengelola. Mereka yang memutuskan, dan kamu akan dapat email
-  begitu itu terjadi.”
-
-It renders at **Body** in secondary ink — never Caption, never the muted step —
-and the action carries `aria-describedby="landing-hero-disclosure"`, so a screen
-reader hears the condition and not just the label. A disclosure that is absent,
-smaller than Body, or untied from the control fails the case.
-
-### TC-DS-013 · P1 · Positive — The hero band is painted board in both materials
-
-**Preconditions:** signed out; `/` open.
+**Preconditions:** the OS or the browser set to **reduce motion** (DevTools →
+Rendering → *Emulate CSS prefers-reduced-motion*). Run in one theme; the rule is
+not themed.
 
 **Steps:**
-1. With the material set to enamel, look at the hero band and at the identity
-   rail above it.
-2. Switch to painted board and look again.
+1. Hover a `Button`, a table row, a stat card and a tab, and read the computed
+   `transition-duration` of each.
+2. Open a Dialog, a Sheet, a Select and a Dropdown menu, and read the computed
+   `animation-duration` of the overlay and of the content.
+3. Close each of them and confirm the node leaves the DOM rather than staying
+   mounted.
+4. Look at a loading spinner and at a skeleton.
+5. Turn the preference off and confirm the motion returns.
 
-**Expected result:** the hero band renders **painted board in both cases** — a
-logged-out stranger has set no preference, so the band does not depend on one —
-while the rail above it stays themed. The rail's bottom rule is the band's top
-edge (one rule, not two), and where painted board returns to enamel at the
-band's bottom there is **no** rule: the material change is the boundary. A hero
-that follows the theme fails the case, and so does a rule at the bottom seam.
+**Expected result:**
 
-### TC-DS-014 · P0 · Negative — The Activity colour column is gone, and nothing renders in its place
+- Every transition in the primitives resolves **`0s`**, through
+  `motion-reduce:transition-none`. `.transition-rally` resolves `0ms` through
+  `src/app/styles/motion.css`.
+- The seven overlay slots — `dialog-overlay`, `dialog-content`, `sheet-overlay`,
+  `sheet-content`, `select-content`, `dropdown-menu-content` and
+  `dropdown-menu-sub-content` — resolve an `animation-duration` of **`1ms`**,
+  and the sheet's transition resolves `0ms`. `1ms` rather than `none` on purpose:
+  the keyframe still fires `animationend`, so Radix unmounts the node instead of
+  leaving it on the page.
+- The **skeleton** stops pulsing (`motion-reduce:animate-none`).
+- The **spinner keeps turning.** That is the one deliberate exemption: a spinner
+  reports that work is in progress, which WCAG 2.3.3 treats as essential motion
+  rather than decoration, and stopping it removes the only signal that the app is
+  still doing something.
+- Nothing on any surface animates because the page loaded or because it scrolled
+  into view, with the preference on or off. There are no entrance animations to
+  suppress.
 
-**Preconditions:** signed in as owner for the admin surfaces, Adi for the member
-surfaces; either material.
+#### TC-DS-110 · P1 · Positive — The shared field treatment, at rest, invalid and read-only
 
-**Steps:**
-1. Open `/admin/activities`, `/admin/sessions`, `/admin`, `/dashboard`,
-   `/sessions`, a session detail page, and `/` — every surface that once carried
-   an Activity colour.
-2. Look at each Activity's livery.
-3. Confirm no element carries an inline `background-color` or `border-color`.
-4. Send a stray colour to the API, as a stale client would:
-   ```js
-   await fetch('/api/activities', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({ name: 'Colour Probe QA', slug: 'colour-probe-qa', minMembers: 2, maxPlayers: 8,
-       sessionFee: 15000, duesAmount: 50000, allowsMonthly: true, allowsPerSession: true, color: '#ff00ff' }) })
-     .then(async (r) => [r.status, await r.json()]);
-   ```
-5. Delete the probe activity afterwards (`DELETE /api/activities/{id}` → `200`).
-
-**Expected result:** every livery is a **magnet tile bearing the Activity's
-initial** in ink — no coloured square, no edge stripe, and no broken, default or
-placeholder swatch anywhere. No surface renders an inline background or border
-colour. The create call returns **`201`** and the created row carries **no colour
-field at all** (the column was dropped in
-`prisma/migrations/20260819174507_drop_activity_color`), so a stray `color` is
-silently ignored rather than stored. A swatch, an inline colour, or a `color` key
-in the response fails the case.
-
-### TC-DS-015 · P1 · Positive — No English leaks into the Indonesian build
-
-**Preconditions:** locale = `id`; visit every surface this spec touched — `/`,
-`/dashboard`, `/sessions`, a session detail page, `/payments`,
-`/payments/upload`, `/profile`, `/admin`, `/admin/sessions`, `/admin/payments`,
-`/admin/activities`, `/admin/members`.
+**Preconditions:** both themes, both locales, 1440 × 900 and 390 × 844. Visit a
+surface composing `Input` (`/onboarding`), `Textarea` (an admin Reject dialog's
+reason field) and `Select` (`/admin/sessions/new`'s Activity picker), plus a
+read-only field (`/payments/upload`'s server-set amount).
 
 **Steps:**
-1. Read every visible string on each surface in `id`.
-2. Compare against the same surface in `en`, and list the strings that are
-   byte-identical in both.
-3. For each identical string, check whether it is a dictionary entry
-   (`src/lib/i18n/dictionaries.ts`) or a hardcoded literal.
-
-**Expected result:** no user-facing string bypasses the dictionary. Strings that
-are identical in both locales are only: the community name and other runtime
-configuration, proper nouns (Activity names, session titles, member names,
-venues, emails), numerals and Rupiah amounts, and the loanwords the Indonesian
-dictionary deliberately keeps — `Dashboard`, `Status`, `Detail`, `Edit`,
-`Filter`, `Slug`, `Export CSV`. Anything else identical across locales is a
-hardcoded literal and fails the case. Mark labels in particular must switch:
-`Unposted` → `Belum Dipasang`, `Confirmed` → `Lunas`, `Opted Out` → `Batal
-Ikut`.
-
-### TC-DS-016 · P1 · Positive — One lettering system, and tabular figures on every number that matters
-
-**Preconditions:** both materials, both locales, across the surfaces listed in
-TC-DS-015.
-
-**Steps:**
-1. On each surface, read the computed `font-family` of every text element.
-2. Find every **time, count, capacity and Rupiah amount** — the day-of-month
-   numeral in a session cell, `n/max` seat counts, session times, dues amounts,
-   attendance percentages — and read its computed `font-variant-numeric`.
-
-**Expected result:** exactly **one** family resolves everywhere —
-`Archivo, "Archivo Fallback"` — with no serif, no second sans and no monospace
-(`DESIGN.md`, *The One Hand Rule*). Every time, count, capacity and amount
-carries `tabular-nums`. A phone number is none of those four and is out of scope
-for this case.
-
-### TC-DS-017 · P1 · Positive — The Inputs / Fields treatment on every shared field
-
-**Preconditions:** both materials, both locales, 1440 × 900 and 390 × 844. Visit
-a surface composing `Input` (`/onboarding`), `Textarea` (an admin Reject
-dialog's reason field), and `Select` (`/admin/sessions/new`'s Activity
-picker), plus a read-only field (`/payments/upload`'s server-set amount).
-
-**Steps:**
-1. At rest, read the computed background, border colour and border-radius of
+1. At rest, read the computed background, border colour and `border-radius` of
    an `Input`, a `Textarea` and a `Select` trigger.
-2. Tab to each field and read the computed border colour and outline/box-shadow
-   ring, with its offset.
-3. Submit a form with an invalid value on a field carrying `aria-invalid` and
-   read its border and helper-text colour.
-4. Load `ReadOnlyField` (`/payments/upload`'s amount) and read its background,
-   with the field neither focused nor disabled.
-5. Repeat steps 1–4 at 390 × 844.
+2. Submit a form with an invalid value on a field carrying `aria-invalid` and
+   read its border and its helper text.
+3. Load `ReadOnlyField` and read its background, with the field neither focused
+   nor disabled.
+4. Repeat at 390 × 844.
 
-**Expected result:** at rest, every field resolves Enamel Tile background
-(`bg-tile`), a 1px Ruled Line border (`border-rule`) and a `2px` corner
-(`DESIGN.md`, *Inputs / Fields*) — no rounded-pill corner, no transparent
-ground, at either width or material. On focus, the border resolves Court Green
-(`border-ring`) with a 2px ring offset 2px from the field edge. An
-`aria-invalid` field resolves a Struck Red border, and its helper text names
-the problem and the fix. `ReadOnlyField` resolves the Enamel Ground fill
-(`bg-board`) with no caller class supplying it.
+**Expected result:** at rest every field resolves a `--card` fill, a 1px
+`--input` edge and an **8px** corner — no pill, no transparent ground, at either
+width or theme. An `aria-invalid` field resolves a `--destructive` border with a
+`--destructive/20` ring, and its helper text names the problem and the fix. A
+read-only field falls back to `--background`. A disabled field takes `--input/50`
+and 50% opacity, which is a state and not a boundary — a disabled control is
+exempt from 1.4.11 and is the only control here that is.
 
-### 16.17 Recorded run — 2026-08-20
+### 16.3 Recorded run — 2026-08-31
 
-Executed once against the §2 seed on Next.js 16.2.6, 1440 × 900 and 390 × 844,
-both materials, both locales, 14 routes plus `/`.
+Executed by #152 against the committed tokens on Next.js 16, Vitest 4.1.10, and
+a production `npm run build`. The computed and static cases were run in full; the
+rendered cases were written with their measured expected values and left for the
+browser pass, which drives Playwright against merged `main` in both themes and
+both locales.
 
-| Case | Result |
-|---|---|
-| TC-DS-001 | **Pass** — 8/8 pairs clear AA; the Quiet-Ink-on-ground constraint holds, no surface puts `--subtle-foreground` on the ground |
-| TC-DS-002 | **Pass** — 9/9 pairs clear AA |
-| TC-DS-003 | **Pass** — all six mark pairs clear AA |
-| TC-DS-004 | **Pass** — all six mark pairs clear AA |
-| TC-DS-005 | **Pass** — the hero action resolves to board ink on lit green, 6.82:1 |
-| TC-DS-006 | **Pass** — six marks tellable apart in greyscale on both materials; Blank ≠ Hollow by dash weight, Tape ≠ Ink by its ink teeth |
-| TC-DS-007 | **Pass** — 5/5 rules clear 3:1 |
-| TC-DS-008 | **Pass** — 5/5 rules clear 3:1 |
-| TC-DS-009 | **Pass** — action bottom edge 415px of 844, both locales, both materials |
-| TC-DS-010 | **Pass** — action 556px, second band top 770px, inside the 900px fold |
-| TC-DS-011 | **Pass** — five stops, all `:focus-visible`; the hero ring paints once its 150ms transition settles |
-| TC-DS-012 | **Pass** — statement present in both locales, tied by `aria-describedby` |
-| TC-DS-013 | **Pass** — hero painted in both materials; no rule at the bottom seam |
-| TC-DS-014 | **Pass** — no swatch and no inline colour on any surface; `POST /api/activities` with a stray `color` → **201**, response carries no colour field; probe deleted → **200** |
-| TC-DS-015 | **Pass** — no hardcoded literal found; every cross-locale match is configuration, a proper noun, a numeral, or a dictionary-authored loanword |
-| TC-DS-016 | **Fail on first run, then fixed** — see below |
+| Case | How | Result |
+|---|---|---|
+| TC-DS-101 | Computed | **Pass** — 39/39 text pairs clear 4.5:1 in both themes; worst is `--subtle-foreground` on `--background` at **4.99** light |
+| TC-DS-102 | Computed | **Pass** — 5/5 inks clear 4.5:1, 5/5 edges clear 3:1; worst is the neutral chip's edge at **3.29** light. The value beside a void chip measures 5.80 / 8.19 on the wash, and no surface strikes it |
+| TC-DS-103 | Computed | **Pass** — 16/16 clear 3:1; worst is `--border` on `--accent` at **3.18** light. The three unfloored pairs are in `RECORDED_PAIRS`, not `AA_PAIRS` |
+| TC-DS-104 | Computed | **Pass** — white **1.96**, off-white **1.69**, beige ground **1.62** on PBP Green; the action carries Black Green at **8.74** in both themes, and the direction assertion holds |
+| TC-DS-105 | Computed | **Fail on first run, then fixed** — `--chart-1` measured **1.96** against the light card. See below |
+| TC-DS-106 | Static | **Fail before the rewrite, Pass after** — measured in `.next/static/chunks/*.css`. Before: the strike utility was **present**, with **0** call sites in `src/`. After: **0** occurrences, and so are the torn-edge class and `data-mark`; the only retired decoration utilities left are `text-decoration-line` and `text-decoration-color` inside live `underline` rules, which are CSS property names rather than retired classes. Every retired name still emitted — `.bg-board`, `.ring-offset-board`, `.bg-tile`, `.border-rule`, `.divide-rule`, `.bg-rule`, `.bg-wash-ink`, `.bg-wash-tape`, `.bg-wash-strike`, `.shadow-tile`, `.shadow-tile-pressed`, `.type-hero`, `.type-mark` — is an alias carrying a #174 removal note. Stylesheet **92,998 bytes** |
+| TC-DS-107 | Rendered | **Pending — orchestrator run** |
+| TC-DS-108 | Rendered | **Pending — orchestrator run** |
+| TC-DS-109 | Rendered | **Pending — orchestrator run** |
+| TC-DS-110 | Rendered | **Pending — orchestrator run** |
 
-**Defects found and fixed in code.** TC-DS-016 failed on three surfaces: the
-day-of-month numeral that anchors a session cell rendered without
-`tabular-nums`, so dates jittered column-to-column as the digits changed width —
-`src/app/(main)/dashboard/page.tsx`, `src/app/(main)/sessions/page.tsx` and
-`src/app/(admin)/admin/page.tsx`. Fixed by giving each numeral `tabular-nums`;
-the case then passed everywhere. Nothing was softened in the case.
+`npm test` runs the computed half of TC-DS-101 through TC-DS-105 on every
+commit: **60 pairs × 2 themes**, read out of the committed stylesheet by
+`src/lib/__tests__/design-tokens.test.ts`. 499 tests over 29 files passed.
 
-**Documented numbers that turned out wrong.** Three ratios in `DESIGN.md` came
-from the prototype and do not match the shipped tokens. The measured values are
-recorded above and corrected in `DESIGN.md`:
+**Defect found and fixed in code.** TC-DS-105 failed as written: `--chart-1` was
+PBP Green `#3ED27E` in **both** themes, which measures **1.96:1** against the
+light theme's white card — below the 3:1 a plotted mark needs, and visible as a
+faint green line in #169's first render. It broke a second rule at the same time:
+*The One Action Rule* reserves that green for the action and names a chart series
+as exactly what it must not become. Fixed by giving the light theme the settled
+green **ink** `#136B3F` instead, which measures **6.56:1** on a card; the dark
+theme is unchanged, because there the ink step and the bright value are the same
+colour. The five series pairs were then added to `AA_PAIRS` (55 → **60**), so
+the next one cannot be introduced without clearing the floor. Nothing was
+softened: the earlier decision that "colour is free for charts" was withdrawn
+rather than restated.
 
-- Quiet Ink on Enamel Ground: documented 4.20:1, measures **4.17:1**. Both fail
-  AA, so the routing rule it justifies is unchanged — only the number was off.
-- Chalk Ink on Court Green Lit: documented 2.29:1, measures **1.92:1**. Still
-  banned; the pairing is worse than recorded, not better.
-- Court Green Lit on board tile: documented 5.9:1, measures **6.00:1**.
+**Defect found and fixed in code.** TC-DS-109 was unsatisfiable as written. The
+overlay layers animate through `tw-animate-css`, which ships no reduced-motion
+guard, and Tailwind's `motion-reduce:` variant cannot reach them — the enter
+utilities are emitted as `[data-state='open']` selectors, which outrank a plain
+class. `src/app/styles/motion.css` now collapses the seven overlay slots to a
+`1ms` animation under `prefers-reduced-motion: reduce`, unlayered so it wins over
+`@layer utilities`. The spinner is left turning deliberately.
 
-The `board-materials.css` comments, by contrast, matched the measurement exactly
-at every value (rule 3.72 / 3.28 / 3.56 enamel and 3.74 / 4.25 / 3.37 board;
-Chalk Quiet 4.70 / 5.35), as did every ratio in the `mark.tsx` header.
+**Decision recorded, not a defect.** The overlay entrance and exit animations
+themselves **stay**, which #150 and #151 each declined to settle alone. Rally
+bans *entrance and scroll* animation — content animating in because a page loaded
+or because it came into view. A Dialog, Sheet, Select or Dropdown-menu open-close
+answers a tap, tells a reader a layer arrived rather than the page having been
+replaced, and Radix needs the exit keyframe to keep the node mounted while it
+plays. They are now instant under reduced motion, which is what the rule was
+actually protecting. `DESIGN.md`'s Motion section states the rule at that scope,
+so the document and the code agree.
 
-> **Superseded in part, 2026-08-20.** `Erased` now has a live producer — the
-> Slot Cell's Opted Out line on `/sessions` and on a Session's own header, added
-> by #60 and measured in TC-MS-021 at **5.41** on enamel and **6.19** on the
-> painted board. `Hollow` still has none. The paragraph below stands otherwise.
+**Documented facts that turned out to need correcting.** Two, both in
+`DESIGN.md` and both fixed there:
 
-**Two marks ship with no producer.** `Erased` and `Hollow` have no live surface:
-nothing records a No-Show yet, and the member session detail page filters
-`ABSENT` rows out of the participant list, so Opted Out never reaches a mark
-there. Both are covered above through the component (TC-DS-003, TC-DS-004,
-TC-DS-006). When the admin spec wires up No-Show recording, TC-DS-003 and
-TC-DS-004 gain a live surface for each and should name it.
+- *Borders are for controls and dividers, not for cards* was written as an
+  absolute, and the overlay surfaces — dialog, sheet, popover, menu — all carry
+  `--border` as well as `shadow-lift`. They should: an overlay floats over
+  whatever happened to be underneath it. The rule now says so.
+- *The No-Glow Rule* bans zero-offset shadows, and every focus ring in the
+  system is one. A ring is a state indicator WCAG requires, not depth; the rule
+  now excludes it explicitly.
+
+**One gap reported, not fixed.** `.transition-rally` and `--duration-rally:
+175ms` shipped in #151 with **no consumer**: every transition in the primitives
+predates them and carries Tailwind's own `duration-150` (or `duration-200` on the
+Sheet), all inside the spec's 150–200ms band and all carrying
+`motion-reduce:transition-none`. Adopting the utility means editing surfaces four
+other tickets own, so #152 documented the state instead of sweeping it. The
+surface runs are what adopt it.
+
+### 16.4 Superseded by Rally — `TC-DS-001` … `TC-DS-017`
+
+ADR 0003 retires Papan Jadwal in full and says its cases are **marked
+superseded, not deleted**. What follows is the marker and the pointer for each.
+The step-by-step bodies are not reproduced: every one of them asserted a mark
+form, a lattice rule, a tile radius or a retired token's ratio, none of those
+exists, and the old TC-DS-006 body in particular was emitting dead CSS into the
+production stylesheet by quoting class names (TC-DS-106). The full text of all
+seventeen is in this file's history at `0dea3c0`.
+
+The rule used to separate the two: **a case is superseded when the thing it
+asserts no longer exists** — a mark's form, a lattice's rule, a tile's corner, a
+retired token's ratio. **A case stays live when it asserts something a member can
+still do or still read** — a label, a route, a status, a keyboard path, a locale
+string — even where the surface drawing it is scheduled for recomposition. A
+future change is not grounds for superseding a case that passes today.
+
+| Case | Marker | Superseded by |
+|---|---|---|
+| TC-DS-001 · Enamel text-on-surface pairs clear AA | **Superseded by Rally** — the enamel material and the Graphite / Court Green tokens are gone | TC-DS-101, light theme |
+| TC-DS-002 · Painted-board text-on-surface pairs clear AA | **Superseded by Rally** — same, dark side | TC-DS-101, dark theme |
+| TC-DS-003 · Mark-on-wash pairs clear AA, enamel | **Superseded by Rally** — there are no marks; five chips replaced six marks | TC-DS-102, light theme |
+| TC-DS-004 · Mark-on-wash pairs clear AA, painted board | **Superseded by Rally** — same, dark side | TC-DS-102, dark theme |
+| TC-DS-005 · The banned action pairing never renders | **Superseded by Rally** — the obligation is unchanged, the ground is now PBP Green and the numbers are different | TC-DS-104 |
+| TC-DS-006 · The six marks survive colour removal | **Superseded by Rally** — the forms are gone; the state now survives colour removal because the label is a word (*The Label Rule*) | TC-DS-107 |
+| TC-DS-007 · Lattice rules stay visible, enamel | **Superseded by Rally** — the lattice is gone (ADR 0003); the 3:1 obligation is not | TC-DS-103, light theme |
+| TC-DS-008 · Lattice rules stay visible, painted board | **Superseded by Rally** — same, dark side | TC-DS-103, dark theme |
+| TC-DS-010 · The fold law holds at 1440 × 900 | **Superseded by Rally** — the public band-stack surface and its fold law are retired and re-decided by spec #143 | the public spec's own suite |
+| TC-DS-011 · The landing is keyboard-reachable with a visible focus ring | **Superseded by Rally** — the ring is `--ring` purple now, not Court Green Lit, and the replacement covers every control rather than one route | TC-DS-108 |
+| TC-DS-017 · The Inputs / Fields treatment on every shared field | **Superseded by Rally** — `bg-tile`, `border-rule` and the 2px corner are all retired; the treatment is now a `--card` fill, an `--input` edge and an 8px corner | TC-DS-110 |
+
+**Six of the seventeen stay live**, and are not marked:
+
+- **TC-DS-009** — the landing action is reachable without scrolling on a phone.
+  Behaviour, not geometry, and the obligation does not move. Its **415px**
+  measurement does: it was taken against a hero whose headline came only from
+  the dictionary, and **#153 has since made the headline and subline
+  Admin-authored** (`publicHeroHeadline`, `publicHeroSubline`, capped at 48
+  characters with no word over 12, and 120, in `src/lib/public-copy.ts`), so a
+  longer authored headline moves the action down the page. Re-measure against
+  the seeded copy **and** against a headline at the 48-character cap; spec #143
+  recomposing the route is a second reason to re-measure. Neither is grounds for
+  superseding the case — a number to re-take is not a rule that stopped
+  applying.
+- **TC-DS-012** — the account-creation statement is present in both locales and
+  tied to the control by `aria-describedby`. Untouched by the design system.
+- **TC-DS-013** — the hero band renders the forced theme in both themes and the
+  rail above it stays themed. The behaviour survives verbatim; only the
+  vocabulary moved, from *painted board in both materials* to *`.dark` in both
+  themes* (`DESIGN.md`, *The Theme-Is-Not-An-Inversion Rule*).
+- **TC-DS-014** — the Activity colour column is gone and nothing renders in its
+  place, including the `201` from `POST /api/activities` with a stray `color`.
+  One bullet of its expected result is **superseded in part**: the livery is no
+  longer *a magnet tile bearing the Activity's initial*, because `Activity.icon`
+  returns with a renderer under spec #145. What stays live is the part the case
+  is named for — no swatch, no inline `background-color` or `border-color`, and
+  no `color` key in the response.
+- **TC-DS-015** and **TC-DS-016** stay live as well. TC-DS-015 (no English leaks
+  into the Indonesian build) is unaffected except that the labels it names are
+  now chip labels resolved from `t.chips`; the strings are the same. One
+  addition to its allow-list, from #153: the landing headline and subline are
+  now Admin-authored (`publicHeroHeadline`, `publicHeroSubline`) and fall back to
+  the dictionary only when blank, so once an Admin has written them they are
+  **runtime configuration** and are expected to read identically in both
+  locales — like the community name, and unlike a hardcoded literal. TC-DS-016
+  (one lettering system, tabular figures on every number that matters) is
+  unaffected except in citation: it names *The One Hand Rule*, which is restated
+  as *The One Family Rule*, and the family it asserts is unchanged.
 
 ---
 
@@ -882,6 +998,16 @@ That is the line every case here is written to. "A member with no resolved
 payment mode reaches the Proof upload and is given a route out" is a test. "The
 uploader filters memberships by effective mode" is an implementation detail that
 passes while the member is still stuck, so no case below asserts one.
+
+> **Rally markers (#152).** Cases and bullets in this area that assert lattice,
+> tile or mark **geometry** carry a `Superseded by Rally` or `Partly superseded
+> by Rally` blockquote under their heading, with a pointer to what replaces
+> them. Nothing is deleted (ADR 0003). The rule used to separate the two is in
+> §16.4: a case is superseded when the thing it asserts no longer exists, and
+> stays live when it asserts something a member can still do or still read —
+> even where the surface drawing it is scheduled for recomposition by spec #144.
+> Four cases here are superseded in whole or in the half that named a mark form;
+> the behavioural assertions in every one of them stay live and are still P0.
 
 Seat-holding is money-backed and transactional. Every case that claims,
 withdraws or pays therefore asserts **capacity from the database**, before and
@@ -1090,6 +1216,19 @@ step says otherwise. Run these in order: TC-MS-009 through TC-MS-011 write.
 
 #### TC-MS-004 · P0 · Positive — Every day of the displayed week gets a cell, and the two silences read differently
 
+> **Partly superseded by Rally (#152).** One bullet is retired: *the board is a
+> ruled lattice, not a card list*, with its `gap-px` over a rule-coloured ground
+> and its shared 1px rules. ADR 0003 replaced the lattice with card grids on
+> member surfaces, so a card list is now the correct answer and this bullet
+> would fail the surface it is checking. Pointer: the member surface spec (#144)
+> settles the composition. **Everything else stays live**, and it is what the
+> case is named for: seven consecutive Monday-first day bands with none skipped,
+> and the two silences reading differently — a standing slot nobody posted says
+> so, a day nobody planned says *nothing on this day*, and telling a member the
+> Admin is behind on a day nothing was planned for is a lie the board is not
+> allowed to tell. The `Unposted` and `None` marks are now `neutral` chips
+> carrying the same words.
+
 **Preconditions:** Adi; `/sessions`; the default **My activities** view and the
 current WIB week. Adi is in all four Activities, whose standing weekly slots are
 Badminton Sunday 19:00–21:00, Basket Tuesday 19:30–21:30, Tennis Thursday
@@ -1135,6 +1274,14 @@ Badminton Sunday 19:00–21:00, Basket Tuesday 19:30–21:30, Tennis Thursday
   at both widths.
 
 #### TC-MS-005 · P1 · Edge — A week with no Sessions at all still draws seven ruled day rows
+
+> **Partly superseded by Rally (#152).** *Ruled* and *the lattice never degrades
+> into an unruled list* are retired with the lattice (ADR 0003, and see
+> TC-MS-004); read the title as "seven day rows". Pointer: the member surface
+> spec (#144). **Still live, and the point of the case:** seven bands on an
+> empty week, four unposted standing slots and three empty days, **no**
+> community-wide "never had a Session" strip on a week a member merely paged
+> forward to, and Previous week returning unchanged.
 
 **Preconditions:** Adi; `/sessions`.
 
@@ -1191,6 +1338,14 @@ against production.
 
 #### TC-MS-007 · P0 · Positive — The Slot Cell's three columns hold their positions at 1440 × 900 and 390 × 844
 
+> **Superseded by Rally (#152).** The shared Slot Cell seam is retired by
+> ADR 0003 — each member surface composes its own card, and the three fixed
+> columns, the `5.5rem` `when` rail and the shared standing edge go with it.
+> Pointer: the member surface spec (#144) owns what replaces this. The one
+> assertion that outlives the cell is that the control is a **sibling** of the
+> link and never a descendant, which is restated in `DESIGN.md`, *Retired
+> rules*, as still in force on any card in any design system.
+
 **Preconditions:** Adi; `/sessions`; a week carrying at least six rows; run at
 both viewports and in both locales.
 
@@ -1228,6 +1383,16 @@ both viewports and in both locales.
   Indonesian build is the binding one and is covered by TC-MS-008.
 
 #### TC-MS-008 · P0 · Positive — The widest mark this product sets never collides with the seat figure
+
+> **Superseded by Rally (#152).** There are no marks, and there is no lattice
+> for one to collide inside — five labelled chips replaced the six marks (#149)
+> and ADR 0003 replaced the ruled lattice with card grids. Pointer: TC-DS-107
+> asserts that no chip label clips at 390px in `id`, which is what this case was
+> protecting. **Keep the measurement:** the widest label this product sets is
+> the Indonesian `Belum Dipasang` at **133.8px**, and any future fixed-width
+> cell putting a label beside a figure has to budget for that, not for the
+> ~105px a session status suggests. The member surface spec (#144) owns the
+> layout that has to hold it.
 
 **Preconditions:** Adi; `/sessions`; locale **`id`** (the binding locale); run at
 1440 × 900 and 390 × 844.
@@ -1408,6 +1573,14 @@ on screen, with Adi holding the Seat TC-MS-009 claimed.
 
 #### TC-MS-012 · P1 · Positive — The dashboard draws every day of its own range, each cell carrying its own date
 
+> **Partly superseded by Rally (#152).** *The dashboard's small boards are ruled
+> lattices, not card lists* is retired (ADR 0003); pointer, the member surface
+> spec (#144). **Still live:** every day of the range gets a cell, a day carrying
+> two Sessions contributes two cells, every cell carries its own date, and no
+> tracked-caps label clips at 390px in `id` — the recorded widths there
+> (`Kehadiran 103px`, `Mendatang 109px`, `Iuran 55px`) are a measurement to
+> re-take, not an assertion to retire.
+
 **Preconditions:** Adi; `/dashboard`; enamel; `en`; both viewports. The
 dashboard's range is **today through the sixth day after it** — seven days, per
 Activity.
@@ -1477,6 +1650,13 @@ Activity.
 ### 17.5 Adi — a Session's own page (`/sessions/{id}`)
 
 #### TC-MS-014 · P0 · Positive — The detail header is the same Slot Cell, and the page says one date
+
+> **Partly superseded by Rally (#152).** *The same Slot Cell* is retired with the
+> seam (ADR 0003, and see TC-MS-007), so the half of this case asserting that the
+> header is the identical component with the identical three columns no longer
+> holds. Pointer: the member surface spec (#144). **Still live:** the page says
+> **one** date and does not repeat it, and the header's facts are the Session's
+> own — that is behaviour, and it survives whatever draws it.
 
 **Preconditions:** Adi; open **Hold Lab (Per-Session Test)** from the board; run
 at both viewports.
@@ -1570,6 +1750,16 @@ submitted.
 
 #### TC-MS-016 · P0 · Positive — Upload Proof and leave it pending: Tape everywhere, and a month of Seats made permanent
 
+> **Partly superseded by Rally (#152).** One bullet is retired: *the Tape mark's
+> form survives colour removal — a filled rectangle whose right edge is three ink
+> teeth*. The torn edge is gone with the marks (#149) and the CSS file that drew
+> it is deleted. Pointer: **TC-DS-107** — the state now survives colour removal
+> because the chip carries the word `In review` / `Ditinjau`, which is a stronger
+> guarantee than a shape a reader has to learn. **Everything else stays live**,
+> and it is nearly all of the case: the state reads `In review` on every surface
+> and never borrows `Pending`, and paying a month makes that month's Seats
+> permanent without moving `seatsHeld` on a Session that had no room.
+
 **Preconditions:** Adi; TC-MS-015 has run, so a Badminton Seat is held on a live
 hold. Any JPEG/PNG/WebP under 5MB will do as the Proof image.
 
@@ -1625,6 +1815,16 @@ hold. Any JPEG/PNG/WebP under 5MB will do as the Proof image.
     `maxPlayers`, fails the case.
 
 #### TC-MS-017 · P0 · Positive — The owner Rejects the Proof: Strike, a named reason, a way back, and the Seats released
+
+> **Partly superseded by Rally (#152).** *A bordered rectangle with a real line
+> through the label* is retired: nothing in the product strikes anything now, and
+> the rejected row carries a **void** chip reading `Rejected` / `Ditolak`.
+> Pointer: **TC-DS-102**, which asserts both that the void chip clears its floor
+> and that no value is struck. **Still live, unchanged, and the reason the case is
+> P0:** the amount beside it is **dimmed, not struck**; the reason is quoted
+> verbatim in supporting ink and not in a status colour; the refund guidance and
+> the route back to an Admin are both there; and rejecting the Dues releases
+> exactly the Seats that Payment was holding, no more.
 
 **Preconditions:** TC-MS-016 has run and left one PENDING Badminton MONTHLY
 Payment. Sign in as `owner@xclub.local` for steps 1–2, then back as Adi.
@@ -1743,6 +1943,16 @@ Payment states.
 
 #### TC-MS-019 · P0 · Positive — The rail's cells are equal, reachable, and the active one is a filled tile
 
+> **Partly superseded by Rally (#152).** *A filled tile* is retired vocabulary
+> and a retired shape: the active navigation item is now the Lime `--accent`
+> highlight carrying `--accent-foreground` at **13.68 / 10.06**, on a pill rather
+> than a square tile. Pointer: **TC-DS-101** for the ratio, and the member
+> surface spec (#144) for the rail's composition. **Still live:** the cells are
+> equal-width and each is a real tap target, every cell is reachable, and the
+> active one is distinguishable **without relying on its hue** — which is now
+> carried by the weight change as well as the fill (`DESIGN.md`, *The Boundary
+> Rule*).
+
 **Preconditions:** Adi; viewport **390 × 844**; run once per material and once
 per locale.
 
@@ -1819,6 +2029,17 @@ short one.
 ### 17.8 Adi — the marks in both board materials
 
 #### TC-MS-021 · P0 · Positive — Every mark a member can reach, on every member surface that shows state, in both materials
+
+> **Superseded by Rally (#152).** Every assertion in this case is about the six
+> marks: their forms in greyscale, their `data-mark` attribute, their per-mark
+> wash ratios and the two board materials. None of those exists — five labelled
+> chips replaced the marks (#149), no element carries `data-mark`, and the
+> materials are now two themes. Pointer: **TC-DS-107** for the labels on every
+> member surface in both locales, **TC-DS-102** for the ink and edge ratios.
+> **What carries over unchanged** is the rule underneath it, and TC-DS-107
+> asserts it: no mark label is ever the stored enum, and `Absent` must not appear
+> anywhere on a member surface — the member chose to opt out, which is not a
+> failure.
 
 **Preconditions:** Adi; run the whole case **twice**, once per material, at
 1440 × 900. TC-MS-009, TC-MS-010, TC-MS-016 and TC-MS-017 have run, so the
@@ -1938,11 +2159,11 @@ never from the screen.
 | TC-MS-014 | P0 | **Pass** — header is the Slot Cell grid, **not** a link, **no** control; `when` carries `MONDAY 24`; facts card reads `Monday, 24 August` — **one date on the page**; participants through the resolver |
 | TC-MS-015 | P0 | **Pass** — CTA `Register & pay · Rp 75.000` (the monthly bill); **201** `{"payUrl": "/payments/upload"}`; `seatsHeld` 3 → **4**, `seatsFree` 5 → 4, `holdExpiresAt` = **exactly 60 minutes** after the press (15:37:16.995Z → 16:37:17.374Z), `myPayment` still **null**; back on the Session `Reserved · pay within 59:32` above `Pay monthly dues first · Rp 75.000`; on `/payments` the Blank `PENDING` card carries `Pay within 59:13` |
 | TC-MS-016 | P0 | **Pass, after defect 8** — **201**, toast, back to `/payments`; Tape on the dues card, banner gone, newest history row Tape under `DUES · AUGUST 2026`. On the first run the dues card read `IN REVIEW` while the history row beneath it, the dashboard and the profile all read `PENDING` — the same word those three used for Dues with *nothing* sent. The submitted state is now **`IN REVIEW`** / **`DITINJAU`** on all four, and the not-yet-paid state is **`PENDING`**, verified by watching Badminton cross from one to the other on all three surfaces. Capacity across all ten Badminton Sessions of the month: Hold Lab's hold **cleared to `null`** with `seatsHeld` unchanged at 4; Morning Drills **6 → 7**; Weekly Rally Night unchanged at 18; **Full Court Challenge 6 / free 0 before and after**; the CANCELLED and COMPLETED Sessions untouched. No Session rose by more than one |
-| TC-MS-017 | P0 | **Pass** — Reject disabled until a reason is typed; `PATCH` **200** → `REJECTED`; Strike `REJECTED` with `line-through`, the amount **dimmed to `--muted-foreground` and not struck**; reason, refund guidance and WhatsApp link all in Secondary Ink, none in red; dues card back to Blank `UNPAID`. Every Badminton Seat released — Hold Lab 4 → 3, Weekly Rally 18 → 17, Morning Drills 7 → 6, `mySeat: null` on all three — while the three `PRESENT` rows on COMPLETED Sessions and the `MAYBE` on Free Play were untouched. **One sub-clause of the case is wrong as written**: Weekly Rally Night does not "return to its TC-MS-016 before figure", because Adi already held an unfunded row there before the upload. The rule that holds everywhere is *falls by exactly one* |
+| TC-MS-017 | P0 | **Pass** — Reject disabled until a reason is typed; `PATCH` **200** → `REJECTED`; Strike `REJECTED` with the strike-through utility on its own label, the amount **dimmed to `--muted-foreground` and not struck**; reason, refund guidance and WhatsApp link all in Secondary Ink, none in red; dues card back to Blank `UNPAID`. Every Badminton Seat released — Hold Lab 4 → 3, Weekly Rally 18 → 17, Morning Drills 7 → 6, `mySeat: null` on all three — while the three `PRESENT` rows on COMPLETED Sessions and the `MAYBE` on Free Play were untouched. **One sub-clause of the case is wrong as written**: Weekly Rally Night does not "return to its TC-MS-016 before figure", because Adi already held an unfunded row there before the upload. The rule that holds everywhere is *falls by exactly one* |
 | TC-MS-018 | P0 | **Fail ×2 → fixed → Pass** — alignment held: six amounts, **one** right edge (1031.5), all `tabular-nums`, `Rp 75.000` id-ID grouping in the **English** build, `Dues · August 2026` with the year, no enum leak. Both read-only treatments failed. See defects 5 and 6 |
 | TC-MS-019 | P0 | **Fail → fixed → Pass** — rail **63px** tall at 577–640, four cells **94/94/94/93px** (spread **1px**), each **56px** tall, active cell `--primary-solid` ground with board ink and `aria-current="page"`, `divide-x` + `border-t` in `--rule`. **Two labels were ellipsised.** See defect 7 |
 | TC-MS-020 | P0 | **Pass** — at 390 × 640 on `/dashboard`, `/payments`, `/payments/upload` and `/sessions/{id}`: rail top **577**, content bottom **543.7–544.4** on every one, `<main>` carrying `padding-bottom: 96px` from the layout rather than per page, and no tap intercepted by the rail. The safe-area inset resolved to the **0.375rem floor** — no device reporting a non-zero inset was available |
-| TC-MS-021 | P0 | **Pass** — five live producers, each through the one resolver. Measured against §16's own figures and matching them: painted board Ink **5.40**, Tape **6.20**, Strike **5.45**, Erased **6.19**, Blank **5.45**; enamel Ink **6.31**, Tape **5.36**, Strike **5.97**, Erased **5.41**, Blank **6.13**. Forms distinct with hue discarded — Ink solid border + fill, Blank dashed border + **no** fill, Tape 0px border + clip-path teeth + `::after`, Strike border + `line-through`, Erased **transparent border** over the ground fill. Hollow has no producer, as the case says. `Absent` appears nowhere |
+| TC-MS-021 | P0 | **Pass** — five live producers, each through the one resolver. Measured against §16's own figures and matching them: painted board Ink **5.40**, Tape **6.20**, Strike **5.45**, Erased **6.19**, Blank **5.45**; enamel Ink **6.31**, Tape **5.36**, Strike **5.97**, Erased **5.41**, Blank **6.13**. Forms distinct with hue discarded — Ink solid border + fill, Blank dashed border + **no** fill, Tape 0px border + clip-path teeth + `::after`, Strike border + the strike-through utility, Erased **transparent border** over the ground fill. Hollow has no producer, as the case says. `Absent` appears nowhere |
 | TC-MS-022 | P1 | **Pass** — board, dashboard, payments, upload and profile in `id` with no English leak; marks all switch (`BELUM DIPASANG`, `KOSONG`, `TERDAFTAR`, `MUNGKIN`, `DIBATALKAN`, `BATAL IKUT`, `PENUH`, `LUNAS`, `DITINJAU`, `DITOLAK`, `KUOTA TERPENUHI`, `BUTUH 2 LAGI`); controls and their accessible names switch; the forfeit sentence switches whole; `Sesi` / `Iuran` on the rail; Eka's dead-end fully Indonesian; `Rp 75.000` unchanged. The only cross-locale matches were the community name, proper nouns, numerals and the documented loanwords. Nothing clips — the single `scrollWidth > clientWidth` hit is an `sr-only` node, which is what `sr-only` is |
 
 **Regression net — the existing cases re-run, not rewritten.**
@@ -2161,6 +2382,15 @@ That is the line every case here is written to. "Payments awaiting a decision
 appear above decided ones" is a test. "The query orders by status" is an
 implementation detail that passes while the queue is still unusable.
 
+> **Rally markers (#152).** ADR 0003 replaced the shared ruled Register with
+> tables composed inside cards, so four cases here — TC-AR-001, TC-AR-002,
+> TC-AR-019 and TC-AR-036 — carry a `Partly superseded by Rally` blockquote
+> under their heading naming exactly which assertions retired and pointing at
+> what replaces them. In all four the retired half is geometry (*ruled*,
+> *struck*, *distinct marks*) and the live half is the P0 behaviour the case
+> exists for. Nothing is deleted, and no behavioural case is marked. The rule
+> used to separate them is in §16.4.
+
 Two kinds of claim in this area are asserted **from the database**, never from
 the screen, because they are the two the redesign could break silently: money,
 and the fourth attendance value. Every case that records a No-Show, saves an
@@ -2217,6 +2447,15 @@ design system's own tokens and marks (§16), and the public route.
 
 ### TC-AR-001 · P0 · Positive — Every Session row carries its eight facts, ruled, at both widths
 
+> **Partly superseded by Rally (#152).** *Ruled* is retired: ADR 0003 replaced
+> the shared ruled Register with tables composed inside cards, so the 1px shared
+> rules and the one-bounded-frame treatment are no longer the target. Pointer:
+> the admin surface spec (#145). **Still live, and it is most of the case:** every
+> Session row carries its **eight** facts, and at 390px the register collapses by
+> axis rather than scrolling sideways — each cell keeps its column's label as
+> real text, and a second DOM tree is still refused (`DESIGN.md`, *Retired
+> rules*, where that one is marked still in force).
+
 **Preconditions:** admin on `/admin/sessions`, at least three Sessions listed.
 
 **Steps:**
@@ -2246,6 +2485,14 @@ design system's own tokens and marks (§16), and the public route.
   figure — the fact is never carried by colour alone.
 
 ### TC-AR-002 · P0 · Positive — A cancelled Session reads as struck, and its figures still hold
+
+> **Partly superseded by Rally (#152).** *Reads as struck* is retired. A
+> cancelled Session now carries a **void** chip reading `Cancelled` /
+> `Dibatalkan`, and nothing anywhere is struck — not the chip's own label and not
+> the row's title. Pointer: **TC-DS-102**. **Still live, and it is what the case
+> actually protects:** the title recedes to `--muted-foreground` rather than
+> being struck through, the row's figures still hold after cancellation, and a
+> cancelled row offers `Take attendance, Edit, Detail, CSV` and **no** Cancel.
 
 **Preconditions:** one Session cancelled from its row (see `TC-AR-006`).
 
@@ -2775,6 +3022,17 @@ still `REGISTERED`.
 
 ### TC-AR-019 · P0 · Positive — Opted Out and No-Show are distinct records and distinct marks, reached through real flows
 
+> **Partly superseded by Rally (#152).** *Distinct marks* is retired — Erased's
+> borderless ground fill and Hollow's 2px dashed outline are both gone. Pointer:
+> **TC-DS-107**. The distinction is now carried entirely by two words, `Opted
+> Out` / `Batal Ikut` on a **neutral** chip and `No-Show` / `Tidak Hadir` on a
+> **void** one, which is the swap ADR 0003 made deliberately: the obligation
+> (WCAG 1.4.1) is unchanged and the channel is a word rather than a shape a
+> reader has to learn. **Still live, and it is the P0 half:** they are two
+> distinct stored `AttendanceStatus` values reached through two real flows, a
+> member's own withdrawal and an Admin's record, and neither is ever derived from
+> the other.
+
 **Preconditions:** two Participants on the same Session, one who will withdraw
 themselves and one an Admin will record as a No-Show.
 
@@ -3255,6 +3513,13 @@ first, and restore it at the end.
 
 ### TC-AR-036 · P0 · Positive — Every register is ruled at 1440 and collapses by axis at 390
 
+> **Partly superseded by Rally (#152).** *Ruled at 1440* is retired: one bounded
+> frame of 1px-ruled rows is exactly what ADR 0003 replaced with tables inside
+> cards. Pointer: the admin surface spec (#145). **Still live, and it is the P0
+> half:** at 390 every register **collapses by axis** — still rows, each cell
+> carrying its column's label as real text, the table role and `scope` dropped
+> together, no horizontal page scroll, and no second DOM tree.
+
 **Preconditions:** each of `/admin/sessions`, `/admin/payments`,
 `/admin/members`, `/admin/activities`, `/admin/applicants`,
 `/admin/sessions/{id}/attendance` and `/admin/settings`.
@@ -3308,7 +3573,7 @@ Payment. The only residue is that rows the run touched carry a moved
 | Case | Priority | Result |
 |---|---|---|
 | TC-AR-001 | P0 | **Pass** — eight heads in order (`DATE, SESSION, ACTIVITY, LOCATION, CAPACITY, FLOOR, STATUS, ACTIONS`); cell rule **1px solid `rgb(119,131,127)`**; `scrollWidth === 1440`; capacity announced "7 of 24 seats held", floor "2 of 4 members committed · **Below floor**" and "**No floor**" where `minMembers = 0`; at 390 `<thead>` is `display: none`, every cell carries its own label, `scrollWidth === clientWidth === 390`; no `<tr>` carries `tabindex` |
-| TC-AR-002 | P0 | **Pass** — Strike mark, `text-decoration: line-through` on the **mark's own label**; the title span recedes to `rgb(84,97,91)` against `rgb(21,30,27)` on a Scheduled row and carries **no** line-through; the cancelled row offers `Take attendance, Edit, Detail, CSV` and **no Cancel** |
+| TC-AR-002 | P0 | **Pass** — Strike mark, `text-decoration` set to a strike on the **mark's own label**; the title span recedes to `rgb(84,97,91)` against `rgb(21,30,27)` on a Scheduled row and carries **no** strike; the cancelled row offers `Take attendance, Edit, Detail, CSV` and **no Cancel** |
 | TC-AR-003 | P0 | **Pass** — Morning Drills `{ "fee": 26000 }` → **409** `FEE_LOCKED`, "This session already has a payment or a held seat, so its fee cannot be changed. Post a new session at the new fee instead."; stored `fee` unchanged at 25 000; the form's Fee input is `readOnly: true`, `disabled: false`, `bg rgb(232,235,234)` against the open fields' `rgb(247,249,248)`, `aria-describedby="session-fee-note"`; a clean sentinel Session took `{ "fee": 11000 }` at **200** |
 | TC-AR-004 | P0 | **Pass** — `{ "maxPlayers": 6 }` against 7 held → **409** `CAPACITY_BELOW_HELD`, "Capacity cannot go below the 7 seats already held. Set it to 7 or higher, or release a seat first."; `{ "maxPlayers": 7 }` → **200**; the form's capacity input carries `min="7"`, `aria-describedby="session-capacity-note"` and is **not** read-only. **Step 3 (a lapsed hold lowering the floor) was not re-run** — carried from #69 and #94 |
 | TC-AR-005 | P0 | **Pass** — on the Completed Friendly Match `{ "title" }` and `{ "status": "SCHEDULED" }` → **409** `SESSION_CLOSED`; `{ "notes" }` → **200**; a whole payload with every field at its stored value and only the notes changed → **200**; the form draws all eight fields `readOnly` with `aria-describedby="session-closed-note"` and the **status as an `<input readonly>` reading "Completed"**, never a disabled `<select>`; notes stays open |
