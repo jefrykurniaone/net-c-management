@@ -2,17 +2,22 @@
 
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
-import { LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Chip } from '@/components/ui/chip';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+} from '@/components/ui/card';
 import { useLocale } from '@/components/providers/locale-provider';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import type { MembershipRowView } from '@/lib/membership-mode-view';
 import { AccountSettings } from './account-settings';
 import { EditProfileDialog } from './edit-profile-dialog';
 import { LeaveActivityDialog } from './leave-activity-dialog';
-import { Lattice, SectionHead } from './BoardCells';
 import { MembershipCell } from './MembershipCell';
 
 interface ProfileUser {
@@ -32,15 +37,14 @@ interface ProfilePanelProps {
 }
 
 /**
- * The member's profile and their per-Activity Memberships, on one surface.
+ * The member's profile and their per-Activity Memberships, on Rally cards.
  *
- * They belong together because payment mode is a property of a Membership and
- * not of the person: a member changing Badminton to per-Session would otherwise
- * reasonably assume they had changed Futsal too. Each Membership is its own cell
- * with its own control, and the section says so in a line of its own.
- *
- * Structure is a ruled lattice — cells sharing their rules with their
- * neighbours — never gaps between floating panels.
+ * Three cards, in reading order: who the member is, what they pay for, and
+ * the account's own settings. They stay separate cards rather than one long
+ * surface because payment mode is a property of a Membership and not of the
+ * person — a member changing Badminton to per-Session would otherwise
+ * reasonably assume they had changed Futsal too. Each Membership keeps its
+ * own row inside the memberships card, with its own control.
  */
 export function ProfilePanel({
     user,
@@ -55,7 +59,7 @@ export function ProfilePanel({
 
     return (
         <div className='flex flex-col gap-bay'>
-            <ProfileBays
+            <ProfileCards
                 profile={profile}
                 memberSinceDate={memberSinceDate}
                 memberships={memberships}
@@ -75,7 +79,7 @@ export function ProfilePanel({
     );
 }
 
-interface ProfileBaysProps {
+interface ProfileCardsProps {
     profile: ProfileUser;
     memberSinceDate: string;
     memberships: readonly MembershipRowView[];
@@ -85,36 +89,29 @@ interface ProfileBaysProps {
 }
 
 /** The surface itself, in reading order: who you are, what you pay for, settings. */
-function ProfileBays({
+function ProfileCards({
     profile,
     memberSinceDate,
     memberships,
     t,
     onEdit,
     onLeave,
-}: Readonly<ProfileBaysProps>) {
+}: Readonly<ProfileCardsProps>) {
     return (
         <>
-            <Lattice>
-                <IdentityCell
-                    profile={profile}
-                    memberSinceDate={memberSinceDate}
-                    t={t}
-                    onEdit={onEdit}
-                />
-            </Lattice>
-            <MembershipsSection
-                memberships={memberships}
+            <IdentityCard
+                profile={profile}
+                memberSinceDate={memberSinceDate}
                 t={t}
-                onLeave={onLeave}
+                onEdit={onEdit}
             />
+            <MembershipsCard memberships={memberships} t={t} onLeave={onLeave} />
             <AccountSettings phone={profile.phone} onEditPhone={onEdit} />
-            <SignOutAction label={t.nav.signOut} />
         </>
     );
 }
 
-interface IdentityCellProps {
+interface IdentityCardProps {
     profile: ProfileUser;
     memberSinceDate: string;
     t: Dictionary;
@@ -123,69 +120,76 @@ interface IdentityCellProps {
 
 /**
  * Who the member is. The avatar is the one genuinely round object on this
- * surface — a photo pinned to the board — and its lettered fallback stays
- * neutral rather than tinting a cell with the identity green.
+ * card — a photo, not a tile — and its lettered fallback stays a neutral
+ * fill rather than tinting the card with the identity green.
  */
-function IdentityCell({
+function IdentityCard({
     profile,
     memberSinceDate,
     t,
     onEdit,
-}: Readonly<IdentityCellProps>) {
+}: Readonly<IdentityCardProps>) {
     const initial = (profile.name ?? profile.email ?? '?')[0].toUpperCase();
 
     return (
-        <div className='flex items-center gap-cell p-block'>
-            <Avatar className='size-12'>
-                <AvatarImage
-                    src={profile.image ?? ''}
-                    alt={profile.name ?? ''}
-                />
-                <AvatarFallback className='type-title bg-board text-secondary-foreground'>
-                    {initial}
-                </AvatarFallback>
-            </Avatar>
-            <div className='min-w-0 flex-1'>
-                <p className='type-title truncate text-card-foreground'>
-                    {profile.name ?? t.profile.roleMember}
-                </p>
-                <p className='type-caption truncate text-secondary-foreground'>
-                    {profile.email}
-                </p>
-                <p className='type-caption text-subtle-foreground'>
-                    {t.profile.memberSince} {memberSinceDate}
-                </p>
-            </div>
-            <Button variant='outline' size='sm' onClick={onEdit}>
-                {t.profile.editButton}
-            </Button>
-        </div>
+        <Card size='sm'>
+            <CardContent className='flex items-center gap-cell'>
+                <Avatar className='size-12'>
+                    <AvatarImage
+                        src={profile.image ?? ''}
+                        alt={profile.name ?? ''}
+                    />
+                    <AvatarFallback className='type-title bg-muted text-muted-foreground'>
+                        {initial}
+                    </AvatarFallback>
+                </Avatar>
+                <div className='min-w-0 flex-1'>
+                    <p className='type-title truncate text-card-foreground'>
+                        {profile.name ?? t.profile.roleMember}
+                    </p>
+                    <p className='type-caption truncate text-secondary-foreground'>
+                        {profile.email}
+                    </p>
+                    <p className='type-caption text-subtle-foreground'>
+                        {t.profile.memberSince} {memberSinceDate}
+                    </p>
+                </div>
+                <Button variant='outline' size='sm' onClick={onEdit}>
+                    {t.profile.editButton}
+                </Button>
+            </CardContent>
+        </Card>
     );
 }
 
-interface MembershipsSectionProps {
+interface MembershipsCardProps {
     memberships: readonly MembershipRowView[];
     t: Dictionary;
     onLeave: (activity: LeavingActivity) => void;
 }
 
-/** Every Membership, one ruled cell each, sharing rules with its neighbours. */
-function MembershipsSection({
+/** Every Membership, one row each, sharing the card's own dividers. */
+function MembershipsCard({
     memberships,
     t,
     onLeave,
-}: Readonly<MembershipsSectionProps>) {
+}: Readonly<MembershipsCardProps>) {
     return (
-        <section className='flex flex-col gap-block'>
-            <SectionHead
-                label={t.profile.membershipsLabel}
-                hint={t.profile.membershipsHint}
-            />
-            <Lattice>
+        <Card className='gap-0 py-0' size='sm'>
+            <CardHeader className='border-b py-block'>
+                <CardTitle>{t.profile.membershipsLabel}</CardTitle>
+                <CardDescription className='max-w-[65ch]'>
+                    {t.profile.membershipsHint}
+                </CardDescription>
+            </CardHeader>
+            <CardContent className='divide-y divide-border p-0'>
                 {memberships.length === 0 ? (
-                    <p className='type-body p-block text-secondary-foreground'>
-                        {t.profile.noMemberships}
-                    </p>
+                    <div className='flex items-center gap-cell p-block'>
+                        <Chip variant='neutral' label={t.common.empty} />
+                        <p className='type-body text-secondary-foreground'>
+                            {t.profile.noMemberships}
+                        </p>
+                    </div>
                 ) : (
                     memberships.map((row) => (
                         <MembershipCell
@@ -198,21 +202,8 @@ function MembershipsSection({
                         />
                     ))
                 )}
-            </Lattice>
-        </section>
-    );
-}
-
-/** Ends the auth session — not a Session, which is a thing you turn up to. */
-function SignOutAction({ label }: Readonly<{ label: string }>) {
-    return (
-        <Button
-            variant='destructive-outline'
-            className='w-full'
-            onClick={() => signOut({ callbackUrl: '/' })}>
-            <LogOut />
-            {label}
-        </Button>
+            </CardContent>
+        </Card>
     );
 }
 
