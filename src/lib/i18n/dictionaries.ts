@@ -388,6 +388,15 @@ const en = {
         emptyMessage: 'No data for this period yet.',
         valuesToggle: 'View chart values as text',
         valuesListLabel: 'Chart values',
+        // Dues collected vs owed (#170).
+        duesTitle: 'Dues collected vs owed',
+        duesCaption:
+            'The last six Billing Periods, in Rupiah. Per-Session Fees count in neither figure.',
+        duesCollected: 'Collected',
+        duesOwed: 'Owed',
+        duesValueRow: 'Collected {collected}, owed {owed}',
+        duesAxisMillion: '{n}M',
+        duesAxisThousand: '{n}K',
     },
     sessions: {
         title: 'Sessions',
@@ -1628,6 +1637,15 @@ const id: typeof en = {
         emptyMessage: 'Belum ada data untuk periode ini.',
         valuesToggle: 'Lihat nilai grafik sebagai teks',
         valuesListLabel: 'Nilai grafik',
+        // Dues collected vs owed (#170).
+        duesTitle: 'Iuran terkumpul vs tagihan',
+        duesCaption:
+            'Enam Periode Tagihan terakhir, dalam Rupiah. Biaya Sesi tidak dihitung di keduanya.',
+        duesCollected: 'Terkumpul',
+        duesOwed: 'Tagihan',
+        duesValueRow: 'Terkumpul {collected}, tagihan {owed}',
+        duesAxisMillion: '{n}jt',
+        duesAxisThousand: '{n}rb',
     },
     sessions: {
         title: 'Sesi',

@@ -118,9 +118,10 @@ export default async function AdminDashboardPage() {
                 dateLocale={dateLocale}
             />
 
-            {/* Reserved for #170/#171 (spec rally-insights) — renders nothing
-                until either lands. */}
-            <DashboardInsightsSlot />
+            {/* The insight charts (spec rally-insights): #170's Dues
+                collected-vs-owed bars now, #171's donut and fill line beside
+                them later. */}
+            <DashboardInsightsSlot now={now} t={t} />
 
             <DashboardActivityCards activities={data.activityCards} t={t} />
         </div>
