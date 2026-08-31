@@ -7,21 +7,38 @@ import {
     type SubmitEvent,
 } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { TASK_MEASURE } from '@/components/layout/measure';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { ReadOnlyField } from '@/components/payments/read-only-field';
 import { toast } from 'sonner';
-import { Upload, ArrowLeft, ImageIcon } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useLocale } from '@/components/providers/locale-provider';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
     BankAccountInfo,
     type BankAccount,
 } from '@/components/payments/bank-account-info';
+import { ProofFileField } from '@/components/payments/proof-file-field';
+import { HoldCountdownChip } from '@/components/payments/hold-countdown';
 import { validateProofFile } from '@/lib/proof-file';
+
+/**
+ * Register-and-pay for one Session, as four cards: the amount (read-only,
+ * server-set), the bank account to transfer to, the proof upload, and the
+ * submit action — the same shape #159's cards and the monthly-dues upload
+ * form (`proof-upload-form.tsx`) already draw a Rally screen in. Behaviour is
+ * unchanged: the same endpoint, the same fields, the server the same
+ * authority on the amount and the mode.
+ */
+
+interface SessionAttendanceRow {
+    readonly userId: string;
+    readonly holdExpiresAt: string | null;
+}
 
 /** The session prefill the register-&-pay uploader needs (display only). */
 interface SessionInfo {
@@ -29,12 +46,26 @@ interface SessionInfo {
     title: string;
     fee: number;
     activity: { name: string } & BankAccount;
+    attendances: readonly SessionAttendanceRow[];
+}
+
+/** The reader's own live reservation hold on this Session, or null. */
+function myHoldExpiresAt(
+    session: SessionInfo | null,
+    userId: string | undefined,
+): string | null {
+    if (!session || !userId) return null;
+    return (
+        session.attendances.find((a) => a.userId === userId)
+            ?.holdExpiresAt ?? null
+    );
 }
 
 export default function SessionPayPage() {
     const router = useRouter();
     const params = useParams<{ id: string }>();
     const sessionId = params.id;
+    const { data: authSession } = useSession();
     const { locale } = useLocale();
     const t = getDictionary(locale);
     const [loading, setLoading] = useState(false);
@@ -101,10 +132,11 @@ export default function SessionPayPage() {
               .split('{activity}').join(session.activity.name)
               .split('{session}').join(session.title)
         : '';
+    const holdExpiresAtISO = myHoldExpiresAt(session, authSession?.user?.id);
 
     if (loaded && !session) {
         return (
-            <div className='max-w-lg mx-auto space-y-6'>
+            <div className={`${TASK_MEASURE} space-y-block`}>
                 <BackLink sessionId={sessionId} label={t.sessions.backToList} />
                 <EmptyState title={t.sessions.notFound} />
             </div>
@@ -112,25 +144,17 @@ export default function SessionPayPage() {
     }
 
     return (
-        <div className='max-w-lg mx-auto space-y-6'>
+        <div className={`${TASK_MEASURE} space-y-block`}>
             <BackLink sessionId={sessionId} label={t.sessions.backToList} />
 
-            <div className='bg-card rounded-xl border border-border p-6'>
-                <div className='flex items-center gap-2 mb-6'>
-                    <Upload className='w-5 h-5 text-primary' />
-                    <h1 className='text-xl font-bold text-foreground'>
-                        {t.payments.paySessionTitle}
-                    </h1>
-                </div>
+            <PayHeader
+                t={t}
+                holdExpiresAtISO={holdExpiresAtISO}
+            />
 
-                <form onSubmit={handleSubmit} className='space-y-5'>
-                    {/* Amount — server-authoritative from the Session's fee.
-                        The same ReadOnlyField the Dues uploader uses, rather
-                        than a second hand-rolled one: this page had the note on
-                        screen but never tied to the input, and no lock at all,
-                        so a screen-reader member met a field that would not
-                        accept typing and was told nothing about why. */}
-                    <div className='space-y-1.5'>
+            <form onSubmit={handleSubmit} className='space-y-block'>
+                <Card>
+                    <CardContent className='space-y-hair'>
                         <ReadOnlyField
                             id='amount'
                             label={t.payments.amountLabel}
@@ -143,54 +167,31 @@ export default function SessionPayPage() {
                             isFigure
                         />
                         {owedLabel && (
-                            <p className='text-sm text-muted-foreground'>
+                            <p className='type-caption text-secondary-foreground'>
                                 {owedLabel}
                             </p>
                         )}
-                    </div>
+                    </CardContent>
+                </Card>
 
-                    {/* Where to transfer — the activity's configured account */}
-                    <BankAccountInfo account={session?.activity ?? null} />
+                <Card>
+                    <CardContent>
+                        <BankAccountInfo account={session?.activity ?? null} />
+                    </CardContent>
+                </Card>
 
-                    {/* File Upload */}
-                    <div className='space-y-2'>
-                        <Label>{t.payments.fileLabel}</Label>
-                        <label
-                            htmlFor='proof-file'
-                            className='flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors relative overflow-hidden'>
-                            {preview ? (
-                                <Image
-                                    src={preview}
-                                    alt='Preview'
-                                    fill
-                                    className='object-cover rounded-xl'
-                                />
-                            ) : (
-                                <div className='flex flex-col items-center gap-2 text-muted-foreground pointer-events-none'>
-                                    <ImageIcon className='w-8 h-8' />
-                                    <p className='text-sm'>
-                                        {t.payments.selectImage}
-                                    </p>
-                                    <p className='text-xs'>
-                                        {t.payments.fileDesc}
-                                    </p>
-                                </div>
-                            )}
-                        </label>
-                        <input
-                            id='proof-file'
-                            type='file'
-                            accept='image/jpeg,image/jpg,image/png,image/webp'
+                <Card>
+                    <CardContent>
+                        <ProofFileField
+                            t={t}
+                            file={file}
+                            preview={preview}
                             onChange={handleFileChange}
-                            className='sr-only'
                         />
-                        {file && (
-                            <p className='text-xs text-muted-foreground truncate tabular-nums'>
-                                {file.name} ({(file.size / 1024).toFixed(0)} KB)
-                            </p>
-                        )}
-                    </div>
+                    </CardContent>
+                </Card>
 
+                <div className='space-y-cell'>
                     <Button
                         type='submit'
                         className='w-full'
@@ -198,12 +199,33 @@ export default function SessionPayPage() {
                         loading={loading}>
                         {t.payments.submit}
                     </Button>
-
-                    <p className='text-center text-xs text-muted-foreground'>
+                    <p className='text-center type-body text-secondary-foreground'>
                         {t.payments.verifyNote}
                     </p>
-                </form>
-            </div>
+                </div>
+            </form>
+        </div>
+    );
+}
+
+/** The page's own title, with the live hold deadline beside it where one
+ *  applies — the chip carries the countdown, so nothing else has to. */
+function PayHeader({
+    t,
+    holdExpiresAtISO,
+}: Readonly<{ t: Dictionary; holdExpiresAtISO: string | null }>) {
+    return (
+        <div className='flex flex-wrap items-center justify-between gap-cell'>
+            <h1 className='type-title text-foreground'>
+                {t.payments.paySessionTitle}
+            </h1>
+            {holdExpiresAtISO && (
+                <HoldCountdownChip
+                    iso={holdExpiresAtISO}
+                    template={t.sessions.reservedPayWithin}
+                    expiredLabel={t.sessions.holdExpired}
+                />
+            )}
         </div>
     );
 }
@@ -215,8 +237,8 @@ function BackLink({
     return (
         <Link
             href={`/sessions/${sessionId}`}
-            className='inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground'>
-            <ArrowLeft className='w-4 h-4' />
+            className='inline-flex items-center gap-cell type-label text-secondary-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2'>
+            <ArrowLeft aria-hidden='true' className='size-4' />
             {label}
         </Link>
     );
