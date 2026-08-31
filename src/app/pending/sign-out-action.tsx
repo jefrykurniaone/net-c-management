@@ -1,6 +1,7 @@
 'use client';
 
 import { signOut } from 'next-auth/react';
+import { Button } from '@/components/ui/button';
 
 /**
  * The door out — one of the waiting room's two affordances. An Applicant who is
@@ -9,11 +10,13 @@ import { signOut } from 'next-auth/react';
  */
 export function SignOutAction({ label }: Readonly<{ label: string }>) {
     return (
-        <button
+        <Button
             type='button'
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className='inline-flex min-h-11 items-center justify-center rounded-[2px] px-cell type-label text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+            variant='ghost'
+            size='lg'
+            className='min-h-11 text-muted-foreground underline underline-offset-4 hover:text-foreground'
+            onClick={() => signOut({ callbackUrl: '/' })}>
             {label}
-        </button>
+        </Button>
     );
 }

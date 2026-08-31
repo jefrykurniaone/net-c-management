@@ -8,6 +8,7 @@ import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { resolveAdmissionState, type AdmissionState } from '@/lib/admission';
 import type { ChipVariant } from '@/lib/status-chip';
 import { Chip } from '@/components/ui/chip';
+import { Button } from '@/components/ui/button';
 import { CommunityIdentityMark } from '@/components/community/identity-mark';
 import { SignOutAction } from './sign-out-action';
 
@@ -85,7 +86,7 @@ function IdentityRail({
     logoUrl,
 }: Readonly<{ communityName: string; logoUrl: string }>) {
     return (
-        <header className='border-b border-rule bg-background'>
+        <header className='border-b border-border bg-background'>
             <div
                 className={`mx-auto flex w-full ${COLUMN_CLASS} items-center gap-cell px-block py-cell`}>
                 <CommunityIdentityMark
@@ -117,13 +118,14 @@ function WhatsappAction({
     const digits = phone.replace(/\D/g, '');
     if (!digits) return null;
     return (
-        <a
-            href={`https://wa.me/${digits}`}
-            target='_blank'
-            rel='noopener noreferrer'
-            className='inline-flex min-h-11 items-center justify-center rounded-[2px] bg-primary-solid px-bay type-label text-primary-solid-foreground hover:bg-primary-solid/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'>
-            {label}
-        </a>
+        <Button asChild size='lg' className='min-h-11'>
+            <a
+                href={`https://wa.me/${digits}`}
+                target='_blank'
+                rel='noopener noreferrer'>
+                {label}
+            </a>
+        </Button>
     );
 }
 

@@ -9,6 +9,7 @@ import {
     type OnboardingFormData,
 } from '@/lib/validations/user';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Form,
     FormControl,
@@ -55,7 +56,7 @@ function IdentityRail({
     logoUrl,
 }: Readonly<{ communityName: string; logoUrl: string }>) {
     return (
-        <header className='border-b border-rule bg-background'>
+        <header className='border-b border-border bg-background'>
             <div
                 className={`mx-auto flex w-full ${COLUMN_CLASS} items-center gap-cell px-block py-cell`}>
                 <CommunityIdentityMark
@@ -157,65 +158,67 @@ export default function OnboardingPage() {
                     </div>
 
                     <Form {...form}>
-                        <form
-                            onSubmit={form.handleSubmit(onSubmit)}
-                            className='flex flex-col gap-block rounded-[2px] border border-rule bg-tile p-block'>
-                            <FormField
-                                control={form.control}
-                                name='name'
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t.onboarding.name}</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder={t.onboarding.namePlaceholder}
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FieldErrorMessage
-                                            t={t}
-                                            keyMap={NAME_ERROR_KEYS}
-                                        />
-                                    </FormItem>
-                                )}
-                            />
+                        <form onSubmit={form.handleSubmit(onSubmit)}>
+                            <Card>
+                                <CardContent className='flex flex-col gap-block'>
+                                    <FormField
+                                        control={form.control}
+                                        name='name'
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t.onboarding.name}</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder={t.onboarding.namePlaceholder}
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FieldErrorMessage
+                                                    t={t}
+                                                    keyMap={NAME_ERROR_KEYS}
+                                                />
+                                            </FormItem>
+                                        )}
+                                    />
 
-                            <FormField
-                                control={form.control}
-                                name='phone'
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>{t.onboarding.phone}</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder={t.onboarding.phonePlaceholder}
-                                                type='tel'
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormDescription>
-                                            {t.common.phoneCountryCodeHint}
-                                        </FormDescription>
-                                        <FieldErrorMessage
-                                            t={t}
-                                            keyMap={PHONE_ERROR_KEYS}
-                                        />
-                                    </FormItem>
-                                )}
-                            />
+                                    <FormField
+                                        control={form.control}
+                                        name='phone'
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>{t.onboarding.phone}</FormLabel>
+                                                <FormControl>
+                                                    <Input
+                                                        placeholder={t.onboarding.phonePlaceholder}
+                                                        type='tel'
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormDescription>
+                                                    {t.common.phoneCountryCodeHint}
+                                                </FormDescription>
+                                                <FieldErrorMessage
+                                                    t={t}
+                                                    keyMap={PHONE_ERROR_KEYS}
+                                                />
+                                            </FormItem>
+                                        )}
+                                    />
 
-                            <ActivityField
-                                control={form.control}
-                                activities={activities}
-                                t={t}
-                            />
+                                    <ActivityField
+                                        control={form.control}
+                                        activities={activities}
+                                        t={t}
+                                    />
 
-                            <Button
-                                type='submit'
-                                className='w-full'
-                                loading={isLoading}>
-                                {t.onboarding.submit}
-                            </Button>
+                                    <Button
+                                        type='submit'
+                                        className='w-full'
+                                        loading={isLoading}>
+                                        {t.onboarding.submit}
+                                    </Button>
+                                </CardContent>
+                            </Card>
                         </form>
                     </Form>
                 </div>
