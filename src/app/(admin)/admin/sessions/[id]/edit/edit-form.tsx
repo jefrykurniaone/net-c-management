@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { SessionStatus } from '@prisma/client';
 import { useLocale } from '@/components/providers/locale-provider';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Form } from '@/components/ui/form';
 import { FormSection } from '@/components/ui/form-section';
@@ -236,17 +237,14 @@ function EditCard({
     children: ReactNode;
 }>) {
     return (
-        <div className='rounded-sm border border-rule bg-tile p-block'>
-            <h1 className='text-xl font-bold text-foreground'>
-                {t.admin.editSessionTitle}
-            </h1>
+        <Card className='p-4'>
             {locks.isClosed && (
                 <LockNote id={CLOSED_NOTE_ID}>
                     {t.admin.closedFieldsLocked}
                 </LockNote>
             )}
-            <div className='mt-6'>{children}</div>
-        </div>
+            {children}
+        </Card>
     );
 }
 
@@ -268,6 +266,9 @@ export function EditSessionForm({
     return (
         <div className='space-y-6'>
             <BackLink t={t} />
+            <h1 className='type-display text-foreground'>
+                {t.admin.editSessionTitle}
+            </h1>
             <EditCard locks={locks} t={t}>
                 <SessionFormBody
                     form={form}

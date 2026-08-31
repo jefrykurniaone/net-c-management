@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import type { RefObject } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Upload } from 'lucide-react';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
@@ -32,7 +33,7 @@ type LogoProps = Omit<LogoControlProps, 't'>;
 
 function LogoPlaceholder() {
     return (
-        <div className='flex h-16 w-16 items-center justify-center rounded-full border border-rule bg-board'>
+        <div className='flex h-16 w-16 items-center justify-center rounded-full border border-border bg-background'>
             <Upload className='h-6 w-6 text-muted-foreground' />
         </div>
     );
@@ -55,7 +56,7 @@ function LogoControl({
                     alt={t.admin.logoLabel}
                     width={64}
                     height={64}
-                    className='h-16 w-16 rounded-full border border-rule object-cover'
+                    className='h-16 w-16 rounded-full border border-border object-cover'
                 />
             ) : (
                 <LogoPlaceholder />
@@ -192,7 +193,7 @@ export function SettingsForm({
 }>) {
     return (
         <form onSubmit={onSubmit}>
-            <div className='border border-rule bg-tile'>
+            <Card className='gap-0 overflow-hidden p-0'>
                 <BasicInfoSection t={t} settings={settings} update={update} logoProps={logoProps} />
                 <ContactSection t={t} settings={settings} update={update} />
                 <PaymentSection
@@ -205,7 +206,7 @@ export function SettingsForm({
                     than inside one of them: nothing here configures how the
                     community runs, it is what a stranger reads. */}
                 <PublicCopySection t={t} settings={settings} update={update} />
-            </div>
+            </Card>
             <Button type='submit' className='mt-bay w-full' loading={saving}>
                 {t.admin.saveSettings}
             </Button>

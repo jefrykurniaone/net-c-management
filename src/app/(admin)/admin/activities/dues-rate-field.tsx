@@ -217,7 +217,7 @@ function WithdrawTile({
             type='button'
             variant='outline'
             size='sm'
-            className='border-rule text-muted-foreground'
+            className='text-muted-foreground'
             loading={withdrawing}
             onClick={withdraw}>
             {t.admin.duesRateWithdraw}
