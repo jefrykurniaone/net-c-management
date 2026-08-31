@@ -63,10 +63,17 @@ export function HeroBand({
     /** The Admin's uploaded photograph, or `''` for the pattern (#155). */
     heroImageUrl: string;
 }>) {
+    // Trimmed once, here, rather than separately in `HeroBackdrop`: a
+    // whitespace-only Settings value is a missing photograph, and the
+    // subline's colour and the backdrop's branch must never disagree about
+    // which case they are in.
+    const photoUrl = heroImageUrl.trim();
+    const hasPhoto = photoUrl !== '';
+
     return (
         <section
             className={`${FORCED_DARK_CLASS} relative isolate w-full overflow-hidden bg-background px-block ${HERO_AIR_CLASS}`}>
-            <HeroBackdrop heroImageUrl={heroImageUrl} />
+            <HeroBackdrop photoUrl={photoUrl} />
             {/* The headline and the action are **siblings in one flow column**,
                 never stacked layers. That is what makes "the headline never
                 paints over the action" a structural guarantee rather than a
@@ -104,8 +111,18 @@ export function HeroBand({
                     it. Body is what the about band below runs at, so the two
                     do not read as the same paragraph twice. Capped at 120
                     characters, which is three lines here at the small end of
-                    the clamp. */}
-                <p className='type-statement min-w-0 max-w-full break-words text-secondary-foreground'>
+                    the clamp.
+
+                    Ink is conditional on the backdrop, not fixed (#155 review):
+                    `--secondary-foreground` is deliberately muted, tuned for
+                    the *known*, fixed ground the pattern backdrop draws — over
+                    an Admin's photograph the ground is unknown and only ever
+                    guaranteed down to a worst-case white, so the subline
+                    switches to the same `--foreground` the headline uses.
+                    Same colour, same scrim, same guaranteed ratio — see
+                    `SCRIM_OPACITY_CLASS` below for the arithmetic. */}
+                <p
+                    className={`type-statement min-w-0 max-w-full break-words ${hasPhoto ? 'text-foreground' : 'text-secondary-foreground'}`}>
                     {subline}
                 </p>
 
@@ -132,15 +149,25 @@ export function HeroBand({
 
 /**
  * `bg-background` at this opacity, over the worst case a photograph can be —
- * a plain white test image — still holds both text pairings this band draws
- * to their AA floor of 4.5:1 (measured with `src/lib/theme-contrast.ts`'s own
- * `contrastRatio`, arithmetic in the pull request that added this): the
- * headline (`--foreground`, #F1EEE5 forced-dark) at 9.27:1 and the subline
- * (`--secondary-foreground`, #B3C1B6 forced-dark) at 5.75:1. `85` rather than
- * a lower value because the subline is the tighter margin of the two — the
- * headline alone would clear AA well below it (7.79:1 at 80%).
+ * a plain white test image — still holds text to its AA floor of 4.5:1
+ * (measured with `src/lib/theme-contrast.ts`'s own `contrastRatio`,
+ * arithmetic in the pull request that revised this).
+ *
+ * Both headline and subline draw `--foreground` (#F1EEE5 forced-dark) over a
+ * photograph (see the subline's own comment above for why), so there is
+ * exactly one pairing to clear rather than two — and this is the least
+ * whole percent that clears it: composited over white, `#F1EEE5` on `65`
+ * (`#626D68`) measures **4.63:1**; one point lower, `64` (`#65706B`), is
+ * 4.43:1 and fails. `65` is the minimum with a safety margin the rounding at
+ * the boundary would not give.
+ *
+ * An earlier version of this band used `--secondary-foreground` for the
+ * subline and an 85% scrim to clear it, which left only 15% of the
+ * photograph visible — defeating the feature the acceptance criteria asked
+ * for. That version is gone; see the pull request for the arithmetic this
+ * one replaced.
  */
-const SCRIM_OPACITY_CLASS = 'bg-background/85';
+const SCRIM_OPACITY_CLASS = 'bg-background/65';
 
 /**
  * The hero's background layer, and the slot the Admin's photograph fills.
@@ -160,20 +187,15 @@ const SCRIM_OPACITY_CLASS = 'bg-background/85';
  * section already).
  */
 function HeroBackdrop({
-    heroImageUrl,
-}: Readonly<{ heroImageUrl: string }>) {
-    // A blank Settings value is a missing photograph, not a source: trimmed
-    // so a whitespace-only value degrades to the pattern rather than asking
-    // `next/image` to fetch an empty string.
-    const src = heroImageUrl.trim();
-
-    if (src) {
+    photoUrl,
+}: Readonly<{ photoUrl: string }>) {
+    if (photoUrl) {
         return (
             <div
                 aria-hidden='true'
                 className='absolute inset-0 -z-10 overflow-hidden bg-background'>
                 <Image
-                    src={src}
+                    src={photoUrl}
                     alt=''
                     fill
                     priority
