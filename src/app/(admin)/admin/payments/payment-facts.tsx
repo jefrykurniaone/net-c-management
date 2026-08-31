@@ -19,7 +19,7 @@ export function PaymentFactList({
     t,
 }: Readonly<{ facts: PaymentFacts; t: Dictionary }>) {
     return (
-        <dl className='grid grid-cols-[auto_1fr] gap-x-block gap-y-hair border border-rule bg-board p-cell'>
+        <dl className='grid grid-cols-[auto_1fr] gap-x-block gap-y-hair rounded-lg border border-border bg-background p-cell'>
             <dt className='type-label text-muted-foreground'>
                 {t.admin.colMember}
             </dt>

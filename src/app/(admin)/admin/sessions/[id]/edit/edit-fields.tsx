@@ -20,8 +20,8 @@ import type { UpdateSessionFormData } from '@/lib/validations/session';
  * A locked field is **read-only**, never disabled: its value still posts, it is
  * still focusable and copyable, and a screen reader announces it as read-only
  * rather than skipping it. It takes the design system's read-only treatment —
- * Enamel Ground fill (DESIGN.md, Inputs / Fields) — from the shared `Input`
- * itself, which carries `read-only:bg-board`, so no caller class is needed.
+ * the beige ground fill (DESIGN.md, Inputs / Fields) — from the shared `Input`
+ * itself, which carries `read-only:bg-background`, so no caller class is needed.
  *
  * Every lock carries a sentence at **Body** size tied to the control with
  * `aria-describedby`. A condition disclosed in the fine print is not disclosed,
@@ -222,7 +222,7 @@ export function ActivityField({
     return (
         <FormItem>
             <FormLabel>{t.activity.label}</FormLabel>
-            <div className='flex items-center gap-2 rounded-md border border-input bg-board px-3 py-2 text-sm'>
+            <div className='flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm'>
                 <span className='font-medium text-foreground'>
                     {activityName}
                 </span>

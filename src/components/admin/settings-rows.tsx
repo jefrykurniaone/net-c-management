@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 const ROW_CLASS =
-    'grid gap-cell border-b border-rule px-block py-cell md:grid-cols-2 md:items-start md:gap-block';
+    'grid gap-cell border-b border-border px-block py-cell md:grid-cols-2 md:items-start md:gap-block';
 
 /** The id a row's helper paragraph carries, for the control's `aria-describedby`. */
 export function settingsHelperId(id: string): string {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ClipboardCheck } from "lucide-react";
 import { RemindMembersButton } from "@/components/admin/remind-members-button";
 import { ShareSessionCard } from "@/components/sessions/share-session-card";
+import { Card } from "@/components/ui/card";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 /**
@@ -21,19 +22,13 @@ interface EditSideCardsProps {
   t: Dictionary;
 }
 
-/**
- * The design system's container idiom (DESIGN.md § Cells / Containers): 2px
- * corner, Enamel Tile ground on Enamel Ground, 1px Ruled Line, bay padding.
- */
-const CARD_CLASS = "rounded-sm border border-rule bg-tile p-block";
-
 /** One link out to where attendance is actually taken. No controls here. */
 function AttendanceLinkCard({
   sessionId,
   t,
 }: Readonly<{ sessionId: string; t: Dictionary }>) {
   return (
-    <div className={CARD_CLASS}>
+    <Card className="p-4">
       <Link
         href={`/admin/sessions/${sessionId}/attendance`}
         className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -41,7 +36,7 @@ function AttendanceLinkCard({
         <ClipboardCheck className="w-4 h-4" />
         {t.admin.toAttendance}
       </Link>
-    </div>
+    </Card>
   );
 }
 
@@ -55,12 +50,12 @@ function RemindCard({
   t: Dictionary;
 }>) {
   return (
-    <div className={CARD_CLASS}>
+    <Card className="p-4">
       <div className="mb-3">
-        <h2 className="text-sm font-semibold text-foreground">
+        <h2 className="type-title text-foreground">
           {t.admin.remindSectionTitle}
         </h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
+        <p className="type-caption text-muted-foreground mt-0.5">
           {t.admin.remindSectionDesc}
         </p>
       </div>
@@ -69,7 +64,7 @@ function RemindCard({
         label={t.admin.remindMembers}
         lastReminderAt={lastReminderAt}
       />
-    </div>
+    </Card>
   );
 }
 

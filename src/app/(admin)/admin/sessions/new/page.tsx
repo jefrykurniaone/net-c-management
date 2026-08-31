@@ -32,6 +32,7 @@ import type { ActivityOption } from "@/types/activity";
 import { parseIntInput } from "@/lib/form-utils";
 import { FormSection } from "@/components/ui/form-section";
 import { LockNote } from "@/components/ui/lock-note";
+import { Card } from "@/components/ui/card";
 
 /**
  * Each restriction is one sentence beneath the control it is about, tied to it
@@ -115,11 +116,11 @@ export default function NewSessionPage() {
         {t.admin.backToSessions}
       </Link>
 
-      <div className="rounded-sm border border-rule bg-tile p-block">
-        <h1 className="text-xl font-bold text-foreground mb-6">
-          {t.admin.newSessionTitle}
-        </h1>
+      <h1 className="type-display text-foreground">
+        {t.admin.newSessionTitle}
+      </h1>
 
+      <Card className="p-4">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormSection title={t.admin.sectionBasicInfo}>
@@ -295,7 +296,7 @@ export default function NewSessionPage() {
             </Button>
           </form>
         </Form>
-      </div>
+      </Card>
     </div>
   );
 }
