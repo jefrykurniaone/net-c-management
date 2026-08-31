@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Chip } from '@/components/ui/chip';
 
 const MS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
@@ -19,18 +20,13 @@ function formatRemaining(ms: number): string {
 }
 
 /**
- * Live countdown to a reservation-hold expiry, ticking every second on the
- * client. Server render and first client render disagree by the request
- * latency, hence suppressHydrationWarning (same reasoning as the old
- * server-zone bug this file's predecessor fixed). Once the hold lapses the
- * label flips to `expiredLabel` — the sweep deletes the row on the next
- * server read, so this is only ever shown briefly.
+ * Milliseconds left until `iso`, ticking every second on the client. Server
+ * render and first client render disagree by the request latency — the
+ * caller is responsible for `suppressHydrationWarning` on whatever it draws
+ * from this, same reasoning as the old server-zone bug this file's
+ * predecessor fixed.
  */
-export function HoldCountdown({
-    iso,
-    template,
-    expiredLabel,
-}: Readonly<{ iso: string; template: string; expiredLabel: string }>) {
+function useHoldRemainingMs(iso: string): number {
     const [remainingMs, setRemainingMs] = useState(
         () => new Date(iso).getTime() - Date.now(),
     );
@@ -43,6 +39,21 @@ export function HoldCountdown({
         return () => clearInterval(timer);
     }, [iso]);
 
+    return remainingMs;
+}
+
+/**
+ * Live countdown to a reservation-hold expiry, as text. Once the hold lapses
+ * the label flips to `expiredLabel` — the sweep deletes the row on the next
+ * server read, so this is only ever shown briefly.
+ */
+export function HoldCountdown({
+    iso,
+    template,
+    expiredLabel,
+}: Readonly<{ iso: string; template: string; expiredLabel: string }>) {
+    const remainingMs = useHoldRemainingMs(iso);
+
     if (remainingMs <= 0) {
         return <span suppressHydrationWarning>{expiredLabel}</span>;
     }
@@ -50,5 +61,30 @@ export function HoldCountdown({
         <span suppressHydrationWarning className='tabular-nums'>
             {template.replace('{time}', formatRemaining(remainingMs))}
         </span>
+    );
+}
+
+/**
+ * The same countdown, carried by a chip rather than plain text — the pay
+ * flow's own deadline marker, provisional like every other Seat held on
+ * money nobody has verified yet (`session-standing.ts`).
+ */
+export function HoldCountdownChip({
+    iso,
+    template,
+    expiredLabel,
+}: Readonly<{ iso: string; template: string; expiredLabel: string }>) {
+    const remainingMs = useHoldRemainingMs(iso);
+    const label =
+        remainingMs <= 0
+            ? expiredLabel
+            : template.replace('{time}', formatRemaining(remainingMs));
+    return (
+        <Chip
+            variant='provisional'
+            label={label}
+            className='tabular-nums'
+            suppressHydrationWarning
+        />
     );
 }
