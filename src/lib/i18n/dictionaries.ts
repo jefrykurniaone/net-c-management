@@ -474,6 +474,19 @@ const en = {
         boardOptedOut: 'You released this Seat.',
         duesForfeited:
             'You opted out of this Session. Your Dues cover the month, not this Session, so nothing is refunded.',
+        // The week strip. The footer figure is spelled out rather than left as
+        // `n/max`: a card has the room a fixed cell did not, and "free of" is
+        // what stops the pair being read as taken-of-total.
+        weekSeatsFigure: '{n} free of {max}',
+        // A Seat claimed against money nobody has confirmed yet. "Reserved" is
+        // the word the Session page already uses for this state; the deadline
+        // beside it is the fact that can cost the member the Seat.
+        weekSeatHeld: 'Reserved',
+        weekHoldPayBy: 'Pay by {time}',
+        // A card's whole accessible name, so one card announces the day, the
+        // time, the Activity and its status without the reader tabbing through
+        // four fragments. The chip's own label is in the footer beside it.
+        weekCardAria: '{day}, {time}, {activity}: {title}, {venue}. {status}',
     },
     payments: {
         title: 'Monthly Dues',
@@ -1639,6 +1652,10 @@ const id: typeof en = {
         boardOptedOut: 'Kamu melepas kursi ini.',
         duesForfeited:
             'Kamu batal ikut sesi ini. Iuranmu menanggung satu bulan, bukan sesi ini, jadi tidak ada pengembalian dana.',
+        weekSeatsFigure: 'Sisa {n} dari {max}',
+        weekSeatHeld: 'Dipesan',
+        weekHoldPayBy: 'Bayar sebelum {time}',
+        weekCardAria: '{day}, {time}, {activity}: {title}, {venue}. {status}',
     },
     payments: {
         title: 'Iuran Bulanan',

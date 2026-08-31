@@ -45,6 +45,12 @@ const DAYS_IN_WEEK = 7;
 export interface BoardActivity {
     readonly id: string;
     readonly name: string;
+    /**
+     * `Activity.icon` as stored — a curated key from `src/lib/activity-icons.ts`
+     * or null for the initial. Optional so a caller that draws no livery need
+     * not read the column; `ActivityTile` falls back to the initial either way.
+     */
+    readonly icon?: string | null;
     /** 0 (Sunday) – 6 (Saturday); `null` means no standing weekly slot. */
     readonly recurringDay: number | null;
     readonly recurringStartTime: string;

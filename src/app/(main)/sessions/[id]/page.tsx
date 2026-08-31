@@ -12,7 +12,7 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
-import { monthDayLabel } from '@/components/sessions/board-view';
+import { monthDayLabel } from '@/components/sessions/day-labels';
 import {
     resolvePaymentMode,
     singleOfferedMode,
