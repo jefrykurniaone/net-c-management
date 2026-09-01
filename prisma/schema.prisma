@@ -256,6 +256,10 @@ model Membership {
 model ActivitySession {
   id          String        @id @default(cuid())
   title       String
+  /// UTC midnight of the WIB calendar day this Session falls on (see
+  /// `wibDayStartFromKey` in src/lib/wib.ts). Carries no meaningful time of
+  /// day — that lives in startTime/endTime below. Never store a `T17:00:00Z`
+  /// instant here; that names WIB midnight of the *following* day (#197).
   date        DateTime
   startTime   String        // e.g. "08:00"
   endTime     String        // e.g. "10:00"
