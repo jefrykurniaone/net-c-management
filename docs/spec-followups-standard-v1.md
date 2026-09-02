@@ -6,13 +6,15 @@
 | Run | `run:followups` |
 | Execution map | [#233](https://github.com/jefrykurniaone/net-c-management/issues/233) |
 | Tickets | #219, #217, #205, #232, #221 — sub-issues of #231 |
-| Version | v1 (2026-09-02) |
+| Version | v1 (spec revision 2, 2026-09-03) |
 | Grilled from | the triage of the nineteen issues left open by runs `rally`, `dues-rate` and `admin-registers` |
 | Depends on | nothing in this run. The function-length and file-length rules are `CLAUDE.md`'s; the case format is `TESTING.md` §16–§23's |
 
 This is a verbatim copy of the tracker issue at the time of ticketing. The issue is the live record; this file is the durable one. Below the rule is the issue body.
 
 ---
+
+Revision 2, 2026-09-03: amended per spec #235, ticket #243. The owner reopened the prior ruling on the 40-line rule's counting basis. The Non-goals, Out of Scope and Success criteria sections below are updated to match issue #231 as amended; nothing else in this file changed.
 
 Grilled on 2026-09-02 as part of run `followups`, the run that clears the nineteen issues left open by runs `rally`, `dues-rate` and `admin-registers`. This spec owns the four that are about the **repository disagreeing with itself** — two files whose bytes fight the commit hook, one written standard nothing enforces, and one test case that asserts the opposite of what ships.
 
@@ -42,7 +44,7 @@ The two byte-order marks are stripped with an editor. A `.gitattributes` pins ge
 
 ## Non-goals
 
-- Amending the coding standard. The owner's decision was to enforce the rule as written, not to exempt page components or to replace the line count with a complexity threshold.
+- Renumbering 40, 300 or 3, or replacing the line count with a complexity threshold. Spec #235 reopened the counting basis and the exemptions, not the numbers: functions and files are now measured in lines of code, with named exemptions (test callbacks, functions with no control flow, an API guard cascade whose ordering is carried by co-location) and a grandfather clause for existing over-length code. Route-level page components are not exempted as a category — they are measured the same way as every other file, on the new basis.
 - Normalising line endings across the repository. Only generated snapshot files are pinned.
 - Rewriting or renumbering the manual test document's existing sections.
 - Wiring a static-analysis scanner into CI. None is wired here, and this run does not add one.
@@ -60,7 +62,7 @@ The two byte-order marks are stripped with an editor. A `.gitattributes` pins ge
 
 - The byte-order-mark sweep over `src/`, the repo root and `docs/` returns nothing, and an edit to either former offender commits without the hook firing.
 - `npm test` followed by `git status --porcelain` returns nothing.
-- No function in the four route-level page components exceeds 40 lines; no file exceeds 300; nesting stays within three levels.
+- No function in the four route-level page components exceeds 40 lines of code; no file exceeds 300 lines of code; nesting stays within three levels. Counted per spec #235's basis: markup and the named exemptions excluded, existing over-length code outside this run's scope left grandfathered.
 - The four pages render identically to the pre-run baseline at 1440×900 and 390×844, in both themes and both locales.
 - The stale case is marked superseded with a citation to the two tickets that decided the behaviour, and the document's new section records every user-visible change this run made.
 
@@ -96,7 +98,7 @@ The two byte-order marks are stripped with an editor. A `.gitattributes` pins ge
 
 ## Out of Scope
 
-- Any change to the coding standard's text.
+- Amending `CLAUDE.md`'s coding-standard text again. Spec #235 already amended it, landed via #238; this spec's tickets consume the new counting basis, they do not re-open or re-edit it.
 - Renormalising line endings for any file that is not a generated snapshot.
 - Extracting any component that is not one of the four named route-level pages.
 - Renumbering, reordering or deleting any existing section or case of the manual test document.
