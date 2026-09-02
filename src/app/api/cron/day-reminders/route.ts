@@ -5,6 +5,10 @@ import { isEmailConfigured, sendDayReminder } from '@/lib/email';
 import { DEFAULT_LOCALE } from '@/lib/i18n/dictionaries';
 import { AttendanceStatus, SessionStatus } from '@prisma/client';
 import { wibDayStart } from '@/lib/wib';
+import {
+    shouldStampDayReminder,
+    type DayReminderOutcome,
+} from '@/lib/day-reminder-stamp';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -47,6 +51,42 @@ async function findTodaySessions(now: Date): Promise<TodaySession[]> {
     });
 }
 
+/** Emails one Session's REGISTERED members, tallying what each recipient did. */
+async function remindSession(
+    session: TodaySession,
+    communityName: string,
+): Promise<DayReminderOutcome> {
+    let sent = 0;
+    let failed = 0;
+    let unaddressable = 0;
+    for (const { user } of session.attendances) {
+        if (!user.email) {
+            unaddressable++;
+            continue;
+        }
+        try {
+            await sendDayReminder({
+                to: user.email,
+                name: user.name ?? user.email,
+                sessionId: session.id,
+                sessionTitle: session.title,
+                sessionDate: new Date(session.date),
+                startTime: session.startTime,
+                endTime: session.endTime,
+                location: session.location,
+                communityName,
+                // Cron has no request cookie to read a locale from.
+                locale: DEFAULT_LOCALE,
+            });
+            sent++;
+        } catch (err) {
+            console.error(`[day-reminders] failed to send to ${user.email}:`, err);
+            failed++;
+        }
+    }
+    return { sent, failed, unaddressable };
+}
+
 /**
  * GET /api/cron/day-reminders
  *
@@ -75,35 +115,17 @@ export async function GET(req: Request) {
     let sent = 0;
     let skipped = 0;
     for (const session of sessions) {
-        for (const { user } of session.attendances) {
-            if (!user.email) {
-                skipped++;
-                continue;
-            }
-            try {
-                await sendDayReminder({
-                    to: user.email,
-                    name: user.name ?? user.email,
-                    sessionId: session.id,
-                    sessionTitle: session.title,
-                    sessionDate: new Date(session.date),
-                    startTime: session.startTime,
-                    endTime: session.endTime,
-                    location: session.location,
-                    communityName: settings.communityName,
-                    // Cron has no request cookie to read a locale from.
-                    locale: DEFAULT_LOCALE,
-                });
-                sent++;
-            } catch (err) {
-                console.error(`[day-reminders] failed to send to ${user.email}:`, err);
-                skipped++;
-            }
+        const outcome = await remindSession(session, settings.communityName);
+        sent += outcome.sent;
+        // `skipped` keeps the meaning it always had: every recipient who did not
+        // get the mail, whether the send threw or there was no address to try.
+        skipped += outcome.failed + outcome.unaddressable;
+        if (shouldStampDayReminder(outcome)) {
+            await prisma.activitySession.update({
+                where: { id: session.id },
+                data: { dayReminderSentAt: new Date() },
+            });
         }
-        await prisma.activitySession.update({
-            where: { id: session.id },
-            data: { dayReminderSentAt: new Date() },
-        });
     }
 
     return NextResponse.json({ sessions: sessions.length, sent, skipped });
