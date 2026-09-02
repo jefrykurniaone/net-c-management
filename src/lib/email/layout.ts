@@ -10,8 +10,8 @@ export type EmailLocale = 'en' | 'id';
  * duplicated here on purpose — this is the **one permitted duplication** of a
  * palette hex in the repo. The token layer, and the only other place these
  * values are allowed to live, is `src/app/styles/colors.css`; a value
- * changed there must be changed here too, by hand, because nothing wires the
- * two together. Every ratio below is measured with `src/lib/theme-contrast.ts`
+ * changed there must be changed here too, by hand — `src/lib/__tests__/email-palette-source.test.ts`
+ * reads both files and fails if one drifts from the other. Every ratio below is measured with `src/lib/theme-contrast.ts`
  * against the exact ground it renders on, not assumed from the app's token
  * roles: an email backdrop is its own surface, not `--background`.
  */
