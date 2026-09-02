@@ -5639,3 +5639,650 @@ rule named) is met.
 - **SonarLint has been consulted on no ticket in this spec.** No source file
   under `src/` was changed by this ticket (`TESTING.md` only, plus the filed
   issue's suggested fix left unapplied) — carried forward for completeness.
+
+## 22. Member surfaces on the Rally card layout (`TC-MW-*`)
+
+Spec [#144](https://github.com/jefrykurniaone/net-c-management/issues/144)
+(`spec:rally-member`, repo copy `docs/spec-rally-member-v1.md`) rebuilt every
+member surface as a card layout: the sessions board is now a **week strip**
+(seven day columns at 1440×900, one column at 390×844), the dashboard is stat
+cards + a dues notice card + one card per Activity, and Session detail, the
+pay flow, payments history and profile are re-laid as cards. Four tickets
+landed it: **#159** (week strip and the Session card), **#160** (dashboard
+cards and navigation), **#161** (Session detail and the pay flow), **#162**
+(payments history and profile) — all composing the shared resolvers from
+**#149** (`resolveStatusChip` in `src/lib/status-chip.ts`) and
+`src/lib/session-standing.ts` (the member-surface precedence wrapper) /
+`src/components/sessions/slot-action.ts` (the claim/withdraw action
+resolver). Nothing about Seats, holds, Payments or Dues rules changed; only
+the drawing did (spec's own non-goal).
+
+This area tests the whole of that: the week strip at both viewports, the
+empty-day slot, every reachable chip state on a card with its measured
+colours in both themes, claiming and withdrawing from a card including the
+three named server refusals (a card gone stale, a closed RSVP window, a full
+Session), the five remaining surfaces (dashboard, Session detail, pay,
+payments history, profile) in both themes and locales, keyboard order and
+reach on a card, and a card's accessible name for a screen reader. It does
+not re-test the resolvers' own logic — `session-standing.test.ts` and
+`slot-action.test.ts` already lock every precedence combination — this suite
+checks what those cannot: the rendered pixel and string result, and the
+server's actual refusal under a row lock.
+
+### TC-MW-001 · P0 · Positive — The week strip draws seven columns at 1440×900 and one column, days in order, at 390×844
+
+**Preconditions:** `sari.rahma@xclub.local` is used for read-only sweeps in
+this suite; the claim/withdraw fixtures below use `member@xclub.local` (Adi)
+and `yoga.saputra@xclub.local` since their seeded state is documented in §3–4.
+`/sessions`, week of 31 August – 6 September 2026 (the seed's own current
+week), both viewports, light/`en` and dark/`id` spot-checked (representative,
+the same choice `TC-AD-011`/`TC-PP-010` made for a restyle with no new
+information).
+
+**Steps:**
+
+1. At 1440×900, read each day heading's `left` and the day column's own
+   width.
+2. At 390×844, read every day heading's `left`/`top` in document order.
+3. Toggle theme/locale and repeat a spot check.
+
+**Expected result:**
+
+- 1440×900: seven day columns, each `174.28px` wide (measured on Monday's
+  empty slot, `rounded-xl border border-dashed` element,
+  `getBoundingClientRect().width`) — inside the spec's own "roughly
+  150–170px" budget note, confirmed close enough that the card stacks its
+  content vertically as the spec requires (no chip beside a figure on one
+  line).
+- 390×844: one column — all seven day headings (`Monday 31 August` …
+  `Sunday 6 September`) share `left: 16px`, with `top` strictly increasing in
+  date order (`531.77`, `687.77`, `880.39`, `1073.02`, `1420.08`, `1776.17`,
+  `1974.70`) — every day present, none skipped, none reordered.
+- Both viewports: the week strip's own day-range builder is the existing one
+  (`session-standing`'s consumer, `week-strip-view.ts`) — `TC-DS`/Vitest's
+  `day-range` tests already lock "yields one entry per day, never skips a
+  day"; this case confirms the DOM matches that guarantee, not re-derives it.
+- Dark/`id`: day headings translate (`Senin 31 Agustus` etc. — read live in
+  `TC-MW-009`'s locale pass rather than duplicated here); layout unchanged.
+
+### TC-MW-002 · P0 · Positive — An empty day draws one dashed slot with a neutral chip and no other text
+
+**Preconditions:** `/sessions`, week of 31 August 2026 — Monday 31 August has
+no Session posted for any Activity in "My activities"; 1440×900 and
+390×844, light/`en` and dark/`id`.
+
+**Steps:**
+
+1. Read Monday's cell: border style, radius, face colour, minimum height.
+2. Read the chip inside it — label and colour.
+3. Confirm no other text renders in the cell.
+
+**Expected result:**
+
+- Light: `border: 1px dashed rgb(139, 126, 104)` (`--border`), `border-radius:
+  12px`, face `rgb(255, 255, 255)` (`--card`), `min-height: 96px`
+  (`min-h-24`) — a card, not a rule.
+- The chip reads **"None"** (`t.sessions.boardNothingMark`, `"Kosong"` in
+  `id`) — its own non-enum label, distinct from the `unposted` chip an
+  Activity card shows when only that Activity has nothing posted; colours
+  match the neutral variant measured in `TC-MW-003`
+  (`rgb(240, 233, 219)`/`rgb(74, 92, 82)` light, `rgb(30, 53, 41)`/`rgb(179,
+  193, 182)` dark).
+- No other label, count or control renders in the slot — the empty day stays
+  visible rather than collapsing the week into a short list, per the spec's
+  own "Further Notes."
+
+### TC-MW-003 · P0 · Positive — Every chip state reachable from a member card renders the resolver's variant with the measured colour pair, in both themes
+
+**Preconditions:** live seed fixtures, no writes except where noted (all
+restored — see §22.1): `Rained Out (Cancelled)` (void/cancelled), `Full
+Court Challenge` (neutral/full), `Free Play (Maybe Test)` — Adi seeded MAYBE
+(provisional/maybe), `Weekly Rally Night`/`Singles Ladder` — Adi REGISTERED
+(settled/registered), `Friendly Match` completed, Adi not registered
+(settled/completed), `Scrimmage` completed, Sari/Bima PRESENT
+(settled/present), Basket's Tuesday slot (neutral/unposted), `/payments`
+Badminton this period (provisional/pending), Basket/Futsal/Tennis this period
+(settled/confirmed), the seed's July `Futsal` payment (void/rejected). Two
+non-enum standings created transiently for this case: **held** (Adi reserves
+`Hold Lab (Per-Session Test)`, released immediately after reading) and
+**optedOut** (Adi withdraws from `Futsal Friday`, whose Dues are Confirmed
+this period so the release forfeits rather than deletes the row; re-claimed
+immediately after reading — see §22.1 for the restore proof).
+
+**Steps:**
+
+1. For each fixture, read the chip's exact `textContent`, and its computed
+   `background-color`/`color`/`border`, in light and dark.
+2. Confirm the chip's shape is identical across all thirteen label keys plus
+   the two non-enum standings: `rounded-full`, `border`, `padding: 4px 10px`,
+   `font-size: 11px`, `font-weight: 700` — one shape, one component
+   (`Chip`/`StatusChip`), never a per-surface reimplementation.
+
+**Expected result — measured colour pairs (light / dark), both confirmed live
+except where noted:**
+
+| Variant | Labels reached live | Light `bg` / `color` | Dark `bg` / `color` |
+|---|---|---|---|
+| `settled` | Registered, Present, Completed, Confirmed (payment) | `rgb(221, 242, 228)` / `rgb(19, 107, 63)` (`#DDF2E4`/`#136B3F`) | `rgb(18, 51, 31)` / `rgb(62, 210, 126)` (`#12331F`/`#3ED27E`) |
+| `provisional` | Maybe, Pending (payment), **held** (`Reserved`, non-enum, carries a `Pay by HH:MM` sub-line from `holdExpiresAt`) | `rgb(250, 235, 214)` / `rgb(138, 71, 8)` (`#FAEBD6`/`#8A4708`) | `rgb(56, 41, 15)` / `rgb(242, 162, 74)` (`#38290F`/`#F2A24A`) |
+| `void` | Cancelled, Rejected (payment) | `rgb(248, 227, 225)` / `rgb(158, 43, 37)` (`#F8E3E1`/`#9E2B25`) | `rgb(58, 29, 26)` / `rgb(240, 128, 120)` (`#3A1D1A`/`#F08078`) |
+| `neutral` | Full, Unposted, **optedOut** (`Opted Out` / `"Batal Ikut"`, never the stored `ABSENT`), the week-strip's own `None`/`Kosong` | `rgb(240, 233, 219)` / `rgb(74, 92, 82)` (`#F0E9DB`/`#4A5C52`) | `rgb(30, 53, 41)` / `rgb(179, 193, 182)` (`#1E3529`/`#B3C1B6`) |
+
+- Every colour pair above matches the pair `TC-PP-014` and `#149`'s own
+  comment already cite for the same variant — one token set, one resolver,
+  confirmed consistent between the email shell, the public threshold pages
+  and every member card in this run.
+- No card, at any surface walked in this ticket, ever renders the literal
+  enum string `ABSENT` or `NO_SHOW` — every label comes from
+  `ChipLabelKey`'s own vocabulary (`Opted Out`/`No-Show`, `chips.optedOut`
+  reads `Batal Ikut`, `chips.noShow` reads `Tidak Hadir`, never observed
+  live — see "Not met").
+
+### TC-MW-004 · P0 · Positive — Claiming a Seat from a card holds it on money not yet sent, and the card reflects it in place
+
+**Preconditions:** Adi (`member@xclub.local`); `Hold Lab (Per-Session Test)`
+(Badminton, 18:00–20:00, `maxPlayers` 8, fee 25000), 6 of 8 seats free, Adi
+not yet registered, his Badminton Dues unpaid this period.
+
+**Steps:**
+
+1. Read the card: free-seat figure, action label.
+2. Press **Claim & pay** (via `POST /api/sessions/{id}/reserve`, the same
+   route the button calls — `src/components/sessions/seat-action.tsx`).
+3. Read the card again without navigating away.
+
+**Expected result:**
+
+- Before: figure **"6 free of 8"**, action **"Claim & pay"** (`isPaid` true —
+  fee > 0, Dues not covering it).
+- `POST /api/sessions/cmtfdjjd7007hgcdfddn6hgfd/reserve` → **201**
+  `{"payUrl": "/payments/upload"}` (Adi's Badminton mode is MONTHLY, so the
+  bill is the monthly upload, never the per-Session pay page).
+- After (in place, no reload needed for the API check; a real click would
+  follow `payUrl`): chip **"Reserved"**, sub-line **"Pay by 13:00"** — the
+  provisional/**held** chip from `TC-MW-003`, `holdExpiresAt` exactly 60
+  minutes after the reservation instant (`holdDurationMinutes` seed default);
+  action flips to **Withdraw**. DB: attendance count for the Session
+  unchanged in the visible seat-holding total until read again — the write is
+  the row itself (`REGISTERED`, `holdExpiresAt` non-null), matching
+  `payments.ts:reserveSeat`'s documented shape.
+- Cleaned up immediately after reading (§22.1): `DELETE …/attendance` → 200,
+  restoring the seed's original 2 REGISTERED rows.
+
+### TC-MW-005 · P0 · Positive — Withdrawing from a card releases or forfeits the Seat, and the card's own reason line matches which one happened
+
+**Preconditions:** Adi; `Futsal Friday` (Fri, `maxPlayers` 12, fee 15000),
+Adi REGISTERED, his Futsal Dues **Confirmed** this period (a paid month, so
+release is a forfeit, never a deletion — `payments.ts:releaseSessionSeat`).
+
+**Steps:**
+
+1. Read the card: chip, note.
+2. Press **Withdraw** (`DELETE /api/sessions/{id}/attendance`).
+3. Read the card again; read the session's own facts card.
+
+**Expected result:**
+
+- Before: chip **Registered**, facts card note **"Quota met (7/4)"**.
+- `DELETE` → **200** `{"success": true, "isForfeited": true}`.
+- After: chip **"Opted Out"** (`"Batal Ikut"` in `id`) — neutral variant per
+  `TC-MW-003`, sub-line **"You released this Seat."**; action card reads
+  **"Kamu batal ikut sesi ini. Iuranmu menanggung satu bulan, bukan sesi ini,
+  jadi tidak ada pengembalian dana."** (id; the en pair is the same sentence
+  `TC-MS-010` already locks) — the forfeit sentence, never the plain release
+  one, because Dues already paid for the month. Row **kept** as `ABSENT`, not
+  deleted — `_count.attendances` (seat-holding only) drops by exactly one
+  (`7 → 6`).
+- Restored immediately (§22.1): `POST …/reserve` → **201** `{"payUrl":
+  null}` (a permanent, already-funded seat needs no hold), facts card back to
+  **"Quota met (7/4)"**, chip back to **Registered** — confirmed by re-read,
+  not assumed.
+
+### TC-MW-006 · P0 · Negative — Claiming a card whose Session went stale under it: the server's current truth wins, not the card's
+
+**Preconditions:** a sentinel Session (`TC-MW Sentinel Stale`, Badminton,
+11 September 2026 18:00–19:00, `maxPlayers` 10, fee 0, created via `POST
+/api/sessions` as admin — see §22.1), SCHEDULED and open when the card is
+first read.
+
+**Steps:**
+
+1. As Adi, read the card — action available (>24h out, open).
+2. Without Adi reloading, cancel the Session as an Admin (`PATCH
+   /api/sessions/{id}` `{ "status": "CANCELLED" }`).
+3. As Adi, press the card's still-rendered Claim action (`POST …/reserve`)
+   against the now-stale row.
+
+**Expected result:**
+
+- Step 1: Session open, `SessionNotRegisterableError` not yet applicable.
+- Step 2: `PATCH` → **200**, `status: "CANCELLED"`.
+- Step 3: `POST …/reserve` → **400** `{"error": "This session is not open
+  for registration."}` (`t.sessions.notRegisterable`,
+  `SessionNotRegisterableError` re-checked **inside** the row-locked
+  transaction in `payments.ts:reserveSeat` — the card's own stale render
+  never gets to write anything, because the lock re-reads the row's current
+  `status` before any capacity or seat logic runs).
+- Cleaned up (§22.1): sentinel Session deleted; no Attendance row was ever
+  created by the refused call.
+
+### TC-MW-007 · P0 · Negative — Claiming a card whose RSVP window has already closed
+
+**Preconditions:** a sentinel Session (`TC-MW Sentinel Closed`, Badminton,
+2 September 2026 06:00–08:00 — already in the past relative to this run,
+so `isRsvpClosed` is unconditionally true; `maxPlayers` 10, fee 25000),
+created as admin.
+
+**Steps:**
+
+1. As Adi, press the card's Claim action.
+
+**Expected result:**
+
+- `POST …/reserve` → **403** `{"error": "RSVP closed"}`
+  (`t.sessions.rsvpClosed`) — the pre-transaction gate in
+  `src/app/api/sessions/[id]/reserve/route.ts:78-80`, checked against
+  `RSVP_CLOSE_HOURS_BEFORE = 24` (`src/lib/rsvp.ts:10`) before the row lock
+  is even taken.
+- Cleaned up (§22.1): sentinel Session deleted; no Attendance row was ever
+  written.
+
+### TC-MW-008 · P0 · Negative — Claiming a card for a Session that filled in the meantime
+
+**Preconditions:** a sentinel Session (`TC-MW Sentinel Full`, Badminton, 10
+September 2026, `maxPlayers` 2, fee 0), filled to 2/2 by two other members
+(`fajar.nugroho@xclub.local`, `maya.sari@xclub.local` — both already Badminton
+MONTHLY members, so `ensureMembership` was a no-op and no Membership row was
+created) via the same `POST …/reserve` route the card's button calls.
+
+**Steps:**
+
+1. As Adi, press the card's Claim action against the now-full Session.
+
+**Expected result:**
+
+- `POST …/reserve` → **409** `{"error": "Session Full"}`
+  (`t.sessions.sessionFull`, `SessionFullError` thrown inside
+  `payments.ts:reserveSeat`'s row-locked transaction once the seat-holding
+  count of *other* attendees is re-read at `>= maxPlayers` under the lock —
+  never trusts the capacity figure the stale card already painted).
+- Cleaned up (§22.1): both seats released, sentinel Session deleted.
+
+### TC-MW-009 · P0 · Positive — The dashboard's stat cards, dues notice card and per-Activity cards, both themes and locales
+
+**Preconditions:** Adi; `/dashboard`; light/`en` and dark/`id`, 1440×900.
+Dashboard's stats area is **three** cards at `main` at `c315c21` — #172's
+fourth (attendance sparkline) card lands after this branch and is explicitly
+out of this record (covered by `TC-IN`/#173).
+
+**Steps:**
+
+1. Read the three stat cards' face, radius, and figures.
+2. Read the dues notice card (present because Adi's Badminton Dues are
+   unpaid this period).
+3. Read one Activity card's header (icon tile, name, payment-mode chip) and
+   its compact Session cards.
+4. Toggle theme/locale and repeat.
+
+**Expected result:**
+
+- Light: stat cards `rgb(255, 255, 255)` face, `border-radius: 12px`, no
+  border (shadow-only lift) — **Attendance 0% this month**, **Upcoming 8
+  sessions**, **Dues 1 unpaid**.
+- Dues notice card: `rgb(250, 235, 214)` face, `1px solid rgb(138, 71, 8)`
+  border, `border-radius: 12px` — the provisional wash applied to the whole
+  card, not just a chip — reads **"Badminton dues unpaid · September ·
+  Rp 75.000"**, action **"Pay now"** linking to `/payments/upload`.
+- Badminton's Activity card carries every chip state a compact Session card
+  can show in one read: Cancelled, held (Reserved, transient — see
+  `TC-MW-004`), Full, Maybe, Registered — matching `TC-MW-003`'s colour
+  table exactly (same component, same tokens).
+- Basket's card, with nothing posted this week, shows **"Unposted"**
+  (neutral) rather than being omitted — the empty-state rule the spec names.
+- **Finding, flagged rather than fixed or filed (see "Not met"):**
+  `TC-MS-013` (§17) asserts dashboard cells carry **no** claim/withdraw
+  control. This build's dashboard cards **do** carry one (`Claim & pay` /
+  `Withdraw`, real, working buttons) — the spec's own Implementation
+  Decision (dashboard Activity cards "must all resolve state and action
+  through the shared resolvers", the same `slotActionFor` the week strip
+  uses) makes this the *intended* Rally behaviour, not a regression. §17 is
+  out of this ticket's edit boundary (§16–21 untouched, per brief); this is
+  reported for a human/owner to update `TC-MS-013`'s own expected result
+  rather than silently revived, softened, or misfiled as a bug.
+- Dark/`id`: card faces `rgb(24, 44, 34)`; Basket icon-less initial tile ("B")
+  and Tennis ("T") render their letter fallback correctly on this surface —
+  **#198** (admin Sessions register never renders the Activity icon) does
+  **not** reproduce here; both Badminton (`feather`) and Futsal (`target`)
+  icons render as real icons, confirming the defect is admin-surface-only.
+
+### TC-MW-010 · P0 · Positive — Session detail's header, facts, players and action cards, both themes and locales, including the own-Seat-over-lifecycle precedence
+
+**Preconditions:** `Weekly Rally Night` (Adi REGISTERED, SCHEDULED),
+`Live Pickup (Ongoing)` (Adi REGISTERED, session status ONGOING), `Friendly
+Match` (COMPLETED, Adi not registered); light/`en` and dark/`id`.
+
+**Steps:**
+
+1. Read the header card (Activity, title, date/time, venue, chip), the facts
+   card (date, duration, map link, fee), the players card (avatars, names,
+   attendance chips, own row marked "(you)"), and the action card.
+2. Read the same for `Live Pickup (Ongoing)` and `Friendly Match`.
+3. Toggle theme/locale and repeat one combination.
+
+**Expected result:**
+
+- `Weekly Rally Night`: header chip **Registered**; players card **"18/24"**;
+  action card **"Are you playing?"**, **Cancel Registration** +
+  **Contact Admin (WhatsApp)**; card face `rgb(24, 44, 34)` dark /
+  `rgb(255, 255, 255)` light, `border-radius: 12px` on every card — same
+  token as every other surface in this suite.
+- `Live Pickup (Ongoing)`: header chip still **Registered**, *not* Ongoing —
+  own-Seat state (precedence 4) beats Session lifecycle (precedence 5) per
+  `session-standing.ts`'s documented order; facts card independently notes
+  **"Quota met (6/6)"**; action card **"RSVP closed"** (RSVP window closed
+  before the session started).
+- `Friendly Match` (COMPLETED, Adi not registered): header chip **"Selesai"**
+  (Completed, settled variant); action card **"Session Completed"** in place
+  of any RSVP control; players card lists only the two seat-holding
+  attendees (`PRESENT`, chip **"Hadir"**) — a third `ABSENT` row on this same
+  Session is confirmed present in the database but never rendered here,
+  by the page's own deliberate query (`src/app/(main)/sessions/[id]/page.tsx:38-42`,
+  `where: { status: { in: ['REGISTERED', 'MAYBE', 'PRESENT'] } }` — "ABSENT
+  rows … are opt-out markers, not participants — hide them"); `NO_SHOW` is
+  excluded by the same clause. This is why `TC-MW-003`'s `void`/`noShow`
+  chip was not observed live anywhere in member surfaces (see "Not met").
+- Dark/`id`: chip labels translate (**"Terdaftar"**, **"Selesai"**,
+  **"Hadir"**); no English leak found in either page's text.
+- The share card (`share-session-card.tsx`) still consumes the retired
+  `border-rule`/`bg-tile` tokens and a hardcoded `text-green-600`, already
+  filed as **#174** and out of this ticket's surfaces — not re-filed.
+
+### TC-MW-011 · P0 · Positive — The pay flow's amount, bank-account and proof-upload cards, both the monthly and the per-Session route
+
+**Preconditions:** Adi (MONTHLY Badminton, dues unpaid) for
+`/payments/upload`; `yoga.saputra@xclub.local` (PER_SESSION Badminton) for
+`/sessions/{id}/pay`, reached by reserving `Hold Lab (Per-Session Test)`
+(already REGISTERED and funded there — the call was a documented no-op, see
+§22.1).
+
+**Steps:**
+
+1. On `/payments/upload`, pick Badminton and read the amount field, the bank
+   card, the proof-upload card and the submit action.
+2. On `/sessions/{id}/pay`, read the same four elements.
+
+**Expected result:**
+
+- Both pages: Amount field is `readOnly`, note names who set it
+  (**"Ditetapkan dari Iuran aktivitas ini untuk bulan ini"** on the monthly
+  route, **"Ditetapkan dari biaya sesi ini"** on the per-Session route);
+  Period field (monthly route only) is also `readOnly`, reading **"September
+  2026"**.
+- Bank-account card, both routes, identical shape: **"Transfer ke"**, **"BCA
+  · 1234567890"**, **"a.n. XClub Community"**, a **Salin** (copy) action —
+  renders only after an Activity is resolved (immediately, on the
+  per-Session route; after picking Badminton from the combobox, on the
+  monthly route).
+- Proof-upload card: **"Bukti Pembayaran (Gambar)"**, drop target reading
+  **"Ketuk untuk upload bukti transfer"** / **"JPG, PNG, WebP · Maks 5MB"**.
+- Submit action `disabled` until a file is attached — **"Kirim untuk
+  ditinjau"** (monthly) / **"Kirim Pembayaran"** (per-Session), each with its
+  own 24-hour review note beneath it.
+- The per-Session route's Amount card correctly reads **"Rp 25.000"** — the
+  Session's own fee, not the monthly Dues figure — confirming the two routes
+  never cross-wire their amount source.
+
+### TC-MW-012 · P0 · Positive — Payments history: the unpaid banner, the monthly dues cards, and history cards grouped by Billing Period
+
+**Preconditions:** Adi; `/payments`; light/`en` and dark/`id`. History
+already carries ≥8 rows across three Billing Periods and three Payment
+states from prior seeded activity (July `Confirmed`/`Rejected`, August/
+September `Confirmed`/`Pending`) — read-only for this case.
+
+**Steps:**
+
+1. Read the unpaid-dues banner, the four per-Activity monthly-dues cards
+   (chip + amount), then the history section grouped by Billing Period.
+2. Read one `Rejected` row's reason line and its recourse link.
+3. Toggle theme/locale and repeat.
+
+**Expected result:**
+
+- Banner: **"1 iuran belum dibayar untuk September"**, names Badminton and
+  `Rp 75.000`, action **Bayar**.
+- Four monthly-dues cards, one per Activity, each with its own chip:
+  Badminton **PENDING**, Basket/Futsal/Tennis **LUNAS**.
+- History grouped under **"SEPTEMBER 2026"** / **"AGUSTUS 2026"** / **"JULI
+  2026"** headings (real `h3`s under the page's `h1`, per #162's fix), each
+  Payment card showing Activity, type, amount (`tabular-nums`, `Rp` grouped,
+  no subunits), submission date and its status chip.
+- The July `Futsal` row: chip **"DITOLAK"** (Rejected, void), beneath it in
+  Secondary Ink (not the status colour) **"Alasan penolakan: wrong amount"**
+  and a WhatsApp recourse link — matching `TC-MS-017`'s own persisted fixture
+  exactly, confirmed still rendering correctly on the new card layout.
+- Dark/`id`: card faces `rgb(24, 44, 34)`; all labels above translate; no
+  English leak.
+
+### TC-MW-013 · P0 · Positive — Profile's identity, memberships and account-actions cards, both themes and locales
+
+**Preconditions:** Adi; `/profile`; light/`en` and dark/`id`.
+
+**Steps:**
+
+1. Read the identity card (avatar, name, email, join date, Edit).
+2. Read one Activity's membership row: join date, Leave action, this
+   period's chip, the payment-mode chooser.
+3. Read the account-actions card (phone, language, theme, sign out).
+
+**Expected result:**
+
+- Identity card: **"Adi Pratama"**, `member@xclub.local`, **"Anggota sejak
+  Jul 2026"** (id), an **Edit** action.
+- Badminton membership row: **"Bergabung Jul 2026"**, **Keluar** (Leave),
+  this period's chip **PENDING** (Badminton dues unpaid), the payment-mode
+  card naming both options with their figures (**"Bulanan · Iuran
+  Rp 75.000/bln"**, **"Per sesi · Biaya Sesi Rp 25.000/sesi"**) and the
+  already-adopted mode noted below (**"Sudah menjadi cara Anda membayar
+  untuk Periode Tagihan September 2026."**).
+- Futsal/Basket/Tennis rows: chip **LUNAS** for each.
+- Account-actions card: phone **628123456789**, language **Bahasa
+  Indonesia**, theme **Terang** (Light), **Keluar** (Sign out) — all in one
+  card, per the spec's "editing one thing does not look like editing
+  everything."
+- Light/`en`: same structure, translated back; card faces `rgb(255, 255,
+  255)`.
+
+### TC-MW-014 · P1 · Positive — Keyboard order and reach on a card: link, then action, Enter writes, focus never lost
+
+**Preconditions:** Adi; `/sessions`, the `Hold Lab (Per-Session Test)` and
+`Free Play (Maybe Test)` cards, 1440×900, both themes (for the ring colour).
+
+**Steps:**
+
+1. Focus the card's link directly; press `Tab` once; read
+   `document.activeElement`.
+2. Wait 500ms (the 0.15s `transition-all` trap) and read the focused
+   button's `border`/`box-shadow`, in light and in dark.
+3. On the `Free Play` card, focus its Claim button and press `Enter`; read
+   `document.activeElement` again after the write settles.
+
+**Expected result:**
+
+- After the link, the very next `Tab` stop is the card's own action button
+  (`"Claim a Seat in Hold Lab (Per-Session Test)"`) — link and action are
+  DOM siblings, never nested, confirming the spec's own accessibility rule
+  ("reachable by keyboard... screen readers announce two things").
+- Focus ring, light theme: `border: 1px solid rgb(75, 49, 184)` (`#4B31B8`,
+  Purple, the **light**-theme `--ring` — distinct from the hero's
+  forced-dark `#B7A4F7` in `TC-PP-007`, confirmed by reading `--ring` off
+  `document.documentElement` directly) plus the `ring-3`/50% halo. Dark
+  theme: `--ring` is `#B7A4F7` (`rgb(183, 164, 247)`), matching `TC-PP-007`.
+- Pressing `Enter` on the Claim button runs the same write a click does
+  (`POST …/reserve` → 201, button label flips to **"Batal ikut"**) and,
+  after the busy state clears, focus is **still on that same button** —
+  `seat-action.tsx`'s own documented behaviour (a disabled button drops
+  focus to `<body>` mid-write; the component re-focuses it once the request
+  settles) rather than losing a keyboard member to the top of the document.
+- Restored immediately after (§22.1).
+
+### TC-MW-015 · P1 · Positive — A Session card's accessible name states day, time, Activity, venue and status in one read
+
+**Preconditions:** the week strip, any populated day cell; a screen reader's
+announcement is read here as the link's accessible name (the
+`aria`-computed name Playwright's snapshot already resolves), per the same
+method `TC-MS-011` used.
+
+**Steps:**
+
+1. Read the accessible name of two cards: one with a free-seat figure, one
+   with a status chip.
+
+**Expected result:**
+
+- `Hold Lab (Per-Session Test)` (before claiming): **"Thursday 3 September,
+  18:00–20:00, Badminton: Hold Lab (Per-Session Test), GOR Cempaka Court 4.
+  6 of 8 seats free."** — day, time, Activity, title, venue, then the figure,
+  in one sentence, on the link; the Claim button is a second, separately
+  announced element (**"Claim a Seat in Hold Lab (Per-Session Test)"**) —
+  never folded into the same name, so a screen reader announces two things
+  as the spec requires.
+- `Rained Out (Cancelled)`: **"Wednesday 2 September, 19:00–21:00, Badminton:
+  Rained Out (Cancelled), GOR Cempaka Court 3. Cancelled."** — the chip's own
+  label closes the sentence in place of a figure, confirming the same
+  sentence shape holds for every footer state, not only the open ones.
+
+### 22.1 Fixtures and the seed
+
+**The seed was left as it was found**, every write recorded before the
+change and re-read after to prove the restore — this run writes more than
+#158's, since claiming and withdrawing a Seat creates and removes
+`Attendance` rows.
+
+**Sentinel Sessions** (`POST /api/sessions` as `admin@xclub.local`, all
+Badminton, all deleted via `DELETE /api/sessions/{id}` at the end of their
+case):
+
+| Sentinel | Used by | Fixture detail | Cleanup |
+|---|---|---|---|
+| `TC-MW Sentinel Stale` | `TC-MW-006` | Created SCHEDULED, cancelled mid-case via admin `PATCH` | `DELETE` → 200 after the refused claim wrote nothing |
+| `TC-MW Sentinel Closed` | `TC-MW-007` | Created dated/timed already inside the 24h RSVP-close window | `DELETE` → 200; no Attendance ever written |
+| `TC-MW Sentinel Full` | `TC-MW-008` | `maxPlayers: 2`, filled by `fajar.nugroho@xclub.local` and `maya.sari@xclub.local` (both pre-existing Badminton MONTHLY members — `ensureMembership` confirmed a no-op, no Membership row created) | Both seats released (`DELETE …/attendance` → 200 each) before `DELETE /api/sessions/{id}` → 200 (the route itself refuses to delete a Session with money/held seats behind it, `409 SESSION_HAS_MONEY`, until they were released first) |
+
+**Attendance round-trips** (all on pre-existing seed Sessions, all restored
+and re-read to confirm the seed's original shape):
+
+| Session | Change | Restore | Confirmed by |
+|---|---|---|---|
+| `Hold Lab (Per-Session Test)` | Adi `POST …/reserve` → 201, held seat created (`TC-MW-004`) | `DELETE …/attendance` → 200 | Re-`GET`: back to the original 2 REGISTERED rows, Adi absent |
+| `Hold Lab (Per-Session Test)` | `yoga.saputra@xclub.local` `POST …/reserve` → 201 `{"payUrl": null}` | none needed | Re-`GET`: attendance rows unchanged — Yoga already held a funded seat there, so `reserveSeat`'s own early-return (`payments.ts:450`) made the call a documented no-op |
+| `Futsal Friday` | Adi `DELETE …/attendance` → 200 `{"isForfeited": true}`, row kept as `ABSENT` (`TC-MW-005`) | `POST …/reserve` → 201 `{"payUrl": null}` | Re-`GET`: `REGISTERED` again, facts card back to "Quota met (7/4)" |
+| `Free Play (Maybe Test)` | Adi `POST …/reserve` → 201 (MAYBE → REGISTERED, `TC-MS-009` re-run); then `Enter`-key claim/withdraw cycle (`TC-MW-014`) | `POST …/attendance {"intent":"MAYBE"}` → 201, twice (once per cycle) | Re-`GET`: final state `MAYBE: 2, REGISTERED: 2` — identical to the seed's original `byStatus` count, and the upsert landed on the same row (`createdAt` unchanged, only `updatedAt` moved) |
+
+No Activity, Payment, Membership or Settings row was created, changed or
+left behind by this ticket. `TESTING.md` is the only tracked file this
+branch changes.
+
+### 22.2 Recorded run — 2026-09-02
+
+Executed once against the dev server (`main` at **`c315c21`**, no restart at
+any point in this run), on Next.js 16, at **1440×900** and **390×844**, in
+both themes and both locales (representative combinations per case, not a
+full cross-product — the same choice `TC-AD-011`/`TC-PP-010` made), through
+the Playwright MCP against the running app, signed in from `/auth/dev`, with
+direct `fetch` calls from the signed-in page for the API-level assertions
+(refusal status codes, capacity counts) the MCP's DOM tools can't read
+directly.
+
+| Case | Priority | Result |
+|---|---|---|
+| TC-MW-001 | P0 | **Pass** — 7 columns at 1440×900 (174.28px each), 1 column (7 headings, `left:16px`, increasing `top`) at 390×844, both themes/locales spot-checked |
+| TC-MW-002 | P0 | **Pass** — dashed `1px` `#8B7E68` slot, `12px` radius, `96px` min-height, neutral "None"/"Kosong" chip, nothing else in the cell |
+| TC-MW-003 | P0 | **Pass, with one gap noted** — 4 of 4 chip variants confirmed live in both themes across 10 of 13 label keys plus both non-enum standings (`held`, `optedOut`); `noShow` and `ongoing` not observed live for a sourced, by-design reason (see "Not met") |
+| TC-MW-004 | P0 | **Pass** — `POST reserve` → 201 `payUrl:"/payments/upload"`, chip flips to Reserved/"Pay by 13:00", restored and re-read |
+| TC-MW-005 | P0 | **Pass** — `DELETE attendance` → 200 `isForfeited:true`, chip flips to Opted Out with the forfeit sentence verbatim, restored to Registered and re-read |
+| TC-MW-006 | P0 | **Pass** — stale card's claim after an admin cancel → **400** `"This session is not open for registration."`, nothing written |
+| TC-MW-007 | P0 | **Pass** — claim inside the closed RSVP window → **403** `"RSVP closed"`, nothing written |
+| TC-MW-008 | P0 | **Pass** — claim on a 2/2-full sentinel → **409** `"Session Full"`, nothing written |
+| TC-MW-009 | P0 | **Pass, one finding flagged (not a bug)** — 3 stat cards (#172's 4th correctly absent), dues notice card wash `#FAEBD6`/`#8A4708`, Activity cards show every chip in `TC-MW-003`'s table; `TC-MS-013` conflict recorded, not resolved here (see "Not met"); #198 does not reproduce on this surface |
+| TC-MW-010 | P0 | **Pass** — header/facts/players/action cards read correctly on 3 Sessions across 3 lifecycle states; own-Seat precedence over lifecycle confirmed live (`Live Pickup (Ongoing)` shows Registered, not Ongoing); #174's retired tokens on the share card noted, not re-filed |
+| TC-MW-011 | P0 | **Pass** — amount/bank/proof cards identical in shape across the monthly and per-Session routes, each amount sourced correctly (`Rp 75.000` vs `Rp 25.000`) |
+| TC-MW-012 | P0 | **Pass** — unpaid banner, 4 monthly-dues cards, history grouped by 3 Billing Periods, the persisted `TC-MS-017` Rejected fixture still renders its reason line and recourse link correctly |
+| TC-MW-013 | P0 | **Pass** — identity/memberships/account-actions cards read correctly in both themes |
+| TC-MW-014 | P1 | **Pass** — link-then-action Tab order confirmed sibling (not nested); ring `#4B31B8` light / `#B7A4F7` dark; `Enter` writes and keeps focus on the same button |
+| TC-MW-015 | P1 | **Pass** — accessible name states day/time/Activity/venue then the chip or figure, on two representative cards; action is a separately announced sibling |
+
+**Summary.** 15 cases, all written by this ticket. **15 executed, 15 Pass, 0
+Fail, 0 Not run.** One finding recorded rather than treated as pass/fail/bug
+(`TC-MW-009`'s note on `TC-MS-013`, below) and one gap in variant coverage
+explained by source (`TC-MW-003`'s `noShow`/`ongoing`, below) — neither
+blocks any acceptance criterion, both are named honestly rather than
+smoothed over.
+
+#### `TC-MS-*` re-run
+
+The behavioural `TC-MS-*` cases (§17) were re-run against this same build.
+No geometric case was resurrected — the nine cases §17 already marks
+`Superseded`/`Partly superseded by Rally` (`TC-MS-004`, `005`, `007`, `008`,
+`012`, `014`, `016`, `017`, `019`, `021`) were **not** re-asserted on their
+retired geometry; only their still-live behavioural half was exercised,
+where this run touched the same surface anyway.
+
+| Case | Result |
+|---|---|
+| TC-MS-001 | **Pass** — Eka's `/payments/upload` heading, body naming Futsal + September 2026, `effectiveMode: null` triple, unchanged |
+| TC-MS-002 | **Pass** — Eka's Badminton row in "All activities" carries the free-seat figure and **0** buttons — no claim control on an unjoined Activity |
+| TC-MS-003 | **Pass** — Yoga's `/payments/upload` heading names Badminton, `effectiveMode: "PER_SESSION"` |
+| TC-MS-009 | **Pass** — claim moved `MAYBE: 2→1`, `REGISTERED: 2→3` exactly; `payUrl: null`; restored |
+| TC-MS-010 | **Pass** — re-run as `TC-MW-005`'s own fixture; forfeit sentence, Opted Out state, row kept not deleted, restored |
+| TC-MS-011 | **Pass** — Tab order is DOM order; `Enter` releases and re-claims correctly; focus never dropped to `<body>` |
+| TC-MS-013 | **Fails against this build — flagged, not fixed or filed.** See `TC-MW-009`'s note: the new Rally dashboard cards intentionally carry claim/withdraw controls per #159/#160's own Implementation Decisions, contradicting this case's "no control" assertion. This is the shipped spec's own decision, not a regression — `TESTING.md` §17 needs an owner's update to `TC-MS-013`'s expected result, which is outside this ticket's edit boundary (§16–21 untouched). Not treated as a `type:bug` (nothing is broken) and not silently revived or softened. |
+| TC-MS-015 | **Pass** — re-run in substance via `TC-MW-004`'s Hold Lab fixture: `POST reserve` → 201 with a `payUrl`, hold created, restored |
+| TC-MS-016/017 | **Pass, read-only** — the persisted PENDING→Rejected fixture from a prior run (`TC-MW-012`'s `Futsal` July row) still renders correctly on the new card layout; the upload/reject write cycle itself was not re-run (would require a new fixture cycle no case here calls for) |
+| TC-MS-018 | **Pass** — Amount/Period fields `readOnly` with a naming note on both the monthly and per-Session pay routes; `Rp` tabular formatting confirmed in `id` |
+| TC-MS-019 | **Pass** — 4 equal rail cells (94/94/94/93px) at 390×844, active cell `aria-current="page"`, Lime `#D8F25E`/Black Green `#0E1F17`, "Iuran" (id short label) not clipped |
+| TC-MS-020 | **Pass** — `<main>` `padding-bottom: 96px` confirmed below the 768px breakpoint, the layout-level clearance the case's own expected result describes (not re-measured per page, consistent with the case's "reserved once by layout" framing) |
+| TC-MS-022 | **Pass** — no English leak found in `id` across session detail, payments, payments/upload, `/sessions/{id}/pay`, profile |
+
+**Summary.** 13 live behavioural cases re-run, **12 Pass, 1 flagged (`TC-MS-013`,
+not a Fail in the code-defect sense — see above), 0 Not run.**
+`TC-MS-016`/`TC-MS-017` counted once as a read-only pass; the nine geometric/
+superseded cases were left exactly as §17 already marks them.
+
+**Not met.**
+
+- **`TC-MS-013` vs. this build's dashboard cards** (above) — needs a human or
+  a future ticket to update §17's own expected result; left unedited per
+  this ticket's §16–21 boundary.
+- **`void`/`noShow` and `settled`/`ongoing` chip variants were not observed
+  live** on any member surface walked in this run. `noShow` is excluded by
+  the Session detail page's own query (`page.tsx:38-42`,
+  `where: { status: { in: ['REGISTERED', 'MAYBE', 'PRESENT'] } }` — a
+  `NO_SHOW` or `ABSENT` row is never fetched for the players card by
+  design), and no other member card renders another member's attendance
+  status at all. `ongoing` is masked whenever the viewer holds a Seat
+  (own-Seat precedence beats lifecycle, confirmed live in `TC-MW-010`); an
+  ONGOING Session with no seed member both *unregistered* and reachable from
+  a member surface was not found without minting a new sentinel Attendance
+  row for a member not otherwise used in this suite, which was judged out of
+  proportion to the value of one more colour confirmation already locked by
+  `session-standing.test.ts`/`status-chip.test.ts`. Both are resolver-logic
+  facts confirmed by reading the source, not by rendering.
+- **The `info` chip variant** is declared and styled
+  (`CHIP_VARIANTS` in `status-chip.ts`) but no domain state resolves to it
+  anywhere in the app (confirmed by reading all three `*_CHIPS` tables) — by
+  design, not a gap this ticket could close.
+- **The `id`/theme cross-product** was spot-checked (one light/`en`, one
+  dark/`id` combination) per surface, not swept across all combinations at
+  both viewports — the same representative-check choice `TC-AD-011`/
+  `TC-PP-010` made, for the same reason (a restyle of already-correct
+  behaviour, not a new decision surface).
+- **`TC-MS-016`/`TC-MS-017`'s write path** (upload a Proof, then reject it)
+  was not re-exercised end-to-end; the persisted result of a prior run was
+  read and confirmed correct on the new layout instead, since minting a new
+  Payment fixture for cards already proven correct in `TC-MW-012` would have
+  added risk (another admin-reviewed Payment to clean up) without new
+  information.
+- **SonarQube.** No scanner is wired into this repository's CI for this
+  ticket to run; `TESTING.md` is the only file this branch changes, so no
+  source was newly exposed to review. Said plainly rather than claiming a
+  scan that did not happen.
