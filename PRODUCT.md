@@ -83,8 +83,8 @@ Cash-transfer reality is built in, not worked around: dues are settled by bank t
 - No payment gateway, no automated reconciliation. Proof review is human.
 - **Email exists; SMS and push do not.** `src/lib/email/` ships Gmail SMTP via nodemailer, with a shared bilingual HTML shell and one file per template. Sends are best-effort by design — guarded by a configuration check, queued after the response, logged on failure, never thrown — so no user-facing flow may depend on delivery succeeding.
 - Serverless database access is pool-constrained (1 connection per function in production); Supabase service-role storage access is server-only and must never reach the browser.
-- **The automated net is narrow and deliberate.** Vitest runs on `npm test` over pure logic in `src/lib/__tests__/`; anything touching Prisma, Supabase, or the DOM is not covered, and `docs/test-cases/` holds 14 manual end-to-end cases and remains the only net for those. Choose the instrument by what is being checked: a data property of a value belongs in Vitest, a syntax pattern belongs in ESLint (which is already a pre-commit hook), and a rule with neither is a rule that leaks.
-- Coding standards are enforced: 40-line functions, 300-line files, max 3 levels of nesting, no magic numbers.
+- **The automated net is narrow and deliberate.** Vitest runs on `npm test` over pure logic in `src/lib/__tests__/`; anything touching Prisma, Supabase, or the DOM is not covered, and `docs/test-cases/` holds 14 manual end-to-end cases and remains the only net for those. Choose the instrument by what is being checked: a data property of a value belongs in Vitest, a syntax pattern belongs in ESLint (which runs in CI on pull requests), and a rule with neither is a rule that leaks.
+- Coding standards are documented, not enforced: 40-line functions, 300-line files, max 3 levels of nesting, no magic numbers — no tool checks the length or nesting rules.
 
 **Decided, not yet built**
 
