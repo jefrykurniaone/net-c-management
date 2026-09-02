@@ -6286,3 +6286,495 @@ superseded cases were left exactly as §17 already marks them.
   ticket to run; `TESTING.md` is the only file this branch changes, so no
   source was newly exposed to review. Said plainly rather than claiming a
   scan that did not happen.
+
+## 23. Insights charts — dues, money by Activity, fill rate, attendance (`TC-IN-*`)
+
+Spec [#146](https://github.com/jefrykurniaone/net-c-management/issues/146)
+(`spec:rally-insights`, repo copy `docs/spec-rally-insights-v1.md`) added four
+charts, each backed by its own pure resolver: **Dues collected vs owed**
+(bars, #170) and **Money by Activity** (donut) / **Seats filled** (line)
+(both #171) on the admin dashboard, and **Member attendance** (sparkline,
+#172) on the member dashboard. All four compose #169's `ChartFigure`
+wrapper — the seam where a series becomes a figure with a caption, an
+accessible text list of its own values, and a neutral empty state.
+
+This area tests the whole of that: every chart's drawn values against the
+seed in both themes and locales at both viewports; the text list against
+the drawn shape; empty states; tooltip content against the text list;
+keyboard reach and focus, both on the text-list disclosure and on Recharts'
+own `accessibilityLayer`; and the one negative case the spec's own success
+criteria could not close — the admin dashboard's Dues tile and the Dues
+chart computing two different things for the current Period (#203). It does
+not re-test the resolvers' own arithmetic — `dues-collection.test.ts`,
+`money-by-activity.test.ts`, `seats-filled.test.ts` and
+`attendance-sparkline.test.ts` already lock every exclusion and edge this
+suite would otherwise have to re-derive — this suite checks what those
+cannot: the rendered figure, the rendered string, and the browser's own
+tooltip and keyboard behaviour.
+
+### TC-IN-001 · P0 · Positive — The three admin charts and the member sparkline card sit where the spec places them, with no console error
+
+**Preconditions:** `admin@xclub.local` (Admin Satu) for `/admin`;
+`sari.rahma@xclub.local` for `/dashboard`; 1440×900; light/`en`.
+
+**Steps:**
+
+1. On `/admin`, read each chart card's title and its `getBoundingClientRect()`.
+2. On `/dashboard`, confirm the sparkline card's position relative to the
+   three stat cards.
+3. Read the console for both pages.
+
+**Expected result:**
+
+- Admin: "Dues collected vs owed" spans the full row (`x: 288`, `width:
+  1105px`, `right: 1393`); "Money by Activity" and "Seats filled" sit side
+  by side directly beneath it, same `top` (`793.47px`), equal width
+  (`544.5px` each) — exactly the spec's own Placement decision ("collected
+  vs owed wide, donut and fill line side by side").
+- Member: the sparkline card ("Your attendance") renders after the three
+  stat cards (Attendance/Upcoming/Dues) and before "Your Activities" — the
+  full-width fourth card #172's own decision describes, not squeezed into
+  the three-column grid.
+- Zero console errors on either page.
+
+### TC-IN-002 · P0 · Positive — Dues collected vs owed: the text list matches the seed for all six Billing Periods, confirmed by tooltip and keyboard nav too
+
+**Preconditions:** `/admin`, light/`en` and dark/`id`, 1440×900.
+
+**Steps:**
+
+1. Expand the chart's `<details>` disclosure (`View chart values as text` /
+   `Lihat nilai grafik sebagai teks`) and read all six rows.
+2. Hover the September bar pair; read the tooltip.
+3. Tab to the chart (the `<svg>` itself carries `tabindex="0"`,
+   `role="application"` — Recharts' `accessibilityLayer`) and press
+   `ArrowRight` from April; read the tooltip again.
+4. Toggle theme/locale and repeat step 1.
+
+**Expected result:**
+
+- Text list, both themes/locales (English, `en`; Indonesian, `id`,
+  `Iuran terkumpul vs tagihan`):
+
+  | Period | Collected | Owed |
+  |---|---|---|
+  | April 2026 | Rp 0 | Rp 0 |
+  | May 2026 | Rp 0 | Rp 0 |
+  | June 2026 | Rp 0 | Rp 0 |
+  | July 2026 | Rp 0 | Rp 455.000 |
+  | August 2026 | Rp 1.965.000 | Rp 2.420.000 |
+  | September 2026 | Rp 1.965.000 | Rp 2.420.000 |
+
+- Tooltip on the September bars: `"Sep — Collected Rp 1.965.000, Owed
+  Rp 2.420.000"` — matches the text list exactly.
+- `ArrowRight` from April moves the focused point to May; the tooltip
+  updates to `"May — Collected Rp 0, Owed Rp 0"` — keyboard nav and mouse
+  hover read the same data.
+- Dark/`id`: identical six rows, translated (`Terkumpul`/`Tagihan`), no
+  numeric drift between themes or locales.
+- Focus ring on the chart's own container while the `<svg>` holds focus:
+  light `box-shadow: rgb(75, 49, 184) 0px 0px 0px 2px` (`--ring` `#4B31B8`),
+  dark `rgb(183, 164, 247) 0px 0px 0px 2px` (`--ring` `#B7A4F7`) — the same
+  two ring colours `TC-MW-014` measured elsewhere.
+- **Finding, not fixed here (filed, see "Not met"):** the legend row above
+  the axis reads `Collected, Owed` in `en` but `Tagihan, Terkumpul` (Owed,
+  Collected — reversed) in `id`, confirmed by the swatch colour attached to
+  each label (`en`: green `rgb(19, 107, 63)` then purple `rgb(108, 76,
+  240)`; `id`: purple then green). Every figure and every colour-to-label
+  pairing stays correct in both locales; only the two legend entries' left-
+  to-right order swaps. Filed as
+  [#224](https://github.com/jefrykurniaone/net-c-management/issues/224).
+
+### TC-IN-003 · P0 · Positive — Money by Activity: the donut's text list and centre total match the seed, arcs cycle the chart palette by count
+
+**Preconditions:** `/admin`, light/`en` and dark/`id`, 1440×900.
+
+**Steps:**
+
+1. Expand the donut's text-list disclosure; read all four rows and the
+   total.
+2. Hover the first arc; read the tooltip.
+3. Read each `.recharts-sector`'s `fill`.
+4. Toggle theme/locale and repeat step 1.
+
+**Expected result:**
+
+- Text list, both themes/locales: Badminton Rp 1.250.000, Basket
+  Rp 360.000, Futsal Rp 280.000, Tennis Rp 275.000, Total **Rp 2.165.000** —
+  centre figure and text-list total agree by construction (`TOTAL` reads
+  `Rp 2.165.000` on the card face too).
+- Tooltip on the Badminton arc: `"Badminton — Rp 1.250.000"`, matching the
+  text list.
+- Four arcs, `fill` = `var(--color-chart-1)` through `var(--color-chart-4)`
+  in order — the spec's own colour rule ("four or more take the full
+  palette cycling from `--chart-1`") confirmed live with the seed's four
+  Activities.
+- Dark/`id`: same four figures, translated caption ("September 2026: hanya
+  Pembayaran Terkonfirmasi, Iuran dan Biaya Sesi digabung...").
+- **Not exercised (seed has no natural case, see "Not met"):** #214's label
+  collision (`Activity.name` with no unique constraint) and a zero-value
+  Activity in the donut's text list — the seed's four Activities are
+  distinctly named and all four carry non-zero money this Period.
+
+### TC-IN-004 · P0 · Positive — Seats filled: three no-data weeks read as a gap, then five measured points, confirmed by tooltip
+
+**Preconditions:** `/admin`, light/`en` and dark/`id`, 1440×900.
+
+**Steps:**
+
+1. Expand the fill line's text-list disclosure; read all eight rows.
+2. Count `.recharts-dot` elements and read each one's `cx`/`r`.
+3. Hover the dot at `cx: 245.71` (the fourth tick, first real week); read
+   the tooltip.
+4. Toggle theme/locale and repeat step 1.
+
+**Expected result:**
+
+- Text list, both themes/locales: `Week of July 13/20/27, 2026` — **"No
+  Sessions"** (`"Tidak ada Sesi"` in `id`) for all three; then **22% — 12 of
+  54 seats held** (Aug 3), **20% — 9 of 46** (Aug 10), **20% — 9 of 44**
+  (Aug 17), **32% — 19 of 60** (Aug 24), **51% — 39 of 76** (Aug 31, the
+  current week, still filling).
+- Exactly **five** `.recharts-dot` elements (`r="3"`, `opacity: 1`), at
+  `cx` 245.71/311.29/376.86/442.43/508 — the three no-data weeks draw no dot
+  at all, so the line visibly starts at the fourth tick rather than opening
+  at zero, the acceptance criterion the spec calls out by name.
+- Tooltip on the first drawn dot: `"Aug 3 — Seats filled 22%"` — matches
+  the text list.
+- Dark/`id`: identical eight rows translated (`Minggu 3 Agustus 2026 — 22%
+  — 12 dari 54 kursi terisi`); caption reads "Delapan minggu terakhir...".
+- **#222 does not surface here** — this chart's own empty-week sentence is
+  "No Sessions" / "Tidak ada Sesi", not the shared "this period" copy
+  #222 is about; that string is exercised in `TC-IN-006` instead.
+
+### TC-IN-005 · P0 · Positive — Member attendance sparkline for an admitted member matches the seed, tooltip agrees
+
+**Preconditions:** `sari.rahma@xclub.local`, `/dashboard`, light/`en` and
+dark/`id`, 1440×900. Independently recomputed from raw rows today
+(`.claude\scratch\w6-expect-172.mjs sari.rahma@xclub.local`, deliberately
+not importing the resolver): 11 Attendance rows in the eight-week window, 7
+`PRESENT`, `0, 0, 0, 2, 2, 2, 1, 0` by week, current week (31 Aug–6 Sep) 0.
+
+**Steps:**
+
+1. Read the headline figure and label above the line.
+2. Expand the text-list disclosure; read all eight rows.
+3. Hover a dot; read the tooltip.
+4. Toggle theme/locale and repeat steps 1–2.
+
+**Expected result:**
+
+- Headline **"0 / Present this week"** (`"0 / Hadir minggu ini"` in `id`).
+- Text list, both locales: `0, 0, 0, 2, 2, 2, 1, 0` Present across the eight
+  weeks of 13 July–31 August 2026 — matches the independent recomputation
+  exactly, week label by week label (`Minggu 3 Agustus 2026 — 2 Hadir` etc.
+  in `id`).
+- Tooltip on the 3 August dot: `"Aug 3 — Present 2 Present"` — matches the
+  text list's own row.
+- Dark/`id`: identical eight figures; card title **"Kehadiranmu"**.
+
+### TC-IN-006 · P0 · Positive — Member attendance sparkline's empty state: the neutral chip and one sentence, no line, no dots
+
+**Preconditions:** `member2@xclub.local` ("Member 2"), `/dashboard`,
+light/`en`. Confirmed by the same independent script that this user has
+zero `PRESENT` rows ever, of any of the five members it lists as
+possibilities.
+
+**Steps:**
+
+1. Read the chart's place on the page: chip, sentence, presence of an
+   `<svg>` or any `.recharts-dot`.
+
+**Expected result:**
+
+- **EMPTY** chip (neutral variant, `TC-MW-003`'s colour pair) and the
+  sentence **"No data for this period yet."** — no line, no dots, no
+  `<svg>` rendered in the chart's place, matching #169's `values.length ===
+  0` empty contract and #172's "empty card, not an empty line" decision
+  (an all-zero eight weeks never reaches this state; this member has no
+  history at all).
+- **#222 surfaces here, cited not re-filed:** the sentence says "this
+  period" for an eight-week window rather than the eight weeks the caption
+  above it names — the same shared `insights.emptyMessage` string #172's
+  own completion record already flagged and filed.
+
+### TC-IN-007 · P0 · Negative — The Dues tile and the Dues chart disagree for the current Period, a known defect (#203)
+
+**Preconditions:** `/admin`, September 2026 (the current Period). Both
+figures independently recomputed today, raw Prisma reads, no app-code
+import (`.claude\scratch\t173-expect-203.mjs`).
+
+**Steps:**
+
+1. Read the "COLLECTED · SEPTEMBER" stat tile's two figures.
+2. Read the Dues chart's September row from its text list.
+3. Compute the gap on each figure and identify its source.
+
+**Expected result — the acceptance criterion "the dashboard stat card and
+the bar chart agree for the current Period" FAILS, by the pre-existing
+defect #203, not by anything this ticket touched:**
+
+| | Tile (`dashboard-data.ts`) | Chart (`dues-collection.ts`) | Gap |
+|---|---|---|---|
+| Collected | **Rp 2.165.000** (`Rp 2.17M`) — `status: CONFIRMED`, month/year, **no `type` filter** | **Rp 1.965.000** — `status: CONFIRMED`, **`type: MONTHLY`**, month/year | **Rp 200.000** — exactly the seed's `SESSION/CONFIRMED` total (8 rows, Rp 200.000): the tile's collected figure counts Fees as Dues |
+| Owed (`totalDue`) | **Rp 3.060.000** (`Rp 3.06M`) — headcount of every active Membership × the Period's Dues Rate, **no Payment Mode resolution** (Badminton 27×75.000, Basket 6×60.000, Futsal 10×40.000, Tennis 5×55.000) | **Rp 2.420.000** — only Memberships `resolvePaymentMode` resolves to `MONTHLY` in this Period | **Rp 640.000** — the tile bills Dues to members whose Payment Mode is Per-Session or otherwise not Monthly this Period |
+
+- **The chart is right; the tile is wrong**, per #170's own completion
+  record — confirmed again today with fresh figures on this run's seed
+  state (Sept now holds Confirmed Payments, where #170's original record
+  measured a Sept with none yet; the gap's two causes are unchanged).
+- Not fixed here: `dashboard-data.ts` is not this ticket's code, and #203 is
+  the owner's to schedule. Cited, not re-filed.
+
+### TC-IN-008 · P0 · Positive — All four charts collapse correctly at 390×844, with no horizontal scroll on either dashboard
+
+**Preconditions:** `/admin` (Admin Satu) and `/dashboard` (Sari), 390×844,
+dark/`id` (representative, the same choice `TC-AD-011`/`TC-PP-010` made).
+
+**Steps:**
+
+1. Read `document.documentElement.scrollWidth` and `.clientWidth` on both
+   pages.
+2. Read the donut's own colour key's layout (`#215` is about a per-Activity
+   legend overflowing at 390px).
+
+**Expected result:**
+
+- Admin: `scrollWidth`/`clientWidth` both **390** — no horizontal overflow,
+  with all three charts stacked full-width in document order (bars, then
+  donut, then fill line).
+- Member: `scrollWidth`/`clientWidth` both **375** in this run's browser
+  (a reserved-space vertical scrollbar takes 15px of the 390px viewport on
+  a page tall enough to scroll, unlike the admin page at the moment
+  measured) — `scrollWidth === clientWidth` on both pages either way, which
+  is the actual claim ("no horizontal scroll"); see "Not met" for the
+  390-vs-375 note against the brief's cited figure.
+- **#215 does not reproduce on the shipped donut**, confirmed live: its
+  colour key is #171's own custom markup (`<span>` rows), not
+  `ChartLegendContent` — at 390px the four `<span>` rows stack vertically
+  (`x: 32` for all four, increasing `y`), card `scrollWidth` **343px**,
+  no overflow.
+
+### TC-IN-009 · P1 · Positive — Tooltip content matches the text list on hover, for every chart (cross-reference)
+
+Already proved per-chart in `TC-IN-002`–`TC-IN-005` above (dues bars,
+donut, fill line, sparkline each hovered and compared against their own
+text list). Recorded once here as its own line item because the spec names
+it as its own acceptance concern ("tooltip and keyboard focus"), not
+because it needed a fifth, separate walk.
+
+**Expected result:** four for four — bar, pie/donut, and both line charts
+each opened a `.recharts-tooltip-wrapper` whose content equals the
+corresponding text-list row, confirmed by exact string match in
+`TC-IN-002`, `003`, `004` and `005`.
+
+### TC-IN-010 · P1 · Positive — Keyboard reach and focus ring, on the text-list disclosure and on the chart itself
+
+**Preconditions:** `/admin`, 1440×900, light and dark (for the ring
+colour). `<details>`/`<summary>` is the disclosure's own markup — natively
+keyboard-operable with no bespoke handler.
+
+**Steps:**
+
+1. Focus a chart's `<summary>` directly; read its focus ring; press `Enter`;
+   confirm the `<details>` opens and focus stays on the `<summary>`.
+2. Focus the chart's own `<svg>` (`tabindex="0"`); read the container's
+   focus ring; press `ArrowRight`; read the tooltip.
+
+**Expected result:**
+
+- `<summary>` ring: light `box-shadow: rgb(75, 49, 184) 0px 0px 0px 2px`,
+  dark `rgb(183, 164, 247) 0px 0px 0px 2px` — same two `--ring` values
+  measured throughout this run.
+- `Enter` toggles the `<details open>` attribute; `document.activeElement`
+  stays the `<summary>` — no focus loss on write, the same guarantee
+  `TC-MW-014` measured for a real write elsewhere.
+- The `<svg>` itself is reachable (`role="application"`, Recharts'
+  `accessibilityLayer`) and carries the **same** `focus-within:ring-2`
+  ring on its `ChartContainer` parent as the disclosure does; `ArrowRight`
+  moves the focused data point and updates the tooltip (proved in
+  `TC-IN-002`) — keyboard users reach both the summary values and the live
+  chart, not only one.
+- **Not independently confirmed:** a screen-reader-style `aria-live`
+  announcement tied to the arrow-key move — no `[aria-live]` element was
+  found scoped inside the chart container itself; the visual tooltip does
+  update correctly (see "Not met").
+
+### TC-IN-011 · P1 · Positive — Both locales: every chart's title, caption, legend, sentence and number format translates
+
+**Preconditions:** `/admin` and `/dashboard`, `id` locale
+(`document.cookie = 'NEXT_LOCALE=id'`), light theme.
+
+**Steps:**
+
+1. Read every chart's title, caption and empty/no-data sentence in `id`.
+2. Confirm Rupiah and percentage formatting follow `id` conventions.
+
+**Expected result:**
+
+- Titles translate: "Iuran terkumpul vs tagihan", "Pemasukan per Aktivitas",
+  "Kursi terisi", "Kehadiranmu".
+- Captions translate in full, e.g. "Enam Periode Tagihan terakhir, dalam
+  Rupiah. Biaya Sesi tidak dihitung di keduanya." and "Delapan minggu
+  terakhir: kursi terisi dibanding kapasitas, Sesi yang dibatalkan tidak
+  dihitung. Minggu tanpa Sesi menjadi jeda, bukan nol...".
+- Rupiah formatting unchanged by locale (`Rp 1.965.000`, dot thousands
+  separator, no decimal) — money format is not locale-sensitive in this
+  app, confirmed identical in both languages throughout `TC-IN-002`/`003`.
+- Percentages read the same digits with a translated joiner ("22% — 12 of
+  54 seats held" / "22% — 12 dari 54 kursi terisi").
+- **One finding, filed not fixed:** the Dues chart's two-item legend
+  reorders between locales (`TC-IN-002`, [#224](https://github.com/jefrykurniaone/net-c-management/issues/224)).
+
+### TC-IN-012 · P1 · Positive — Chart series colours measured in both themes; the previously-flagged `chart-1` contrast gap is now closed
+
+**Preconditions:** `/admin`, light and dark, reading `--chart-1`…
+`--chart-5` off `document.documentElement` directly, against the card face
+each theme actually paints (`--card`).
+
+**Steps:**
+
+1. Read all five chart tokens and the card face colour in both themes.
+2. Compute the contrast ratio of `chart-1` and `chart-2` (the two colours
+   the Dues chart draws in) against the card face in each theme.
+
+**Expected result:**
+
+- Light: `chart-1 #136b3f`, `chart-2 #6c4cf0`, `chart-3 #e8701a`, `chart-4
+  #9e2b25`, `chart-5 #0e1f17`, card `#fff` (`rgb(255, 255, 255)`).
+- Dark: `chart-1 #3ed27e`, `chart-2 #b7a4f7`, `chart-3 #f2a24a`, `chart-4
+  #f08078`, `chart-5 #d8f25e`, card `#182c22` (`rgb(24, 44, 34)`).
+- **`chart-1`'s light-theme value has changed since #169/#170/#171's
+  heads-ups** (`#3ED27E`, 1.96:1, below the 3:1 series floor) — light and
+  dark now carry *different* hex values (`#136b3f` light vs `#3ed27e`
+  dark), where before both themes shared one hex. Measured today: light
+  `#136b3f` on `#fff` is **6.55:1**; dark `#3ed27e` on `#182c22` is
+  unchanged at **7.54:1**. Both now clear the 3:1 floor comfortably. #152
+  (DESIGN.md finalised, closed) is the ticket that owned this token layer
+  and evidently recoloured `chart-1` for light while leaving dark alone.
+- `chart-2`/`chart-3`/`chart-4` measured today at the exact same ratios
+  #169's original table recorded (`5.34`/`3.10`/`7.43` light,
+  `6.80`/`7.06`/`5.67` dark) — unchanged, confirming only `chart-1` moved.
+  `chart-3` at 3.10 light remains only just over the 3:1 line, as #169
+  already noted; not this ticket's token to move.
+- Not re-filed: this is a positive finding (a prior concern, now resolved),
+  not a new defect.
+
+### TC-IN-013 · P1 · Positive — The donut's own colour key does not overflow at 390×844 (#215 does not reproduce)
+
+Folded into `TC-IN-008` above (see its third bullet) rather than repeated
+here as a separate walk — recorded as its own numbered case because #215 is
+a named, cited defect this suite was asked to check against, not because a
+sixth walk of the same page was needed.
+
+**Expected result:** confirmed in `TC-IN-008` — the donut's custom colour
+key stacks vertically at 390px with no overflow, because #171 drew its own
+markup rather than composing `ChartLegendContent` (the component #215 is
+actually filed against).
+
+### 23.1 Fixtures and the seed
+
+**No write of any kind.** Every chart is read-only content computed from
+existing rows — reading the charts needs no writes, exactly as the brief
+anticipated. `member2@xclub.local` (Member 2) was used read-only for the
+sparkline's empty state; `sari.rahma@xclub.local` (Sari Rahma) and
+`admin@xclub.local` (Admin Satu) for every other case. `TESTING.md` is the
+only tracked file this branch changes; two independent, read-only scratch
+scripts were written and run against the dev database from the main tree
+root (`.claude\scratch\t173-expect-203.mjs`, `.claude\scratch\t173-week-sessions.mjs`)
+and are not part of the diff. `.claude\scratch\w6-census.mjs`,
+`w6-expect-171.mjs` and `w6-expect-172.mjs` (written by the orchestrator in
+wave 6) were re-run rather than re-written, to confirm the seed's money and
+attendance figures are unchanged today.
+
+**The seed's own shape was confirmed unchanged** by the census the
+orchestrator ran today (2026-09-02) before dispatch, and this run touched
+no row: `users 32 · activities 4 · memberships 48 · sessions 25 ·
+attendances 121 · payments 75 · duesRates 4`, same as the wave 6 row.
+
+### 23.2 Recorded run — 2026-09-02
+
+Executed once against the dev server (`main` at **`1f6c656`**, no restart at
+any point in this run), on Next.js 16, at **1440×900** and **390×844**, in
+both themes and both locales (representative combinations per case, not a
+full cross-product — the same choice every prior admin/public suite made),
+through the Playwright MCP against the running app, signed in from
+`/auth/dev`. Tooltip and keyboard-focus assertions used the MCP's own
+`browser_hover`/`browser_press_key` where the target was reachable by
+selector, and a same-tick `dispatchEvent(mouseover/mousemove)` on the
+chart's own DOM node where a unique Playwright locator was not resolvable
+(multiple `<g class="recharts-bar-rectangle">` siblings) — both methods
+opened the same `.recharts-tooltip-wrapper` with the same content, cross-
+checked against each other on the Dues chart.
+
+| Case | Priority | Result |
+|---|---|---|
+| TC-IN-001 | P0 | **Pass** — bars chart full-width (1105px), donut/fill line side by side beneath it (544.5px each, same `top`); sparkline card below the member stats row; zero console errors on both pages |
+| TC-IN-002 | P0 | **Pass, one finding filed** — all six Periods' text-list figures match the seed exactly; tooltip and `ArrowRight` keyboard nav both agree with the text list; ring colours confirmed both themes; legend item order reverses between `en`/`id` — filed as [#224](https://github.com/jefrykurniaone/net-c-management/issues/224), not a data defect |
+| TC-IN-003 | P0 | **Pass** — four Activities' figures and the Rp 2.165.000 total match the seed and the centre figure; tooltip matches; four arcs cycle `chart-1`–`chart-4` |
+| TC-IN-004 | P0 | **Pass** — three no-data weeks read "No Sessions", five real weeks' percentages/counts match the seed exactly; exactly 5 dots drawn, starting at the fourth tick; tooltip matches |
+| TC-IN-005 | P0 | **Pass** — `0,0,0,2,2,2,1,0` Present matches the independent recomputation exactly; headline "0 Present this week"; tooltip matches |
+| TC-IN-006 | P0 | **Pass, #222 cited** — EMPTY chip, "No data for this period yet.", no line/dots for a member with zero PRESENT rows ever; the "period"-for-a-week-window wording is #222, already filed, cited not re-filed |
+| TC-IN-007 | P0 | **Fails against this build — a known, pre-existing defect, cited not fixed.** Tile Rp 2.165.000/Rp 3.060.000 vs chart Rp 1.965.000/Rp 2.420.000; gaps of exactly Rp 200.000 (Fees counted as Dues) and Rp 640.000 (Per-Session members billed for Dues) reproduced and independently recomputed today; cites [#203](https://github.com/jefrykurniaone/net-c-management/issues/203) |
+| TC-IN-008 | P0 | **Pass** — admin `scrollWidth`/`clientWidth` 390/390; member 375/375 (own scrollbar note, see "Not met"); donut colour key does not overflow (#215 does not reproduce) |
+| TC-IN-009 | P1 | **Pass** — cross-reference; four for four tooltip-vs-text-list matches already proved in `TC-IN-002`–`005` |
+| TC-IN-010 | P1 | **Pass, one gap noted** — disclosure and chart both keyboard-reachable with a visible ring in both themes; `Enter` and `ArrowRight` both work and never lose focus; an `aria-live` announcement inside the chart itself was not found (see "Not met") |
+| TC-IN-011 | P1 | **Pass, cross-referencing #224** — every title/caption/sentence translated correctly; money format locale-invariant as designed; the one locale-dependent finding is `TC-IN-002`'s legend order |
+| TC-IN-012 | P1 | **Pass — positive finding** — `chart-1`'s light-theme contrast gap (1.96:1, flagged by #169/#170/#171) is closed (now 6.55:1, theme-differentiated hex); `chart-2`/`3`/`4` unchanged and re-measured identical to #169's original table |
+| TC-IN-013 | P1 | **Pass** — cross-reference; #215 confirmed not reproducing on the shipped donut, detailed in `TC-IN-008` |
+
+**Summary.** 13 cases, all written by this ticket. **13 executed, 12 Pass, 1
+Fail (`TC-IN-007`, a pre-existing defect cited against #203 — not softened,
+not fixed, as the ticket's own acceptance criterion for that comparison
+requires), 0 Not run.** One new defect found and filed
+([#224](https://github.com/jefrykurniaone/net-c-management/issues/224));
+three pre-existing defects cited, none re-filed (#203, #215, #222); one
+prior concern confirmed resolved (`chart-1` contrast, `TC-IN-012`).
+
+**Not met.**
+
+- **The member dashboard's `scrollWidth` measured 375, not the 390 this
+  ticket's own brief cited from wave 6.** Investigated rather than assumed:
+  `document.documentElement.clientWidth` also read 375 at the same moment
+  (`scrollWidth === clientWidth`, so there is no horizontal overflow either
+  way), and the admin dashboard measured 390/390 in the same browser
+  session moments apart — the difference tracks whether the page needed a
+  vertical scrollbar at that instant (a reserved-space, non-overlay
+  scrollbar removes ~15px of width from a taller page), not a regression in
+  either page's own layout. Not re-measured with the exact browser channel
+  wave 6's own harness used, so the discrepancy is reported as an
+  environment/measurement difference rather than resolved.
+- **#214's label collision and a zero-value Activity in the donut** were
+  not exercised — the seed's four Activities are distinctly named and all
+  four carry non-zero money this Period, and minting a duplicate-named or
+  zero-money Activity fixture was judged out of proportion for a chart
+  already correctly excluding zero-money Activities from the donut face
+  and listing them in the text list per spec (a case Vitest's own
+  `money-by-activity.test.ts` already covers at the resolver).
+- **No `[aria-live]` element was found scoped inside any chart container**
+  for the `accessibilityLayer`'s keyboard navigation — the visual tooltip
+  does update correctly on `ArrowRight` (`TC-IN-002`, `TC-IN-010`), so a
+  sighted keyboard user is served; whether a screen reader announces the
+  moved point was not independently confirmed and is not filed, since this
+  is Recharts 3.8's own `accessibilityLayer` behaviour (pinned by #169),
+  not code any of #170–#173 wrote.
+- **`prefers-reduced-motion` honouring** was not independently verified
+  live — the Playwright MCP has no exposed media-feature emulation call in
+  this session's toolset, and stubbing `matchMedia` after a client
+  component has already mounted would not reproduce a fresh page load
+  under the media query. Confirmed instead by reading source: every chart
+  leaves Recharts' `isAnimationActive` at its Recharts-3.8 default
+  (`'auto'`), which is documented to honour the media query, and
+  `dues-collection-chart.tsx`'s own doc comment records the same choice was
+  deliberate ("Left at the default rather than pinned, so the honouring
+  cannot be switched off by accident").
+- **The `id`/theme cross-product** was spot-checked (one light/`en`, one
+  dark/`id` combination) per chart, not swept across all four combinations
+  at both viewports — the same representative-check choice
+  `TC-AD-011`/`TC-PP-010`/`TC-MW-001` made, for the same reason (every
+  chart's underlying figures are locale- and theme-invariant by
+  construction; only strings and colour tokens vary).
+- **SonarQube.** No scanner is wired into this repository's CI for this
+  ticket to run; `TESTING.md` is the only tracked file this branch changes,
+  so no source was newly exposed to review. Said plainly rather than
+  claiming a scan that did not happen.
