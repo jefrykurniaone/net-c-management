@@ -756,7 +756,8 @@ state, checked in `src/` on 2026-09-02:
 | `type-mark` | its own former letterforms | **2**, unresolved — see #223 |
 
 Every alias above except `type-mark` is deleted from `src/app/globals.css`
-(renamed `colors.css` by #174) and `src/app/styles/type-roles.css`;
+and `src/app/styles/type-roles.css` (whose sibling, `board-materials.css`,
+was renamed `colors.css` by #174);
 `src/lib/__tests__/design-tokens.test.ts` now fails the build if any of the
 eight class names reappears anywhere in `src/`. `type-mark`'s `@utility` and
 its two call sites (`components/landing/identity-rail.tsx`,

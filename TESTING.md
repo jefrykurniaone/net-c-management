@@ -412,7 +412,7 @@ case touches an API the expected result names the **HTTP status**.
 Jadwal (ADR 0003):
 
 - **light** — warm off-white grounds carrying Black Green ink. `:root` in
-  `src/app/styles/board-materials.css`.
+  `src/app/styles/colors.css`.
 - **dark** — a real Black Green ground carrying off-white ink, with card faces
   stepping *up* from it. `.dark` in the same file. The public route's hero band
   forces `.dark` regardless of the visitor's preference, deliberately, so every
@@ -459,7 +459,7 @@ bold, would only have to clear 3:1; no pair below relies on that concession.
 
 #### TC-DS-101 · P0 · Positive — Every text pair clears AA in both themes
 
-**Preconditions:** none. Computed from `src/app/styles/board-materials.css`.
+**Preconditions:** none. Computed from `src/app/styles/colors.css`.
 
 **Steps:**
 1. For each row below, read the two token values out of `:root` and out of
@@ -1018,7 +1018,7 @@ after, as numbers — not from what the screen happened to draw.
 This area inherits **§16.0 in full** and restates none of it: the same id /
 priority / type / preconditions / numbered steps / expected-result shape, the
 same P0-P1-P2 meanings, the same two board materials (enamel = `:root`, painted
-board = `.dark`, both in `src/app/styles/board-materials.css`), the same theme
+board = `.dark`, both in `src/app/styles/colors.css`), the same theme
 toggle and `NEXT_LOCALE` switches, the same two viewports (**390 × 844** and
 **1440 × 900**), and the same rule that a contrast case fails when a measurement
 falls **below its target**, not when it differs from the number printed here.
@@ -5518,7 +5518,7 @@ never committed.
 - Card face `#FFFFFF`; details table wash `#FBF8F1`; row labels `#4A5C52`;
   footer divider `#8B7E68`, footer ink `#55675D` — all eight hex values
   matched byte-for-byte against `layout.ts`'s own named constants (themselves
-  duplicated from `board-materials.css` on purpose, per the file's own
+  duplicated from `colors.css` on purpose, per the file's own
   comment — the one permitted palette duplication in the repo).
 - The action button: `background:#3ED27E`, ink `#0E1F17`, `border-radius:
   8px`.
