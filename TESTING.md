@@ -5068,3 +5068,574 @@ the diff.
   file was touched by this ticket (`TESTING.md` only), so there is nothing new
   for it to have found here; the observation is carried forward for
   completeness, as every wave before it has done.
+
+## 21. Public and threshold surfaces — landing bands, Settings caps, hero image, threshold pages, email shell (`TC-PP-*`)
+
+Spec [#143](https://github.com/jefrykurniaone/net-c-management/issues/143)
+(`spec:rally-public`, repo copy `docs/spec-rally-public-v1.md`) rebuilt the
+public route as a band stack (hero, optional about, Activities, optional
+features, footer) with an Admin-editable "Public page" Settings section, a
+hero photograph upload, and restyled the four threshold pages (sign-in,
+onboarding, the waiting room, the shared Session card) and the email shell
+onto Rally. Five tickets landed it: **#153** (public copy, caps, cache
+invalidation), **#154** (the band stack itself), **#155** (the hero image),
+**#156** (the four threshold pages), **#157** (the email shell).
+
+This area tests the whole of that: the page with nothing configured and with
+everything configured, the fold guarantee on the longest permitted headline,
+the hero photograph's cover behaviour and its removal, that a save is visible
+on `/` with no redeploy, keyboard reach on the join action, that the copy caps
+and the hero image's mime/size rule are both enforced at the form and at the
+API (an explicit acceptance criterion), all four threshold pages in both
+themes and locales, and all nine email templates in both locales. It does not
+re-test the copy-cap arithmetic or the fallback-resolution logic Vitest
+already locks (`public-copy.test.ts`, `pitch-budget.test.ts`) — this suite
+checks what those cannot: the rendered pixel result.
+
+### TC-PP-001 · P0 · Positive — Nothing configured: the pattern hero, the dictionary's own copy, no about or features band
+
+**Preconditions:** unauthenticated `/`, the seed's Settings with every
+`publicHero*`/`publicAbout`/`publicFeature*` key and `heroImageUrl` unset, at
+390×844 and 1440×900.
+
+**Steps:**
+
+1. Read the hero band: background, headline, subline, the one action.
+2. Search the DOM for an about band and a features band.
+3. Read the Activities band's cards.
+4. Read the footer.
+
+**Expected result:**
+
+- The hero section carries `dark` and computes `background-color: rgb(14, 31,
+  23)` (`#0E1F17`, forced dark regardless of the page theme); with no hero
+  image the backdrop is the `GridPattern` (`isStretched colorToken='border'`),
+  never a broken `<img>`.
+- Headline reads the dictionary's own pitch, **"A game every week, and a place
+  to play it."**, `type-display` (`clamp(2rem, 4.6vw, 3.5rem)` — measured
+  `56px` at 1440×900, `32px` at 390×844, the clamp's two ends exactly);
+  subline reads **"This community runs the same sessions every week. Pick the
+  ones you want, turn up, and pay your share."**, colour `rgb(179, 193, 182)`
+  (`--secondary-foreground`, the no-photograph branch).
+- The one action reads **"Ask to join this community"**, fill `rgb(62, 210,
+  126)` (`#3ED27E`, PBP Green) on ink `rgb(14, 31, 23)` (Black Green,
+  8.74:1).
+- No about band and no features band in the DOM — `copy.about === null` and
+  `copy.features.length === 0` both render nothing, confirmed by an `h2`
+  sweep finding only `board.head`.
+- Four Activity cards render (Badminton, Basket, Tennis, Futsal, the §2 seed),
+  each with its weekly slot, location, next date or the `Unposted` neutral
+  chip, and its Fee — the same information order `TC-AD-*` never touched.
+- Footer reads "© 2026 XClub Community. Run by its members."
+
+### TC-PP-002 · P0 · Positive — Everything configured: the photograph, the Admin's headline within its cap, the about band, four feature cards
+
+**Preconditions:** Settings' Public page section saved with a headline,
+subline, about paragraph (two lines, one blank line between), four titled
+feature cards and an uploaded hero photograph (all fixtures below); 390×844
+and 1440×900, `en` and `id`.
+
+**Steps:**
+
+1. Read the hero band's headline, subline and backdrop.
+2. Read the about band's head and paragraph.
+3. Read the features band's head and its four cards.
+4. Repeat at both viewports and both UI locales.
+
+**Expected result:**
+
+- Headline reads the Admin's own text verbatim, unchanged by the UI locale
+  (one stored value, both locales, `resolvePublicCopy`'s documented
+  contract); backdrop is a `next/image` with `object-fit: cover` filling the
+  section's own bounds at both viewports (see `TC-PP-004`).
+- Headline and subline draw `rgb(241, 238, 229)` (`#F1EEE5`,
+  `--foreground`) rather than the pattern branch's muted colour — the
+  `hasPhoto` switch in `hero-band.tsx` confirmed live.
+- About band head is the dictionary's **"About this community"**
+  (`"Tentang komunitas ini"` in `id`); the paragraph renders with its blank
+  line preserved (`whitespace-pre-line`, confirmed present in the rendered
+  text).
+- Features band head is the dictionary's **"What you get once you are in"**
+  (`"Yang kamu dapat begitu masuk"` in `id`); exactly four `Card`s render, one
+  per titled slot, each showing its title and its line.
+- The Activities band still renders its four cards, unaffected — the public
+  copy and the Activities data are read through the same
+  `readCachedPublicSettings`/`getPublicLandingData` pair but never conflated.
+- Nothing in the identity rail (community name, logo slot, theme toggle,
+  language switcher, sign-in) changes with the copy.
+
+### TC-PP-003 · P1 · Positive — The longest permitted headline and subline never overlap the join action, at both viewports and both locales
+
+**Preconditions:** headline saved at exactly 48 characters with no word over
+12 letters (`"Community games every week, made for everyone!!!"`, longest word
+`Community`, 9 letters) and subline at exactly 120 characters
+(`"Every single week we open our doors to anyone who wants to play, meet new
+people, and keep a weekly habit alive here!!!!"`); 390×844 and 1440×900, `en`
+and `id` UI locale (the stored value itself does not change with locale — see
+`TC-PP-002` — so this checks the layout guarantee holds regardless of which
+locale's surrounding strings, e.g. the CTA label, render alongside it).
+
+**Steps:**
+
+1. At each viewport/locale combination, measure the headline's bottom edge
+   and the join button's top edge.
+2. Confirm the headline never breaks mid-word short of its own line wrap and
+   the gap between it and the action is positive.
+
+**Expected result:**
+
+- 1440×900, `en`: headline bottom `274.25px`, action top `431.42px`, gap
+  **157.17px**.
+- 1440×900, `id`: same headline (unlocalised), gap **157.17px** — the CTA's
+  longer Indonesian label (`"Minta gabung ke komunitas ini"`) changes nothing
+  above it.
+- 390×844, `en`: gap **144.38px** at the font floor (`32px`), action bottom
+  well inside the 844px fold.
+- 390×844, `id`: gap **144.38px**, action still inside the fold.
+- In every combination the headline and the action are siblings in one flex
+  column (`hero-band.tsx`'s structural guarantee — DESIGN.md's Never-Bleed
+  Rule) with a positive gap; no combination shows the headline's bounding box
+  intersecting the action's.
+- Vitest's `pitch-budget.test.ts` separately locks the *dictionary's own*
+  fallback strings against this same 48/12/120 budget per locale — this case
+  is the Admin-authored boundary value the unit test cannot render pixels
+  for.
+
+### TC-PP-004 · P0 · Positive — The hero photograph covers the band at both viewports
+
+**Preconditions:** the fixture hero photograph from `TC-PP-002` uploaded;
+390×844 and 1440×900.
+
+**Steps:**
+
+1. Read the backdrop `<img>`'s `object-fit` and its bounding box against the
+   hero section's own bounding box.
+2. Confirm the scrim element is present and read the text colours drawn over
+   it.
+
+**Expected result:**
+
+- 1440×900: image rect `{width: 1425, height: 642.17, top: 57, left: 0}`,
+  identical to the hero section's own rect — full-bleed, `object-fit: cover`,
+  no letterboxing.
+- 390×844: image rect `{width: 375, height: 525.61, top: 75, left: 0}`,
+  again identical to the section's own rect.
+- The scrim (`bg-background/65`) sits between the image and the text layer;
+  headline, subline, disclosure and `QuietJoin`'s link all draw
+  `rgb(241, 238, 229)` over it (confirmed live in `TC-PP-002`) — the single
+  colour, single composite the code documents at **4.63:1** against a
+  worst-case white photograph (`hero-band.tsx`'s own arithmetic, re-derived
+  and verified in #155's pull request; not independently re-measured
+  pixel-by-pixel here since the fixture photograph is not white).
+
+### TC-PP-005 · P0 · Positive — Remove returns the pattern; the storage object is gone
+
+**Preconditions:** the hero photograph from `TC-PP-002`/`TC-PP-004` still set.
+
+**Steps:**
+
+1. Click **Remove** (`"Hapus"` in `id`) in the Settings Public page section.
+2. Read `/api/settings`'s `heroImageUrl`.
+3. List the `hero-images` Supabase bucket.
+4. Read unauthenticated `/`'s markup for an `<img>` from that bucket and for
+   the pattern's `<svg>`.
+
+**Expected result:**
+
+- `heroImageUrl` is `""` immediately after the click (no page reload needed).
+- The `hero-images` bucket lists **zero objects** — `deleteHeroImage()`'s
+  `clearHeroImageObjects()` actually removed the file, not only the Settings
+  row.
+- `/` shows no `<img>` from `hero-images` and does show the pattern's `<svg>`
+  — the pattern fallback, confirmed the instant after remove (see
+  `TC-PP-006`).
+
+### TC-PP-006 · P0 · Positive — Cache invalidation is observed immediately after save, with no redeploy
+
+**Preconditions:** the running dev server serving `main` at `e50693c`, no
+restart at any point in this run.
+
+**Steps:**
+
+1. `PATCH /api/settings` with the `TC-PP-002` fixture values as the admin.
+2. Immediately (no wait) `GET /` unauthenticated and search for the new
+   headline, the hero image URL and the about text.
+3. Upload the hero photograph; immediately `GET /` again for the `<img>`.
+4. Remove the hero photograph; immediately `GET /` again for its absence.
+
+**Expected result:**
+
+- All three checks find the new state on the very next unauthenticated `GET`
+  — no wait, no server restart. `invalidatePublicLanding()`'s
+  `revalidateTag(PUBLIC_LANDING_TAG, { expire: 0 })` is what makes this
+  immediate rather than bounded by the one-hour `REVALIDATE_SECONDS` window.
+- Confirmed for both mutation routes that write published keys:
+  `PATCH /api/settings` (copy, headline/subline/about/features) and
+  `POST`/`DELETE /api/settings/hero-image` (the photograph).
+
+### TC-PP-007 · P1 · Positive — The join action is reachable by keyboard with a visible focus ring
+
+**Preconditions:** unauthenticated `/`, nothing configured, 1440×900.
+
+**Steps:**
+
+1. From a fresh load, press Tab repeatedly and read `document.activeElement`
+   after each press.
+2. On reaching the hero's primary action, wait 500ms (focus-ring transition
+   trap) and read its computed border, box-shadow and background/ink.
+
+**Expected result:**
+
+- Tab order: **1** the rail's theme toggle (`aria-label="Toggle theme"`),
+  **2** the language switcher (`aria-label="Switch language"`), **3** the
+  rail's **Sign in** button, **4** the hero's **Ask to join this community**
+  action, **5** `QuietJoin`'s **Already a member? Sign in** — the header rail
+  and the hero content in one linear DOM order, no positioned element skipped
+  or reordered.
+- The action's focus ring: `border: 1px solid rgb(183, 164, 247)` (`#B7A4F7`,
+  `--ring`, Purple) plus a `box-shadow` halo `0px 0px 0px 3px` at the same
+  colour and 50% opacity — the `Button` primitive's own
+  `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50`,
+  not a custom ring this call site had to add.
+- Fill `rgb(62, 210, 126)` / ink `rgb(14, 31, 23)` unchanged by focus.
+
+### TC-PP-008 · P0 · Negative — The public-copy caps are refused at the form and at the API, with the cap named
+
+**Preconditions:** the Settings Public page section, admin session; each
+check restores the field to empty immediately after.
+
+**Steps:**
+
+1. In the Headline field, type 49 `A`s (over the 48-character cap in one
+   word) and read the counter and the `aria-live` refusal text.
+2. Type a 16-character value containing one 13-letter word
+   (`"AAAAAAAAAAAAA ok"`) and read the refusal.
+3. Click **Save Settings** with an over-cap value present and confirm no
+   `PATCH` is sent (client-side refusal).
+4. Bypass the form: `PATCH /api/settings` directly with
+   `publicHeroSubline` at 121 chars, `publicAbout` at 601 chars,
+   `publicFeature1Title` at 33 chars and `publicFeature1Line` at 121 chars,
+   one call each.
+5. Re-`GET /api/settings` and confirm none of the refused values were
+   written.
+
+**Expected result:**
+
+- 49-char headline: counter **"49 / 48"**, `aria-invalid="true"`, refusal
+  **"Too long — 48 characters at most."** (`t.publicCopy.lengthCapRefusal`,
+  `{max}` = 48).
+- 16-char / 13-letter-word headline: counter **"16 / 48"** (length is fine),
+  refusal **"One word is too long — 12 letters at most."**
+  (`t.publicCopy.wordCapRefusal`, `{max}` = 12) — confirms length is checked
+  first and the word rule fires independently of the length cap.
+- Clicking **Save Settings** with the invalid headline produces a toast with
+  the same refusal text and **zero** `PATCH /api/settings` calls in the
+  network log — the form refuses before any request leaves the browser.
+- Direct API calls all return **400** with `{ error, key }`:
+  `publicHeroSubline` → `"Too long — 120 characters at most."`;
+  `publicAbout` → `"Too long — 600 characters at most."`;
+  `publicFeature1Title` → `"Too long — 32 characters at most."`;
+  `publicFeature1Line` → `"Too long — 120 characters at most."` — each names
+  the cap `checkPublicCopyValue` returned, exactly.
+- The follow-up `GET /api/settings` shows none of the five keys above were
+  written — every refusal happened before the `prisma.settings.upsert`.
+- Boundary acceptance (exactly-at-cap succeeds) is Vitest's job
+  (`public-copy.test.ts`) and is not re-proven here; this case is the
+  bypassed-form path the unit test cannot reach.
+
+### TC-PP-009 · P0 · Negative — The hero image's mime/size rule is refused at the form and at the API
+
+**Preconditions:** the Settings Public page section, admin session.
+
+**Steps:**
+
+1. Through the Upload Image control, pick a `.txt` file (`text/plain`).
+2. Through the same control, note the network request the selection
+   produces.
+3. Bypass the form: `POST /api/settings/hero-image` with a `text/plain`
+   blob, then with a valid-mime blob sized `5 * 1024 * 1024 + 1` bytes.
+4. Confirm `heroImageUrl` is unchanged after all three refusals.
+
+**Expected result:**
+
+- The `.txt` selection produces `POST /api/settings/hero-image` → **400**,
+  body `{"error":"Unsupported file format. Use JPG, PNG, or WebP."}`
+  (`t.validation.fileTypeInvalid`, reused from the payment-proof upload
+  rather than a hero-specific string, `hero-image-file.ts`'s own documented
+  choice).
+- **Found, not fixed here:** the selection reaches the network at all —
+  `validateHeroImageFile` is never called client-side
+  (`use-hero-image-upload.ts` has no import of it), only server-side, despite
+  `hero-image-file.ts`'s own doc comment claiming an instant client-side
+  check. The refusal is still correct and nothing is uploaded, so this
+  acceptance criterion ("refusing anything else with a message naming the
+  rule") is met — the round trip is a missed optimisation, not a failure.
+  Filed as [#211](https://github.com/jefrykurniaone/net-c-management/issues/211),
+  `type:bug` + `spec:rally-public`.
+- Direct API calls: wrong mime → **400**
+  `{"error":"Unsupported file format. Use JPG, PNG, or WebP."}`; oversized
+  (5,242,881 bytes, `image/jpeg`) → **400**
+  `{"error":"Maximum file size is 5MB."}` (`t.validation.fileSizeProof`,
+  also reused).
+- `heroImageUrl` is absent/unchanged after all three calls — no upload
+  reached storage on any refused attempt.
+
+### TC-PP-010 · P0 · Positive — Sign-in restyled onto Rally, both themes and locales
+
+**Preconditions:** unauthenticated `/auth/signin`, light/`en` and dark/`id`
+spot-checked (representative, not a full cross-product — the same choice
+`TC-AD-011`/`TC-AD-012` made).
+
+**Steps:**
+
+1. Read the page ground, the card, the title and the Google action.
+2. Read the dev-only `/auth/dev` link's gate and label.
+3. Toggle theme (`localStorage.theme`) and locale (`NEXT_LOCALE` cookie) and
+   repeat.
+
+**Expected result:**
+
+- Light/`en`: ground `rgb(240, 233, 219)` (`#F0E9DB`, beige `--background`,
+  not the retired `bg-primary-soft` lavender wash #156 replaced); card
+  `border-radius: 12px`, `shadow-lift`, face `rgb(255, 255, 255)`; title
+  **"Sign In"** (`type-display`, ink `rgb(14, 31, 23)`); Google button reads
+  **"Continue with Google"**, fill `rgb(62, 210, 126)` on ink
+  `rgb(14, 31, 23)` — the primary `Button` variant (no `variant` prop; the
+  primitive's own `default`), not the retired outline treatment.
+- Dark/`id`: ground `rgb(14, 31, 23)`, card face `rgb(24, 44, 34)`, title
+  **"Masuk"**, button **"Lanjutkan dengan Google"**.
+- The dev-only link (`process.env.NODE_ENV !== 'production'`) is present on
+  this dev server and reads **"Dev login →"** / **"Login dev →"**.
+- `ThresholdRail` carries only the identity mark and the community name
+  (`type-mark`) — no theme toggle, no language switcher, confirmed absent in
+  the DOM, unlike the landing page's `IdentityRail`.
+
+### TC-PP-011 · P0 · Positive — Onboarding restyled onto Rally, both themes and locales
+
+**Preconditions:** signed in as the seed's incomplete-profile member
+("Newbie (No Onboarding)"), redirected to `/onboarding`; dark/`id` and
+light/`en` spot-checked.
+
+**Steps:**
+
+1. Read the ground, the card and the title/welcome line.
+2. Read the Full Name and WhatsApp Number fields and the Activity chips.
+3. Toggle theme/locale and repeat.
+
+**Expected result:**
+
+- Dark/`id`: ground `rgb(14, 31, 23)`, card face `rgb(24, 44, 34)`, title
+  **"Lengkapi Profil"**, submit **"Simpan Profil"**.
+- Light/`en`: ground `rgb(240, 233, 219)`, card face `rgb(255, 255, 255)`,
+  `border-radius: 12px`; title **"Complete Your Profile"**; welcome line
+  **"Welcome to XClub Community! Complete your data before getting
+  started."**; Activity chips render for all four seeded Activities
+  (Badminton, Basket, Futsal, Tennis), each with its `ActivityTile` initial
+  or icon and its name, `aria-pressed` toggling on click.
+- No behaviour change: same fields, same `PATCH /api/users/onboarding`
+  target, same redirect to `/dashboard` on submit (read from source, not
+  re-exercised here — #156 already proved the behaviour unchanged, this
+  ticket proves only the render).
+
+### TC-PP-012 · P0 · Positive — The waiting room restyled onto Rally, both themes and locales
+
+**Preconditions:** signed in as the seed's waiting applicant
+("Wulandari (Waiting)"), redirected to `/pending`; light/`en` and dark/`id`
+spot-checked.
+
+**Steps:**
+
+1. Read the status chip, the title, the lead paragraph and the two actions.
+2. Toggle theme/locale and repeat.
+
+**Expected result:**
+
+- Light/`en`: chip variant `provisional` — `background-color:
+  rgb(250, 235, 214)`, `color: rgb(138, 71, 8)`, matching border — label
+  **"Waiting"**; title **"An organizer is reviewing your request"**
+  (`type-display`); lead **"You asked to join. Someone who runs this
+  community has to let you in — usually within a day or two. We will email
+  you the moment they do."**; actions **"Message an organizer"** (a
+  `wa.me` link, primary button) and **"Sign out"** (ghost variant,
+  underlined).
+- Dark/`id`: ground `rgb(14, 31, 23)`, title **"Pengelola sedang meninjau
+  permintaanmu"**.
+- The declined and revoked states (`Bagas (Declined)` in the seed) exist as
+  the same component with a different `variant`/copy branch — not
+  re-rendered in this run since #156 already restyled all three from one
+  `statementFor` function and no visual risk is specific to this ticket's
+  surfaces; noted under "Not met".
+
+### TC-PP-013 · P0 · Positive — The shared Session card restyled onto Rally, both themes and locales
+
+**Preconditions:** unauthenticated `/s/<id>` for a live `SCHEDULED` session
+(`Morning Drills`, Badminton, 12 September 2026, 07:00–09:00); light/`en` and
+dark/`id` spot-checked.
+
+**Steps:**
+
+1. Read the card's title, date, time and location.
+2. Read the RSVP action.
+3. Toggle theme/locale and repeat.
+
+**Expected result:**
+
+- Light/`en`: card `border-radius: 12px`, face `rgb(255, 255, 255)`; title
+  **"Badminton"** (the Activity's name, `type-display`); date **"Saturday, 12
+  September 2026"**; time **"07:00 – 09:00"**; location **"GOR Cempaka Court
+  3"** (the Activity's `defaultLocation`, never the session's own `location`
+  field — Rule 4 of `public-landing.ts`'s no-list); action **"Sign in to
+  RSVP"**, fill `rgb(62, 210, 126)` on ink `rgb(14, 31, 23)`, linking to
+  `/auth/signin?callbackUrl=…`.
+- Dark/`id`: card face `rgb(24, 44, 34)`; date **"Sabtu, 12 September
+  2026"**; action **"Masuk untuk daftar"**.
+- No capacity figure, no spots-left, no attendee count anywhere on the page —
+  `PUBLIC_SESSION_CARD_SELECT` carries none of them, by design.
+
+### TC-PP-014 · P1 · Positive — Every email template renders through the Rally shell in both locales
+
+**Preconditions:** the nine `send*` functions under `src/lib/email/`, called
+directly with `sendEmail` mocked (no mail sent), locale `en` and `id` each —
+mirroring `src/lib/__tests__/email-shell.test.ts`'s own fixtures. Rendered
+HTML written to `.claude/scratch/t158-email-*.html` (18 files) plus the
+`REJECTED`/void-chip variant of `payment-status` as a bonus 19th/20th pair,
+never committed.
+
+**Steps:**
+
+1. Call `sendAdmission`, `sendHoldConfirmation`, `sendHoldExpired`,
+   `sendDayReminder`, `sendSessionReminder`, `sendPaymentStatus` (CONFIRMED),
+   `sendDuesChangeQueued`, `sendDuesChangeReplaced`, `sendDuesChangeWithdrawn`
+   — nine templates, once per locale.
+2. Read each rendered HTML's header band, details table, chip (where
+   present), body and action button.
+3. Read `sendPaymentStatus` with `status: 'REJECTED'` for the void chip.
+
+**Expected result:**
+
+- Every template's header band: `background:#0E1F17`, ink `#F1EEE5`,
+  community name uppercase above the heading.
+- Card face `#FFFFFF`; details table wash `#FBF8F1`; row labels `#4A5C52`;
+  footer divider `#8B7E68`, footer ink `#55675D` — all eight hex values
+  matched byte-for-byte against `layout.ts`'s own named constants (themselves
+  duplicated from `board-materials.css` on purpose, per the file's own
+  comment — the one permitted palette duplication in the repo).
+- The action button: `background:#3ED27E`, ink `#0E1F17`, `border-radius:
+  8px`.
+- `payment-status`'s settled chip: `background:#DDF2E4`, ink `#136B3F`; the
+  `REJECTED` variant's void chip: `background:#F8E3E1`, ink `#9E2B25` —
+  confirmed by rendering both, not only the default CONFIRMED case.
+- `id`-locale renders carry translated subjects and body text (e.g.
+  `dues-change-queued`'s subject **"Perubahan iuran: Badminton — Oktober
+  2026"**, heading **"Perubahan Iuran"**) with the same shell colours —
+  the shell is locale-blind, only the strings passed in vary.
+- No word of any template's content changed from what
+  `email-shell.test.ts`'s own committed snapshot already locks — this run
+  re-confirms the shell visually; the no-content-change proof itself is that
+  test's job, not re-litigated here.
+
+### 21.1 Fixtures and the seed
+
+**The seed was left as it was found**, values read before change and
+restored after, proved by re-reading them:
+
+| Key | Original | Set during this run | Restored to |
+|---|---|---|---|
+| `publicHeroHeadline` | *(missing)* | `"Community games every week, made for everyone!!!"` | `""` |
+| `publicHeroSubline` | *(missing)* | 120-char fixture (§ `TC-PP-003`) | `""` |
+| `publicAbout` | *(missing)* | two-paragraph fixture (§ `TC-PP-002`) | `""` |
+| `publicFeature1Title`/`Line` … `publicFeature4Title`/`Line` | *(missing, all 8)* | four fixture cards (§ `TC-PP-002`) | `""` (all 8) |
+| `heroImageUrl` | *(missing)* | a 287-byte fixture JPEG, uploaded then removed | `""` (removed via the product's own control, not by clearing the key by hand) |
+
+`communityName`, `logoUrl`, `defaultLocation`, `adminWhatsapp` and
+`holdDurationMinutes` were read at the start (`XClub Community` / `""` /
+`GOR Cempaka` / `6281200000001` / `60`) and never written by this run —
+confirmed unchanged in the final `GET /api/settings`.
+
+**Restored-to is `""`, not a missing row.** `PATCH /api/settings` only
+upserts; there is no delete endpoint. `resolvePublicCopy` and
+`readCachedPublicSettings` both treat an empty string identically to a
+missing key (`stored.publicHeroHeadline?.trim() || …`), so the rendered
+behaviour is proven identical (`TC-PP-001`'s render was re-confirmed after
+the restore) — the eleven `Settings` rows now exist with `value: ""` where
+they did not exist before, which is a byte-level difference from the
+original seed but not a behavioural one. Recorded here rather than hidden.
+
+No Activity, Session, Payment or Attendance row was created or touched. The
+one session used for `TC-PP-013` (`Morning Drills`) is a pre-existing seed
+row, read-only.
+
+### 21.2 Recorded run — 2026-09-02
+
+Executed once against the dev server (`main` at **`e50693c`**, plus one
+migration applied to the dev database mid-run — see "Not met" below), on
+Next.js 16, at **1440×900** and **390×844**, in both themes and both
+locales (representative combinations per case, not a full cross-product —
+the same choice `TC-AD-011`/`TC-AD-012` made), through the Playwright MCP
+against the running app, signed in from `/auth/dev`. Email templates were
+rendered directly (mocked `sendEmail`), never through SMTP.
+
+| Case | Priority | Result |
+|---|---|---|
+| TC-PP-001 | P0 | **Pass** — pattern hero, dictionary pitch/lead, no about/features band, four Activity cards, footer |
+| TC-PP-002 | P0 | **Pass** — photograph, Admin headline verbatim in both locales, about band and four feature cards render, Activities band unaffected |
+| TC-PP-003 | P1 | **Pass** — 48-char/12-letter-word headline and 120-char subline never overlap the action; gap 157.17px at 1440×900, 144.38px at 390×844, both locales |
+| TC-PP-004 | P0 | **Pass** — image rect equals the section's own rect at both viewports, `object-fit: cover`, no letterboxing |
+| TC-PP-005 | P0 | **Pass** — `heroImageUrl` cleared instantly, `hero-images` bucket empty, `/` shows the pattern |
+| TC-PP-006 | P0 | **Pass** — copy save, image upload and image remove all visible on the very next unauthenticated `GET /`, no restart |
+| TC-PP-007 | P1 | **Pass** — tab order theme → language → sign-in → join action → quiet join; ring `1px solid #B7A4F7` + `3px` halo at 50% |
+| TC-PP-008 | P0 | **Pass** — all five copy caps refused at the form (client-side, zero network calls) and at the API (400, cap named), nothing written |
+| TC-PP-009 | P0 | **Pass, with a found-not-fixed note** — both refusals correct at the API; the form's own refusal is a round trip, not the instant check its doc comment describes. Filed as [#211](https://github.com/jefrykurniaone/net-c-management/issues/211) |
+| TC-PP-010 | P0 | **Pass** — sign-in on `bg-background` (not the retired lavender wash), primary Google button, dev link present, both themes/locales |
+| TC-PP-011 | P0 | **Pass** — onboarding card, title, welcome line and Activity chips, both themes/locales |
+| TC-PP-012 | P0 | **Pass** — waiting-room chip/title/lead/actions, both themes/locales |
+| TC-PP-013 | P0 | **Pass** — shared Session card title/date/time/location/action, no capacity figure, both themes/locales |
+| TC-PP-014 | P1 | **Pass** — all nine templates' shell colours match `layout.ts` byte-for-byte in both locales, plus the void-chip variant |
+
+**Summary.** 14 cases, all written by this ticket. **14 executed, 14 Pass, 0
+Fail, 0 Not run.** One low-impact implementation/doc-comment mismatch found
+and filed rather than fixed (`TC-PP-009`, [#211](https://github.com/jefrykurniaone/net-c-management/issues/211)) —
+not a failing case, since the acceptance criterion it tests (refusal with the
+rule named) is met.
+
+**Not met.**
+
+- **The dev database was missing a migration.** `/` 500'd on first load with
+  `The column Activity.icon does not exist in the current database` —
+  `npx prisma migrate status` showed `20260831000000_add_activity_icon_key`
+  (part of `main` at `e50693c`, landed with #164/#154) unapplied to the
+  running dev server's database. This blocked every case in this suite, since
+  nearly all of them read `/`. Fixed by running `npx prisma migrate deploy`
+  from this worktree against the shared dev database — additive DDL only (one
+  nullable column), no data touched, no `npx prisma generate` run, no dev
+  server restarted. This is an environment/deploy-process gap (the dev
+  server's database was not migrated to match `main` before this wave's
+  executors were dispatched), not an application defect, so it is reported
+  here rather than filed as a `type:bug` against `src/`. **Flagged for the
+  orchestrator:** this is a shared dev database — other wave-6 tickets
+  running concurrently against the same server were very likely hitting the
+  same 500 until this fix landed, and should re-check rather than assume
+  their own runs were against a working server throughout.
+- **The `id`/theme cross-product for the four threshold pages** was
+  spot-checked (one light/`en` and one dark/`id` combination per page), not
+  swept across all four at both viewports the way `TC-AR-036` swept
+  geometric claims elsewhere — the same representative-check choice
+  `TC-AD-011`/`TC-AD-012` made, for the same reason (four already-restyled,
+  low-risk pages, not a new surface).
+- **The waiting room's declined and revoked states** were not re-rendered —
+  `Bagas (Declined)` exists in the seed but the component is one shared
+  function (`statementFor`) #156 already exercised in both states; no visual
+  risk specific to this ticket's surfaces.
+- **Boundary acceptance of each copy cap** (exactly-at-cap succeeds) is
+  Vitest's job (`public-copy.test.ts`) and was not re-proven manually —
+  `TC-PP-008` only re-proves the bypassed-form refusal path, consistent with
+  the spec's own Testing Decisions split.
+- **The hero photograph's exact contrast ratio** was not independently
+  re-measured pixel-by-pixel over the actual fixture image (a small solid
+  JPEG, not the white worst case) — `TC-PP-004` cites the code's own
+  documented arithmetic (65% scrim, 4.63:1 over white) and confirms the
+  colours it depends on are the ones actually rendered, rather than
+  recomputing the ratio from scratch.
+- **SonarLint has been consulted on no ticket in this spec.** No source file
+  under `src/` was changed by this ticket (`TESTING.md` only, plus the filed
+  issue's suggested fix left unapplied) — carried forward for completeness.
