@@ -23,7 +23,7 @@ export function IdentityRail({
     t,
 }: Readonly<{ communityName: string; logoUrl: string; t: Dictionary }>) {
     return (
-        <header className='border-b border-rule bg-background'>
+        <header className='border-b border-border bg-background'>
             {/* The rail does not wrap. Letting it wrap pushes the two controls
                 onto a second row — a 105px rail on a phone against 57px, with a
                 ragged gap under the wordmark — and costs 48px of the fold

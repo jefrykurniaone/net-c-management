@@ -1,6 +1,6 @@
 /**
  * Rally chart series colours (DESIGN.md, Colours; tokens landed by #148).
- * `board-materials.css` defines `--chart-1` through `--chart-5` for both
+ * `colors.css` defines `--chart-1` through `--chart-5` for both
  * themes, and `globals.css`'s `@theme inline` block re-exposes them as
  * Tailwind's `--color-chart-*`. A chart component names one of these five
  * instead of a hex, so both themes stay correct without a component ever

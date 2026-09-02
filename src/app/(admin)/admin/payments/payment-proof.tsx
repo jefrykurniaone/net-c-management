@@ -90,7 +90,7 @@ function NoProofCell({ label }: Readonly<{ label: string }>) {
         <span className='flex flex-col items-start gap-hair'>
             <span
                 aria-hidden
-                className={cn(BOX_CLASS, 'border border-dashed border-rule')}
+                className={cn(BOX_CLASS, 'border border-dashed border-border')}
             />
             <span className='type-caption text-muted-foreground'>{label}</span>
         </span>
@@ -101,7 +101,7 @@ function NoProofCell({ label }: Readonly<{ label: string }>) {
 function FailedProofCell({ label }: Readonly<{ label: string }>) {
     return (
         <span className='flex flex-col items-start gap-hair'>
-            <span className={cn(BOX_CLASS, 'border border-rule bg-board')}>
+            <span className={cn(BOX_CLASS, 'border border-border bg-background')}>
                 <ImageOff aria-hidden className='size-4 text-destructive' />
             </span>
             <span className='type-caption text-destructive'>{label}</span>
@@ -128,7 +128,7 @@ function FullProof({
                 height={FULL_HEIGHT}
                 sizes={FULL_SIZES}
                 unoptimized={!isOptimisable}
-                className='h-auto max-h-[70vh] w-full border border-rule bg-board object-contain'
+                className='h-auto max-h-[70vh] w-full border border-border bg-background object-contain'
             />
         </DialogContent>
     );
@@ -163,7 +163,7 @@ function OpenableProof({
                     aria-label={labels.open}
                     className={cn(
                         BOX_CLASS,
-                        'border border-rule bg-board',
+                        'border border-border bg-background',
                         FOCUS_CLASS,
                     )}>
                     <Image

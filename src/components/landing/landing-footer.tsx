@@ -16,7 +16,7 @@ export function LandingFooter({
     year,
 }: Readonly<{ communityName: string; t: Dictionary; year: number }>) {
     return (
-        <footer className='border-t border-rule bg-background'>
+        <footer className='border-t border-border bg-background'>
             <p
                 className={`mx-auto ${BOARD_GUTTER_CLASS} type-caption px-block py-cell text-muted-foreground`}>
                 © <span className='tabular-nums'>{year}</span> {communityName}.{' '}

@@ -19,7 +19,7 @@ const buttonVariants = cva(
         /**
          * The Rally spec's second action (DESIGN.md `action-secondary`):
          * Black Green ground, off-white ink, invariant across both themes —
-         * see `--secondary-solid` in `board-materials.css`. Distinct from
+         * see `--secondary-solid` in `colors.css`. Distinct from
          * `secondary` above, which is a change to neither its token nor its
          * call sites (#148's decision: `--secondary-foreground` runs body
          * text at 54 sites). No call site consumes this variant yet.

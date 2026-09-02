@@ -15,7 +15,7 @@ import { ACTIVITY_ICON_GLYPHS } from './activity-icon-glyphs';
  * **Colour.** `--accent` and `--accent-foreground`, which is Lime carrying
  * Black Green in the light theme and the deep olive carrying Lime in the dark
  * one — `--accent` inverts between themes on purpose (see the note beside it in
- * `board-materials.css`), and both directions are asserted at 13.68:1 and
+ * `colors.css`), and both directions are asserted at 13.68:1 and
  * 10.06:1 by `design-tokens.test.ts`. The `--border` hairline is not
  * decoration: the accent fill is a *hue* step against the ground rather than a
  * lightness one, so The Boundary Rule requires an edge that a reader who

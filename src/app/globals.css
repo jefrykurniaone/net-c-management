@@ -5,7 +5,7 @@
 /* The Rally colour layer and the eight typographic roles. Split out so
    this file stays the token map and the base layer, both under the
    300-line cap in CLAUDE.md. */
-@import "./styles/board-materials.css";
+@import "./styles/colors.css";
 @import "./styles/type-roles.css";
 @import "./styles/motion.css";
 
@@ -108,27 +108,6 @@
     0 6px 16px -6px var(--shadow-tint);
   --shadow-lift-hover: 0 2px 4px -1px var(--shadow-tint-weak),
     0 12px 26px -8px var(--shadow-tint-strong);
-
-  /* ── Retired Papan Jadwal names ───────────────────────────────
-     Roughly sixty files still name these. Each resolves to its nearest
-     Rally value here, at the token level rather than at the call site,
-     because the retired colours are consumed through four different
-     utility prefixes — `bg-`, `border-`, `divide-`, `ring-offset-` —
-     and one alias covers every one of them. #174 removes this block and
-     migrates the call sites with it. Nothing new may consume a name in
-     it. The shadow aliases restate `--shadow-lift` rather than
-     referencing it, because a theme key referencing a sibling theme key
-     is not a substitution Tailwind is documented to make. */
-  --color-board: var(--background); /* alias — removed by #174 */
-  --color-tile: var(--card); /* alias — removed by #174 */
-  --color-rule: var(--border); /* alias — removed by #174 */
-  --color-wash-ink: var(--success-soft); /* alias — removed by #174 */
-  --color-wash-tape: var(--warning-soft); /* alias — removed by #174 */
-  --color-wash-strike: var(--destructive-soft); /* alias — removed by #174 */
-  /* alias — removed by #174 */
-  --shadow-tile: 0 1px 2px -1px var(--shadow-tint-weak),
-    0 6px 16px -6px var(--shadow-tint);
-  --shadow-tile-pressed: 0 0 0 0 transparent; /* alias — removed by #174 */
 }
 
 /* `rounded` with no suffix is the one radius Tailwind hardcodes — it emits
