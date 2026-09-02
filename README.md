@@ -175,14 +175,16 @@ This solution automates and centralizes those workflows — reducing the operati
     Confirm `DATABASE_URL` in `.env.local` points at this local DB:
     `postgresql://postgres:postgres@localhost:5432/xclub?schema=public`
 
-    Then apply the migrations, the raw-SQL extras, and seed initial data:
+    Then apply the migrations and seed initial data:
 
     ```bash
     npx prisma migrate deploy   # apply prisma/migrations/ to the local DB
-    npx prisma db execute --file prisma/payment-monthly-unique.sql
-    npx prisma db execute --file prisma/rls-policies.sql
     npm run db:seed        # full scenario seed (see "Reseeding" below); creates the owner if SEED_OWNER_EMAIL is set
     ```
+
+    The migrations carry everything, including the partial unique index on
+    MONTHLY payments and the row-level security policies. There are no raw-SQL
+    extras to apply by hand.
 
 5. **Set up Supabase Storage**
 
@@ -314,17 +316,10 @@ desyncs local from prod. Safe flow: **local first, production is an explicit ste
     `_prisma_migrations` table — it never drops columns and never resets data. Run
     it after every merge that adds a migration.
 
-3. **Re-apply the raw-SQL extras** if the affected tables changed (both are
-   idempotent, so re-running is always safe — and **mandatory after any reset**,
-   which recreates tables without them):
-
-    ```bash
-    # Partial unique index on MONTHLY payments (the Prisma schema cannot express it)
-    npx cross-env DATABASE_TARGET=prod prisma db execute --file prisma/payment-monthly-unique.sql
-
-    # Enable RLS + deny direct API access on every table (Supabase hardening)
-    npx cross-env DATABASE_TARGET=prod prisma db execute --file prisma/rls-policies.sql
-    ```
+    There are no raw-SQL extras to apply afterwards. The partial unique index on
+    MONTHLY payments and the row-level security policies are created by migration
+    `20260902180043_add_monthly_payment_unique_index_and_rls`, and every statement
+    in it is idempotent, so it is a no-op on a database that already has them.
 
 ### Production seed & owner
 
@@ -363,11 +358,10 @@ A full reset is only for starting production over from an empty database.
 #    any seed automatically here.)
 npx cross-env DATABASE_TARGET=prod prisma migrate reset
 
-# 2. Mandatory after any reset — the recreated tables lack the raw-SQL extras:
-npx cross-env DATABASE_TARGET=prod prisma db execute --file prisma/payment-monthly-unique.sql
-npx cross-env DATABASE_TARGET=prod prisma db execute --file prisma/rls-policies.sql
+#    The replay includes the partial unique index and the RLS policies, so a
+#    reset needs no follow-up SQL.
 
-# 3. Reseed the production catalog (settings + real Activities — no sample data)
+# 2. Reseed the production catalog (settings + real Activities — no sample data)
 npm run db:seed:prod
 ```
 
@@ -410,8 +404,7 @@ prisma/
 ├── seed.ts                     # Local/testing seed (sample members, payments, quotas)
 ├── seed-prod.ts                # Production seed (settings, real Activities, owner promotion)
 ├── promote-owner.ts            # Promote a signed-in user to OWNER (local or prod)
-├── payment-monthly-unique.sql  # Partial unique index (applied via prisma db execute)
-├── rls-policies.sql            # Supabase RLS hardening (applied via prisma db execute)
 └── migrations/                 # Prisma Migrate history — source of truth for the schema
+                                # (includes the MONTHLY partial unique index and the RLS policies)
 prisma.config.ts        # Prisma 7 config (selects local/prod via DATABASE_TARGET)
 ```

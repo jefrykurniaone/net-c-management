@@ -38,7 +38,6 @@
  *
  * Run after a fresh schema:
  *   npm run db:reset   (or: npx prisma migrate dev)
- *   npx prisma db execute --file prisma/payment-monthly-unique.sql
  *   npm run db:seed
  */
 import { prisma } from './seed/client';
