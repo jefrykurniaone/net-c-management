@@ -397,6 +397,27 @@ const en = {
         duesValueRow: 'Collected {collected}, owed {owed}',
         duesAxisMillion: '{n}M',
         duesAxisThousand: '{n}K',
+        // This Billing Period's money by Activity (#171). Dues and Fees
+        // together — deliberately a different total from the Dues chart above,
+        // which counts Dues alone, so the caption says what is in it.
+        moneyTitle: 'Money by Activity',
+        moneyCaption:
+            '{period}: Confirmed Payments only, Dues and Fees together. Dues count by the Billing Period they settle, a Fee by its Session date.',
+        moneyTotal: 'Total',
+        moneyKeyLabel: 'Activity colours',
+        // Seats filled, last eight weeks (#171).
+        fillTitle: 'Seats filled',
+        fillCaption:
+            'The last eight weeks: Seats held over capacity, cancelled Sessions excluded. A week with no Sessions is a gap rather than zero, and the current week is still filling.',
+        fillSeriesLabel: 'Seats filled',
+        fillAxisDate: '{month} {day}',
+        fillWeekLabel: 'Week of {month} {day}, {year}',
+        fillValueRow: '{percent}% — {seats} of {capacity} seats held',
+        fillNoSessions: 'No Sessions',
+        // A week whose Sessions offered no capacity at all. Distinct from the
+        // line above: a week that ran must never be reported as one that did not.
+        fillNoCapacity: 'No Seats offered',
+        fillAxisPercent: '{n}%',
     },
     sessions: {
         title: 'Sessions',
@@ -1646,6 +1667,21 @@ const id: typeof en = {
         duesValueRow: 'Terkumpul {collected}, tagihan {owed}',
         duesAxisMillion: '{n}jt',
         duesAxisThousand: '{n}rb',
+        moneyTitle: 'Pemasukan per Aktivitas',
+        moneyCaption:
+            '{period}: hanya Pembayaran Terkonfirmasi, Iuran dan Biaya Sesi digabung. Iuran dihitung menurut Periode Tagihan yang dilunasinya, Biaya Sesi menurut tanggal Sesinya.',
+        moneyTotal: 'Total',
+        moneyKeyLabel: 'Warna aktivitas',
+        fillTitle: 'Kursi terisi',
+        fillCaption:
+            'Delapan minggu terakhir: kursi terisi dibanding kapasitas, Sesi yang dibatalkan tidak dihitung. Minggu tanpa Sesi menjadi jeda, bukan nol, dan minggu ini belum berjalan penuh.',
+        fillSeriesLabel: 'Kursi terisi',
+        fillAxisDate: '{day} {month}',
+        fillWeekLabel: 'Minggu {day} {month} {year}',
+        fillValueRow: '{percent}% — {seats} dari {capacity} kursi terisi',
+        fillNoSessions: 'Tidak ada Sesi',
+        fillNoCapacity: 'Tidak ada kursi ditawarkan',
+        fillAxisPercent: '{n}%',
     },
     sessions: {
         title: 'Sesi',
