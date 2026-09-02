@@ -120,43 +120,27 @@
 }
 
 /* ─────────────────────────────────────────────────────────────
-   Retired roles, aliased so the surfaces that still name them render.
-   #174 removes this block and the last call sites with it. Nothing new
-   may consume either utility.
+   One retired role left. #174 removed the retired Hero role and every
+   other retired name in the run; the Mark role below could not go with
+   it — see the comment on the utility. Nothing new may consume it.
    ───────────────────────────────────────────────────────────── */
 
 /**
- * alias — removed by #174. The retired Hero role. Rally has one Display
- * role, system-wide, so Hero *is* Display: the declarations below are
- * `type-display`'s, copied rather than composed because Tailwind's
- * `@utility` has no inheritance. The public hero already renders
- * `type-display` directly, so this alias has no consumer left in `src/`
- * — it exists so that a surface not yet migrated keeps rendering, and
- * for nothing else.
+ * pending decision — see #223. The retired Mark role: the community
+ * wordmark in the public header rail (`identity-rail.tsx`) and the
+ * threshold rail (`threshold-rail.tsx`). Rally has no Mark role — the
+ * wordmark was meant to get its own treatment in the public spec, but
+ * neither `docs/spec-rally-public-v1.md` nor the completion records of
+ * #154 and #156 assign one. #174 leaves this alias and its two call
+ * sites as they are rather than inventing a role or renaming the class
+ * to something that would read as a resolution; keeps the letterforms
+ * it shipped with, tracked *out* rather than drawn in, and adds only the
+ * width reset every non-Display role now carries. Held at its old size
+ * deliberately: the community name is runtime configuration with no
+ * length cap, and every step up in size is a step further from
+ * surviving one. #223 tracks the open decision.
  */
-/* alias — removed by #174 */
-@utility type-hero {
-  font-size: clamp(2rem, 4.6vw, 3.5rem);
-  font-stretch: 66%;
-  font-variation-settings: 'wdth' 66;
-  font-weight: 900;
-  line-height: 0.94;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  text-wrap: balance;
-}
-
-/**
- * alias — removed by #174. The retired Mark role: the community wordmark
- * in the header rail, the hero and the two interstitials. Rally has no
- * Mark role — the wordmark gets its own treatment in the public spec —
- * so this keeps the letterforms it shipped with, tracked *out* rather
- * than drawn in, and adds only the width reset every non-Display role
- * now carries. Held at its old size deliberately: the community name is
- * runtime configuration with no length cap, and every step up in size is
- * a step further from surviving one.
- */
-/* alias — removed by #174 */
+/* pending decision — see #223 */
 @utility type-mark {
   font-size: clamp(1.125rem, 2.4vw, 1.5rem);
   font-stretch: normal;

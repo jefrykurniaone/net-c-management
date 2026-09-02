@@ -62,7 +62,7 @@ export function Sidebar({
         // regardless of which theme the rest of the page is in. Only the
         // active nav item diverges from the dark theme's own `--accent`
         // (which inverts to olive-on-lime) and reaches for the dedicated
-        // `sidebar-accent*` tokens instead — see board-materials.css.
+        // `sidebar-accent*` tokens instead — see colors.css.
         <aside className='dark flex flex-col h-full w-64 bg-background text-foreground border-r border-border'>
             {/* Logo */}
             <div className='flex items-center gap-3 px-5 py-5'>

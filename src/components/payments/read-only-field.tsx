@@ -33,7 +33,7 @@ export function ReadOnlyField({
                     readOnly
                     aria-describedby={noteId}
                     // `Input` now carries the read-only Enamel Ground fill itself
-                    // (`read-only:bg-board`), so only the icon clearance and the
+                    // (`read-only:bg-background`), so only the icon clearance and the
                     // Figure role for an amount are this field's own to add.
                     className={cn(
                         'pr-8',

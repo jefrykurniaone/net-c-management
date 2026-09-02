@@ -33,7 +33,7 @@ export function ProofFileField({
             {/* The slot wraps its own input, which is what associates the two —
                 no `htmlFor`, so a click on the input cannot be forwarded back
                 to it and open the picker twice. */}
-            <label className='relative flex h-40 w-full cursor-pointer flex-col items-center justify-center overflow-hidden border border-dashed border-rule bg-tile transition-colors hover:border-primary has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/50'>
+            <label className='relative flex h-40 w-full cursor-pointer flex-col items-center justify-center overflow-hidden border border-dashed border-border bg-card transition-colors hover:border-primary has-[input:focus-visible]:border-ring has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/50'>
                 {preview ? (
                     <Image
                         src={preview}

@@ -209,7 +209,7 @@ is no size at which a light label on this green becomes acceptable.
 Every pair the shipped surfaces can produce, both themes, with the ratio it
 has to clear. All **62** live in `AA_PAIRS` in `src/lib/theme-contrast.ts` and
 are asserted twice each — once per theme — against the hex values parsed out of
-`src/app/styles/board-materials.css`. The worst case in each family is below.
+`src/app/styles/colors.css`. The worst case in each family is below.
 
 Of those 62, the last two are the admin shell's own: the active navigation
 item's label and its boundary, both measured against `--sidebar-accent`. They
@@ -734,29 +734,41 @@ call site. Everything else retired as written.
 
 ### Retired token names
 
-These resolve to their nearest Rally value in `src/app/globals.css` and
-`src/app/styles/type-roles.css` so that the files still naming them keep
-rendering. **#174 removes the aliases and the last call sites with them.
-Nothing new may consume one.** Counted in `src/` on 2026-08-31:
+These aliases resolved to their nearest Rally value in `src/app/globals.css`
+and `src/app/styles/type-roles.css` while the surfaces naming them were
+migrated. **#174 removed the aliases and every call site but one.** Final
+state, checked in `src/` on 2026-09-02:
 
-| Retired name | Resolves to | Call sites left |
+| Retired name | Resolved to | Call sites left |
 |---|---|---|
-| `bg-board` | `--background` | 20 in 15 files |
-| `ring-offset-board` | `--background` | 1, in `landing/hero-band.tsx` |
-| `bg-tile` | `--card` | 31 in 25 files |
-| `border-rule` | `--border` | 56 in 39 files |
-| `divide-rule` | `--border` | 5 in 5 files |
-| `bg-rule` | `--border` | 4 in 3 files |
-| `bg-wash-ink` | `--success-soft` | **0** |
-| `bg-wash-tape` | `--warning-soft` | **0** |
-| `bg-wash-strike` | `--destructive-soft` | **0** |
-| `shadow-tile` | `--shadow-lift` | 2 |
-| `shadow-tile-pressed` | a no-op shadow, i.e. `shadow-none` | 2 |
-| `type-hero` | Display | 1 outside tests and comments |
-| `type-mark` | its own former letterforms, until the public spec gives the wordmark a Rally role | 4 |
+| `bg-board` | `--background` | **0** — removed by #174 |
+| `ring-offset-board` | `--background` | **0** — removed by #154, ahead of this sweep |
+| `bg-tile` | `--card` | **0** — removed by #174 |
+| `border-rule` | `--border` | **0** — removed by #174 |
+| `divide-rule` | `--border` | **0** — gone since this table's 2026-08-31 count; no single ticket in this sweep's inventory claims it |
+| `bg-rule` | `--border` | **0** — gone since this table's 2026-08-31 count, same as `divide-rule` |
+| `bg-wash-ink` | `--success-soft` | **0** — had none; alias deleted by #174 |
+| `bg-wash-tape` | `--warning-soft` | **0** — had none; alias deleted by #174 |
+| `bg-wash-strike` | `--destructive-soft` | **0** — had none; alias deleted by #174 |
+| `shadow-tile` | `--shadow-lift` | **0** — had none; alias deleted by #174 |
+| `shadow-tile-pressed` | a no-op shadow, i.e. `shadow-none` | **0** — had none; alias deleted by #174 |
+| `type-hero` | Display | **0** — removed by #174 |
+| `type-mark` | its own former letterforms | **2**, unresolved — see #223 |
 
-The three wash aliases already have **no consumer at all**: the chips took their
-call sites with them in #149, and only the alias itself is left to delete.
+Every alias above except `type-mark` is deleted from `src/app/globals.css`
+(renamed `colors.css` by #174) and `src/app/styles/type-roles.css`;
+`src/lib/__tests__/design-tokens.test.ts` now fails the build if any of the
+eight class names reappears anywhere in `src/`. `type-mark`'s `@utility` and
+its two call sites (`components/landing/identity-rail.tsx`,
+`components/layout/threshold-rail.tsx`) stay until #223 — the community
+wordmark's Rally role — is decided: neither `docs/spec-rally-public-v1.md` nor
+the completion records of #154 and #156 assign one, so #174 left the alias as
+it is rather than inventing a role or renaming it to something that would read
+as a resolution.
+
+The three wash aliases had **no consumer at all** even before #174: the chips
+took their call sites with them in #149, and only the alias itself was left to
+delete.
 
 `--radius-rail` is gone rather than aliased: it had no consumer.
 

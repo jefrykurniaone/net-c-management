@@ -234,7 +234,7 @@ function ModeOption({
     return (
         <label
             className={cn(
-                'flex cursor-pointer items-start gap-cell rounded-sm border border-rule p-cell',
+                'flex cursor-pointer items-start gap-cell rounded-sm border border-border p-cell',
                 'focus-within:border-ring',
                 isSelected ? 'bg-accent' : 'bg-background',
             )}>

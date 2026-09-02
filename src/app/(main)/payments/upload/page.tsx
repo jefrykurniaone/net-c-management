@@ -61,7 +61,7 @@ export default function UploadPaymentPage() {
     if (status !== 'loaded') {
         return (
             <TaskColumn t={t}>
-                <p className='border border-rule bg-tile p-block type-body text-secondary-foreground'>
+                <p className='border border-border bg-card p-block type-body text-secondary-foreground'>
                     {status === 'loading' ? t.common.loading : t.common.error}
                 </p>
             </TaskColumn>
@@ -82,8 +82,8 @@ export default function UploadPaymentPage() {
 
     return (
         <TaskColumn t={t}>
-            <section className='border border-rule bg-tile'>
-                <div className='border-b border-rule p-block'>
+            <section className='border border-border bg-card'>
+                <div className='border-b border-border p-block'>
                     <h1 className='type-display text-card-foreground'>
                         {t.payments.uploadTitle}
                     </h1>

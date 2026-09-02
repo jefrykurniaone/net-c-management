@@ -49,7 +49,7 @@ function MemberHeader({
     dateLocale: DateFnsLocale;
 }>) {
     return (
-        <section className='flex flex-col gap-cell border border-rule bg-tile p-block'>
+        <section className='flex flex-col gap-cell border border-border bg-card p-block'>
             <h1 className='type-display text-foreground'>
                 {member.name ?? t.admin.memberNameEmpty}
             </h1>

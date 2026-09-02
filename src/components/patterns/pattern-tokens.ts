@@ -3,7 +3,7 @@
  * grid lines, concentric rings, diagonal dashed lines and a row of thin
  * arrows. None of them carries information, so their only inputs are a size
  * and a colour resolved from the Rally token layer
- * (`src/app/styles/board-materials.css`) — never a hardcoded hex.
+ * (`src/app/styles/colors.css`) — never a hardcoded hex.
  *
  * `PatternColorToken` is deliberately a closed union rather than `string`: a
  * pattern is decoration behind content, so it may only draw from tokens this

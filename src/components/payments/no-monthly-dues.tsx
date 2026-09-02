@@ -90,7 +90,7 @@ export function NoMonthlyDues({
     });
 
     return (
-        <section className='border border-rule bg-tile p-block'>
+        <section className='border border-border bg-card p-block'>
             <h1 className='type-display text-card-foreground'>{copy.title}</h1>
             <p className='mt-cell type-body text-secondary-foreground'>{body}</p>
             {copy.action && (

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { extname, join } from 'node:path';
 import {
     AA_PAIRS,
     AA_TEXT,
@@ -19,12 +19,8 @@ import {
  * rather than restating them.
  */
 const STYLES_DIR = join(process.cwd(), 'src', 'app', 'styles');
-const tokenCss = readFileSync(join(STYLES_DIR, 'board-materials.css'), 'utf8');
+const tokenCss = readFileSync(join(STYLES_DIR, 'colors.css'), 'utf8');
 const typeCss = readFileSync(join(STYLES_DIR, 'type-roles.css'), 'utf8');
-const globalsCss = readFileSync(
-    join(process.cwd(), 'src', 'app', 'globals.css'),
-    'utf8',
-);
 
 const themes = parseThemeTokens(tokenCss);
 const THEME_NAMES: readonly ThemeName[] = ['light', 'dark'];
@@ -75,46 +71,31 @@ describe('Rally palette contrast', () => {
 });
 
 /**
- * Retired Papan Jadwal names, kept alive only so the surfaces that still
- * spell them render while the run lands. Each has to say which ticket takes
- * it away, on its own line or the one above it, so that an alias added
- * without a removal plan fails here rather than becoming permanent.
+ * `type-mark`, the one retired name #174 could not remove: neither
+ * `docs/spec-rally-public-v1.md` nor the completion records of #154 and #156
+ * assign the community wordmark a Rally role, so its two call sites and its
+ * `@utility` stay as they are rather than inventing one. This asserts the
+ * alias still names the open decision, so it fails here rather than quietly
+ * losing its tracking issue.
  */
-const REMOVAL_TICKET = '#174';
+const PENDING_DECISION_ISSUE = '#223';
 
-const RETIRED_TOKENS: readonly string[] = [
-    '--color-board',
-    '--color-tile',
-    '--color-rule',
-    '--color-wash-ink',
-    '--color-wash-tape',
-    '--color-wash-strike',
-    '--shadow-tile',
-    '--shadow-tile-pressed',
-];
-
-const RETIRED_UTILITIES: readonly string[] = ['type-hero', 'type-mark'];
-
-/** True when `needle`'s line, or the line above it, names the removal ticket. */
-function hasRemovalNote(source: string, needle: string): boolean {
+/** True when `needle`'s line, or the line above it, names the given issue. */
+function hasNoteFor(source: string, needle: string, issue: string): boolean {
     const lines = source.split('\n');
     const index = lines.findIndex((line) => line.includes(needle));
     if (index === -1) {
         return false;
     }
     const previous = index > 0 ? lines[index - 1] : '';
-    return (
-        lines[index].includes(REMOVAL_TICKET) || previous.includes(REMOVAL_TICKET)
-    );
+    return lines[index].includes(issue) || previous.includes(issue);
 }
 
 describe('Retired token aliases', () => {
-    it.each(RETIRED_TOKENS)('names the removing ticket beside %s', (token) => {
-        expect(hasRemovalNote(globalsCss, `${token}:`)).toBe(true);
-    });
-
-    it.each(RETIRED_UTILITIES)('names the removing ticket beside %s', (utility) => {
-        expect(hasRemovalNote(typeCss, `@utility ${utility} {`)).toBe(true);
+    it('names the open decision beside type-mark', () => {
+        expect(
+            hasNoteFor(typeCss, '@utility type-mark {', PENDING_DECISION_ISSUE),
+        ).toBe(true);
     });
 
     /**
@@ -130,5 +111,68 @@ describe('Retired token aliases', () => {
         );
 
         expect(eslintConfig).not.toContain('type-hero');
+    });
+});
+
+/**
+ * The zero-consumer gate #174 exists to add. Every retired Papan Jadwal name
+ * except `type-mark` (see above) has to have exactly nothing left naming it
+ * anywhere in `src/` — this scans the tree itself rather than trusting a
+ * point-in-time count, so a reintroduced name fails here on the next run.
+ */
+const RETIRED_CLASS_NAMES: readonly string[] = [
+    'bg-board',
+    'bg-tile',
+    'border-rule',
+    'bg-wash-ink',
+    'bg-wash-tape',
+    'bg-wash-strike',
+    'shadow-tile',
+    'shadow-tile-pressed',
+    'type-hero',
+];
+
+const SCAN_EXTENSIONS = new Set(['.ts', '.tsx', '.css']);
+const SELF_FILE = 'design-tokens.test.ts';
+
+function collectSourceFiles(dir: string): string[] {
+    const entries = readdirSync(dir, { withFileTypes: true });
+    return entries.flatMap((entry) => {
+        const fullPath = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            return collectSourceFiles(fullPath);
+        }
+        if (!SCAN_EXTENSIONS.has(extname(entry.name)) || entry.name === SELF_FILE) {
+            return [];
+        }
+        return [fullPath];
+    });
+}
+
+/** Maps each retired name to the files under `src/` that still spell it. */
+function findRetiredConsumers(
+    names: readonly string[],
+): Record<string, string[]> {
+    const files = collectSourceFiles(join(process.cwd(), 'src'));
+    const consumers: Record<string, string[]> = {};
+    for (const name of names) {
+        consumers[name] = [];
+    }
+    for (const file of files) {
+        const content = readFileSync(file, 'utf8');
+        for (const name of names) {
+            if (content.includes(name)) {
+                consumers[name].push(file);
+            }
+        }
+    }
+    return consumers;
+}
+
+const retiredConsumers = findRetiredConsumers(RETIRED_CLASS_NAMES);
+
+describe('Retired class names', () => {
+    it.each(RETIRED_CLASS_NAMES)('has no consumer of %s left in src/', (name) => {
+        expect(retiredConsumers[name]).toEqual([]);
     });
 });

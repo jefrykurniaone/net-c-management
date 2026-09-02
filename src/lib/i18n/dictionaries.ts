@@ -151,8 +151,8 @@ const en = {
         // WhatsApp preview are always the `en` strings (ticket 12, F2). The `id`
         // pair below is what a returning human with the cookie sees in their
         // browser tab. Consequence: 13's 48-character `id` budget is a
-        // `type-hero` constraint and does **not** apply here — a snippet wants
-        // ~155 characters and is read with no wordmark above it.
+        // `type-display` constraint and does **not** apply here — a snippet
+        // wants ~155 characters and is read with no wordmark above it.
         meta: {
             // Its own string, not the hero's lead reused (ticket 12 decision 3):
             // the pitch is capped at 48 characters on `id`, 06 broke the
@@ -770,9 +770,6 @@ const en = {
         shareViaWhatsapp: 'Share via WhatsApp',
         shareViaTwitter: 'Share on X',
         reviewAction: 'Review',
-        thisWeekTitle: 'This week',
-        allSessionsLink: 'All sessions',
-        noSessionsThisWeek: 'No sessions scheduled this week.',
         attendanceMetric: 'attendance',
         sessionsPerWeek: 'sessions / wk',
         duesCollectedLabel: 'Dues collected',
@@ -2005,9 +2002,6 @@ const id: typeof en = {
         shareViaWhatsapp: 'Bagikan via WhatsApp',
         shareViaTwitter: 'Bagikan di X',
         reviewAction: 'Tinjau',
-        thisWeekTitle: 'Minggu ini',
-        allSessionsLink: 'Semua sesi',
-        noSessionsThisWeek: 'Belum ada sesi minggu ini.',
         attendanceMetric: 'kehadiran',
         sessionsPerWeek: 'sesi / mgg',
         duesCollectedLabel: 'Iuran terkumpul',
