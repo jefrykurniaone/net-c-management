@@ -1,6 +1,7 @@
 import { PaymentStatus, PaymentType } from '@prisma/client';
 import { SessionStatus } from '@prisma/client';
 import { afterAll, describe, expect, it } from 'vitest';
+import { buildAttendanceSparklineView } from '../attendance-sparkline-view';
 import { chartWeeks } from '../chart-weeks';
 import { getDictionary } from '../i18n/dictionaries';
 import { resolveMoneyByActivitySeries } from '../money-by-activity';
@@ -119,6 +120,23 @@ describe('a week label, read west of UTC', () => {
                     seats: index === 0 ? 5 : 0,
                     capacity: index === 0 ? 10 : 0,
                     sessionCount: index === 0 ? 1 : 0,
+                })),
+            },
+            getDictionary('en'),
+        );
+
+        expect(view.dots[0].label).toBe('Jul 13');
+        expect(view.values[0].label).toBe('Week of July 13, 2026');
+    });
+});
+
+describe('an attendance week label, read west of UTC', () => {
+    it('names the Monday the week opens on, not the evening before it', () => {
+        const view = buildAttendanceSparklineView(
+            {
+                points: chartWeeks(NOW).map((week, index) => ({
+                    week,
+                    count: index === 0 ? 2 : 0,
                 })),
             },
             getDictionary('en'),

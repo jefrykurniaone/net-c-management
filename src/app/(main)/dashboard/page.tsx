@@ -19,6 +19,7 @@ import { getOutstandingSessionBills } from '@/lib/payments';
 import { releaseExpiredHolds } from '@/lib/holds';
 import { getDashboardSessionsBoard } from '@/lib/dashboard-sessions';
 import { DuesBanner } from '@/components/dashboard/dues-banner';
+import { AttendanceSparklineCard } from '@/components/dashboard/attendance-sparkline-card';
 import { ActivitySummaryCard } from '@/components/dashboard/activity-summary-card';
 import {
     dashboardActivityCards,
@@ -239,6 +240,11 @@ export default async function DashboardPage() {
                     sub={t.dashboard.unpaid}
                 />
             </div>
+
+            {/* #172: a fourth stat does not fit the three-column split above,
+                so this small card runs full width right below it, still the
+                dashboard's stats area. */}
+            <AttendanceSparklineCard userId={userId} now={now} t={t} />
 
             {/* Per-activity sections */}
             {myActivities.length === 0 ? (
