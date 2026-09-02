@@ -418,6 +418,14 @@ const en = {
         // line above: a week that ran must never be reported as one that did not.
         fillNoCapacity: 'No Seats offered',
         fillAxisPercent: '{n}%',
+        // Own attendance, last eight weeks (#172).
+        attendanceTitle: 'Your attendance',
+        attendanceCaption: 'The last eight weeks: your own Present rows, week by week.',
+        attendanceHeadlineLabel: 'Present this week',
+        attendanceSeriesLabel: 'Present',
+        attendanceAxisDate: '{month} {day}',
+        attendanceWeekLabel: 'Week of {month} {day}, {year}',
+        attendanceValueRow: '{n} Present',
     },
     sessions: {
         title: 'Sessions',
@@ -1682,6 +1690,13 @@ const id: typeof en = {
         fillNoSessions: 'Tidak ada Sesi',
         fillNoCapacity: 'Tidak ada kursi ditawarkan',
         fillAxisPercent: '{n}%',
+        attendanceTitle: 'Kehadiranmu',
+        attendanceCaption: 'Delapan minggu terakhir: baris Hadir milikmu sendiri, per minggu.',
+        attendanceHeadlineLabel: 'Hadir minggu ini',
+        attendanceSeriesLabel: 'Hadir',
+        attendanceAxisDate: '{day} {month}',
+        attendanceWeekLabel: 'Minggu {day} {month} {year}',
+        attendanceValueRow: '{n} Hadir',
     },
     sessions: {
         title: 'Sesi',

@@ -40,6 +40,17 @@ export function StatCardsSkeleton({
     );
 }
 
+/** One `ChartFigure`-shaped card: title bar, a headline number, a chart area. */
+export function ChartCardSkeleton() {
+    return (
+        <div className={`${CARD} p-5 space-y-3`}>
+            <Skeleton className='h-4 w-32' />
+            <Skeleton className='h-7 w-16' />
+            <Skeleton className='h-16 w-full rounded-md' />
+        </div>
+    );
+}
+
 export function ListSkeleton({
     rows = DEFAULT_LIST_ROWS,
 }: Readonly<{ rows?: number }>) {
