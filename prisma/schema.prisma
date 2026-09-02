@@ -334,8 +334,10 @@ model Payment {
 
   // SESSION uniqueness: one payment per member per session. NULLs are distinct
   // in Postgres, so MONTHLY rows (sessionId = null) are unaffected here — their
-  // uniqueness is enforced by a PARTIAL unique index applied via raw SQL (see
-  // prisma/payment-monthly-unique.sql), which `db push` cannot express (AD-5).
+  // uniqueness is enforced by a PARTIAL unique index, which this schema does not
+  // declare. It is created by migration
+  // 20260902180043_add_monthly_payment_unique_index_and_rls (AD-5), and applying
+  // the migrations is the only thing needed to get it.
   @@unique([userId, sessionId])
   @@index([activityId])
   @@index([sessionId])

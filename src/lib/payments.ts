@@ -15,7 +15,8 @@ import { resolveDuesRate } from '@/lib/dues-rate';
  * Server-only payment writes (Story 3.2, AD-5).
  *
  * MONTHLY uniqueness is a PARTIAL unique index — `(userId, activityId, month,
- * year) WHERE type = 'MONTHLY'` (see prisma/payment-monthly-unique.sql).
+ * year) WHERE type = 'MONTHLY'` — created by migration
+ * 20260902180043_add_monthly_payment_unique_index_and_rls.
  * `prisma.payment.upsert` cannot target a partial index, so the monthly
  * insert-or-update is done by hand here: update-first, then create, with the
  * partial index as the race arbiter (a concurrent create that loses the race
