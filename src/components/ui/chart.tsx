@@ -282,6 +282,19 @@ export interface ChartLegendItem {
 }
 
 /**
+ * Same guard `useChart` throws, extracted so the caller can defer it: the
+ * `items` path in `ChartLegendContent` needs no `ChartContext` at all (the
+ * donut renders it outside any `<ChartContainer>`), so only the
+ * payload-derived fallback below may dereference the context and throw.
+ */
+function requireChartConfig(context: ChartContextProps | null): ChartConfig {
+  if (!context) {
+    throw new Error("useChart must be used within a <ChartContainer />")
+  }
+  return context.config
+}
+
+/**
  * Recharts 3.8's `Legend` only ever computes a `payload` for its `content`
  * when the chart itself mounts a `<Legend>` — `LegendImpl` bails out to
  * `null` before `content` is invoked at all when there is no legend payload
@@ -327,9 +340,10 @@ function ChartLegendContent({
   /** Items to render, in order, instead of Recharts' legend payload. */
   items?: readonly ChartLegendItem[]
 } & RechartsPrimitive.DefaultLegendContentProps) {
-  const { config } = useChart()
+  const context = React.useContext(ChartContext)
 
-  const resolvedItems = items ?? legendItemsFromPayload(payload, config, nameKey)
+  const resolvedItems =
+    items ?? legendItemsFromPayload(payload, requireChartConfig(context), nameKey)
 
   if (!resolvedItems.length) {
     return null
