@@ -272,57 +272,110 @@ function ChartTooltipContent({
 
 const ChartLegend = RechartsPrimitive.Legend
 
+/** One row of a legend, given explicitly rather than read out of a payload. */
+export interface ChartLegendItem {
+  /** Stable React key; never displayed. */
+  key: string
+  label: React.ReactNode
+  color?: string
+  icon?: React.ComponentType
+}
+
+/**
+ * Same guard `useChart` throws, extracted so the caller can defer it: the
+ * `items` path in `ChartLegendContent` needs no `ChartContext` at all (the
+ * donut renders it outside any `<ChartContainer>`), so only the
+ * payload-derived fallback below may dereference the context and throw.
+ */
+function requireChartConfig(context: ChartContextProps | null): ChartConfig {
+  if (!context) {
+    throw new Error("useChart must be used within a <ChartContainer />")
+  }
+  return context.config
+}
+
+/**
+ * Recharts 3.8's `Legend` only ever computes a `payload` for its `content`
+ * when the chart itself mounts a `<Legend>` — `LegendImpl` bails out to
+ * `null` before `content` is invoked at all when there is no legend payload
+ * in redux state (node_modules/recharts/es6/component/Legend.js:152,
+ * `if (legendPortal == null || contextPayload == null) { return null; }`).
+ * A caller that never mounts `<Legend>` — a `Pie` drawing its own colour key,
+ * for instance — has nothing to introspect. `DefaultLegendContent.d.ts:93-95`
+ * documents the same gap on the type side ("`DefaultLegendContent.payload` is
+ * omitted from `Legend` props"). `items` lets a caller bypass that contract
+ * and hand the row its content directly, in series order; `payload` remains
+ * the fallback for a caller that mounts a real `<Legend>` (unchanged).
+ */
+function legendItemsFromPayload(
+  payload: RechartsPrimitive.DefaultLegendContentProps["payload"],
+  config: ChartConfig,
+  nameKey: string | undefined
+): ChartLegendItem[] {
+  return (payload ?? [])
+    .filter((item) => item.type !== "none")
+    .map((item, index) => {
+      const key = `${nameKey ?? item.dataKey ?? "value"}`
+      const itemConfig = getPayloadConfigFromPayload(config, item, key)
+      return {
+        key: `${item.dataKey ?? item.value ?? index}`,
+        label: itemConfig?.label,
+        color: item.color,
+        icon: itemConfig?.icon,
+      }
+    })
+}
+
 function ChartLegendContent({
   className,
   hideIcon = false,
   payload,
   verticalAlign = "bottom",
   nameKey,
+  items,
+  "aria-label": ariaLabel,
 }: React.ComponentProps<"div"> & {
   hideIcon?: boolean
   nameKey?: string
+  /** Items to render, in order, instead of Recharts' legend payload. */
+  items?: readonly ChartLegendItem[]
 } & RechartsPrimitive.DefaultLegendContentProps) {
-  const { config } = useChart()
+  const context = React.useContext(ChartContext)
 
-  if (!payload?.length) {
+  const resolvedItems =
+    items ?? legendItemsFromPayload(payload, requireChartConfig(context), nameKey)
+
+  if (!resolvedItems.length) {
     return null
   }
 
   return (
     <div
+      aria-label={ariaLabel}
       className={cn(
-        "flex items-center justify-center gap-4",
+        "flex flex-wrap items-center justify-center gap-4",
         verticalAlign === "top" ? "pb-3" : "pt-3",
         className
       )}
     >
-      {payload
-        .filter((item) => item.type !== "none")
-        .map((item, index) => {
-          const key = `${nameKey ?? item.dataKey ?? "value"}`
-          const itemConfig = getPayloadConfigFromPayload(config, item, key)
-
-          return (
+      {resolvedItems.map((item) => (
+        <div
+          key={item.key}
+          className="flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
+        >
+          {item.icon && !hideIcon ? (
+            <item.icon />
+          ) : (
             <div
-              key={index}
-              className={cn(
-                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
-              )}
-            >
-              {itemConfig?.icon && !hideIcon ? (
-                <itemConfig.icon />
-              ) : (
-                <div
-                  className="h-2 w-2 shrink-0 rounded-[2px]"
-                  style={{
-                    backgroundColor: item.color,
-                  }}
-                />
-              )}
-              {itemConfig?.label}
-            </div>
-          )
-        })}
+              className="h-2 w-2 shrink-0 rounded-[2px]"
+              style={{
+                backgroundColor: item.color,
+              }}
+            />
+          )}
+          {item.label}
+        </div>
+      ))}
     </div>
   )
 }
