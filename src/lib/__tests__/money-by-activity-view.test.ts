@@ -164,7 +164,7 @@ describe('a Period with no confirmed money', () => {
         expect(view.segments).toEqual([]);
         expect(view.values).toEqual([]);
         expect(view.emptyChipLabel).toBe(t.insights.emptyChip);
-        expect(view.emptyMessage).toBe(t.insights.emptyMessage);
+        expect(view.emptyMessage).toBe(t.insights.moneyEmptyMessage);
     });
 
     it('still draws when one Activity has money', () => {

@@ -205,6 +205,6 @@ export function buildSeatsFilledView(
         valuesToggleLabel: t.insights.valuesToggle,
         valuesListLabel: t.insights.valuesListLabel,
         emptyChipLabel: t.insights.emptyChip,
-        emptyMessage: t.insights.emptyMessage,
+        emptyMessage: t.insights.fillEmptyMessage,
     };
 }

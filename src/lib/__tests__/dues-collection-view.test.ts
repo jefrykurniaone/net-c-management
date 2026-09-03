@@ -103,7 +103,7 @@ describe('a community with nothing to show', () => {
         expect(view.bars).toEqual([]);
         expect(view.values).toEqual([]);
         expect(view.emptyChipLabel).toBe(t.insights.emptyChip);
-        expect(view.emptyMessage).toBe(t.insights.emptyMessage);
+        expect(view.emptyMessage).toBe(t.insights.duesEmptyMessage);
     });
 
     it('still draws when a single Period has a figure', () => {
