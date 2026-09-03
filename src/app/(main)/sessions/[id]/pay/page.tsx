@@ -35,9 +35,14 @@ import { validateProofFile } from '@/lib/proof-file';
  * authority on the amount and the mode.
  */
 
+/**
+ * One attendee entry of `GET /api/sessions/[id]`. `holdExpiresAt` is optional
+ * because the route sends it on the reader's own row only — see
+ * `src/lib/session-detail-response.ts`.
+ */
 interface SessionAttendanceRow {
-    readonly userId: string;
-    readonly holdExpiresAt: string | null;
+    readonly user: Readonly<{ id: string }>;
+    readonly holdExpiresAt?: string | null;
 }
 
 /** The session prefill the register-&-pay uploader needs (display only). */
@@ -56,7 +61,7 @@ function myHoldExpiresAt(
 ): string | null {
     if (!session || !userId) return null;
     return (
-        session.attendances.find((a) => a.userId === userId)
+        session.attendances.find((a) => a.user.id === userId)
             ?.holdExpiresAt ?? null
     );
 }
