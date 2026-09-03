@@ -92,7 +92,9 @@ describe('a member who has not played at all in the window', () => {
         expect(view.dots).toEqual([]);
         expect(view.values).toEqual([]);
         expect(view.emptyChipLabel).toBe(t.insights.emptyChip);
-        expect(view.emptyMessage).toBe(t.insights.emptyMessage);
+        expect(view.emptyMessage).toBe(t.insights.attendanceEmptyMessage);
+        expect(view.emptyMessage.toLowerCase()).not.toContain('period');
+        expect(view.emptyMessage.toLowerCase()).not.toContain('periode');
     });
 
     it('still draws when a single week has one Present row', () => {

@@ -169,7 +169,9 @@ describe('a community that has posted nothing for eight weeks', () => {
         expect(view.dots).toEqual([]);
         expect(view.values).toEqual([]);
         expect(view.emptyChipLabel).toBe(t.insights.emptyChip);
-        expect(view.emptyMessage).toBe(t.insights.emptyMessage);
+        expect(view.emptyMessage).toBe(t.insights.fillEmptyMessage);
+        expect(view.emptyMessage.toLowerCase()).not.toContain('period');
+        expect(view.emptyMessage.toLowerCase()).not.toContain('periode');
     });
 
     it('still draws when a single week ran', () => {

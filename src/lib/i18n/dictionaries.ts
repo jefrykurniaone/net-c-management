@@ -385,7 +385,6 @@ const en = {
      */
     insights: {
         emptyChip: 'Empty',
-        emptyMessage: 'No data for this period yet.',
         valuesToggle: 'View chart values as text',
         valuesListLabel: 'Chart values',
         // Dues collected vs owed (#170).
@@ -426,6 +425,14 @@ const en = {
         attendanceAxisDate: '{month} {day}',
         attendanceWeekLabel: 'Week of {month} {day}, {year}',
         attendanceValueRow: '{n} Present',
+        // Per-chart empty messages (#222): the Dues chart and the donut keep
+        // the Period wording; the two eight-week charts name their own window
+        // instead, and never "period" - #172's is a neutral, non-reproachful
+        // register for a member's first-ever view of their own dashboard.
+        duesEmptyMessage: 'No data for this period yet.',
+        moneyEmptyMessage: 'No data for this period yet.',
+        fillEmptyMessage: 'No Sessions in these eight weeks yet.',
+        attendanceEmptyMessage: 'Nothing yet — this fills in as you play.',
     },
     sessions: {
         title: 'Sessions',
@@ -1660,7 +1667,6 @@ const id: typeof en = {
     },
     insights: {
         emptyChip: 'Kosong',
-        emptyMessage: 'Belum ada data untuk periode ini.',
         valuesToggle: 'Lihat nilai grafik sebagai teks',
         valuesListLabel: 'Nilai grafik',
         // Dues collected vs owed (#170).
@@ -1694,6 +1700,10 @@ const id: typeof en = {
         attendanceAxisDate: '{day} {month}',
         attendanceWeekLabel: 'Minggu {day} {month} {year}',
         attendanceValueRow: '{n} Hadir',
+        duesEmptyMessage: 'Belum ada data untuk periode ini.',
+        moneyEmptyMessage: 'Belum ada data untuk periode ini.',
+        fillEmptyMessage: 'Belum ada Sesi dalam delapan minggu ini.',
+        attendanceEmptyMessage: 'Belum ada apa-apa — ini akan terisi seiring kamu bermain.',
     },
     sessions: {
         title: 'Sesi',
