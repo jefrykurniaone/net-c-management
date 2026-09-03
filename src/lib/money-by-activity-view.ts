@@ -44,6 +44,14 @@ const WARM_RANGE_START = 2;
  */
 const WARM_RANGE_SEGMENTS = 3;
 
+/**
+ * The text list's summary row identity (#214). `Activity.name` carries no
+ * unique constraint (`prisma/schema.prisma:145` only makes `slug` unique), so
+ * an Admin can name an Activity "Total" — this constant keeps the summary row
+ * distinct from that Activity's own row regardless.
+ */
+const TOTAL_ROW_ID = 'total';
+
 /** One drawn arc of the ring. Zero Activities never reach here. */
 export interface MoneySegment {
     /** The Activity id — a stable React key, never displayed. */
@@ -58,6 +66,8 @@ export interface MoneySegment {
 export interface MoneyValueRow {
     readonly label: string;
     readonly value: string;
+    /** Stable row identity (#214) — the Activity id, or {@link TOTAL_ROW_ID}. */
+    readonly id: string;
 }
 
 /** Everything the donut draws, decided here and nowhere else. */
@@ -157,6 +167,7 @@ export function buildMoneyByActivityView(
     const drawn = hasMoney(series);
     const rows = drawn
         ? series.slices.map((slice) => ({
+              id: slice.activityId,
               label: slice.activityName,
               value: rupiah(slice.amount),
           }))
@@ -169,7 +180,14 @@ export function buildMoneyByActivityView(
         }),
         segments: drawn ? toSegments(series.slices) : [],
         values: drawn
-            ? [...rows, { label: t.insights.moneyTotal, value: rupiah(series.total) }]
+            ? [
+                  ...rows,
+                  {
+                      id: TOTAL_ROW_ID,
+                      label: t.insights.moneyTotal,
+                      value: rupiah(series.total),
+                  },
+              ]
             : [],
         totalLabel: t.insights.moneyTotal,
         totalValue: rupiah(series.total),
