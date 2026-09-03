@@ -1,0 +1,7 @@
+# Vitest rewrites snapshot files with LF on every run, regardless of the
+# checkout's core.autocrlf setting. Without this, that rewrite makes the
+# working tree look dirty after every test run even though the content is
+# byte-identical as text. Scoped to snapshots only — do not widen this to
+# `* text=auto` or any other pattern; that would renormalize the whole repo
+# in one commit and conflict with every branch in flight (see #217).
+*.snap text eol=lf
