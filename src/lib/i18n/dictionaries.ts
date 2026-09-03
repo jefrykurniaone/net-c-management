@@ -1488,6 +1488,9 @@ const en = {
         activityRequired: 'Select an activity',
         activityMembershipRequired: 'Select at least one activity',
         rejectReasonRequired: 'A rejection reason is required.',
+        communityNameTooLong: 'Community name cannot exceed {max} characters',
+        communityNameWordTooLong:
+            'Community name cannot contain a word longer than {max} letters',
     },
 };
 
@@ -2578,6 +2581,9 @@ const id: typeof en = {
         activityRequired: 'Pilih aktivitas',
         activityMembershipRequired: 'Pilih minimal satu aktivitas',
         rejectReasonRequired: 'Alasan penolakan wajib diisi.',
+        communityNameTooLong: 'Nama komunitas maksimal {max} karakter',
+        communityNameWordTooLong:
+            'Nama komunitas tidak boleh memuat kata lebih dari {max} huruf',
     },
 };
 

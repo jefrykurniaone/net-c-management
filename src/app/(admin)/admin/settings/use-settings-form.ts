@@ -152,8 +152,9 @@ function useLogoUpload({
     };
 }
 
-/** Save: `PATCH /api/settings`. Two refusals before the request goes out — the
- *  community name, and the public copy's caps (#153) — then the same payload. */
+/** Save: `PATCH /api/settings`. Two refusals before the request goes out — an
+ *  empty community name, and the public copy's caps (#153) — then the same
+ *  payload, and the route's own refusal shown as it wrote it (#209). */
 function useSettingsSave({
     t,
     router,
@@ -183,7 +184,16 @@ function useSettingsSave({
                 body: JSON.stringify(settings),
             });
             if (!res.ok) {
-                throw new Error(t.admin.settingsFailed);
+                // The community-name caps live only in the route (#209), so
+                // the message it wrote is the only one that names the number
+                // the Admin broke. Read it rather than replacing it with a
+                // generic failure; `t.admin.settingsFailed` stands in for a
+                // response that carries no message at all.
+                const data = (await res.json().catch(() => ({}))) as {
+                    error?: string;
+                };
+                toast.error(data.error ?? t.admin.settingsFailed);
+                return;
             }
             toast.success(t.admin.settingsSaved);
             router.refresh();
