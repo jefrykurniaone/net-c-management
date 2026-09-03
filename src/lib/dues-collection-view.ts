@@ -1,4 +1,5 @@
 import { fromPeriodKey, type BillingPeriod } from './billing-period';
+import { chartColor } from './chart-tokens';
 import type { DuesCollectionSeries, DuesPeriodPoint } from './dues-collection';
 import type { Dictionary } from './i18n/dictionaries';
 
@@ -47,6 +48,20 @@ export interface DuesCollectionValueRow {
     readonly value: string;
 }
 
+/**
+ * One entry of the legend, coloured and labelled but not yet positioned — the
+ * chart draws these in the array order `duesLegendItems` returns them in, not
+ * in whatever order Recharts hands back its own legend payload (#224: that
+ * payload's only locale-dependent input is each Bar's translated `name`, and
+ * Recharts reorders by it, so `id`'s legend read Owed before Collected even
+ * though the JSX always declares `collected` first).
+ */
+export interface DuesLegendItem {
+    readonly key: 'collected' | 'owed';
+    readonly label: string;
+    readonly color: string;
+}
+
 /** Everything the chart draws, decided here and nowhere else. */
 export interface DuesCollectionChartView {
     readonly title: string;
@@ -56,6 +71,10 @@ export interface DuesCollectionChartView {
     readonly values: readonly DuesCollectionValueRow[];
     readonly collectedLabel: string;
     readonly owedLabel: string;
+    /** `var(--color-chart-1)` — the settled green ink, same token in both themes. */
+    readonly collectedColor: string;
+    /** `var(--color-chart-2)` — the purple beside it. */
+    readonly owedColor: string;
     readonly valuesToggleLabel: string;
     readonly valuesListLabel: string;
     readonly emptyChipLabel: string;
@@ -131,6 +150,8 @@ export function buildDuesCollectionView(
         values: drawn.map((point) => toValueRow(point, t)),
         collectedLabel: t.insights.duesCollected,
         owedLabel: t.insights.duesOwed,
+        collectedColor: chartColor(0),
+        owedColor: chartColor(1),
         valuesToggleLabel: t.insights.valuesToggle,
         valuesListLabel: t.insights.valuesListLabel,
         emptyChipLabel: t.insights.emptyChip,
@@ -138,6 +159,20 @@ export function buildDuesCollectionView(
         axisMillionTemplate: t.insights.duesAxisMillion,
         axisThousandTemplate: t.insights.duesAxisThousand,
     };
+}
+
+/**
+ * The legend's two entries, Collected before Owed — every locale, every theme.
+ * Pinned by array order rather than left to Recharts' own legend-payload
+ * construction, which reorders by each Bar's translated `name` and put Owed
+ * first in `id` (#224). The chart passes this straight to `ChartLegendContent`
+ * as `items`, the explicit-order interface #215 added for exactly this case.
+ */
+export function duesLegendItems(view: DuesCollectionChartView): readonly DuesLegendItem[] {
+    return [
+        { key: 'collected', label: view.collectedLabel, color: view.collectedColor },
+        { key: 'owed', label: view.owedLabel, color: view.owedColor },
+    ];
 }
 
 /**

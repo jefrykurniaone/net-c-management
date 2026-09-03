@@ -3,6 +3,7 @@ import { toPeriodKey } from '../billing-period';
 import type { DuesCollectionSeries, DuesPeriodPoint } from '../dues-collection';
 import {
     buildDuesCollectionView,
+    duesLegendItems,
     rupiah,
     skippedDuesRateLog,
 } from '../dues-collection-view';
@@ -114,6 +115,51 @@ describe('a community with nothing to show', () => {
         expect(buildDuesCollectionView(oneFigure, getDictionary('en')).bars).toHaveLength(
             6,
         );
+    });
+});
+
+describe('the legend order (#224)', () => {
+    it.each(LOCALES)(
+        'reads Collected before Owed in %s, regardless of which translated name is longer',
+        (locale) => {
+            const t = getDictionary(locale);
+            const view = buildDuesCollectionView(SIX_PERIODS, t);
+            const items = duesLegendItems(view);
+
+            expect(items.map((item) => item.key)).toEqual(['collected', 'owed']);
+            expect(items[0].label).toBe(t.insights.duesCollected);
+            expect(items[1].label).toBe(t.insights.duesOwed);
+        },
+    );
+
+    it('pairs the green swatch with Collected and the purple swatch with Owed in every locale', () => {
+        for (const locale of LOCALES) {
+            const view = buildDuesCollectionView(SIX_PERIODS, getDictionary(locale));
+            const items = duesLegendItems(view);
+
+            expect(items[0]).toEqual({
+                key: 'collected',
+                label: view.collectedLabel,
+                color: view.collectedColor,
+            });
+            expect(items[1]).toEqual({
+                key: 'owed',
+                label: view.owedLabel,
+                color: view.owedColor,
+            });
+            // TC-IN-002: the colour-to-label pairing never flips, only the
+            // legend's left-to-right order was the bug.
+            expect(view.collectedColor).not.toBe(view.owedColor);
+        }
+    });
+
+    it('keeps the same order and the same colours whether or not the chart has any figures to draw', () => {
+        const empty = buildDuesCollectionView(NOTHING_YET, getDictionary('en'));
+        const items = duesLegendItems(empty);
+
+        expect(items.map((item) => item.key)).toEqual(['collected', 'owed']);
+        expect(items[0].color).toBe(empty.collectedColor);
+        expect(items[1].color).toBe(empty.owedColor);
     });
 });
 
