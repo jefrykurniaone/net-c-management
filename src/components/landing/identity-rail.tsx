@@ -24,38 +24,62 @@ export function IdentityRail({
 }: Readonly<{ communityName: string; logoUrl: string; t: Dictionary }>) {
     return (
         <header className='border-b border-border bg-background'>
-            {/* The rail does not wrap. Letting it wrap pushes the two controls
-                onto a second row — a 105px rail on a phone against 57px, with a
-                ragged gap under the wordmark — and costs 48px of the fold
-                budget. The mark group shrinks instead. */}
+            {/* The rail wraps only when the name leaves it no choice — #209.
+                Re-measured 2026-09-04 against the `type-title` wordmark #223
+                landed, at 390px: a wrapped rail is 105px against 57px unwrapped,
+                so the 48px of fold budget the old comment defended is real and
+                the row still keeps the controls beside the wordmark wherever it
+                can. What changed is the condition. The old comment forbade
+                wrapping *unconditionally*, and paid for it with `min-w-0` on the
+                mark group, which let the row squeeze the wordmark below the
+                width of its own longest word and hand the overflow to
+                `break-words`. That is the mid-word break #209 came from.
+
+                So the ladder now runs: fit beside the controls (57px, every
+                realistic name), wrap the name at its spaces (65-87px), and only
+                for a name whose longest word cannot fit the 164.06px the
+                controls leave — an 18-letter word needs 174.42px, an 18-letter
+                uppercase one 291.94px — yield the whole line to the mark group
+                and drop the controls to a second row, where the wordmark gets
+                312px. Never a mid-word break, and never a glyph painted over a
+                control: without `flex-wrap` that same name bleeds 18.33px to
+                95.44px past its box across the theme toggle, which no measure of
+                element boxes reports. `justify-end` only has free space to act
+                on once the row has wrapped, and it returns the controls to the
+                right-hand edge they hold on one row. */}
             <div
-                className={`mx-auto flex ${BOARD_GUTTER_CLASS} items-center gap-block px-block py-cell`}>
-                <div className='flex min-w-0 flex-1 items-center gap-cell'>
+                className={`mx-auto flex ${BOARD_GUTTER_CLASS} flex-wrap items-center justify-end gap-block px-block py-cell`}>
+                <div className='flex flex-1 items-center gap-cell'>
                     <CommunityIdentityMark
                         communityName={communityName}
                         logoUrl={logoUrl}
                         size='md'
                     />
-                    {/* `min-w-0` + `break-words` is a guarantee, not a
-                        preference. The community name is runtime configuration
-                        of unknown length, so it is the first thing to fail an
-                        unfamiliar name, not the last. Without this a single long
-                        word painted straight across the theme toggle, which no
-                        measurement of element boxes reports, because a glyph is
-                        not clipped by the box that owns it.
+                    {/* No `min-w-0` and no `break-words`, and the two go
+                        together: `min-w-0` is what let this span be sized
+                        narrower than its own longest word, and `break-words` is
+                        what then chopped that word in half. Dropping both makes
+                        the span's min-content width — its longest word — the
+                        floor the flex row has to respect, which is what turns
+                        the row's `flex-wrap` above from decoration into the
+                        last-resort rung it now carries.
 
-                        The order is fixed: wrap at spaces, break mid-word only
-                        as a last resort, never bleed and never paint over a
-                        control. A mid-word break is a visible defect and that is
-                        the point — the guarantee exists so a violation degrades
-                        instead of burying a control the visitor needs.
+                        The name's own length is bounded where it is authored
+                        rather than here: `src/app/api/settings/route.ts` caps it
+                        at 48 characters and 18 letters per word, measured so
+                        that even 18 letters of `W` — 291.94px, the widest glyph
+                        in Archivo at weight 700 — clear the 312px this rail can
+                        give the wordmark at 390px. A cap is the only bound that
+                        holds for arbitrary input: no size the design system owns
+                        is small enough to fit an unbounded word, and truncation
+                        and a mid-word break are both refused (#209).
 
                         The name wears Title (#223), the same role as a card
                         heading: sentence case, no tracking, 17px. It carries no
                         size, weight, tracking or transform of its own, because a
                         raw utility beside a `type-*` role is a second source of
                         truth that tailwind-merge cannot dedupe. */}
-                    <span className='type-title min-w-0 break-words text-foreground'>
+                    <span className='type-title text-foreground'>
                         {communityName}
                     </span>
                 </div>
