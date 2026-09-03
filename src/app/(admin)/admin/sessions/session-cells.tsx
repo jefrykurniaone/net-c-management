@@ -63,7 +63,9 @@ export function SessionTitle({
 export function SessionActivity({
     session,
 }: Readonly<{ session: SessionRegisterRow }>) {
-    return <ActivityBadge name={session.activityName} />;
+    return (
+        <ActivityBadge name={session.activityName} icon={session.activityIcon} />
+    );
 }
 
 /** Held Seats over the capacity they are held against. */
