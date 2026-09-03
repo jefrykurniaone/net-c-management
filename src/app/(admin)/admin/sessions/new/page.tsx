@@ -266,7 +266,7 @@ export default function NewSessionPage() {
                 )}
               />
             </div>
-            <LockNote id={FEE_NOTE_ID}>{t.admin.feeLocked}</LockNote>
+            <LockNote id={FEE_NOTE_ID}>{t.admin.feeLocksLater}</LockNote>
             </FormSection>
 
             <FormField

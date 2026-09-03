@@ -1245,6 +1245,11 @@ const en = {
         registerCountSessions: '{n} sessions',
         registerCountActivities: '{n} activities',
         registerCountParticipants: '{n} participants',
+        // Create form's forward-looking sibling to `feeLocked` (#196): no
+        // Session exists yet, so the fee is not locked, but it will become
+        // so once a Payment or held Seat exists. Never reuse `feeLocked`
+        // here — the edit form needs that key verbatim for the real lock.
+        feeLocksLater: 'The fee is locked once this session has a payment or a held seat.',
     },
     activity: {
         label: 'Activity',
@@ -2361,6 +2366,8 @@ const id: typeof en = {
         registerCountSessions: '{n} sesi',
         registerCountActivities: '{n} aktivitas',
         registerCountParticipants: '{n} peserta',
+        feeLocksLater:
+            'Biaya akan terkunci begitu sesi ini memiliki pembayaran atau kursi yang dipegang.',
     },
     activity: {
         label: 'Aktivitas',
