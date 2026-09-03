@@ -5,12 +5,19 @@ import { join } from 'node:path';
 /**
  * #193. `Label`, `FormDescription` and `FormMessage` used to spell a Rally
  * type role out by hand in raw Tailwind size/weight/leading utilities, so a
- * later change to `type-label` or `type-caption` in
- * `src/app/styles/type-roles.css` (DESIGN.md, Typography) would move every
- * other consumer of the role and silently leave these three behind. This
- * reads the components and the token layer back off disk, the same way
- * `design-tokens.test.ts` reads `colors.css`, so a hand-rolled utility
- * creeping back in fails on a string rather than on a screenshot.
+ * later change to `type-caption` in `src/app/styles/type-roles.css`
+ * (DESIGN.md, Typography) would move every other consumer of the role and
+ * silently leave these three behind. This reads the components and the
+ * token layer back off disk, the same way `design-tokens.test.ts` reads
+ * `colors.css`, so a hand-rolled utility creeping back in fails on a string
+ * rather than on a screenshot.
+ *
+ * `Label` composes `type-caption font-medium`, not `type-label`: comment 5523547023
+ * on #193 rejected `type-label` there, because `DESIGN.md:363` and the
+ * comment above `type-roles.css:91` both scope that role to column heads and
+ * chip text (11px, weight 700, 0.1em tracking, uppercase) — a form field
+ * label is neither, and composing it would have changed 57 call sites across
+ * 16 files.
  */
 const SRC_DIR = join(process.cwd(), 'src');
 const labelSource = readFileSync(
@@ -48,18 +55,9 @@ function readUtility(css: string, name: string): Record<string, string> {
     return declarations;
 }
 
-const typeLabel = readUtility(typeCss, 'type-label');
 const typeCaption = readUtility(typeCss, 'type-caption');
 
 describe('form primitive type roles (#193)', () => {
-    it("pins type-label to DESIGN.md's Label role", () => {
-        expect(typeLabel['font-size']).toBe('0.6875rem');
-        expect(typeLabel['font-weight']).toBe('700');
-        expect(typeLabel['line-height']).toBe('1.1');
-        expect(typeLabel['letter-spacing']).toBe('0.1em');
-        expect(typeLabel['text-transform']).toBe('uppercase');
-    });
-
     it("pins type-caption to DESIGN.md's Caption role", () => {
         expect(typeCaption['font-size']).toBe('0.8125rem');
         expect(typeCaption['font-weight']).toBe('400');
@@ -67,16 +65,17 @@ describe('form primitive type roles (#193)', () => {
         expect(typeCaption['letter-spacing']).toBe('normal');
     });
 
-    it('Label composes type-label, not a hand-rolled size/weight/leading utility', () => {
+    it('Label composes type-caption plus the font-medium weight step, not type-label and not a hand-rolled size/weight/leading utility', () => {
         const match = labelSource.match(
             /data-slot="label"[\s\S]*?className=\{cn\(\s*"([^"]+)"/,
         );
         const className = match?.[1] ?? '';
 
-        expect(className).toContain('type-label');
+        expect(className).toContain('type-caption');
+        expect(className).toContain('font-medium');
+        expect(className).not.toMatch(/\btype-label\b/);
         expect(className).not.toMatch(/\btext-sm\b/);
         expect(className).not.toMatch(/\bleading-none\b/);
-        expect(className).not.toMatch(/\bfont-medium\b/);
     });
 
     it('FormDescription composes type-caption, not text-sm', () => {
