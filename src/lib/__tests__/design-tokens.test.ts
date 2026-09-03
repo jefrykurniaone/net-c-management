@@ -70,32 +70,30 @@ describe('Rally palette contrast', () => {
     });
 });
 
-/**
- * `type-mark`, the one retired name #174 could not remove: neither
- * `docs/spec-rally-public-v1.md` nor the completion records of #154 and #156
- * assign the community wordmark a Rally role, so its two call sites and its
- * `@utility` stay as they are rather than inventing one. This asserts the
- * alias still names the open decision, so it fails here rather than quietly
- * losing its tracking issue.
- */
-const PENDING_DECISION_ISSUE = '#223';
-
-/** True when `needle`'s line, or the line above it, names the given issue. */
-function hasNoteFor(source: string, needle: string, issue: string): boolean {
-    const lines = source.split('\n');
-    const index = lines.findIndex((line) => line.includes(needle));
-    if (index === -1) {
-        return false;
-    }
-    const previous = index > 0 ? lines[index - 1] : '';
-    return lines[index].includes(issue) || previous.includes(issue);
-}
+/** Rally's eight roles, in the order `type-roles.css` declares them. */
+const LIVE_TYPE_ROLES: readonly string[] = [
+    'type-display',
+    'type-statement',
+    'type-title',
+    'type-body',
+    'type-caption',
+    'type-label',
+    'type-figure',
+    'type-figure-lead',
+];
 
 describe('Retired token aliases', () => {
-    it('names the open decision beside type-mark', () => {
-        expect(
-            hasNoteFor(typeCss, '@utility type-mark {', PENDING_DECISION_ISSUE),
-        ).toBe(true);
+    /**
+     * #223 settled the community wordmark on the Title role and deleted the
+     * `type-mark` alias, so the eight live roles are the whole stylesheet.
+     * A ninth `@utility` here would be a role nothing decided.
+     */
+    it('declares the eight live roles and no retired one', () => {
+        const declared = [...typeCss.matchAll(/@utility (type-[\w-]+)/g)].map(
+            ([, name]) => name,
+        );
+
+        expect(declared).toEqual(LIVE_TYPE_ROLES);
     });
 
     /**
@@ -115,10 +113,81 @@ describe('Retired token aliases', () => {
 });
 
 /**
- * The zero-consumer gate #174 exists to add. Every retired Papan Jadwal name
- * except `type-mark` (see above) has to have exactly nothing left naming it
+ * #278: `tailwind-merge` cannot dedupe an opaque Tailwind v4 `@utility` class
+ * against a raw size, weight, tracking or transform utility — both survive in
+ * the class attribute and stylesheet emission order decides which one paints,
+ * which is a half-applied role that a screenshot pair does not show. The
+ * community wordmark is the surface #223 took that decision for, so both rails
+ * are held to the role and nothing that competes with it. Colour (`text-*` as
+ * a token) and the never-bleed utilities (`min-w-0`, `break-words`) declare
+ * nothing a `type-*` role declares, so they are not competitors.
+ */
+const TEXT_SIZE_SUFFIXES = new Set([
+    'xs',
+    'sm',
+    'base',
+    'lg',
+    'xl',
+    '2xl',
+    '3xl',
+    '4xl',
+    '5xl',
+    '6xl',
+    '7xl',
+    '8xl',
+    '9xl',
+]);
+const TRANSFORM_UTILITIES = new Set([
+    'uppercase',
+    'lowercase',
+    'capitalize',
+    'normal-case',
+]);
+const COMPETING_PREFIXES = ['font-', 'tracking-', 'leading-'];
+const TEXT_PREFIX = 'text-';
+
+/** True when the class token would fight a `type-*` role's own declarations. */
+function isCompetingUtility(token: string): boolean {
+    if (TRANSFORM_UTILITIES.has(token)) {
+        return true;
+    }
+    if (COMPETING_PREFIXES.some((prefix) => token.startsWith(prefix))) {
+        return true;
+    }
+    return (
+        token.startsWith(TEXT_PREFIX) &&
+        TEXT_SIZE_SUFFIXES.has(token.slice(TEXT_PREFIX.length))
+    );
+}
+
+const WORDMARK_RAILS = [
+    { rail: 'landing', file: join('components', 'landing', 'identity-rail.tsx') },
+    { rail: 'threshold', file: join('components', 'layout', 'threshold-rail.tsx') },
+] as const;
+
+/** The one span in each rail that renders the runtime-configured name. */
+const NAME_SPAN_CLASSES = /<span className='([^']*)'>\s*\{communityName\}/;
+
+describe('Community wordmark type', () => {
+    it.each(WORDMARK_RAILS)(
+        '$rail rail composes type-title with nothing competing',
+        ({ file }) => {
+            const source = readFileSync(join(process.cwd(), 'src', file), 'utf8');
+            const classes =
+                NAME_SPAN_CLASSES.exec(source)?.[1].split(/\s+/) ?? [];
+
+            expect(classes).toContain('type-title');
+            expect(classes.filter(isCompetingUtility)).toEqual([]);
+        },
+    );
+});
+
+/**
+ * The zero-consumer gate #174 exists to add, with no exception left in it.
+ * Every retired Papan Jadwal name has to have exactly nothing naming it
  * anywhere in `src/` — this scans the tree itself rather than trusting a
  * point-in-time count, so a reintroduced name fails here on the next run.
+ * `type-mark` joined the list when #223 settled the wordmark on Title.
  */
 const RETIRED_CLASS_NAMES: readonly string[] = [
     'bg-board',
@@ -130,6 +199,7 @@ const RETIRED_CLASS_NAMES: readonly string[] = [
     'shadow-tile',
     'shadow-tile-pressed',
     'type-hero',
+    'type-mark',
 ];
 
 const SCAN_EXTENSIONS = new Set(['.ts', '.tsx', '.css']);

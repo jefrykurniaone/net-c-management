@@ -61,6 +61,14 @@
   letter-spacing: -0.015em;
 }
 
+/**
+ * Card and section headings — and the community wordmark in the public
+ * header rail (`identity-rail.tsx`) and the threshold rail
+ * (`threshold-rail.tsx`). Rally never had a Mark role, and #223 settled
+ * the wordmark on this one rather than inventing a ninth: the name is
+ * runtime configuration with no length cap, so every step up in size is
+ * a step further from surviving an unfamiliar one.
+ */
 @utility type-title {
   font-size: 1.0625rem;
   font-stretch: normal;
@@ -117,36 +125,4 @@
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   One retired role left. #174 removed the retired Hero role and every
-   other retired name in the run; the Mark role below could not go with
-   it — see the comment on the utility. Nothing new may consume it.
-   ───────────────────────────────────────────────────────────── */
-
-/**
- * pending decision — see #223. The retired Mark role: the community
- * wordmark in the public header rail (`identity-rail.tsx`) and the
- * threshold rail (`threshold-rail.tsx`). Rally has no Mark role — the
- * wordmark was meant to get its own treatment in the public spec, but
- * neither `docs/spec-rally-public-v1.md` nor the completion records of
- * #154 and #156 assign one. #174 leaves this alias and its two call
- * sites as they are rather than inventing a role or renaming the class
- * to something that would read as a resolution; keeps the letterforms
- * it shipped with, tracked *out* rather than drawn in, and adds only the
- * width reset every non-Display role now carries. Held at its old size
- * deliberately: the community name is runtime configuration with no
- * length cap, and every step up in size is a step further from
- * surviving one. #223 tracks the open decision.
- */
-/* pending decision — see #223 */
-@utility type-mark {
-  font-size: clamp(1.125rem, 2.4vw, 1.5rem);
-  font-stretch: normal;
-  font-variation-settings: normal;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }

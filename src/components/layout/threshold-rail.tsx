@@ -32,8 +32,11 @@ export function ThresholdRail({
                     size='md'
                 />
                 {/* Same never-bleed guarantee every threshold rail carries: the
-                    community name is runtime configuration of unknown length. */}
-                <span className='type-mark min-w-0 break-words text-foreground'>
+                    community name is runtime configuration of unknown length.
+                    The name wears Title (#223), as it does in the landing rail,
+                    and carries no size, weight, tracking or transform of its
+                    own. */}
+                <span className='type-title min-w-0 break-words text-foreground'>
                     {communityName}
                 </span>
             </div>
