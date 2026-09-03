@@ -6970,13 +6970,12 @@ to 300px it wraps to 2 rows with no overflow. The Dues chart's legend still
 renders its 2 items through the payload fallback, unchanged in `en` at
 1440×900.
 
-- **Gap, not sourced:** the **six-Activity** wrap combination named in this
-  ticket's own brief was never independently observed. #215's own
-  completion record defers it to "#214's post-merge check in the next
-  batch," but #214's own completion record (checked directly) verifies
-  only the donut's row-identity/duplicate-label figures (`TC-FU-006`
-  below) — it contains no 390px layout measurement. Named again in "Not
-  met" below.
+- The six-Activity wrap combination this ticket's own brief named has its
+  own case, `TC-FU-011` below. #215's own completion record defers it to
+  "#214's post-merge check in the next batch," and #214's own completion
+  record verifies only the donut's row-identity/duplicate-label figures
+  (`TC-FU-006`), with no layout measurement of its own — the wrap itself
+  was measured directly instead.
 
 #### TC-FU-006 · P0 · Positive — The money-by-Activity donut's text list keys on Activity id, not label: two identically-named Activities and one named `Total` each render their own row and their own amount (#214)
 
@@ -7106,18 +7105,74 @@ doubling, no trailing space.
   page; the "renders identically to baseline" claim only ever applied to
   the two pages #205 actually touched. Named again in "Not met" below.
 
+#### TC-FU-011 · P0 · Positive — The shared legend wraps at 390px with six Activities carrying money, stays one row at four, and the Dues chart's own legend is unaffected (#215)
+
+Source: orchestrator's own measurement, 2026-09-04, on merged `main` at
+`1c2151c`.
+
+**Preconditions:** two sentinel Activities (`Tenis Meja`, `Bola Voli`)
+added to the seed's four, each carrying one Confirmed `MONTHLY` Payment in
+the current Billing Period (Rp 90.000 and Rp 100.000) — six active
+Activities total. `/admin`, 390×844 and 1440×900, both themes, both
+locales — 8 views, all HTTP 200, no console errors.
+
+**Steps:**
+1. Read the money-by-Activity donut legend's item count, row count and
+   items per row at both viewports, in all four theme/locale combinations.
+2. Read `document.documentElement.scrollWidth`/`.clientWidth`.
+3. Sum each legend item's measured width and compare it against the
+   legend's available width.
+4. Repeat with the seed's four Activities, no sentinels, for contrast.
+5. Read the Dues chart's own legend the same way.
+
+**Expected result:**
+
+- **Trap, confirmed live and worth recording:** a first attempt created
+  the two sentinel Activities with no Payments and still saw only **4**
+  legend items with six Activities present — correct behaviour, not a
+  defect. `resolveMoneyByActivitySeries` seeds every Activity at zero, and
+  the view drops the zero-value ones from the drawn ring; the legend is
+  built from the ring's own segments, so a zero-money Activity reaches the
+  accessible text list but never the legend. Reaching six legend items
+  needs six Activities with Confirmed money this Period, which is why each
+  sentinel carried one Confirmed Payment.
+
+  | Viewport | Items | Rows | Items per row | Legend box | Overflow |
+  |---|---|---|---|---|---|
+  | 390×844 | 6 | **2** | 4 then 2 | 326 × 65.69 | none |
+  | 1440×900 | 6 | 1 | 6 | 520 × 30.84 | none |
+
+  Identical in all four theme/locale combinations at each viewport.
+  `flex-wrap` computes to `wrap` on the legend container — #215's change.
+  Item labels in render order: `Badminton | Basket | Futsal | Tennis |
+  Bola Voli | Tenis Meja`. Widest single item **75.34px**; the six item
+  widths sum to **367.88px** against **326px** of available legend width
+  at 390px, so the row cannot hold them and must wrap — the arithmetic
+  that explains why the pre-#215 legend overflowed instead of wrapping.
+  Rightmost item edge **333.31px**, inside the 390px viewport.
+- For contrast, the seed's four Activities (no sentinels): 4 items, 1 row,
+  item widths sum to **228.61px** inside the same 326px — under the
+  threshold, no wrap needed. Four Activities does not exercise the wrap;
+  six does, which is why this case needed the sentinel pair.
+- The Dues chart's own two-item legend stayed 1 row at both viewports
+  throughout this measurement (316px × 28px at 390px) — nothing about the
+  six-Activity donut wrap touches `TC-FU-005`'s item-order case.
+- Sentinels removed afterwards and the wipe proven: a census returns the
+  seed's exact pre-check state — four active Activities, money-by-Activity
+  total Rp 2.165.000, zero sentinel Sessions, Activities or Payments.
+
 ### 24.1 Fixtures and the seed
 
 **No write of any kind by this ticket.** `TESTING.md` is the only tracked
 file this branch changes; every figure above was carried over from the
-orchestrator's own measurements (waves 2–3, on merged `main`) or from a
-named closed ticket's own completion record, not re-derived. Every
-sentinel row a source above describes (the extra Activities for
-`TC-FU-006`, the 7th Session for `TC-FU-009`, the held-Seat Session for
-`TC-FU-008`) was created and removed by its own originating ticket or by
-the orchestrator directly, with the wipe proven against a pre-check
-census where the source says so — none of it was created or removed by
-this ticket.
+orchestrator's own measurements (waves 2–3, and the `TC-FU-011` measurement
+taken 2026-09-04, on merged `main`) or from a named closed ticket's own
+completion record, not re-derived. Every sentinel row a source above
+describes (the extra Activities for `TC-FU-006` and `TC-FU-011`, the 7th
+Session for `TC-FU-009`, the held-Seat Session for `TC-FU-008`) was created
+and removed by its own originating ticket or by the orchestrator directly,
+with the wipe proven against a pre-check census where the source says so —
+none of it was created or removed by this ticket.
 
 ### 24.2 Recorded run — consolidated 2026-09-04
 
@@ -7131,20 +7186,21 @@ started and no browser was driven by this ticket.
 | TC-FU-002 | P0 | **Pass** — orchestrator measurement, waves 2–3: zero mid-word breaks, zero overflow across 120 views, three names |
 | TC-FU-003 | P0 | **Pass** — orchestrator measurement, waves 2–3: both caps inclusive, both locales' messages confirmed |
 | TC-FU-004 | P0 | **Pass, one gap noted** — #222's own completion record: four keys landed, gated, Vitest-pinned; live post-fix render not independently re-walked (see "Not met") |
-| TC-FU-005 | P0 | **Pass, one gap noted** — orchestrator measurement for item order; #215's own completion record for the 4-item wrap; the six-Activity combination is a gap (see "Not met") |
+| TC-FU-005 | P0 | **Pass** — orchestrator measurement for item order; #215's own completion record for the 4-item wrap; the six-Activity combination is `TC-FU-011` |
 | TC-FU-006 | P0 | **Pass** — orchestrator measurement and #214's own completion record agree exactly on all seven rows |
 | TC-FU-007 | P0 | **Pass** — #198's own completion record: icon rows draw the icon, icon-less rows draw the initial |
 | TC-FU-008 | P0 | **Pass** — #196's own completion record: no false lock on create, real lock unchanged on edit |
 | TC-FU-009 | P0 | **Pass** — orchestrator measurement: count bug fixed at seven Sessions; Dues tile now agrees with the Dues chart, resolving §23's `TC-IN-007` |
 | TC-FU-010 | P0 | **Pass, one gap noted** — orchestrator measurement: #205's two pages 31/32 byte-identical (32nd a proven nondeterministic artefact); #232 extracted nothing, so its two pages have no baseline to diff (see "Not met") |
+| TC-FU-011 | P0 | **Pass** — orchestrator measurement, 2026-09-04: 6 legend items wrap to 2 rows at 390px (4 then 2), 1 row at 1440px, no overflow either viewport; 4 items need no wrap; Dues chart legend unaffected |
 
-**Summary.** 10 cases, all consolidated by this ticket from prior recorded
-observations. **10 executed (by their original source, not by this
-ticket), 10 Pass, 0 Fail, 0 Not run.** Two gaps named below, neither a
-regression: a fix (`TC-FU-004`) whose live render was deliberately
-deferred by its own ticket, and a ticket (`TC-FU-005`'s six-Activity
-combination, `TC-FU-010`'s two pages) that this run's own brief assumed
-happened and did not.
+**Summary.** 11 cases: 10 consolidated by this ticket from prior recorded
+observations, plus `TC-FU-011`, measured directly at the orchestrator's own
+hand once the map's other tickets flagged it as unsourced. **11 executed,
+11 Pass, 0 Fail, 0 Not run.** Two gaps named below, neither a regression: a
+fix (`TC-FU-004`) whose live render was deliberately deferred by its own
+ticket, and a ticket (`TC-FU-010`'s two pages) that this run's own brief
+assumed happened and did not.
 
 **Not met.**
 
@@ -7157,13 +7213,6 @@ happened and did not.
   activity-less community, is unconfirmed. Would need a member with zero
   history or a Session-less community, neither in the seed without a
   write — the same constraint #222's own record names.
-- **`TC-FU-005`'s six-Activity legend wrap at 390px was never measured.**
-  #215's own completion record names it as deferred to #214's post-merge
-  check; #214's own completion record, read directly for this ticket,
-  contains no layout measurement at all — only the row-identity figures
-  in `TC-FU-006`. Would need six Activities with sentinel Payments,
-  captured at 390px, and cleaned up afterward the way `TC-FU-006`'s
-  fixture was.
 - **`TC-FU-010`'s member Sessions page and landing page have no
   before/after baseline**, because #232 — the ticket this run's own brief
   cites for them — closed without touching either file. Not a defect: the
