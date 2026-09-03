@@ -159,9 +159,12 @@ export function duesChartPeriods(now: Date): BillingPeriod[] {
  * collected above owed. The honest fix is a Membership mode history in the
  * shape ADR 0002 gave the Dues Rate — one row per (Membership, effective-from
  * Period) — which is a schema change and a decision of its own, not something
- * a chart may invent. Until then this module reports what the rows can answer;
- * `dues-collection.test.ts` pins the behaviour so it stays a known limit
- * rather than becoming a surprise.
+ * a chart may invent. That decision — the shape, the backfill rule, and what
+ * it asserts about Memberships whose earlier modes are already lost — is
+ * recorded in `docs/adr/0004-membership-payment-mode-history.md`, proposed
+ * rather than accepted. Until then this module reports what the rows can
+ * answer; `dues-collection.test.ts` pins the behaviour so it stays a known
+ * limit rather than becoming a surprise.
  */
 function monthlyMemberCount(
     activity: DuesChartActivity,
