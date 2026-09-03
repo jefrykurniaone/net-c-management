@@ -141,10 +141,10 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
             },
             _count: true,
         }),
-        // The honest tile figure: every non-cancelled Session in the week, not
-        // a page of them. Kept as its own query rather than derived from the
-        // `findMany` below, because that one is capped for the per-Activity
-        // aggregation and no longer safe to read a length off (#189).
+        // The tile figure: every non-cancelled Session in the week. Its own
+        // query rather than a `.length` of the `findMany` below, because that
+        // one is read for a different purpose (per-Activity aggregation) and
+        // the tile must not depend on what that purpose happens to fetch (#189).
         prisma.activitySession.count({
             where: {
                 date: { gte: weekStart, lte: weekEnd },
@@ -152,25 +152,15 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
             },
         }),
         // Feeds `weeklyCounts` below — one entry per Session, grouped by
-        // Activity — so this is never a page. The `activity` include is not
-        // read here; `activityId` alone is grouped on, but the relation was
-        // already selected before #189 and dropping it is a follow-up.
+        // Activity — so this carries no page size. Selects only `activityId`,
+        // the one field the grouping reads; a `Map` accumulation does not
+        // depend on row order either, so no `orderBy`.
         prisma.activitySession.findMany({
             where: {
                 date: { gte: weekStart, lte: weekEnd },
                 status: { not: 'CANCELLED' },
             },
-            orderBy: { date: 'asc' },
-            include: {
-                activity: { select: { name: true } },
-                _count: {
-                    select: {
-                        attendances: {
-                            where: { status: { in: ['REGISTERED', 'PRESENT'] } },
-                        },
-                    },
-                },
-            },
+            select: { activityId: true },
         }),
         prisma.activitySession.findMany({
             where: {

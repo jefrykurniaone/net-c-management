@@ -9,9 +9,10 @@ import { prisma } from '@/lib/prisma';
  * panel (#165). A week holding seven or more Sessions silently read as six.
  *
  * The fix separates the honest count (`prisma.activitySession.count`) from
- * the page still read for per-Activity aggregation, so both figures below
- * assert against seven Sessions in one week — a count neither figure could
- * have reported correctly under the old `take: 6`.
+ * the query still read for per-Activity aggregation — now narrowed to the one
+ * field (`activityId`) that aggregation reads — so both figures below assert
+ * against seven Sessions in one week, a count neither figure could have
+ * reported correctly under the old `take: 6`.
  */
 
 vi.mock('@/lib/prisma', () => ({
@@ -24,7 +25,7 @@ vi.mock('@/lib/prisma', () => ({
     },
 }));
 
-type SessionRow = Awaited<ReturnType<typeof prisma.activitySession.findMany>>[number];
+type SessionWeeklyRow = Awaited<ReturnType<typeof prisma.activitySession.findMany>>[number];
 type ActivityFindManyResult = Awaited<ReturnType<typeof prisma.activity.findMany>>;
 
 /** Thursday inside the ISO week 2026-08-31..2026-09-06. */
@@ -44,20 +45,14 @@ const ACTIVITY_ROW = {
     memberships: [],
 } as unknown as ActivityFindManyResult[number];
 
-function weekSession(id: string): SessionRow {
-    return {
-        id,
-        activityId: ACTIVITY_ID,
-        title: `Session ${id}`,
-        date: NOW,
-        maxPlayers: 20,
-        activity: { name: 'Padel' },
-        _count: { attendances: 0 },
-    } as unknown as SessionRow;
+/** What the per-Activity `weeklyCounts` grouping actually reads: `activityId`
+ * alone, per the `select: { activityId: true }` on that query. */
+function weeklyRow(activityId: string): SessionWeeklyRow {
+    return { activityId } as unknown as SessionWeeklyRow;
 }
 
-const SEVEN_SESSIONS_THIS_WEEK: SessionRow[] = Array.from({ length: 7 }, (_, i) =>
-    weekSession(`s${i + 1}`),
+const SEVEN_SESSIONS_THIS_WEEK: SessionWeeklyRow[] = Array.from({ length: 7 }, () =>
+    weeklyRow(ACTIVITY_ID),
 );
 
 describe('loadDashboardData - Sessions this week count (#189)', () => {
@@ -77,6 +72,8 @@ describe('loadDashboardData - Sessions this week count (#189)', () => {
 
     it('reports seven on the tile when the week holds seven non-cancelled Sessions', async () => {
         vi.mocked(prisma.activitySession.count).mockResolvedValue(7);
+        // Two `activitySession.findMany` calls happen: the weekly-aggregation
+        // query, then the under-booked query. Neither matters to this case.
         vi.mocked(prisma.activitySession.findMany).mockResolvedValue([]);
 
         const data = await loadDashboardData(NOW);
@@ -86,9 +83,12 @@ describe('loadDashboardData - Sessions this week count (#189)', () => {
 
     it("counts an Activity's own seven weekly Sessions uncapped on its card", async () => {
         vi.mocked(prisma.activitySession.count).mockResolvedValue(7);
-        vi.mocked(prisma.activitySession.findMany).mockResolvedValue(
-            SEVEN_SESSIONS_THIS_WEEK,
-        );
+        // Call order matches `Promise.all`'s array order: the weekly-aggregation
+        // query first (the seven rows this case pins), the under-booked query
+        // second (empty — its own shape is out of scope here).
+        vi.mocked(prisma.activitySession.findMany)
+            .mockResolvedValueOnce(SEVEN_SESSIONS_THIS_WEEK)
+            .mockResolvedValueOnce([]);
 
         const data = await loadDashboardData(NOW);
 
