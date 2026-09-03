@@ -38,20 +38,24 @@ export function IdentityRail({
                     />
                     {/* `min-w-0` + `break-words` is a guarantee, not a
                         preference. The community name is runtime configuration
-                        of unknown length, and tracked caps make it the widest
-                        element per character in the system — so it is the first
-                        thing to fail an unfamiliar name, not the last. Without
-                        this a single long word painted straight across the theme
-                        toggle, which no measurement of element boxes reports,
-                        because a glyph is not clipped by the box that owns it.
+                        of unknown length, so it is the first thing to fail an
+                        unfamiliar name, not the last. Without this a single long
+                        word painted straight across the theme toggle, which no
+                        measurement of element boxes reports, because a glyph is
+                        not clipped by the box that owns it.
 
                         The order is fixed: wrap at spaces, break mid-word only
                         as a last resort, never bleed and never paint over a
-                        control. A mid-word break in a 900-weight slab is a
-                        visible defect and that is the point — the guarantee
-                        exists so a violation degrades instead of burying a
-                        control the visitor needs. */}
-                    <span className='type-mark min-w-0 break-words text-foreground'>
+                        control. A mid-word break is a visible defect and that is
+                        the point — the guarantee exists so a violation degrades
+                        instead of burying a control the visitor needs.
+
+                        The name wears Title (#223), the same role as a card
+                        heading: sentence case, no tracking, 17px. It carries no
+                        size, weight, tracking or transform of its own, because a
+                        raw utility beside a `type-*` role is a second source of
+                        truth that tailwind-merge cannot dedupe. */}
+                    <span className='type-title min-w-0 break-words text-foreground'>
                         {communityName}
                     </span>
                 </div>

@@ -356,7 +356,14 @@ does. Both properties inherit, so every other role resets both.
 - **Statement** (600, regular width, `clamp(1.25rem, 2.6vw, 1.875rem)`, 1.28):
   the large line that is not a headline. Display shouts a name; Statement says
   a sentence, so it keeps its lower case, its descenders and room to breathe.
-- **Title** (700, `1.0625rem`, 1.3): card and section headings.
+- **Title** (700, `1.0625rem`, 1.3): card and section headings, and the
+  community wordmark in the public header rail and the threshold rail. The
+  wordmark's role was the one Rally left open — neither the public spec nor the
+  threshold surfaces assign it a role of its own — and #223 settled it here
+  rather than adding a ninth: the community name is runtime configuration with
+  no length cap, so every step up in size is a step further from surviving an
+  unfamiliar one. Sentence case, no tracking, and no size, weight or transform
+  of its own at either call site.
 - **Body** (400, `0.9375rem`, 1.55): prose, at a 65–75ch measure.
 - **Caption** (400, `0.8125rem`, 1.45): the dense supporting line inside a card
   — time and venue, a note under an action.
@@ -736,8 +743,8 @@ call site. Everything else retired as written.
 
 These aliases resolved to their nearest Rally value in `src/app/globals.css`
 and `src/app/styles/type-roles.css` while the surfaces naming them were
-migrated. **#174 removed the aliases and every call site but one.** Final
-state, checked in `src/` on 2026-09-02:
+migrated. **#174 removed the aliases and every call site but one; #223 removed
+the last one.** Final state, checked in `src/` on 2026-09-04:
 
 | Retired name | Resolved to | Call sites left |
 |---|---|---|
@@ -753,19 +760,29 @@ state, checked in `src/` on 2026-09-02:
 | `shadow-tile` | `--shadow-lift` | **0** — had none; alias deleted by #174 |
 | `shadow-tile-pressed` | a no-op shadow, i.e. `shadow-none` | **0** — had none; alias deleted by #174 |
 | `type-hero` | Display | **0** — removed by #174 |
-| `type-mark` | its own former letterforms | **2**, unresolved — see #223 |
+| `type-mark` | Title | **0** — removed by #223 |
 
-Every alias above except `type-mark` is deleted from `src/app/globals.css`
-and `src/app/styles/type-roles.css` (whose sibling, `board-materials.css`,
-was renamed `colors.css` by #174);
-`src/lib/__tests__/design-tokens.test.ts` now fails the build if any of the
-eight class names reappears anywhere in `src/`. `type-mark`'s `@utility` and
-its two call sites (`components/landing/identity-rail.tsx`,
-`components/layout/threshold-rail.tsx`) stay until #223 — the community
-wordmark's Rally role — is decided: neither `docs/spec-rally-public-v1.md` nor
-the completion records of #154 and #156 assign one, so #174 left the alias as
-it is rather than inventing a role or renaming it to something that would read
-as a resolution.
+Every alias above is deleted from `src/app/globals.css` and
+`src/app/styles/type-roles.css` (whose sibling, `board-materials.css`, was
+renamed `colors.css` by #174);
+`src/lib/__tests__/design-tokens.test.ts` now fails the build if any of the ten
+class names reappears anywhere in `src/`, with no exception left in that gate.
+
+`type-mark` was the last one, and it was stuck rather than merely unfinished:
+neither `docs/spec-rally-public-v1.md` nor the completion records of #154 and
+#156 assigned the community wordmark a role, so #174 left the alias alone
+rather than inventing one or renaming it to something that would read as a
+resolution. **#223 decided it — the community wordmark wears Title.** The
+`@utility` and its long pending-decision comment are deleted, both call sites
+(`components/landing/identity-rail.tsx`, `components/layout/threshold-rail.tsx`)
+compose `type-title`, and the test's pending-decision marker is gone with them.
+That is a deliberate visual change, not a silent one: the name goes from
+uppercase, `0.14em`-tracked, weight 900 at 18–24px to sentence case, untracked,
+weight 700 at 17px — *XClub Community* rather than *XCLUB COMMUNITY* — on the
+landing rail and on all four threshold surfaces. A ninth role and a promotion
+of the alias to a documented one were both on the table and both rejected; so
+were Display, whose condensed caps would have made the 390px fit worse, and
+Label, at which the name would have read as a column head.
 
 The three wash aliases had **no consumer at all** even before #174: the chips
 took their call sites with them in #149, and only the alias itself was left to
