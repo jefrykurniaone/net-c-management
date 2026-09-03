@@ -64,7 +64,7 @@ export interface DashboardData {
     readonly activityCards: readonly ActivityCardData[];
 }
 
-/** The ten parallel queries the dashboard reads, before any derived figure is built. */
+/** The eleven parallel queries the dashboard reads, before any derived figure is built. */
 async function fetchDashboardRows(now: Date, period: BillingPeriod) {
     const { month: currentMonth, year: currentYear } = period;
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -80,6 +80,7 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
         activities,
         duesActivities,
         confirmedByActivity,
+        sessionsThisWeekCount,
         sessionsThisWeek,
         underBookedSession,
         attendanceRows,
@@ -140,23 +141,26 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
             },
             _count: true,
         }),
+        // The tile figure: every non-cancelled Session in the week. Its own
+        // query rather than a `.length` of the `findMany` below, because that
+        // one is read for a different purpose (per-Activity aggregation) and
+        // the tile must not depend on what that purpose happens to fetch (#189).
+        prisma.activitySession.count({
+            where: {
+                date: { gte: weekStart, lte: weekEnd },
+                status: { not: 'CANCELLED' },
+            },
+        }),
+        // Feeds `weeklyCounts` below — one entry per Session, grouped by
+        // Activity — so this carries no page size. Selects only `activityId`,
+        // the one field the grouping reads; a `Map` accumulation does not
+        // depend on row order either, so no `orderBy`.
         prisma.activitySession.findMany({
             where: {
                 date: { gte: weekStart, lte: weekEnd },
                 status: { not: 'CANCELLED' },
             },
-            orderBy: { date: 'asc' },
-            take: 6,
-            include: {
-                activity: { select: { name: true } },
-                _count: {
-                    select: {
-                        attendances: {
-                            where: { status: { in: ['REGISTERED', 'PRESENT'] } },
-                        },
-                    },
-                },
-            },
+            select: { activityId: true },
         }),
         prisma.activitySession.findMany({
             where: {
@@ -192,6 +196,7 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
         activities,
         duesActivities,
         confirmedByActivity,
+        sessionsThisWeekCount,
         sessionsThisWeek,
         underBookedSession,
         attendanceRows,
@@ -210,6 +215,7 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
         activities,
         duesActivities,
         confirmedByActivity,
+        sessionsThisWeekCount,
         sessionsThisWeek,
         underBookedSession,
         attendanceRows,
@@ -275,7 +281,7 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
     return {
         activeMembers,
         newThisMonth,
-        sessionsThisWeekCount: sessionsThisWeek.length,
+        sessionsThisWeekCount,
         activitiesCount: activities.length,
         pendingPayments,
         collected,
