@@ -5,15 +5,14 @@ import { Cell, Pie, PieChart } from 'recharts';
 import { ChartFigure } from '@/components/charts/chart-figure';
 import {
     ChartContainer,
+    ChartLegendContent,
     ChartTooltip,
     ChartTooltipContent,
     type ChartConfig,
+    type ChartLegendItem,
 } from '@/components/ui/chart';
 import { rupiah } from '@/lib/dues-collection-view';
-import type {
-    MoneyByActivityChartView,
-    MoneySegment,
-} from '@/lib/money-by-activity-view';
+import type { MoneyByActivityChartView } from '@/lib/money-by-activity-view';
 
 /**
  * This Billing Period's money grouped by Activity, as a donut with the total in
@@ -33,12 +32,12 @@ import type {
  * product's real type roles — `type-figure` is the role every Rupiah amount in
  * this app takes — instead of an SVG `<text>` that has to restate them.
  *
- * **The colour key is ours rather than Recharts' `Legend`.** Recharts 3.8 omits
- * `payload` from `Legend`'s props, so a pie legend's labels can only be
- * recovered by introspecting the payload it builds itself, and
- * `ChartLegendContent` renders nothing when that lookup misses. A plain list of
- * swatches cannot miss, and it wraps — the shared legend is a single
- * non-wrapping flex row, which overflows 390px at four Activities.
+ * **The colour key is `ChartLegendContent`, given its items explicitly**
+ * (#215). Recharts 3.8 only computes a `Legend`'s `payload` when the chart
+ * mounts an actual `<Legend>`, and this donut never does — a `Pie`'s own
+ * colour key has no `Legend` to introspect. Passing `items` sidesteps that
+ * contract instead of relying on it, and the shared row now wraps (`chart.tsx`
+ * `ChartLegendContent`), so it no longer overflows 390px at four Activities.
  *
  * Motion: Recharts 3.8 defaults `isAnimationActive` to `'auto'`, which respects
  * `prefers-reduced-motion` and disables the grow-in during SSR. Left at the
@@ -89,33 +88,6 @@ function DonutTotal({
             <span className='type-label text-muted-foreground'>{label}</span>
             <span className='type-figure text-foreground'>{value}</span>
         </div>
-    );
-}
-
-/**
- * Which colour is which Activity. Colour is never the only carrier (DESIGN.md),
- * and on a phone there is no hover to fall back on, so the mapping is on the
- * page rather than in the tooltip alone.
- */
-function ActivityColourKey({
-    segments,
-    label,
-}: Readonly<{ segments: readonly MoneySegment[]; label: string }>) {
-    return (
-        <ul
-            aria-label={label}
-            className='mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 type-caption text-muted-foreground'>
-            {segments.map((segment) => (
-                <li key={segment.key} className='flex items-center gap-1.5'>
-                    <span
-                        aria-hidden='true'
-                        className='h-2 w-2 shrink-0 rounded-[2px]'
-                        style={{ backgroundColor: segment.color }}
-                    />
-                    {segment.label}
-                </li>
-            ))}
-        </ul>
     );
 }
 
@@ -172,9 +144,17 @@ export function MoneyByActivityChart({
                 </ChartContainer>
                 <DonutTotal label={view.totalLabel} value={view.totalValue} />
             </div>
-            <ActivityColourKey
-                segments={view.segments}
-                label={view.keyLabel}
+            <ChartLegendContent
+                items={view.segments.map(
+                    (segment): ChartLegendItem => ({
+                        key: segment.key,
+                        label: segment.label,
+                        color: segment.color,
+                    }),
+                )}
+                hideIcon
+                aria-label={view.keyLabel}
+                className='type-caption text-muted-foreground'
             />
         </ChartFigure>
     );
