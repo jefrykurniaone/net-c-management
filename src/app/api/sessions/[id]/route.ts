@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { releaseExpiredHolds } from '@/lib/holds';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
+import { toSessionDetailResponse } from '@/lib/session-detail-response';
 import type { SessionRefusal } from '@/lib/session-lock';
 import {
     deleteSessionLocked,
@@ -40,8 +41,15 @@ export async function GET(
                 },
             },
             _count: { select: { attendances: true } },
+            // `select`, never `include`: an Attendance row carries another
+            // member's payment standing (`holdExpiresAt`), and admitted is not
+            // the same as entitled to it. `toSessionDetailResponse` then keeps
+            // that expiry on the reader's own row alone.
             attendances: {
-                include: {
+                select: {
+                    id: true,
+                    status: true,
+                    holdExpiresAt: true,
                     user: {
                         select: {
                             id: true,
@@ -62,7 +70,9 @@ export async function GET(
         );
     }
 
-    return NextResponse.json(activitySession);
+    return NextResponse.json(
+        toSessionDetailResponse(activitySession, session.user.id),
+    );
 }
 
 /** HTTP for "the request is well-formed, and this Session refuses it". */
