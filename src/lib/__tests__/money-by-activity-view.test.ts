@@ -68,7 +68,11 @@ describe('the drawn ring and the text list', () => {
     it('lists the zero Activity as zero rather than as nothing', () => {
         const view = buildMoneyByActivityView(TWO_EARNING, getDictionary('en'));
 
-        expect(view.values[2]).toEqual({ label: 'Archery', value: 'Rp 0' });
+        expect(view.values[2]).toEqual({
+            id: 'archery',
+            label: 'Archery',
+            value: 'Rp 0',
+        });
     });
 
     it.each(LOCALES)('ends the list with the centre total in %s', (locale) => {
@@ -76,6 +80,7 @@ describe('the drawn ring and the text list', () => {
         const view = buildMoneyByActivityView(TWO_EARNING, t);
 
         expect(view.values.at(-1)).toEqual({
+            id: 'total',
             label: t.insights.moneyTotal,
             value: rupiah(1_300_000),
         });
@@ -87,10 +92,31 @@ describe('the drawn ring and the text list', () => {
 
         view.segments.forEach((segment, index) => {
             expect(view.values[index]).toEqual({
+                id: segment.key,
                 label: segment.label,
                 value: rupiah(segment.amount),
             });
         });
+    });
+
+    it('keys two identically-named Activities as two distinct rows', () => {
+        const t = getDictionary('en');
+        const twoFutsals = seriesOf([
+            slice('futsal-a', 'Futsal', 900_000),
+            slice('futsal-b', 'Futsal', 400_000),
+        ]);
+        const view = buildMoneyByActivityView(twoFutsals, t);
+
+        const [first, second, total] = view.values;
+        expect(view.values).toHaveLength(3);
+        expect(first).toEqual({ id: 'futsal-a', label: 'Futsal', value: rupiah(900_000) });
+        expect(second).toEqual({ id: 'futsal-b', label: 'Futsal', value: rupiah(400_000) });
+        expect(total).toEqual({
+            id: 'total',
+            label: t.insights.moneyTotal,
+            value: rupiah(1_300_000),
+        });
+        expect(new Set(view.values.map((row) => row.id)).size).toBe(3);
     });
 
     it('names the Period in the caption, in each locale', () => {

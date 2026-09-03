@@ -8,6 +8,13 @@ export interface ChartFigureValue {
     readonly label: string;
     /** Pre-formatted for display (Rupiah, a percentage, a count) — the wrapper never formats a number itself. */
     readonly value: string;
+    /**
+     * A stable identity for this row, when the label is not unique by
+     * construction (#214) — e.g. an Activity id. Falls back to `label` when
+     * absent, which is every caller whose labels are unique already (a
+     * Billing Period, a week).
+     */
+    readonly id?: string;
 }
 
 export interface ChartFigureProps {
@@ -120,7 +127,7 @@ function ChartValuesList({
                 className='mt-2 space-y-1 type-caption text-muted-foreground'>
                 {values.map((row) => (
                     <li
-                        key={row.label}
+                        key={row.id ?? row.label}
                         className='flex justify-between gap-4 tabular-nums'>
                         <span>{row.label}</span>
                         <span className='text-foreground'>{row.value}</span>
