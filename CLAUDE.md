@@ -70,8 +70,6 @@ Declared in `vercel.json`, protected by the `CRON_SECRET` bearer token (auto-inj
 
 ## Coding Standards
 
-These rules were carried by `AGENTS.md` until that file was deleted in `eff4b48` (2026-06-28); it no longer exists and is no longer the source. The canonical version is the vault coding standard, and this section keeps its numbers unchanged — 40 for a function, 300 for a file, 3 for nesting depth. What this section overrides is only what those numbers count, and which shapes are exempt.
-
 - Max function length: 40 lines of code — the function's span minus every `return` that returns JSX. Markup is not logic and does not count toward the limit. Exempt rather than in violation: test callbacks, and functions with no control flow at all, such as a validation schema, a table-column array, or a single `Promise.all` of queries. An API guard cascade whose ordering is carried by co-location is accepted where it stands rather than extracted — reordering it is a behaviour change, so keeping the checks together is worth more than the line count. Nothing checks this rule. It is a review rule, and ESLint carries no length or complexity rule in this repository.
 - Max file length: 300 lines of code, excluding comments and blank lines. Nothing checks this rule either, for the same reason: it is a review rule, and ESLint carries no length or complexity rule in this repository.
 - Both length rules bind new and modified code. Existing over-length code is grandfathered — it stays as it is until it is touched for another reason, and a measured violation count is not a backlog. Do not split a file or a function your ticket did not name.
