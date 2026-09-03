@@ -11,8 +11,11 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from '@/components/ui/chart';
-import { chartColor } from '@/lib/chart-tokens';
-import { rupiah, type DuesCollectionChartView } from '@/lib/dues-collection-view';
+import {
+    duesLegendItems,
+    rupiah,
+    type DuesCollectionChartView,
+} from '@/lib/dues-collection-view';
 
 /**
  * Dues collected against Dues owed, six Billing Periods of grouped bars (#170).
@@ -29,11 +32,15 @@ import { rupiah, type DuesCollectionChartView } from '@/lib/dues-collection-view
  * `prefers-reduced-motion` and disables the grow-in during SSR. Left at the
  * default rather than pinned, so the honouring cannot be switched off by
  * accident.
+ *
+ * **The legend takes `duesLegendItems(view)`, not Recharts' own legend
+ * payload** (#224). Recharts 3.8 reorders that payload by each Bar's
+ * translated `name`, so `id`'s legend read Owed before Collected even though
+ * the JSX below always declares `collected` first; `items` is the
+ * explicit-order interface #215 added to `ChartLegendContent` for exactly this
+ * case, and `duesLegendItems` pins Collected before Owed by array order —
+ * unaffected by which name string is longer or sorts first in either locale.
  */
-
-/** Collected takes the settled green ink, owed the purple beside it. */
-const COLLECTED_COLOR = chartColor(0);
-const OWED_COLOR = chartColor(1);
 
 const MILLION = 1_000_000;
 const THOUSAND = 1_000;
@@ -92,8 +99,8 @@ export function DuesCollectionChart({
     view,
 }: Readonly<{ view: DuesCollectionChartView }>) {
     const config = {
-        collected: { label: view.collectedLabel, color: COLLECTED_COLOR },
-        owed: { label: view.owedLabel, color: OWED_COLOR },
+        collected: { label: view.collectedLabel, color: view.collectedColor },
+        owed: { label: view.owedLabel, color: view.owedColor },
     } satisfies ChartConfig;
 
     return (
@@ -126,7 +133,9 @@ export function DuesCollectionChart({
                     <ChartTooltip
                         content={<ChartTooltipContent formatter={formatMoneyRow} />}
                     />
-                    <ChartLegend content={<ChartLegendContent />} />
+                    <ChartLegend
+                        content={<ChartLegendContent items={duesLegendItems(view)} />}
+                    />
                     <Bar
                         dataKey='collected'
                         name={view.collectedLabel}
