@@ -675,8 +675,12 @@ it has no room left.
 - The **alias** utilities are present and are expected to be, until #174 runs:
   `.bg-board`, `.ring-offset-board`, `.bg-tile`, `.border-rule`, `.divide-rule`,
   `.bg-rule`, the three wash aliases, `.shadow-tile`, `.shadow-tile-pressed`,
-  `.type-hero`, `.type-mark`. Every one of them resolves to a Rally token and
-  every one carries a removal note.
+  `.type-hero`. Every one of them resolves to a Rally token and every one
+  carries a removal note. `.type-mark` no longer belongs on this list: #223
+  settled the wordmark-role decision this alias was held open for and deleted
+  it, ahead of #174, once its last two call sites (`identity-rail.tsx`,
+  `threshold-rail.tsx`) moved onto `.type-title` — one of Rally's own eight
+  roles, not a retirement alias.
 - The three **mark-form** names are **absent from the stylesheet and from
   `src/`**, and so is `data-mark`. The torn-edge class cannot render at all:
   `src/app/styles/mark-forms.css`, which defined it, is deleted.
@@ -855,7 +859,7 @@ both locales.
 | TC-DS-103 | Computed | **Pass** — 16/16 clear 3:1; worst is `--border` on `--accent` at **3.18** light. The three unfloored pairs are in `RECORDED_PAIRS`, not `AA_PAIRS` |
 | TC-DS-104 | Computed | **Pass** — white **1.96**, off-white **1.69**, beige ground **1.62** on PBP Green; the action carries Black Green at **8.74** in both themes, and the direction assertion holds |
 | TC-DS-105 | Computed | **Fail on first run, then fixed** — `--chart-1` measured **1.96** against the light card. See below |
-| TC-DS-106 | Static | **Fail before the rewrite, Pass after** — measured in `.next/static/chunks/*.css`. Before: the strike utility was **present**, with **0** call sites in `src/`. After: **0** occurrences, and so are the torn-edge class and `data-mark`; the only retired decoration utilities left are `text-decoration-line` and `text-decoration-color` inside live `underline` rules, which are CSS property names rather than retired classes. **Re-run for #174, 2026-09-02:** every alias is gone from the built stylesheet except `.type-mark` — `.bg-board`, `.ring-offset-board`, `.bg-tile`, `.border-rule`, `.divide-rule`, `.bg-rule`, `.bg-wash-ink`, `.bg-wash-tape`, `.bg-wash-strike`, `.shadow-tile`, `.shadow-tile-pressed` and `.type-hero` all measure **0** occurrences. `.type-mark` is still emitted, by design: its `@utility` and its two call sites (`identity-rail.tsx`, `threshold-rail.tsx`) stay until the open wordmark-role decision (#223) is settled, and `src/lib/__tests__/design-tokens.test.ts` now asserts the alias names that issue rather than a #174 removal note. Stylesheet **91,332 bytes** |
+| TC-DS-106 | Static | **Fail before the rewrite, Pass after** — measured in `.next/static/chunks/*.css`. Before: the strike utility was **present**, with **0** call sites in `src/`. After: **0** occurrences, and so are the torn-edge class and `data-mark`; the only retired decoration utilities left are `text-decoration-line` and `text-decoration-color` inside live `underline` rules, which are CSS property names rather than retired classes. **Re-run for #174, 2026-09-02:** every alias is gone from the built stylesheet except `.type-mark` — `.bg-board`, `.ring-offset-board`, `.bg-tile`, `.border-rule`, `.divide-rule`, `.bg-rule`, `.bg-wash-ink`, `.bg-wash-tape`, `.bg-wash-strike`, `.shadow-tile`, `.shadow-tile-pressed` and `.type-hero` all measure **0** occurrences. `.type-mark` is still emitted, by design: its `@utility` and its two call sites (`identity-rail.tsx`, `threshold-rail.tsx`) stay until the open wordmark-role decision (#223) is settled, and `src/lib/__tests__/design-tokens.test.ts` now asserts the alias names that issue rather than a #174 removal note. Stylesheet **91,332 bytes**. **Confirmed gone, 2026-09-04 (#223):** both call sites now carry `.type-title` in place of `.type-mark`, and `document.querySelectorAll('.type-mark').length` measured **0** across 40 rendered views (5 surfaces × 2 viewports × 2 themes × 2 locales) where it measured **1** on all 40 before — #174 now has one fewer alias to remove |
 | TC-DS-107 | Rendered | **Pending — orchestrator run** |
 | TC-DS-108 | Rendered | **Pending — orchestrator run** |
 | TC-DS-109 | Rendered | **Pending — orchestrator run** |
@@ -1618,6 +1622,17 @@ Activity.
   case.
 
 #### TC-MS-013 · P1 · Positive — The dashboard's cells carry no claim control, and its money mark comes from the resolver
+
+> **Superseded by Rally (#159, #160).** The dashboard's Activity cards carry a
+> claim/withdraw control by design — #159 and #160's own Implementation
+> Decisions route every Activity card's action through the same
+> `slotActionFor` resolver the week strip uses, so a member reads and acts on
+> one contract instead of learning a second card that carries none. This
+> case's "no claim control" assertion is what changed, not a regression:
+> §22's `TC-MW-*` suite already covers the week-strip's claim and withdraw
+> paths, including the server's three named refusals, so no coverage is lost
+> by marking this superseded. Pointer: **TC-MW-009**, which recorded the
+> contradiction live against this build and left the update for an owner.
 
 **Preconditions:** Adi; `/dashboard`; run once per material.
 
@@ -5407,7 +5422,7 @@ spot-checked (representative, not a full cross-product — the same choice
 - The dev-only link (`process.env.NODE_ENV !== 'production'`) is present on
   this dev server and reads **"Dev login →"** / **"Login dev →"**.
 - `ThresholdRail` carries only the identity mark and the community name
-  (`type-mark`) — no theme toggle, no language switcher, confirmed absent in
+  (`type-title`) — no theme toggle, no language switcher, confirmed absent in
   the DOM, unlike the landing page's `IdentityRail`.
 
 ### TC-PP-011 · P0 · Positive — Onboarding restyled onto Rally, both themes and locales
@@ -6778,3 +6793,433 @@ prior concern confirmed resolved (`chart-1` contrast, `TC-IN-012`).
   ticket to run; `TESTING.md` is the only tracked file this branch changes,
   so no source was newly exposed to review. Said plainly rather than
   claiming a scan that did not happen.
+
+## 24. Recorded run — the `followups` map (`TC-FU-*`)
+
+Spec [#231](https://github.com/jefrykurniaone/net-c-management/issues/231)
+(`spec:followups-standard`), run `followups`, execution map
+[#233](https://github.com/jefrykurniaone/net-c-management/issues/233).
+Eleven tickets landed a batch of independent user-visible fixes across the
+public wordmark, the Insights charts, an admin register and the Create
+Session form: #223 and #209 (wordmark role and rail fit), #222 (per-chart
+empty messages), #215 and #224 (legend wrap and item order), #214 (donut
+row identity), #198 (Sessions register icon), #196 (Create Session fee
+note), #189 and #203 (dashboard counts and Dues figures), and #205 (the
+extracted member pages) — plus #232, closed without a change (see
+`TC-FU-010`). This section is the run's single record of all of it, kept in
+one place per this ticket's own `writes:` boundary.
+
+**This is a consolidation, not a fresh walk.** This ticket's own Execution
+note calls for driving a dozen surfaces in a browser; that is superseded by
+the map's standing rule that no executor starts a dev server, because the
+observations already exist. Every case below cites one of two sources,
+named in its own text: the orchestrator's own measurements, taken on
+merged `main` in waves 2 and 3 and reproduced here verbatim; or a named
+ticket's own completion record on the tracker, read with `gh issue view
+<n> --comments`. No case here was independently re-executed by this
+ticket. Where neither source covers a claim, the gap is named in "Not met"
+rather than filled with a predicted result.
+
+#### TC-FU-001 · P0 · Positive — The community wordmark composes `type-title`; the retired `type-mark` role is gone (#223)
+
+**Preconditions:** merged `main`, 40 views — `/`, `/auth/signin`, `/s/<id>`,
+`/onboarding`, `/pending`, each at 1440×900 and 390×844, both themes, both
+locales. Orchestrator's own measurement, waves 2–3.
+
+**Steps:**
+1. Read the wordmark element's computed style on all 40 views.
+2. Count `document.querySelectorAll('.type-mark').length` on all 40.
+3. Read the wordmark's live `class` attribute.
+
+**Expected result:**
+
+- Identical computed style on all 40 views, and identical at both
+  viewports (there is no `clamp`): `font-size 17px`, `font-weight 700`,
+  `letter-spacing -0.17px` (−0.01em), `text-transform none`,
+  `line-height 22.1px`, `font-stretch 100%`, family Archivo. Before #223:
+  24px at 1440 / 18px at 390, weight 900, letter-spacing +3.36px / +2.52px,
+  `text-transform uppercase`, line-height 24px / 18px.
+- `document.querySelectorAll('.type-mark').length` is **0** on all 40
+  pages; it was **1** on all 40 before #223.
+- Live class attribute, after #223 and before #209's rail change: exactly
+  `type-title min-w-0 break-words text-foreground`.
+- All 40 views HTTP 200, no console errors.
+
+#### TC-FU-002 · P0 · Positive — The rail fits the community name at 390px with no mid-word break and no horizontal overflow, three names tested (#209)
+
+**Preconditions:** the same 5 surfaces × 2 viewports × 2 themes × 2
+locales, 120 views, at three community names of increasing length:
+`XClub Community` (15 characters, longest word 9), `Komunitas Olahraga
+Bulutangkis Netral Jakarta` (45, longest word 11), `SPORTGEMEINSCHAFT`
+(17, one all-caps word — the shape that broke before #209). Orchestrator's
+own measurement, waves 2–3.
+
+**Steps:**
+1. Read `document.documentElement.scrollWidth`/`.clientWidth` and
+   `overflow-wrap` on every view.
+2. For each rendered word, wrap it in its own `Range` and read
+   `getClientRects().length` — more than one rect is a mid-word break.
+   (A line count cannot be taken from the wordmark `<span>` itself: the
+   span is a flex item and therefore blockified, so `span.getClientRects()`
+   returns exactly one rect regardless of how the text wraps.)
+
+**Expected result:**
+
+- **Zero mid-word breaks and zero horizontal overflow in all 120 views.**
+  `overflow-wrap` computes to `normal` everywhere — `break-words` is gone
+  from both rails.
+
+  | Name | Surface | Observed |
+  |---|---|---|
+  | `XClub Community` | all 40 views | 1 line, 143.31px, rail height 57px, control row not wrapped |
+  | `Komunitas Olahraga Bulutangkis Netral Jakarta` | `/` at 1440 | 1 line, 375.25px, rail 57px |
+  | | `/` at 390 | **3 lines**, widest line 162.05px, rail 87.28px, controls stay on row 1 |
+  | | `/auth/signin`, `/onboarding`, `/pending` at 390 | 2 lines, 311.89px, rail 65.19px |
+  | `SPORTGEMEINSCHAFT` | `/` at 390, all four theme/locale combos | **1 line at 196.5px inside 358px, the control row drops to a second row**, rail 105px |
+  | | threshold surfaces at 390 | 1 line, 196.5px, rail 57px, nothing wraps |
+  | | everything at 1440 | 1 line, 196.5px, rail 57px, nothing wraps |
+
+- Looked at, not only measured: on the wrapped landing rail (the
+  `SPORTGEMEINSCHAFT` case at 390px) the mark and the full wordmark sit on
+  row one, and the theme toggle, `EN` and `Sign in` are right-aligned on
+  row two — no collision, no glyph over a control.
+
+#### TC-FU-003 · P0 · Positive — Community-name length caps are enforced, inclusive at both edges, in both locales (#209)
+
+**Preconditions:** `PATCH /api/settings`, both locales. Orchestrator's own
+measurement, waves 2–3.
+
+**Steps:** submit the community-name field at seven inputs and read the
+response.
+
+**Expected result:**
+
+| Input | Result |
+|---|---|
+| 20-letter word (`Bundesligamannschaft`) | 400 — `Community name cannot contain a word longer than 18 letters` / `Nama komunitas tidak boleh memuat kata lebih dari 18 huruf` |
+| 19-letter word | 400 — same messages |
+| **18-letter word** | **200 accepted** (the word cap is inclusive) |
+| 49 characters | 400 — `Community name cannot exceed 48 characters` / `Nama komunitas maksimal 48 karakter` |
+| **48 characters** | **200 accepted** (the length cap is inclusive) |
+| whitespace only | 400 — `Community name is required` / `Nama komunitas wajib diisi` |
+
+- **Trap confirmed:** changing the Setting must go through the API.
+  `PATCH /api/settings` calls `invalidatePublicLanding()`; writing the
+  `Settings` row directly does not, and `/` and `/s/[id]` then keep
+  serving the previous name from cache.
+
+#### TC-FU-004 · P0 · Positive — Each Insights chart's empty state names the window it actually covers, both locales (#222)
+
+Source: [#222](https://github.com/jefrykurniaone/net-c-management/issues/222)'s
+own completion record (merged `ae8df72`, PR #267).
+
+**Expected result:**
+
+- The `insights` dictionary block gains four keys, appended at its end in
+  `en` and `id`: `duesEmptyMessage` and `moneyEmptyMessage` keep the Period
+  wording verbatim; `fillEmptyMessage` = "No Sessions in these eight weeks
+  yet." / "Belum ada Sesi dalam delapan minggu ini."; `attendanceEmptyMessage`
+  = "Nothing yet — this fills in as you play." / "Belum ada apa-apa — ini
+  akan terisi seiring kamu bermain." The shared `insights.emptyMessage` key
+  was deleted in both locales after a repo-wide grep found zero remaining
+  consumers.
+- Each of the four view resolvers (`dues-collection-view`,
+  `money-by-activity-view`, `seats-filled-view`,
+  `attendance-sparkline-view`) sets `emptyMessage` from its own key; a
+  Vitest case per chart pins the per-chart key, and the two eight-week
+  charts additionally assert that neither "period" nor "periode" appears.
+- Gate on `main` after the merge (05:24:53Z–05:26:19Z): `npm run lint`
+  clean, `npm run build` 42 routes, `npm test` 870 passed, `git status
+  --porcelain` empty.
+- **Not independently re-walked live in a browser after this fix**, by
+  #222's own completion record: a member with no attendance, or a
+  community with no Sessions, needs a write the seed does not provide, and
+  the record defers that walk to the runtime lock shared with #215. §23's
+  `TC-IN-006` (this document) exercised the sparkline's empty state on
+  2026-09-02, **before** #222 merged, and correctly cites the "this
+  period"-for-a-week-window wording as #222's own known defect rather than
+  re-filing it — that recorded run predates the fix and is not evidence
+  either way for the fixed copy. Named in "Not met" below.
+
+#### TC-FU-005 · P0 · Positive — The Dues chart's legend reads in the correct order in both locales; the shared legend wraps at 390px with no overflow at four Activities (#215, #224)
+
+Source: orchestrator's own measurement (waves 2–3) for the item-order
+table, and [#215](https://github.com/jefrykurniaone/net-c-management/issues/215)'s
+own completion record (merged `c11d951`, PR #275, one hand-back) for the
+wrap behaviour.
+
+**Expected result — item order, `/admin`, 1440×900:**
+
+| Theme | Locale | Legend, in rendered order, with each swatch's `backgroundColor` |
+|---|---|---|
+| light | `en` | 1. `Collected` `rgb(19, 107, 63)` · 2. `Owed` `rgb(108, 76, 240)` |
+| light | `id` | 1. `Terkumpul` `rgb(19, 107, 63)` · 2. `Tagihan` `rgb(108, 76, 240)` |
+| dark | `en` | 1. `Collected` `rgb(62, 210, 126)` · 2. `Owed` `rgb(183, 164, 247)` |
+| dark | `id` | 1. `Terkumpul` `rgb(62, 210, 126)` · 2. `Tagihan` `rgb(183, 164, 247)` |
+
+Collected reads first in every combination; the green swatch is always
+Collected/Terkumpul and the purple always Owed/Tagihan. The reported `id`
+order (Tagihan first) is gone.
+
+**Expected result — wrap, from #215's own completion record:** verified on
+merged `main` at `ea57e1b`, `/admin`, 2 locales × 2 themes × 390/1440, 16
+loads, all 200, zero console or page errors. The donut's legend renders
+through the shared `ChartLegendContent` primitive: **4** items on one row
+at 390px (legend 326px inside a 358px card, no overflow); forced narrower
+to 300px it wraps to 2 rows with no overflow. The Dues chart's legend still
+renders its 2 items through the payload fallback, unchanged in `en` at
+1440×900.
+
+- The six-Activity wrap combination this ticket's own brief named has its
+  own case, `TC-FU-011` below. #215's own completion record defers it to
+  "#214's post-merge check in the next batch," and #214's own completion
+  record verifies only the donut's row-identity/duplicate-label figures
+  (`TC-FU-006`), with no layout measurement of its own — the wrap itself
+  was measured directly instead.
+
+#### TC-FU-006 · P0 · Positive — The money-by-Activity donut's text list keys on Activity id, not label: two identically-named Activities and one named `Total` each render their own row and their own amount (#214)
+
+Source: orchestrator's own measurement, matched exactly by
+[#214](https://github.com/jefrykurniaone/net-c-management/issues/214)'s own
+completion record (merged `af4f6ec`, PR #280).
+
+**Preconditions:** `/admin`, sentinel data, both locales — a second
+Activity named exactly `Badminton`, and one named exactly `Total`, each
+with a Confirmed Payment in the current Billing Period.
+
+**Expected result:** the donut's text list, identically in `en` and `id`:
+
+| Row label | Amount | What it is |
+|---|---|---|
+| Badminton | Rp 1.583.000 | the original Activity |
+| Basket | Rp 360.000 | |
+| Futsal | Rp 280.000 | |
+| Tennis | Rp 275.000 | |
+| **Total** | Rp 222.000 | the Activity *named* `Total` |
+| **Badminton** | Rp 111.000 | the duplicate-named Activity |
+| Total | Rp 2.831.000 | the summary row |
+
+Seven distinct rows; two share the label `Badminton` and two share
+`Total`; the six Activity rows sum exactly to the summary
+(`1.583.000 + 360.000 + 280.000 + 275.000 + 222.000 + 111.000 =
+2.831.000`). No console errors on either locale. Sentinel Activities and
+their Payments were removed afterwards and the wipe proven against a
+pre-check census — the seed's exact pre-check state, confirmed by both the
+orchestrator's own census and #214's own completion record.
+
+- **One observation, recorded and not fixed, per #214's own completion
+  record:** with six Activities in the ring the shared legend cycles its
+  palette, so the duplicate-named `Badminton` drew the same green as the
+  original and the `Total`-named Activity took the ink colour — colour is
+  therefore not a distinguishing signal past the palette's length. Not a
+  defect of this ticket; the text list carries the numbers unambiguously.
+
+#### TC-FU-007 · P0 · Positive — The admin Sessions register draws each Activity's icon, and the initial-letter fallback for an Activity with none (#198)
+
+Source: [#198](https://github.com/jefrykurniaone/net-c-management/issues/198)'s
+own completion record (merged `e39d59f`, PR #268).
+
+**Expected result:** on `/admin/sessions` as `admin@xclub.local`, the
+Activity column draws one `<svg>` for every Badminton and Futsal row
+(seeded icons `feather` and `target`) and the plain initial `T` with no
+`<svg>` for the Tennis row (`icon: null`). Zero console errors. The
+Applicants register is unchanged, deliberately, per spec #229 — noted
+there rather than fixed.
+
+#### TC-FU-008 · P0 · Positive — The Create Session form states no false fee lock; the Edit form's real lock note is unchanged (#196)
+
+Source: [#196](https://github.com/jefrykurniaone/net-c-management/issues/196)'s
+own completion record (merged `4220c77`, PR #270).
+
+**Expected result:** on `/admin/sessions/new` as `admin@xclub.local`, both
+locales: the fee input's `aria-describedby` resolves to
+`new-session-fee-note` carrying **"The fee is locked once this session has
+a payment or a held seat."** / **"Biaya akan terkunci begitu sesi ini
+memiliki pembayaran atau kursi yang dipegang."**; the old "cannot be
+changed: this session already has" sentence is absent; the sibling
+Activity note is unchanged. On the edit form of a sentinel Session with
+one held Seat, both locales: the real lock note **"This fee cannot be
+changed: this session already has a payment or a held seat."** appears,
+and the fee input is read-only. Zero console errors.
+
+#### TC-FU-009 · P0 · Positive — The admin dashboard's Sessions-this-week count is correct at seven Sessions, and the Dues tile now agrees with the Dues chart for the current Billing Period (#189, #203)
+
+Source: orchestrator's own measurement, waves 2–3.
+
+**Expected result:**
+
+| State of the week | `Sessions this week` tile | Badminton card | Other cards |
+|---|---|---|---|
+| dev seed (6 non-cancelled) | 6 | 4 | 1 / 0 / 1 |
+| a 7th non-cancelled Session added | **7** | **5** | 1 / 0 / 1 |
+| that 7th Session cancelled | 6 | 4 | 1 / 0 / 1 |
+
+Under the old `take: 6` bug, the seven-Session state read 6 on the tile
+and 4 on the Badminton card. Identical figures in `en` and `id`. The
+sentinel Session was removed and the wipe proven.
+
+Dues tile against the chart, same page: tile reads `Collected · September`
+= `Rp 1.97M` with `of Rp 2.42M due`; the Dues chart's September row (§23,
+`TC-IN-002`) reads Collected `Rp 1.965.000`, owed `Rp 2.420.000` — they
+agree (`Rp 1.97M` is `Rp 1.965.000` rounded to two places).
+
+- **This resolves §23's `TC-IN-007`**, which recorded the tile and chart
+  disagreeing by exactly two named causes (Fees counted as Dues; Per-Session
+  members billed for Dues) as a known, pre-existing defect (#203) at the
+  time that section was written. #203 has since landed, and this run's own
+  measurement, above, confirms the two now agree — the same "previously
+  flagged, now closed" treatment `TC-DS-105`/`TC-IN-012` gave the
+  `chart-1` contrast gap elsewhere in this document.
+
+#### TC-FU-010 · P0 · Positive — Two of the four extracted member-facing pages render identically to baseline; the other two named were never extracted (#205, #232)
+
+Source: orchestrator's own measurement (waves 2–3) for #205, and #232's own
+issue record for the gap.
+
+**Expected result, #205 — 32 views:** `/dashboard`, `/payments`, `/payments`
+with a filter matching nothing
+(`?historyStatus=REJECTED&historyActivity=none`), and
+`/payments?historyPage=2`, each at 1440×900 and 390×844, both themes, both
+locales, signed in as `member@xclub.local`. All HTTP 200, no console
+errors. Captured before and after the merge in one session and diffed:
+**31 of 32 byte-identical**; the 32nd differed only in the attendance
+sparkline's final line segment, which was proven nondeterministic across
+capture runs (capturing the pre-merge state twice reproduced the artefact
+in a *different* theme/locale combination) and is not in #205's diff.
+Heading text captured as text: `Welcome back, Adi` / `Selamat datang
+kembali, Adi` and `Monthly Dues` / `Iuran Bulanan` — single space, no
+doubling, no trailing space.
+
+- **Gap, not a defect: #232 extracted nothing, so there is no baseline to
+  diff for the other two pages.** This ticket's own brief names "the four
+  extracted route pages" and cites #232 for two of them (the member
+  Sessions page and the landing page). #232's own issue record shows it
+  was closed against measurement rather than merged: under the code-only
+  counting basis (spec #235/#238, the completion-gate wording #243 amended
+  on #233), `SessionsPage` measured 33 lines (never in violation — the
+  ticket's own 78-line figure came from measuring to the end of the file
+  rather than the end of the function), the `StripSurface` helper 24 lines
+  of code, and `LandingPage` 25 lines of code — all three already complied,
+  and nothing was extracted or changed. There is accordingly no
+  before/after render to compare for the Sessions page or the landing
+  page; the "renders identically to baseline" claim only ever applied to
+  the two pages #205 actually touched. Named again in "Not met" below.
+
+#### TC-FU-011 · P0 · Positive — The shared legend wraps at 390px with six Activities carrying money, stays one row at four, and the Dues chart's own legend is unaffected (#215)
+
+Source: orchestrator's own measurement, 2026-09-04, on merged `main` at
+`1c2151c`.
+
+**Preconditions:** two sentinel Activities (`Tenis Meja`, `Bola Voli`)
+added to the seed's four, each carrying one Confirmed `MONTHLY` Payment in
+the current Billing Period (Rp 90.000 and Rp 100.000) — six active
+Activities total. `/admin`, 390×844 and 1440×900, both themes, both
+locales — 8 views, all HTTP 200, no console errors.
+
+**Steps:**
+1. Read the money-by-Activity donut legend's item count, row count and
+   items per row at both viewports, in all four theme/locale combinations.
+2. Read `document.documentElement.scrollWidth`/`.clientWidth`.
+3. Sum each legend item's measured width and compare it against the
+   legend's available width.
+4. Repeat with the seed's four Activities, no sentinels, for contrast.
+5. Read the Dues chart's own legend the same way.
+
+**Expected result:**
+
+- **Trap, confirmed live and worth recording:** a first attempt created
+  the two sentinel Activities with no Payments and still saw only **4**
+  legend items with six Activities present — correct behaviour, not a
+  defect. `resolveMoneyByActivitySeries` seeds every Activity at zero, and
+  the view drops the zero-value ones from the drawn ring; the legend is
+  built from the ring's own segments, so a zero-money Activity reaches the
+  accessible text list but never the legend. Reaching six legend items
+  needs six Activities with Confirmed money this Period, which is why each
+  sentinel carried one Confirmed Payment.
+
+  | Viewport | Items | Rows | Items per row | Legend box | Overflow |
+  |---|---|---|---|---|---|
+  | 390×844 | 6 | **2** | 4 then 2 | 326 × 65.69 | none |
+  | 1440×900 | 6 | 1 | 6 | 520 × 30.84 | none |
+
+  Identical in all four theme/locale combinations at each viewport.
+  `flex-wrap` computes to `wrap` on the legend container — #215's change.
+  Item labels in render order: `Badminton | Basket | Futsal | Tennis |
+  Bola Voli | Tenis Meja`. Widest single item **75.34px**; the six item
+  widths sum to **367.88px** against **326px** of available legend width
+  at 390px, so the row cannot hold them and must wrap — the arithmetic
+  that explains why the pre-#215 legend overflowed instead of wrapping.
+  Rightmost item edge **333.31px**, inside the 390px viewport.
+- For contrast, the seed's four Activities (no sentinels): 4 items, 1 row,
+  item widths sum to **228.61px** inside the same 326px — under the
+  threshold, no wrap needed. Four Activities does not exercise the wrap;
+  six does, which is why this case needed the sentinel pair.
+- The Dues chart's own two-item legend stayed 1 row at both viewports
+  throughout this measurement (316px × 28px at 390px) — nothing about the
+  six-Activity donut wrap touches `TC-FU-005`'s item-order case.
+- Sentinels removed afterwards and the wipe proven: a census returns the
+  seed's exact pre-check state — four active Activities, money-by-Activity
+  total Rp 2.165.000, zero sentinel Sessions, Activities or Payments.
+
+### 24.1 Fixtures and the seed
+
+**No write of any kind by this ticket.** `TESTING.md` is the only tracked
+file this branch changes; every figure above was carried over from the
+orchestrator's own measurements (waves 2–3, and the `TC-FU-011` measurement
+taken 2026-09-04, on merged `main`) or from a named closed ticket's own
+completion record, not re-derived. Every sentinel row a source above
+describes (the extra Activities for `TC-FU-006` and `TC-FU-011`, the 7th
+Session for `TC-FU-009`, the held-Seat Session for `TC-FU-008`) was created
+and removed by its own originating ticket or by the orchestrator directly,
+with the wipe proven against a pre-check census where the source says so —
+none of it was created or removed by this ticket.
+
+### 24.2 Recorded run — consolidated 2026-09-04
+
+Not a browser walk: this run consolidates the sources named in each case
+above, on the date this ticket authored the case text. No dev server was
+started and no browser was driven by this ticket.
+
+| Case | Priority | Result |
+|---|---|---|
+| TC-FU-001 | P0 | **Pass** — orchestrator measurement, waves 2–3: `.type-mark` at 0/40 views, `.type-title` computed style identical across all 40 |
+| TC-FU-002 | P0 | **Pass** — orchestrator measurement, waves 2–3: zero mid-word breaks, zero overflow across 120 views, three names |
+| TC-FU-003 | P0 | **Pass** — orchestrator measurement, waves 2–3: both caps inclusive, both locales' messages confirmed |
+| TC-FU-004 | P0 | **Pass, one gap noted** — #222's own completion record: four keys landed, gated, Vitest-pinned; live post-fix render not independently re-walked (see "Not met") |
+| TC-FU-005 | P0 | **Pass** — orchestrator measurement for item order; #215's own completion record for the 4-item wrap; the six-Activity combination is `TC-FU-011` |
+| TC-FU-006 | P0 | **Pass** — orchestrator measurement and #214's own completion record agree exactly on all seven rows |
+| TC-FU-007 | P0 | **Pass** — #198's own completion record: icon rows draw the icon, icon-less rows draw the initial |
+| TC-FU-008 | P0 | **Pass** — #196's own completion record: no false lock on create, real lock unchanged on edit |
+| TC-FU-009 | P0 | **Pass** — orchestrator measurement: count bug fixed at seven Sessions; Dues tile now agrees with the Dues chart, resolving §23's `TC-IN-007` |
+| TC-FU-010 | P0 | **Pass, one gap noted** — orchestrator measurement: #205's two pages 31/32 byte-identical (32nd a proven nondeterministic artefact); #232 extracted nothing, so its two pages have no baseline to diff (see "Not met") |
+| TC-FU-011 | P0 | **Pass** — orchestrator measurement, 2026-09-04: 6 legend items wrap to 2 rows at 390px (4 then 2), 1 row at 1440px, no overflow either viewport; 4 items need no wrap; Dues chart legend unaffected |
+
+**Summary.** 11 cases: 10 consolidated by this ticket from prior recorded
+observations, plus `TC-FU-011`, measured directly at the orchestrator's own
+hand once the map's other tickets flagged it as unsourced. **11 executed,
+11 Pass, 0 Fail, 0 Not run.** Two gaps named below, neither a regression: a
+fix (`TC-FU-004`) whose live render was deliberately deferred by its own
+ticket, and a ticket (`TC-FU-010`'s two pages) that this run's own brief
+assumed happened and did not.
+
+**Not met.**
+
+- **`TC-FU-004`'s fixed copy was not independently re-walked live in a
+  browser.** #222's own completion record defers that walk to the runtime
+  lock shared with #215, and no later session's record picks it up. The
+  four new dictionary keys are pinned by Vitest at the resolver seam and
+  confirmed present in the gate; whether the exact string renders
+  correctly in the browser for a member with no attendance, or an
+  activity-less community, is unconfirmed. Would need a member with zero
+  history or a Session-less community, neither in the seed without a
+  write — the same constraint #222's own record names.
+- **`TC-FU-010`'s member Sessions page and landing page have no
+  before/after baseline**, because #232 — the ticket this run's own brief
+  cites for them — closed without touching either file. Not a defect: the
+  measurement it closed against shows both already complied with the
+  40-line rule. Nothing to verify here unless a future ticket changes
+  either page.
+- **SonarQube.** No scanner is wired into this repository's CI for this
+  ticket to run; `TESTING.md` is the only tracked file this branch
+  changes, so no source was newly exposed to review. Said plainly rather
+  than claiming a scan that did not happen.
