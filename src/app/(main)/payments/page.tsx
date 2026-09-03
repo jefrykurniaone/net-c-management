@@ -6,7 +6,7 @@ import {
   MonthlyDuesSection,
   OutstandingReservationsSection,
 } from "@/components/payments/monthly-dues-cards";
-import { PaymentHistorySection } from "@/components/payments/PaymentHistorySection";
+import { PaymentHistorySection } from "@/components/payments/payment-history-section";
 import { resolvePaymentHistoryQuery } from "@/components/payments/payment-history-query";
 import { loadMemberPayments } from "@/components/payments/member-payments-data";
 import { resolveMonthlyDues } from "@/components/payments/monthly-dues-rows";

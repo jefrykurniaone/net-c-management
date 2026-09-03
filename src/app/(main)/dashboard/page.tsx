@@ -6,9 +6,9 @@ import { getDictionary } from '@/lib/i18n/dictionaries';
 import { releaseExpiredHolds } from '@/lib/holds';
 import { DuesBanner } from '@/components/dashboard/dues-banner';
 import { AttendanceSparklineCard } from '@/components/dashboard/attendance-sparkline-card';
-import { GreetingHeader } from '@/components/dashboard/GreetingHeader';
-import { SummaryStatStrip } from '@/components/dashboard/SummaryStatStrip';
-import { ActivitySummarySection } from '@/components/dashboard/ActivitySummarySection';
+import { GreetingHeader } from '@/components/dashboard/greeting-header';
+import { SummaryStatStrip } from '@/components/dashboard/summary-stat-strip';
+import { ActivitySummarySection } from '@/components/dashboard/activity-summary-section';
 import {
     loadMemberDashboard,
     memberDashboardWindow,
