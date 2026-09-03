@@ -41,6 +41,8 @@ export type SessionRegisterRow = Readonly<{
     location: string;
     status: SessionStatus;
     activityName: string;
+    /** `Activity.icon` as stored; null renders the initial — see `ActivityBadge`. */
+    activityIcon: string | null;
     /** Seats held right now, after the sweep. */
     heldSeats: number;
     maxPlayers: number;
@@ -78,7 +80,7 @@ const SESSION_SELECT = {
     maxPlayers: true,
     status: true,
     activityId: true,
-    activity: { select: { name: true } },
+    activity: { select: { name: true, icon: true } },
     _count: {
         select: {
             attendances: { where: { status: { in: SEAT_HOLDING_STATUSES } } },
@@ -138,6 +140,7 @@ function toRow(
         location: record.location,
         status: record.status,
         activityName: record.activity.name,
+        activityIcon: record.activity.icon,
         heldSeats: record._count.attendances,
         maxPlayers: record.maxPlayers,
         floor: resolveSessionFloor(quotas.get(record.id)),
