@@ -5,6 +5,7 @@ import { releaseExpiredHolds } from './holds';
 import { getUserActivityIds } from './activity';
 import { getSessionQuotas, type SessionQuota } from './recurring-sessions';
 import { buildBoardDays, type BoardActivity, type BoardDay } from './board-days';
+import { mondayOf } from './chart-weeks';
 import { wibDayStart, wibDayStartFromKey } from './wib';
 import { readFreeClaimPeriods, freeClaimKey } from './payments';
 import { currentPeriod } from './payment-mode';
@@ -111,25 +112,19 @@ function dayKeyOf(day: Date): string {
 }
 
 /**
- * The Monday of the week containing `day`. The board reads Monday-first even
- * though `Activity.recurringDay` and the dictionary's `days` are Sunday-first —
- * those index a weekday, this orders columns.
+ * A malformed or absent `week` falls back to the current WIB week. The board
+ * reads Monday-first even though `Activity.recurringDay` and the dictionary's
+ * `days` are Sunday-first — those index a weekday, this orders columns.
  */
-function weekStartOf(day: Date): Date {
-    const back = (day.getUTCDay() + SUNDAY_SHIFT) % DAYS_IN_WEEK;
-    return addDays(day, -back);
-}
-
-/** A malformed or absent `week` falls back to the current WIB week. */
 export function resolveWeekStart(
     weekKey: string | undefined,
     now: Date,
 ): Date {
     if (weekKey !== undefined && DAY_KEY_PATTERN.test(weekKey)) {
         const asked = wibDayStartFromKey(weekKey);
-        if (!Number.isNaN(asked.getTime())) return weekStartOf(asked);
+        if (!Number.isNaN(asked.getTime())) return mondayOf(asked);
     }
-    return weekStartOf(wibDayStart(now));
+    return mondayOf(wibDayStart(now));
 }
 
 const BOARD_ACTIVITY_SELECT = {
@@ -301,7 +296,7 @@ function weekKeys(
 ): { prevWeekKey: string; thisWeekKey: string; nextWeekKey: string } {
     return {
         prevWeekKey: dayKeyOf(addDays(weekStart, -DAYS_IN_WEEK)),
-        thisWeekKey: dayKeyOf(weekStartOf(wibDayStart(now))),
+        thisWeekKey: dayKeyOf(mondayOf(wibDayStart(now))),
         nextWeekKey: dayKeyOf(addDays(weekStart, DAYS_IN_WEEK)),
     };
 }

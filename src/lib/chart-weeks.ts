@@ -22,11 +22,10 @@ import { wibDayStart } from './wib';
  * a locale-aware formatter or `getDay()` would shift the Monday by whatever
  * zone the server happens to run in.
  *
- * The Monday rule itself is arithmetic this repo already writes once, in the
- * private `weekStartOf` of `src/lib/sessions-board.ts`. That module is
- * `server-only` and Prisma-bound, so it cannot be imported here; the rule is
- * restated rather than shared, and folding the board's copy onto this one is a
- * follow-up rather than a change this ticket makes.
+ * The Monday rule lives here, in {@link mondayOf}, and nowhere else.
+ * `src/lib/sessions-board.ts` is `server-only` and Prisma-bound, so it cannot
+ * be the shared home for a pure rule; instead it imports {@link mondayOf} from
+ * here, which is why this module must stay free of `server-only` and Prisma.
  */
 
 /**
@@ -67,7 +66,7 @@ function addDays(day: Date, delta: number): Date {
 }
 
 /** The Monday of the week containing `day`. Monday because a week starts there. */
-function mondayOf(day: Date): Date {
+export function mondayOf(day: Date): Date {
     const back = (day.getUTCDay() + SUNDAY_SHIFT) % DAYS_IN_WEEK;
     return addDays(day, -back);
 }
