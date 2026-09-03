@@ -161,10 +161,10 @@ export function duesChartPeriods(now: Date): BillingPeriod[] {
  * Period) — which is a schema change and a decision of its own, not something
  * a chart may invent. That decision — the shape, the backfill rule, and what
  * it asserts about Memberships whose earlier modes are already lost — is
- * recorded in `docs/adr/0004-membership-payment-mode-history.md`, proposed
- * rather than accepted. Until then this module reports what the rows can
- * answer; `dues-collection.test.ts` pins the behaviour so it stays a known
- * limit rather than becoming a surprise.
+ * recorded and accepted in `docs/adr/0004-membership-payment-mode-history.md`;
+ * the implementing run is still to come. Until then this module reports what
+ * the rows can answer; `dues-collection.test.ts` pins the behaviour so it
+ * stays a known limit rather than becoming a surprise.
  */
 function monthlyMemberCount(
     activity: DuesChartActivity,
