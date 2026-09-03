@@ -64,7 +64,7 @@ export interface DashboardData {
     readonly activityCards: readonly ActivityCardData[];
 }
 
-/** The ten parallel queries the dashboard reads, before any derived figure is built. */
+/** The eleven parallel queries the dashboard reads, before any derived figure is built. */
 async function fetchDashboardRows(now: Date, period: BillingPeriod) {
     const { month: currentMonth, year: currentYear } = period;
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -80,6 +80,7 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
         activities,
         duesActivities,
         confirmedByActivity,
+        sessionsThisWeekCount,
         sessionsThisWeek,
         underBookedSession,
         attendanceRows,
@@ -140,13 +141,26 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
             },
             _count: true,
         }),
+        // The honest tile figure: every non-cancelled Session in the week, not
+        // a page of them. Kept as its own query rather than derived from the
+        // `findMany` below, because that one is capped for the per-Activity
+        // aggregation and no longer safe to read a length off (#189).
+        prisma.activitySession.count({
+            where: {
+                date: { gte: weekStart, lte: weekEnd },
+                status: { not: 'CANCELLED' },
+            },
+        }),
+        // Feeds `weeklyCounts` below — one entry per Session, grouped by
+        // Activity — so this is never a page. The `activity` include is not
+        // read here; `activityId` alone is grouped on, but the relation was
+        // already selected before #189 and dropping it is a follow-up.
         prisma.activitySession.findMany({
             where: {
                 date: { gte: weekStart, lte: weekEnd },
                 status: { not: 'CANCELLED' },
             },
             orderBy: { date: 'asc' },
-            take: 6,
             include: {
                 activity: { select: { name: true } },
                 _count: {
@@ -192,6 +206,7 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
         activities,
         duesActivities,
         confirmedByActivity,
+        sessionsThisWeekCount,
         sessionsThisWeek,
         underBookedSession,
         attendanceRows,
@@ -210,6 +225,7 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
         activities,
         duesActivities,
         confirmedByActivity,
+        sessionsThisWeekCount,
         sessionsThisWeek,
         underBookedSession,
         attendanceRows,
@@ -275,7 +291,7 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
     return {
         activeMembers,
         newThisMonth,
-        sessionsThisWeekCount: sessionsThisWeek.length,
+        sessionsThisWeekCount,
         activitiesCount: activities.length,
         pendingPayments,
         collected,
