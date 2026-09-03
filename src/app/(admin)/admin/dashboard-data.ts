@@ -7,11 +7,17 @@ import { currentPeriod, type BillingPeriod } from '@/lib/billing-period';
 import { sumDuesForPeriod } from './dashboard-dues-total';
 
 /**
- * Everything the admin dashboard reads, moved here unchanged from the page
- * (ticket #165 restyles the dashboard's cards; it does not recompute a single
- * figure). Every Prisma call and every arithmetic step below is the same one
- * the page ran before the restyle — only its address changed, so the figures
- * this returns are provably identical to `main` on the same seed.
+ * Everything the admin dashboard reads, moved here from the page by ticket
+ * #165, which restyled the cards without recomputing a single figure.
+ *
+ * That move changed nothing. #203 does: the "Dues collected" tile's two money
+ * figures did not mean what their labels said, and both are corrected here.
+ * `collected` now excludes Confirmed `SESSION` Payments, because a Fee is not a
+ * Due; `totalDue` now prices only the Memberships `resolvePaymentMode` calls
+ * `MONTHLY` for this Period, instead of every live Membership. So those two are
+ * deliberately no longer the figures `main` showed before #203 on the same seed
+ * — they are the ones the Dues chart (#170) has always shown. Every other
+ * figure below is still the page's own, unchanged.
  */
 
 const UNDER_BOOKED_RATIO = 0.6;
@@ -72,8 +78,7 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
         pendingPayments,
         collectedAgg,
         activities,
-        activityDuesRates,
-        membersByActivity,
+        duesActivities,
         confirmedByActivity,
         sessionsThisWeek,
         underBookedSession,
@@ -82,25 +87,45 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
         prisma.user.count({ where: { isActive: true, isProfileComplete: true } }),
         prisma.user.count({ where: { createdAt: { gte: monthStart } } }),
         prisma.payment.count({ where: { status: 'PENDING' } }),
+        // Dues collected, so Dues Payments alone. A Confirmed SESSION Payment
+        // is a Fee for one Seat in one Session and no part of what this figure
+        // asks about; summing it showed collection running ahead of the
+        // obligation it is drawn against (#203). Same exclusion the
+        // per-Activity count below carries, and the same one the Dues chart
+        // applies in `collectedForPeriod`.
         prisma.payment.aggregate({
             _sum: { amount: true },
-            where: { status: 'CONFIRMED', month: currentMonth, year: currentYear },
+            where: {
+                status: 'CONFIRMED',
+                type: 'MONTHLY',
+                month: currentMonth,
+                year: currentYear,
+            },
         }),
         getActivities(),
-        // The Dues Rate history per Activity. Read as rows rather than as a
-        // figure: which of them prices this Period is `resolveDuesRate`'s to
-        // say, and no order is assumed of them.
+        // Everything the owed figure resolves through, per Activity, read as
+        // rows rather than as figures. Which rate prices this Period is
+        // `resolveDuesRate`'s to say and no order is assumed of them; which
+        // Memberships owe Dues at all is `resolvePaymentMode`'s, which is why
+        // the mode columns and the offered pair come back instead of a
+        // `_count` that could only answer "how many members".
         prisma.activity.findMany({
             where: { isActive: true },
             select: {
                 id: true,
+                allowsMonthly: true,
+                allowsPerSession: true,
                 duesRates: { select: { amount: true, effectiveFrom: true } },
+                memberships: {
+                    where: { isActive: true },
+                    select: {
+                        paymentMode: true,
+                        effectiveFrom: true,
+                        pendingMode: true,
+                        pendingEffectiveFrom: true,
+                    },
+                },
             },
-        }),
-        prisma.membership.groupBy({
-            by: ['activityId'],
-            where: { isActive: true },
-            _count: true,
         }),
         // Only MONTHLY dues count toward "dues collected" — a per-session
         // (SESSION) payment is not a monthly due and would otherwise push the
@@ -165,8 +190,7 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
         pendingPayments,
         collectedAgg,
         activities,
-        activityDuesRates,
-        membersByActivity,
+        duesActivities,
         confirmedByActivity,
         sessionsThisWeek,
         underBookedSession,
@@ -184,16 +208,19 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
         pendingPayments,
         collectedAgg,
         activities,
-        activityDuesRates,
-        membersByActivity,
+        duesActivities,
         confirmedByActivity,
         sessionsThisWeek,
         underBookedSession,
         attendanceRows,
     } = rows;
 
+    // The cards' headcount: every live Membership, whatever mode it is on.
+    // A different question from `totalDue` below — the cards count members,
+    // the tile prices Dues — answered off the same rows rather than a second
+    // query that would read them again.
     const memberCounts = new Map(
-        membersByActivity.map((r) => [r.activityId, r._count]),
+        duesActivities.map((a) => [a.id, a.memberships.length]),
     );
     const confirmedCounts = new Map(
         confirmedByActivity.map((r) => [r.activityId, r._count]),
@@ -212,15 +239,7 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
     }
 
     const collected = collectedAgg._sum.amount ?? 0;
-    const ratesByActivity = new Map(
-        activityDuesRates.map((a) => [a.id, a.duesRates]),
-    );
-    const totalDue = sumDuesForPeriod(
-        activities,
-        memberCounts,
-        ratesByActivity,
-        period,
-    );
+    const totalDue = sumDuesForPeriod(duesActivities, period);
     const underBookedRow = underBookedSession.find(
         (s) => s._count.attendances < s.maxPlayers * UNDER_BOOKED_RATIO,
     );
