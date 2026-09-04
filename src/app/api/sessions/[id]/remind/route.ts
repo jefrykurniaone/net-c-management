@@ -6,8 +6,67 @@ import { sendSessionReminder } from '@/lib/email';
 import { getSettings } from '@/lib/settings';
 import { getLocale } from '@/lib/i18n/locale';
 import { NextResponse } from 'next/server';
+import {
+    shouldStampDayReminder,
+    type DayReminderOutcome,
+} from '@/lib/day-reminder-stamp';
+import type { Locale } from '@/lib/i18n/dictionaries';
 
 const REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+interface ReminderCandidate {
+    user: { name: string | null; email: string | null };
+}
+
+interface ReminderSessionInfo {
+    id: string;
+    title: string;
+    date: Date;
+    startTime: string;
+    location: string;
+    registered: number;
+    max: number;
+}
+
+/** Emails one Session's non-RSVP'd active members, tallying what each recipient did. */
+async function sendReminders(
+    candidates: ReminderCandidate[],
+    sessionInfo: ReminderSessionInfo,
+    communityName: string,
+    locale: Locale,
+): Promise<DayReminderOutcome> {
+    let sent = 0;
+    let failed = 0;
+    let unaddressable = 0;
+
+    for (const { user } of candidates) {
+        if (!user.email) {
+            unaddressable++;
+            continue;
+        }
+        try {
+            await sendSessionReminder({
+                to: user.email,
+                name: user.name ?? user.email,
+                sessionId: sessionInfo.id,
+                sessionTitle: sessionInfo.title,
+                sessionDate: sessionInfo.date,
+                startTime: sessionInfo.startTime,
+                location: sessionInfo.location,
+                registered: sessionInfo.registered,
+                max: sessionInfo.max,
+                communityName,
+                locale,
+            });
+            sent++;
+        } catch (err) {
+            console.error(`[remind] failed to send to ${user.email}:`, err);
+            failed++;
+        }
+    }
+
+    return { sent, failed, unaddressable };
+}
 
 // POST /api/sessions/[id]/remind — admin only
 // Sends email reminders to active activity members who haven't RSVP'd.
@@ -94,43 +153,37 @@ export async function POST(
         },
     });
 
-    let sent = 0;
-    let skipped = 0;
+    const outcome = await sendReminders(
+        activeMembers,
+        {
+            id: activitySession.id,
+            title: activitySession.title,
+            date: new Date(activitySession.date),
+            startTime: activitySession.startTime,
+            location: activitySession.location,
+            registered: activitySession._count.attendances,
+            max: activitySession.maxPlayers,
+        },
+        settings.communityName,
+        locale,
+    );
 
-    for (const { user } of activeMembers) {
-        if (!user.email) {
-            skipped++;
-            continue;
-        }
-        try {
-            await sendSessionReminder({
-                to: user.email,
-                name: user.name ?? user.email,
-                sessionId: activitySession.id,
-                sessionTitle: activitySession.title,
-                sessionDate: new Date(activitySession.date),
-                startTime: activitySession.startTime,
-                location: activitySession.location,
-                registered: activitySession._count.attendances,
-                max: activitySession.maxPlayers,
-                communityName: settings.communityName,
-                locale,
-            });
-            sent++;
-        } catch (err) {
-            console.error(`[remind] failed to send to ${user.email}:`, err);
-            skipped++;
-        }
+    // Reuses the rule #245 settled for the day-reminder cron
+    // (`shouldStampDayReminder`, src/lib/day-reminder-stamp.ts): stamp only
+    // when at least one send actually succeeded. A batch that reaches nobody
+    // — every member unaddressable, or every send throwing — must not arm the
+    // cooldown; there was no delivery for it to guard against a repeat of.
+    const reachedAnyone = shouldStampDayReminder(outcome);
+    if (reachedAnyone) {
+        await prisma.activitySession.update({
+            where: { id: sessionId },
+            data: { lastReminderAt: new Date() },
+        });
     }
 
-    // Stamped after the send loop whether or not any mail went out: a batch
-    // where every member lacked an address, or where every send threw, still
-    // arms the 24-hour cooldown above.
-    await prisma.activitySession.update({
-        where: { id: sessionId },
-        data: { lastReminderAt: new Date() },
+    return NextResponse.json({
+        sent: outcome.sent,
+        skipped: outcome.failed + outcome.unaddressable,
+        reachedAnyone,
     });
-
-    return NextResponse.json({ sent, skipped });
 }
-

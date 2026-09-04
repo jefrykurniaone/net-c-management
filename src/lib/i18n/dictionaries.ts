@@ -768,8 +768,11 @@ const en = {
         remindSendBtn: 'Send reminders',
         remindSending: 'Sending...',
         remindSuccessToast: 'Reminder sent to {n} member(s).',
-        remindSkippedToast: '{n} member(s) skipped (no email on record).',
         remindErrorToast: 'Failed to send reminders. Please try again.',
+        // Shown when the batch reached nobody: every member lacked an address, or
+        // every send threw. Distinguishes that outcome from a real success.
+        remindNoneToast: 'No reminders were sent — nobody was reachable this time.',
+        remindPartialToast: 'Reminder sent to {sent} member(s); {skipped} could not be reached.',
         shareSession: 'Share session',
         shareSessionDesc: 'Share this link to invite new members',
         copyLink: 'Copy link',
@@ -2011,8 +2014,9 @@ const id: typeof en = {
         remindSendBtn: 'Kirim pengingat',
         remindSending: 'Mengirim...',
         remindSuccessToast: 'Pengingat dikirim ke {n} anggota.',
-        remindSkippedToast: '{n} anggota dilewati (tidak ada email).',
         remindErrorToast: 'Gagal mengirim pengingat. Coba lagi.',
+        remindNoneToast: 'Tidak ada pengingat terkirim — tidak ada yang bisa dihubungi kali ini.',
+        remindPartialToast: 'Pengingat dikirim ke {sent} anggota; {skipped} tidak dapat dihubungi.',
         shareSession: 'Bagikan sesi',
         shareSessionDesc: 'Bagikan tautan ini untuk mengundang member baru',
         copyLink: 'Salin tautan',
