@@ -4,8 +4,8 @@
 |---|---|
 | Spec | [#303](https://github.com/jefrykurniaone/net-c-management/issues/303) — `spec:storage-retention` |
 | Run | `run:retention` |
-| Execution map | not yet authored (Stage 5) |
-| Tickets | not yet authored (Stage 3) |
+| Execution map | [#309](https://github.com/jefrykurniaone/net-c-management/issues/309) |
+| Tickets | #305, #306, #307, #308 — sub-issues of #303 |
 | Version | v1 (2026-09-04) |
 | Grilled from | [#293](https://github.com/jefrykurniaone/net-c-management/issues/293), orphaned avatar objects, filed out of #248 |
 | Split out | [#302](https://github.com/jefrykurniaone/net-c-management/issues/302) — the settings route writes arbitrary keys and can strand a hero photograph. Found during the grill, deliberately not folded in. |
