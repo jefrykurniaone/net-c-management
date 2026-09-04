@@ -4,7 +4,11 @@ import type { AttendanceStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getActivities } from '@/lib/activity';
 import { currentPeriod, type BillingPeriod } from '@/lib/billing-period';
-import { sumDuesForPeriod } from './dashboard-dues-total';
+import {
+    countMonthlyMemberships,
+    sumDuesForPeriod,
+    type DuesTotalActivity,
+} from './dashboard-dues-total';
 
 /**
  * Everything the admin dashboard reads. The "Dues collected" tile's two money
@@ -36,12 +40,21 @@ export interface UnderBookedSession {
 export interface ActivityCardData {
     readonly id: string;
     readonly name: string;
+    /** Every active Membership, whatever mode it is on — a roster headcount. */
     readonly members: number;
+    /** Of those, the ones that owe Dues this Period — what `confirmed` counts against. */
+    readonly duesMembers: number;
     readonly confirmed: number;
     /** Percent, 0-100, rounded. `null` when no historical attendance exists yet. */
     readonly attendanceRate: number | null;
     readonly sessionsPerWeek: number;
-    /** Percent, 0-100, capped at 100. */
+    /**
+     * Percent, 0-100 — the ceiling is `confirmed`'s own cap, not a second clamp
+     * over a denominator that disagrees with it (#273). `0` where no Membership
+     * owes Dues this Period: nothing was collected because nothing was owed,
+     * and the `confirmed`/`duesMembers` pair beside the bar says so as `0/0`,
+     * where a full bar would claim a collection that never happened.
+     */
     readonly duesPct: number;
 }
 
@@ -199,6 +212,24 @@ async function fetchDashboardRows(now: Date, period: BillingPeriod) {
 
 type DashboardRows = Awaited<ReturnType<typeof fetchDashboardRows>>;
 
+/**
+ * Per Activity, how many of its Memberships owe Dues in `period` — the only
+ * denominator a Dues figure may be read against.
+ *
+ * Counted by the same `countMonthlyMemberships` that `sumDuesForPeriod` prices
+ * `totalDue` through, off the same rows, so a card and the tile can never
+ * disagree about who owes: two derivations of that question would be a worse
+ * defect than the headcount denominator this replaces (#273).
+ */
+function duesMemberCountsByActivity(
+    activities: readonly DuesTotalActivity[],
+    period: BillingPeriod,
+): Map<string, number> {
+    return new Map(
+        activities.map((a) => [a.id, countMonthlyMemberships(a, period)]),
+    );
+}
+
 /** The maps, totals and per-Activity figures the page draws, from the rows above. */
 function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): DashboardData {
     const {
@@ -215,13 +246,15 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
         attendanceRows,
     } = rows;
 
-    // The cards' headcount: every live Membership, whatever mode it is on.
-    // A different question from `totalDue` below — the cards count members,
-    // the tile prices Dues — answered off the same rows rather than a second
-    // query that would read them again.
+    // Two questions off the rows the tile already read, and a card asks both.
+    // `memberCounts` is the roster headcount every live Membership is in,
+    // whatever mode it is on, and is what the card labels "members".
+    // `duesMemberCounts` is who owes Dues this Period, and is the only one of
+    // the two a Dues figure may be divided by (#273).
     const memberCounts = new Map(
         duesActivities.map((a) => [a.id, a.memberships.length]),
     );
+    const duesMemberCounts = duesMemberCountsByActivity(duesActivities, period);
     const confirmedCounts = new Map(
         confirmedByActivity.map((r) => [r.activityId, r._count]),
     );
@@ -255,9 +288,10 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
 
     const activityCards: ActivityCardData[] = activities.map((a) => {
         const members = memberCounts.get(a.id) ?? 0;
-        // Cap at the member total: a lingering confirmed payment from a member
-        // who has since left must not read as "more collected than owed".
-        const confirmed = Math.min(confirmedCounts.get(a.id) ?? 0, members);
+        const duesMembers = duesMemberCounts.get(a.id) ?? 0;
+        // Cap at the Memberships that owe: a lingering confirmed payment from a
+        // member who has since left must not read as "more collected than owed".
+        const confirmed = Math.min(confirmedCounts.get(a.id) ?? 0, duesMembers);
         const att = attendance.get(a.id);
         const attendanceRate =
             att && att.total > 0 ? Math.round((att.present / att.total) * 100) : null;
@@ -265,10 +299,11 @@ function deriveDashboardData(rows: DashboardRows, period: BillingPeriod): Dashbo
             id: a.id,
             name: a.name,
             members,
+            duesMembers,
             confirmed,
             attendanceRate,
             sessionsPerWeek: weeklyCounts.get(a.id) ?? 0,
-            duesPct: members > 0 ? Math.min((confirmed / members) * 100, 100) : 0,
+            duesPct: duesMembers > 0 ? (confirmed / duesMembers) * 100 : 0,
         };
     });
 
