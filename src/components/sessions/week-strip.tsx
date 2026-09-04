@@ -6,20 +6,11 @@ import type { WeekStripDayView } from './week-strip-view';
 
 /**
  * The week strip: the chosen week as seven day columns on a wide screen, one
- * column of day headings and cards on a phone.
+ * column of day headings and cards on a phone. Every day is here, none skipped —
+ * `docs/adr/0014-member-session-card-conventions.md` argues why.
  *
- * **Every day of the week is here, none skipped.** A day with nothing on it
- * keeps its column and draws a dashed empty slot, because skipping it turns the
- * week into a short list and hides the one thing an Admin most needs members to
- * notice — that nothing has been posted. The days come from the shared
- * day-range builder (`buildBoardDays`), which yields one entry per day of the
- * range and never drops one.
- *
- * **Seven columns, no rail.** The columns are a `grid` that collapses to one
- * below `lg`, so the week is read across on a laptop and down on a phone, and
- * there is no horizontal scroller at any width. `STRIP_MEASURE` is what sizes
- * the columns to hold a card; see the note on it in
- * `src/components/layout/measure.ts`.
+ * `STRIP_MEASURE` is what sizes the columns to hold a card; see the note on it
+ * in `src/components/layout/measure.ts`.
  */
 
 /**

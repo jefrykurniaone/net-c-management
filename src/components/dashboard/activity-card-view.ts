@@ -13,24 +13,11 @@ import { monthDayLabel } from '@/components/sessions/day-labels';
 /**
  * The dashboard's own Activity card body: this Activity's next Sessions,
  * flattened out of its {@link BoardDay} range into one ordered list of cards.
+ * The flat list, and the shared resolvers this reaches for, are argued in
+ * `docs/adr/0014-member-session-card-conventions.md`.
  *
- * **Why a flat list rather than the day-per-row board this ticket retires.**
- * The board drew every day of the range, empty ones included, because that is
- * what a *week* surface owes a reader (DESIGN.md's retired "every day gets a
- * cell" rule, kept for the week strip). The dashboard's Activity card is not a
- * week — it answers "what is next for this Activity", so a day with nothing on
- * it contributes nothing here; only a day with a posted Session or a standing
- * slot becomes a card. An Activity with nothing at all across the whole range
- * yields an empty list, which the card (`activity-summary-card.tsx`) draws as
- * one neutral-chipped sentence rather than a card per empty day.
- *
- * **Same resolvers as every other member Session card (ADR 0003).** Standing
- * comes from `resolveSessionStanding` and the action from `slotActionFor`,
- * exactly as the week strip's own `week-strip-view.ts` resolves them — this
- * file is a sibling of that one, not a caller of it, because ADR 0003 keeps
- * each surface's *view* as much its own as its *drawing*. `isJoined` is always
- * true here: the dashboard only ever renders the Activities in
- * `getUserActivityIds`, so there is no "browsing" case to withhold the claim
+ * `isJoined` is always true here: the dashboard only ever renders the Activities
+ * in `getUserActivityIds`, so there is no "browsing" case to withhold the claim
  * action for, unlike the sessions board's "all" view.
  */
 

@@ -10,12 +10,9 @@ import { cn } from '@/lib/utils';
 
 /**
  * What the session detail page can say about a Session that its header cannot.
- *
- * The header is the Slot Cell, so it already carries the start and end times,
- * the venue, the Activity and the standing. This card is deliberately only the
- * remainder: the full date with its month, how long the Session runs, the way to
- * the venue on a map, the Fee, and the Admin's notes. Repeating the header's
- * facts underneath it would read as two Sessions rather than one.
+ * `SessionDetailHeader` already carries the start and end times, the venue, the
+ * Activity and the standing, so this card is deliberately only the remainder —
+ * repeating the header's facts underneath it would read as two Sessions.
  */
 
 const MINUTES_PER_HOUR = 60;

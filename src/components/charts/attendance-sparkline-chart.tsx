@@ -15,36 +15,10 @@ import { chartColor } from '@/lib/chart-tokens';
 /**
  * The member's own attendance, eight weeks of one small line (#172).
  *
- * Draws only. Every figure and every string arrives finished in
- * {@link AttendanceSparklineView} — this component never sees an Attendance
- * row or the dictionary, so a wrong number is a resolver test's failure
- * rather than something a member finds. It composes onto #169's
- * {@link ChartFigure} exactly as `SeatsFilledChart` does.
- *
- * **No visible axes.** This card sits inside the dashboard's stats area
- * (`src/app/(main)/dashboard/page.tsx`) rather than the admin insights
- * region, so it draws as a true sparkline: `hide` on both axes drops the tick
- * labels and the reserved axis gutter, leaving only the line and its dots in
- * a 64px-tall strip. The eight-week detail is not lost — it is exactly what
- * the text list and the tooltip carry, same accessibility contract as every
- * other Rally chart.
- *
- * **The headline number is drawn here, not resolved here.** `headlineCount`
- * is the current week's Present count, restated in `type-figure-lead`
- * (the same figure type-scale step `StatCard` uses) above the line, so the
- * one number the acceptance criterion asks for ("the current week's count")
- * reads immediately rather than waiting on the toggled text list.
- *
- * **PBP Green, `chartColor(0)`.** The strongest-contrast pair in the ramp
- * (6.56:1 light / 7.54:1 dark, DESIGN.md § Chart series) and the brand's
- * primary colour — safe to spend here because this is the only chart on the
- * member dashboard, so there is no adjacent series on the same page for it to
- * be confused with (unlike the admin dashboard's three charts, which is why
- * #171 avoided it there).
- *
- * Motion: Recharts 3.8 defaults `isAnimationActive` to `'auto'`, which
- * respects `prefers-reduced-motion`. Left at the default, same as
- * `SeatsFilledChart`.
+ * Draws only: every figure and string arrives finished in
+ * {@link AttendanceSparklineView}. The hidden axes, the `type-figure-lead`
+ * headline and `chartColor(0)` are settled in
+ * `docs/adr/0013-rally-charts-draw-only.md`.
  */
 
 const LINE_COLOR = chartColor(0);

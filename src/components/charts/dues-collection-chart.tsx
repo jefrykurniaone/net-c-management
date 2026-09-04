@@ -20,26 +20,10 @@ import {
 /**
  * Dues collected against Dues owed, six Billing Periods of grouped bars (#170).
  *
- * Draws only. Every figure and every string arrives finished in
- * {@link DuesCollectionChartView} — this component never sees a Payment, a
- * Dues Rate or the dictionary, so a wrong number is a resolver test's failure
- * rather than something an Admin finds. It composes onto #169's
- * {@link ChartFigure}, which carries the title, the caption and the text list
- * of the same values; a series is never drawn straight onto the page ground,
- * where the chart colours do not clear 3:1 (DESIGN.md, Chart series).
- *
- * Motion: Recharts 3.8 defaults `isAnimationActive` to `'auto'`, which respects
- * `prefers-reduced-motion` and disables the grow-in during SSR. Left at the
- * default rather than pinned, so the honouring cannot be switched off by
- * accident.
- *
- * **The legend takes `duesLegendItems(view)`, not Recharts' own legend
- * payload** (#224). Recharts 3.8 reorders that payload by each Bar's
- * translated `name`, so `id`'s legend read Owed before Collected even though
- * the JSX below always declares `collected` first; `items` is the
- * explicit-order interface #215 added to `ChartLegendContent` for exactly this
- * case, and `duesLegendItems` pins Collected before Owed by array order —
- * unaffected by which name string is longer or sorts first in either locale.
+ * Draws only: every figure and string arrives finished in
+ * {@link DuesCollectionChartView}. The explicit `duesLegendItems(view)` order
+ * (#224) and the rest of the chart contract are settled in
+ * `docs/adr/0013-rally-charts-draw-only.md`.
  */
 
 const MILLION = 1_000_000;

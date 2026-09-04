@@ -5,19 +5,14 @@ import type { DuesChangeNotice } from '@/lib/dues-notice';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
- * The dues alert banner: monthly Dues take priority; otherwise any
- * per-session reservation still awaiting payment. Moved out of the page
- * component so the page stays a reasonable length while it takes on the Slot
- * Cell rebuild.
+ * The dues alert banner: monthly Dues take priority; otherwise any per-session
+ * reservation still awaiting payment.
  *
- * It also carries the **queued Dues change** notice (#113), and that is why the
- * banner now renders when nothing is unpaid. A member who has already paid this
- * month is exactly the member who most needs to hear that the figure changes in
- * September, and the old component returned `null` for them. So the notice is a
- * variant of its own: the same box treatment, body text, one sentence per
- * Activity, no "Pay now" pill and no link — there is nothing to pay yet. The
- * sentence carries the fact in words; no colour or icon is doing that work, and
- * the block is not interactive, so there is nothing to reach by keyboard.
+ * It also carries the **queued Dues change** notice (#113), which is why the
+ * banner renders when nothing is unpaid — a member who has already paid this
+ * month is exactly the member who needs to hear that the figure changes next.
+ * That variant carries no "Pay now" pill and no link: there is nothing to pay
+ * yet, the sentence carries the fact in words, and nothing here is interactive.
  */
 
 const BANNER_BOX =

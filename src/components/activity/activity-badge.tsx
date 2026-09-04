@@ -3,15 +3,8 @@ import { ActivityTile } from './activity-tile';
 
 /**
  * Two compositions of {@link ActivityTile} — the tile plus the Activity's name
- * in a pill, and the tile standing alone in a list row.
- *
- * The tile itself lives in `./activity-tile`, which is the seam every surface
- * that names an Activity draws through. Nothing here decides what a tile looks
- * like; these only decide what sits beside one.
- *
- * `icon` is optional on both and passes straight through, so a caller that has
- * not been given the Activity's icon yet keeps rendering the initial exactly as
- * before rather than having to pass null.
+ * in a pill, and the tile standing alone in a list row. Nothing here decides
+ * what a tile looks like; these only decide what sits beside one.
  */
 
 type ActivityLiveryProps = Readonly<{

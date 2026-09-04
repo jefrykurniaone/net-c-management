@@ -1,14 +1,10 @@
 /**
- * Shared contract for the four decorative pattern primitives (#151): thin
- * grid lines, concentric rings, diagonal dashed lines and a row of thin
- * arrows. None of them carries information, so their only inputs are a size
- * and a colour resolved from the Rally token layer
- * (`src/app/styles/colors.css`) — never a hardcoded hex.
- *
- * `PatternColorToken` is deliberately a closed union rather than `string`: a
- * pattern is decoration behind content, so it may only draw from tokens this
- * app already measured for contrast, not from an arbitrary CSS colour a call
- * site could invent.
+ * Shared contract for the four decorative pattern primitives (#151). None of
+ * them carries information, so their only inputs are a size and a colour from
+ * the Rally token layer (`src/app/styles/colors.css`) — never a hardcoded hex.
+ * `PatternColorToken` is a closed union rather than `string` on purpose: a
+ * pattern is decoration behind content, so it may only draw from tokens this app
+ * already measured for contrast.
  */
 
 export type PatternColorToken =

@@ -2,20 +2,11 @@ import type { ReactNode } from 'react';
 
 /**
  * Primitives of the public route's band stack — a third layout category
- * alongside the member surfaces and the interstitial, and one that exists on
- * this route and nowhere else.
- *
- * A vertical stack of full-bleed bands. The hero carries its own dark ground
- * and centres its content at a text measure; every band below it is themed
- * material, gutter-aligned to the same 72rem as the header rail and the
- * footer, with cards on that ground inside generous band padding. That split
- * — air *between* bands, density *inside* cards — is what keeps the page from
- * reading as two websites stapled together.
- *
- * ADR 0003 retired the ruled lattice these bands used to draw, so the row
- * primitives that served it (`Lattice`, `Livery`) are gone with it: a band's
- * content is a card grid now, and an Activity's livery is the one shared
- * {@link ActivityTile} rather than a second initial-only tile.
+ * alongside the member surfaces and the interstitial, existing on this route
+ * and nowhere else. A vertical stack of full-bleed bands: air *between* bands,
+ * density *inside* the cards on them, which is what keeps the page from reading
+ * as two websites stapled together. The hero is the one band that does not take
+ * the shared gutter below; it carries its own dark ground at a text measure.
  */
 
 /** The shared gutter. Every surface except the hero band aligns to it. */

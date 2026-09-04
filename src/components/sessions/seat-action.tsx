@@ -10,18 +10,12 @@ import type { SlotCellAction } from './slot-cell-data';
 
 /**
  * Claiming a Seat, or releasing one, from the row the member is already reading.
- * The common action costs one tap and no navigation.
  *
  * **It adds no seat-holding rule of its own.** Both paths are the routes the
- * session page has always called — `POST …/reserve` and `DELETE
- * …/attendance` — so capacity is still counted under a row lock, a paid Seat is
- * still claimed with a payment hold, and the lazy sweep still releases the ones
- * nobody funds. What is new is only where the member taps.
- *
- * Claiming and paying stay **one flow**: the reserve route holds the Seat and
- * answers with the bill's own address, and the member is taken straight there.
- * A Seat is never held outside the hold window, and the pay page is never
- * reached without a Seat behind it, because the same response does both.
+ * session page has always called — `POST …/reserve` and `DELETE …/attendance` —
+ * so capacity is still counted under a row lock and a paid Seat is still claimed
+ * with a payment hold. The reserve route answers with the bill's own address, so
+ * claiming and paying stay one flow.
  */
 
 /**

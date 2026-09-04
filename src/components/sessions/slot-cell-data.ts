@@ -1,10 +1,10 @@
 import type { AttendanceStatus, SessionStatus } from '@prisma/client';
 
 /**
- * The Slot Cell's contract, in one file so the cell and the parts it composes
- * read the same shape without importing one another. Every field is data — the
- * cell takes **no nodes**, so nothing here is a React type and nothing here can
- * reorder a row. See `slot-cell.tsx` for what each field draws and where.
+ * The Slot Cell's contract, in one file so the surfaces that draw a Session card
+ * read the same shape without importing one another. Every field is data — a
+ * card takes **no nodes**, so nothing here is a React type and nothing here can
+ * reorder a row. ADR 0003 retired the shared `slot-cell.tsx` this once served.
  */
 
 export type SlotCellSeats = Readonly<{

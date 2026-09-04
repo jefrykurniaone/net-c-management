@@ -15,38 +15,13 @@ import type { SeatsFilledChartView } from '@/lib/seats-filled-view';
 /**
  * Seats held over capacity, eight weeks of one line (#171).
  *
- * Draws only. Every figure and every string arrives finished in
- * {@link SeatsFilledChartView} — this component never sees a Session, an
- * Attendance row or the dictionary, so a wrong number is a resolver test's
- * failure rather than something an Admin finds. It composes onto #169's
- * {@link ChartFigure}, which carries the title, the caption and the text list
- * of the same figures; a series is never drawn straight onto the page ground,
- * where the chart colours do not clear 3:1 (DESIGN.md, Chart series).
- *
- * **A week with no Sessions is drawn as a gap.** The resolver answers `null`
- * for it, and `connectNulls` is pinned `false` — Recharts' own default, pinned
- * rather than assumed, because the whole point of the point is that it is
- * missing. Bridging the gap would draw a line through a week that never
- * happened, and interpolate a fill rate for it. Dots stay on, so a single week
- * between two quiet ones is still visible with no segment to sit on.
- *
- * **The line is straight between weeks, not curved.** A week is a discrete
- * measurement; a spline would invent a Tuesday value between two Mondays.
- *
- * **Purple, not the green beside it.** `--chart-2` clears 5.34:1 light and
- * 6.80:1 dark against the card — a one-pixel stroke has the least area of any
- * mark to carry its contrast, so it takes one of the stronger pairs — and it is
- * neither the green the Dues chart spends on collected money nor the
- * Orange-to-Dark-Red the donut spends on Activities, so nothing on this
- * dashboard reads as the same series twice.
- *
- * Motion: Recharts 3.8 defaults `isAnimationActive` to `'auto'`, which respects
- * `prefers-reduced-motion` and disables the draw-in during SSR. Left at the
- * default rather than pinned, so the honouring cannot be switched off by
- * accident.
+ * Draws only: every figure and string arrives finished in
+ * {@link SeatsFilledChartView}. The gap for a week with no Sessions, the
+ * straight segments and the purple series are settled in
+ * `docs/adr/0013-rally-charts-draw-only.md`.
  */
 
-/** Purple. See the note above for why this series is not the palette's first. */
+/** Purple, not the green beside it — ADR 0013 allocates colour across a page. */
 const FILL_COLOR = chartColor(1);
 
 const Y_AXIS_WIDTH = 44;

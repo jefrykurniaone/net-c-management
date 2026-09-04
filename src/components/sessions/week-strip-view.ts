@@ -14,14 +14,9 @@ import { monthDayLabel } from './day-labels';
  * `BoardDay` carries a day's situation and its numbers; the dictionary carries
  * the words. This is the seam between them for the week strip — the only place
  * on this surface that turns a weekday index into a name, and the reason no
- * component here calls a date formatter. A locale-aware formatter reads the
- * machine's zone, not WIB, which is how a Tuesday Session comes to advertise
- * itself as Monday.
- *
- * Nothing here decides a state or a permission. The standing comes from
- * `resolveSessionStanding` and the action from `slotActionFor`, both of them
- * shared with every other member surface (ADR 0003: the cards are each
- * surface's own, the resolvers are not).
+ * component here calls a date formatter (`./day-labels` states why). Nothing
+ * here decides a state or a permission; the resolvers are shared, per
+ * `docs/adr/0014-member-session-card-conventions.md`.
  *
  * `BoardDay.weekday` and the dictionary's `days` are both Sunday-first because
  * `Activity.recurringDay` is; the strip reads Monday-first because a week of
