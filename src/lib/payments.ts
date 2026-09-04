@@ -8,6 +8,7 @@ import {
   AttendanceStatus,
 } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { deletePaymentProof } from '@/lib/supabase';
 import { resolvePaymentMode, currentPeriod, toPeriodKey } from '@/lib/payment-mode';
 import { resolveDuesRate } from '@/lib/dues-rate';
 
@@ -478,6 +479,116 @@ export type SeatReleaseResult =
   | { released: false; reason: 'notRegistered' | 'confirmedLocked' };
 
 /**
+ * What the release transaction hands back: the member-visible result plus, on
+ * the branch that deleted a Payment, the storage key of the Proof that record
+ * carried. The key rides out of the transaction because the removal it feeds
+ * cannot be made inside one — see `releaseSeatRecords`.
+ */
+type SeatReleaseCommit =
+  | { released: true; isForfeited: boolean; proofPath: string | null }
+  | { released: false; reason: 'notRegistered' | 'confirmedLocked' };
+
+/**
+ * Whether MONTHLY dues already cover the period this Session falls in — the
+ * branch that keeps the Attendance row as ABSENT instead of deleting it.
+ */
+async function isMonthlyDuesCovered(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  sessionId: string,
+): Promise<boolean> {
+  const session = await tx.activitySession.findUniqueOrThrow({
+    where: { id: sessionId },
+    select: { activityId: true, date: true },
+  });
+  const { month, year } = currentPeriod(session.date);
+  const monthlyPaid = await tx.payment.findFirst({
+    where: {
+      userId,
+      activityId: session.activityId,
+      type: PaymentType.MONTHLY,
+      month,
+      year,
+      status: { in: LIVE_PAYMENT_STATUSES },
+    },
+    select: { id: true },
+  });
+  return monthlyPaid !== null;
+}
+
+/**
+ * The transactional half of `releaseSessionSeat`: everything the release must
+ * do atomically, and nothing it cannot.
+ */
+async function releaseSeatRecords(
+  userId: string,
+  sessionId: string,
+): Promise<SeatReleaseCommit> {
+  const key = { userId_sessionId: { userId, sessionId } };
+
+  return prisma.$transaction(async (tx): Promise<SeatReleaseCommit> => {
+    const attendance = await tx.attendance.findUnique({ where: key, select: { id: true } });
+    if (!attendance) return { released: false, reason: 'notRegistered' };
+
+    // `proofPath` is read HERE — inside the transaction, under the same
+    // `FOR UPDATE` lock as the status guard, and BEFORE the delete below —
+    // because the Payment row is the only record of where its Proof is stored.
+    // Once the row is gone the location is gone with it and nothing recovers it
+    // from a public link, so this order cannot be reversed. The removal itself
+    // is deliberately NOT made here: storage is a third party that cannot join
+    // this transaction, and a removal that succeeded before a rollback would
+    // leave a surviving record pointing at evidence that no longer exists —
+    // worse than the object the post-commit call risks stranding. Holding this
+    // money row's lock open across a third-party network call is also what
+    // docs/adr/0008-row-locks-on-capacity-and-money-writes.md exists to prevent.
+    // Rule and failure split: docs/adr/0017-storage-object-retention.md.
+    const [payment] = await tx.$queryRaw<
+      { status: PaymentStatus; proofPath: string | null }[]
+    >`
+      SELECT "status", "proofPath" FROM "Payment"
+      WHERE "userId" = ${userId} AND "sessionId" = ${sessionId} AND "type" = 'SESSION'
+      FOR UPDATE
+    `;
+    // This refusal is also what keeps a reviewed Proof out of the removal: a
+    // CONFIRMED record is never deleted, so its Proof is never read out of one.
+    // No second confirmed-status check exists anywhere below, deliberately —
+    // a copy of this rule could drift out of step with it.
+    if (payment?.status === PaymentStatus.CONFIRMED) {
+      return { released: false, reason: 'confirmedLocked' };
+    }
+    const proofPath = payment?.proofPath ?? null;
+
+    await tx.payment.deleteMany({ where: { userId, sessionId, type: PaymentType.SESSION } });
+
+    if (await isMonthlyDuesCovered(tx, userId, sessionId)) {
+      await tx.attendance.update({ where: key, data: { status: AttendanceStatus.ABSENT } });
+      return { released: true, isForfeited: true, proofPath };
+    }
+    await tx.attendance.deleteMany({ where: { userId, sessionId } });
+    return { released: true, isForfeited: false, proofPath };
+  });
+}
+
+/**
+ * Remove a released Payment's Proof from storage, after that record is gone.
+ *
+ * A blank path is a Payment with no location recorded — both real upload flows
+ * write one, the development seed does not — so there is nothing to remove and
+ * that is not an error. A removal failure strands one object and is logged
+ * rather than thrown: the seat is already released and the record already
+ * deleted, so failing the member's cancel over a tidy-up they never asked for
+ * would undo none of it (docs/adr/0017-storage-object-retention.md).
+ */
+async function removeReleasedProof(proofPath: string | null): Promise<void> {
+  if (!proofPath) return;
+  try {
+    await deletePaymentProof(proofPath);
+  } catch (error) {
+    console.error(`[payments] proof removal failed for ${proofPath}:`, error);
+  }
+}
+
+/**
  * Member self-cancel: release the seat AND its paired SESSION `Payment` in one
  * transaction, so no orphaned charge remains. A `CONFIRMED` (paid +
  * admin-verified) per-session payment is protected — the member may not
@@ -493,6 +604,11 @@ export type SeatReleaseResult =
  * is forfeited — monthly dues buy availability for the month, not a per-session
  * credit. Everyone else (per-session, free-session registrants) is deleted
  * outright.
+ *
+ * The deleted Payment's Proof goes with it, so no unattributable receipt is left
+ * in the bucket. That removal is the one thing here that is not transactional,
+ * and it runs strictly after the commit — the two halves below are split for
+ * exactly that reason.
  */
 export async function releaseSessionSeat(input: {
   userId: string;
@@ -500,51 +616,12 @@ export async function releaseSessionSeat(input: {
 }): Promise<SeatReleaseResult> {
   const { userId, sessionId } = input;
 
-  return prisma.$transaction(async (tx) => {
-    const attendance = await tx.attendance.findUnique({
-      where: { userId_sessionId: { userId, sessionId } },
-      select: { id: true },
-    });
-    if (!attendance) return { released: false, reason: 'notRegistered' };
+  const committed = await releaseSeatRecords(userId, sessionId);
+  if (!committed.released) return committed;
 
-    const [payment] = await tx.$queryRaw<{ status: PaymentStatus }[]>`
-      SELECT "status" FROM "Payment"
-      WHERE "userId" = ${userId} AND "sessionId" = ${sessionId} AND "type" = 'SESSION'
-      FOR UPDATE
-    `;
-    if (payment?.status === PaymentStatus.CONFIRMED) {
-      return { released: false, reason: 'confirmedLocked' };
-    }
-
-    await tx.payment.deleteMany({ where: { userId, sessionId, type: PaymentType.SESSION } });
-
-    const session = await tx.activitySession.findUniqueOrThrow({
-      where: { id: sessionId },
-      select: { activityId: true, date: true },
-    });
-    const { month, year } = currentPeriod(session.date);
-    const monthlyPaid = await tx.payment.findFirst({
-      where: {
-        userId,
-        activityId: session.activityId,
-        type: PaymentType.MONTHLY,
-        month,
-        year,
-        status: { in: LIVE_PAYMENT_STATUSES },
-      },
-      select: { id: true },
-    });
-
-    if (monthlyPaid) {
-      await tx.attendance.update({
-        where: { userId_sessionId: { userId, sessionId } },
-        data: { status: AttendanceStatus.ABSENT },
-      });
-      return { released: true, isForfeited: true };
-    }
-    await tx.attendance.deleteMany({ where: { userId, sessionId } });
-    return { released: true, isForfeited: false };
-  });
+  // Committed, so the Payment is gone for good and its Proof backs no claim.
+  await removeReleasedProof(committed.proofPath);
+  return { released: true, isForfeited: committed.isForfeited };
 }
 
 /** Payment statuses that hold a seat (a REJECTED payment funds nothing). */
