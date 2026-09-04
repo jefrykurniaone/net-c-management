@@ -75,7 +75,7 @@ Declared in `vercel.json`, protected by the `CRON_SECRET` bearer token (auto-inj
 - Both length rules bind new and modified code. Existing over-length code is grandfathered — it stays as it is until it is touched for another reason, and a measured violation count is not a backlog. Do not split a file or a function your ticket did not name.
 - Max nesting depth: 3 levels — prefer early return
 - No magic numbers; use named constants
-- Naming: `camelCase` for variables/functions, `PascalCase` for components/classes, `SCREAMING_SNAKE_CASE` for constants, `PascalCase.tsx` for component files, `kebab-case.ts` for utilities/hooks
+- Naming: `camelCase` for variables/functions, `PascalCase` for components/classes, `SCREAMING_SNAKE_CASE` for constants, `kebab-case.tsx` for component files (Next.js App Router route files — `page.tsx`, `layout.tsx`, `error.tsx`, and the like — are exempt; the framework names those), `kebab-case.ts` for utilities/hooks
 - Boolean names: prefix with `is`, `has`, or `should`
 - Branch format: `feat/`, `fix/`, `chore/`, `hotfix/`
 - Commit format: Conventional Commits; no direct push to `main`
