@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
  *   two lines, because half an amount is a different number.
  * - `standing` — one chip from the resolver and nothing else, on the register's
  *   shared right edge, so every chip on the surface lands on one line.
- * - `actions` — the row's own controls, on that same edge.
+ * - `actions` — the row's own controls, starting at the column's left edge.
  */
 export const REGISTER_COLUMN_KINDS = [
     'text',
@@ -57,12 +57,17 @@ export type RegisterColumn<Row extends RegisterRow> = Readonly<{
 
 const DEFAULT_KIND: RegisterColumnKind = 'text';
 
-/** The kinds that sit on the register's shared right edge at full width. */
+/**
+ * The kinds that sit on the register's shared right edge at full width: the
+ * ones read *down* the column, where a shared edge is what makes two values
+ * comparable. `actions` is deliberately not among them — a control group is
+ * operated one row at a time, and an edge-aligned group whose optional control
+ * is absent displaces every control that remains (ADR 0016).
+ */
 const RIGHT_EDGE_KINDS: readonly RegisterColumnKind[] = [
     'figure',
     'amount',
     'standing',
-    'actions',
 ];
 
 /** Whether this kind's head and value belong on the shared right edge. */
@@ -89,7 +94,7 @@ const VALUE_CLASS: Record<RegisterColumnKind, string> = {
     figure: 'block type-figure',
     amount: 'block type-figure whitespace-nowrap',
     standing: 'flex flex-wrap items-center gap-cell md:justify-end',
-    actions: 'flex flex-wrap items-center gap-cell md:justify-end',
+    actions: 'flex flex-wrap items-center gap-cell',
 };
 
 export function valueClassFor(kind: RegisterColumnKind = DEFAULT_KIND): string {
