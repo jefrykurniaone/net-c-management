@@ -67,6 +67,15 @@ const CONTENT_WIDTH = size.width - 160;
  * either: the role only resets both to `normal`, and `Archivo-900.ttf` is a
  * static weight-only face with no width axis to reset.
  */
+/**
+ * The weight below is intent, not output. Only `Archivo-900.ttf` is registered
+ * with `ImageResponse`, and it is a static weight-only face, so satori draws
+ * those glyphs whatever weight is asked for: `/opengraph-image` rendered at 700
+ * and at 900 returned byte-identical PNGs, SHA-256 `CCA4DDAC1D64C24F`, measured
+ * 2026-09-04. So the card matches the on-screen wordmark in case, tracking and
+ * leading, but is heavier in stroke. #312 carries the weight-700 face that makes
+ * this declaration true; until it lands, do not read 700 here as what renders.
+ */
 const WORDMARK_FONT_WEIGHT = 700;
 const WORDMARK_LETTER_SPACING = '-0.01em';
 const WORDMARK_LINE_HEIGHT = 1.3;
