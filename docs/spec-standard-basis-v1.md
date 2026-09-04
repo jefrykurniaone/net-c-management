@@ -13,6 +13,28 @@
 
 This is a verbatim copy of the tracker issue at the time of ticketing. The issue is the live record; this file is the durable one. Below the rule is the issue body.
 
+## Delivery record — 2026-09-04, marked at the close of run `standards`
+
+Run `standards` closed on 2026-09-04. The body below is unchanged and stays unchanged; this section marks the claims delivery falsified or settled. Nothing below is deleted, and no `path:line` citation in the body has been renumbered — the quoted text is the evidence, the number was only its address at writing time, and `CLAUDE.md` has since been rewritten by #238 and #242, so the line numbers in the Problem Statement no longer address what they name.
+
+**Claims delivery reversed.**
+
+- "**the test suite does not run in CI**" (Testing Decisions, and the sibling spec's Problem Statement) — **no longer true.** #240 added the step; `.github/workflows/ci.yml` runs `npm test` at line 34 as of this writing. The note warning that "a test added here would not gate anything until that lands" is therefore spent.
+- The four false enforcement claims enumerated in the Problem Statement — `CLAUDE.md:10`, `CLAUDE.md:71`, `PRODUCT.md:86`, `PRODUCT.md:87` — **were all corrected**, by #238 in `CLAUDE.md` and #239 in `PRODUCT.md`. The dead `AGENTS.md` citation in the heading is gone. The line numbers above are left as written and no longer resolve.
+- "The ticket that extracts the member Sessions page and the landing page is rescoped or closed" — **closed**, by #244, on the measurement the body gives.
+
+**Claims delivery confirmed, unchanged.**
+
+- "The ticket covering the dashboard and member payments pages is left as it is. Both still fail after the markup subtraction — 168 and 161 lines of code" — **#205 remains open and unchanged**, and the map lists it under Out of Scope for exactly this reason.
+- "No ESLint configuration changes in this spec" — none were made. The repository still declares one ESLint rule and carries no length, complexity or nesting rule, so both length rules remain review-only, as intended.
+- The counting basis, the accepted-shape exemptions, the grandfather clause and the no-drive-by-splits instruction all landed in `CLAUDE.md` (#238) and were carried into the `followups` gate, #231 and the mirror (#243).
+
+**Claims still open, deliberately.**
+
+- The optional guard asserting that "the phrase describing a pre-commit hook does not reappear in a tracked document" was **not built**. It was left to the ticket's judgement and no ticket took it up. It is now buildable rather than pointless, since the CI test step exists.
+
+**One measurement to treat with caution.** The Further Notes table was not re-measured by this run, and three other measurements produced by the same audit — this spec's sibling on comment policy, and tickets #248, #249, #250 and #251 — each failed to reproduce during delivery, every one of them low or otherwise wrong. Nothing here contradicts this table specifically; it is flagged because the audit that produced it has a demonstrated error rate, and the body invites the next reader to "start from evidence rather than from scratch". Re-measure before relying on a figure from it.
+
 ---
 
 ## Problem Statement
