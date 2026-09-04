@@ -12,6 +12,27 @@
 
 This is a verbatim copy of the tracker issue at the time of ticketing. The issue is the live record; this file is the durable one. Below the rule is the issue body.
 
+## Delivery record — 2026-09-04, marked at the close of run `standards`
+
+Run `standards` closed on 2026-09-04. The body below is unchanged and stays unchanged; this section marks the claims delivery falsified or settled. Nothing below is deleted, and no `path:line` citation has been renumbered.
+
+**All four problems this spec names are fixed. Verified on `main` at the close rather than taken from the tickets:**
+
+| Claim in the body | State at close |
+|---|---|
+| "`prisma/payment-monthly-unique.sql` and `prisma/rls-policies.sql` sit beside the migration directory… nothing creates the partial unique index, and nothing enables row-level security" | **Reversed** by #246. Migration `20260902180043_add_monthly_payment_unique_index_and_rls` exists among the now 14 migration folders, and **both loose SQL files are gone from the tree** — the ticket took the option the body left open. Nothing depends on a human applying SQL any more. |
+| "The day-of reminder guard is stamped even when every send failed" | **Reversed** by #245. `src/lib/day-reminder-stamp.ts` exists as the pure function the body specifies, tested at the library seam. |
+| "The service-role Supabase client and the Prisma pool are not import-guarded" | **Reversed** by #241. `server-only` is at line 1 of both `src/lib/supabase.ts` and `src/lib/prisma.ts`. No transitive client import was surfaced, so the finding the ticket was told to report rather than work around did not arise. |
+| "the test suite does not run in CI… Locally 45 test files and 840 tests pass. On a pull request, none of them run." | **Reversed** by #240. `.github/workflows/ci.yml` runs `npm test` at line 34. The suite has since grown to **52 files and 924 tests**, so the 45/840 figures are an authoring-time snapshot. |
+
+**Claims delivery confirmed, unchanged.**
+
+- "The comments stay. They are good comments." — honoured. The later comment-policy tickets (#248, #249, #250, #251) left every one of them at full length, each under a named keep rule in `CLAUDE.md`: the row-level-security bypass boundary, the connection-pool runtime fact, the double-send guard and the deliberate-absence notes. `src/lib/supabase.ts` and `src/lib/prisma.ts` are not in any cap ticket's diff at all — neither carries an unattached block, so neither was ever in that population.
+- "Auditing row-level security policy content… is a separate question" (Non-goals) and "Reviewing whether the existing row-level security policies are correct or sufficient" (Out of Scope) — **still not done, deliberately.** #246 brought the existing policies under migration control and asserted their presence after apply. Whether they are the right policies remains open and is not tracked by any ticket in this run.
+- "Testing the cron route handler itself" stays out of scope; no route handler is tested in this repository today.
+
+**One claim of this spec's own reasoning was borne out in an unexpected place.** The body's closing observation — that all three gaps were invisible because each comment "reads as adequate documentation", and that only checking whether anything *executes* it revealed that nothing did — recurred during the later comment work. #248 found two comments in code no ticket owned describing behaviour the code does not have, and both are now filed as defects: **#293** (a comment claimed a fixed avatar path overwrites on re-upload; `randomUUID()` means it never does, and nothing deletes the predecessor) and **#294** (a reminder batch that sends nothing still arms the 24-hour cooldown — the same shape as the defect #245 fixed, on the admin-triggered path instead of the cron path). Neither was found by a test. Both were found by reading a comment against its code.
+
 ---
 
 ## Problem Statement

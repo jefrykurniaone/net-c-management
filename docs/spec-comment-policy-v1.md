@@ -13,6 +13,36 @@
 
 This is a verbatim copy of the tracker issue at the time of ticketing. The issue is the live record; this file is the durable one. Below the rule is the issue body.
 
+## Delivery record — 2026-09-04, marked at the close of run `standards`
+
+Run `standards` closed on 2026-09-04. The body below is unchanged and stays unchanged; this section marks the claims delivery falsified or settled, so a later reader takes the body as evidence of what was believed at ticketing time rather than as current fact. Nothing below is deleted, and no `path:line` citation in the body has been renumbered.
+
+**Four of this spec's measurements did not reproduce, and every one was low or otherwise wrong.** This is the single most important correction on the page, because the audit's numbers were written to be "the baseline any later measurement is compared against".
+
+| Claim in the body | What delivery measured |
+|---|---|
+| 96 doc blocks attached to no declaration, 1,611 lines (Problem Statement, Further Notes table) — corrected before ticketing to 131 blocks / 1,704 lines / 114 files (header row) | Both figures were low. Measured per batch during delivery: `src/lib` **90 blocks / 1,348 lines / 87 files** (#249), `src/app` **57 / 698 / 57** (#250), `src/components` **32 / 554 / 32** plus one stray block in `src/proxy.ts` (#251). |
+| "73 comment runs are older than the code beneath them, 15 by more than 40 days, the worst by 102 days" | Did not reproduce under any definition #248 could recover. Comment run against the first code line beneath gives **26 runs, 2 over 40 days, worst 49.7**; against the newest code line in the block it heads gives **300 runs, 67 over 40 days, worst 115.2**. The stated figure sits between the two, so a third definition was used that the body does not record. #248 flagged it rather than adopting it and drove the correction work by reading comments against code. |
+| "Of 11 in-code `file:line` citations, at least 5 resolve wrong" | **18 citations, 11 of which resolve wrong.** Two shapes are easy for a pattern to miss (`.env.example:56-58` in `src/lib/app-url.ts`, and a Recharts path in `src/components/ui/chart.tsx`), and the citations reach `PRODUCT.md`, `DESIGN.md`, `prisma/schema.prisma`, `colors.css`, `type-roles.css` and a type declaration as well as source files. 16 were rewritten to symbol or heading anchors by #248. |
+| "Comment density is 19.82%" and the rest of the Further Notes table | Not re-measured, and now stale in any case: delivery removed **558 lines** of comment across the three cap tickets. Treat the whole table as an authoring-time snapshot. |
+
+**Claims delivery settled, in the direction the body predicted.**
+
+- "The shared domain document is silent on the connection pooler, on row-level security, on the service role and on the pooler ports… there is no other home." Partly reversed. `docs/adr/0005` through `0015` now exist as destinations, created by #249, #250 and #251. `CONTEXT.md` itself is still silent on all four and was deliberately left untouched by every cap ticket — it is a domain glossary (`## Language` only), and infrastructure facts are not vocabulary. The pooler and row-level-security comments in `src/lib/prisma.ts` and `src/lib/supabase.ts` were **not** moved and remain at full length: neither file carries an unattached block, so neither was in the cap tickets' population at all.
+- "the 96 file-header essays are capped at roughly six lines each" — done as a per-file verdict, not a sweep. Across the three batches **90 blocks were capped and 89 left at full length or already inside the cap**, every one with a stated reason. A block left whole is the move-before-cut rule working, as the body says.
+- "One keep-category subject can be converted from a comment into a checked pair: the email palette's hand-copied colour values" — done by #247.
+- "Vendored UI primitives are out of scope… the boundary is by provenance, not by path." Confirmed and now written into `CLAUDE.md`. #251 made the call per file: 18 vendored, 9 repo-authored. **No file under `src/components/ui/` carries an unattached doc block**, so the boundary gated no trim in practice.
+- "Adoption is after the run" — `run:followups` (#233) closed before wave 3 dispatched, and the policy landed as #242.
+- "Any comment change inside a file that a `followups` ticket is editing, for as long as that run is open" (Out of Scope) — spent. That run is closed.
+
+**Claims still open, deliberately.**
+
+- The three optional tree-scanning guards (identifier shapes, citation shapes, box-drawing dividers) were **not built**. They were left to the tickets' judgement and no ticket took them up. The CI test step they were gated on does now exist (#240), so the option is live rather than blocked.
+- `src/lib/i18n/dictionaries.ts` was untouched by the entire run, as the body requires. Two broken citations in it are therefore still broken and are tracked as **#295** — the only known-broken citations left in the tree.
+- "Comments a test asserts are code… that carve-out has a known expiry" — not resolved by this run.
+
+**Two defects were found by delivery in code no ticket owned, and filed rather than fixed: #293** (orphaned avatar objects) and **#294** (a reminder batch that sends nothing still arms the 24-hour cooldown).
+
 ---
 
 ## Problem Statement
