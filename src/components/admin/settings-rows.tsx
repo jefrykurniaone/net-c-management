@@ -30,7 +30,8 @@ export function SettingsRow({
             <div className='space-y-hair'>
                 <Label
                     htmlFor={id}
-                    className='type-label text-muted-foreground'>
+                    typeRole='label'
+                    className='text-muted-foreground'>
                     {label}
                 </Label>
                 {helper && (
