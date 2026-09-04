@@ -8,9 +8,9 @@
  * double send — there was no first send to guard — it suppresses the only one
  * that was ever going to happen.
  *
- * Nothing here sends, reads or writes anything. It takes the tally the recipient
- * loop produced and answers one question, so the answer can be tested without a
- * mailer or a database.
+ * Nothing here sends, reads or writes anything — it takes the tally the
+ * recipient loop produced and answers one question
+ * (`docs/adr/0005-pure-rule-modules.md`).
  */
 
 /** What one Session's recipient loop did, counted per recipient. */

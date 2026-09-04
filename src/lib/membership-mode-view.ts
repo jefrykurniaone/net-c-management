@@ -13,11 +13,9 @@ import {
 /**
  * The member's per-Activity payment mode, in the member's own words.
  *
- * Purely presentational over `src/lib/payment-mode.ts`: nothing here resolves a
- * mode, mints a period key, or decides when a switch lands. It reads the
- * resolver's output for two periods — the current one, which is settled, and the
- * next one, which is what a control can still change — and turns both into
- * sentences. Server-only by construction, because the resolver it reads is.
+ * A view module over `src/lib/payment-mode.ts` (`docs/adr/0006-view-modules.md`),
+ * reading the resolver's output for two periods — the current one, which is
+ * settled, and the next one, which is what a control can still change.
  *
  * The one rule it restates in words is the rule a member gets billed by: a
  * Billing Period that has arrived is never rewritten, so a switch made against a

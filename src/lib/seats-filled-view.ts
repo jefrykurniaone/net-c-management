@@ -7,16 +7,10 @@ import type { SeatsFilledPoint, SeatsFilledSeries } from './seats-filled';
  * they hang on, and the text list that carries the same figures to anyone who
  * cannot see them.
  *
- * Purely presentational over `src/lib/seats-filled.ts`, in the shape
- * `dues-collection-view.ts` established: nothing here counts a Seat, excludes a
- * Session or reads a clock — it turns one finished series into sentences. Both
- * the line and the list are built from the same `points` in the same order in
- * one pass, which is what makes them impossible to disagree.
- *
- * The one figure it computes is the axis ceiling, and only because the ceiling
- * is a consequence of the data: the resolver reports a week above 100 rather
- * than clamping it, so the axis has to be able to hold it. Computing it here
- * rather than inside Recharts keeps it a number a unit test can assert.
+ * A view module over `src/lib/seats-filled.ts` (`docs/adr/0006-view-modules.md`).
+ * Its one computed figure is the axis ceiling, which that record allows because
+ * the resolver reports a week above 100 rather than clamping it and the axis has
+ * to hold what it reports.
  */
 
 /** The axis reaches at least a whole week, whatever the series says. */

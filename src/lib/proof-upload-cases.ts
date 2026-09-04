@@ -10,9 +10,8 @@ import type { PaymentMode } from '@prisma/client';
  * of `GET /api/users/memberships`. Nothing here re-decides a mode, a period, or
  * a graduation; it only tells apart the causes that all used to render as the
  * same empty select, because a confident wrong explanation is worse than none.
- *
- * Deliberately free of `server-only`: the uploader is a client component and
- * reads its own fetched rows through this same seam.
+ * Free of `server-only` because the uploader is a client component
+ * (`docs/adr/0005-pure-rule-modules.md`).
  */
 
 /**

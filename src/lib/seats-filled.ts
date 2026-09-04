@@ -29,11 +29,9 @@ import { chartWeeks, weekIndexOfDay, type ChartWeek } from './chart-weeks';
  * this chart must never produce. The axis is sized to whatever the series
  * reaches, so the point stays on the canvas.
  *
- * **Pure**: no clock, no database, no logging, and no write. `now` is a
- * parameter and the records arrive as plain objects, so both exclusions — the
- * cancelled Session and the non-Seat-holding Attendance row — run here, in the
- * code `src/lib/__tests__/seats-filled.test.ts` covers, rather than in a
- * `where` clause no unit test can reach.
+ * **Pure, and no write** (`docs/adr/0005-pure-rule-modules.md`): both
+ * exclusions — the cancelled Session and the non-Seat-holding Attendance row —
+ * run here, in the code `src/lib/__tests__/seats-filled.test.ts` covers.
  *
  * **One thing it does not do: sweep expired holds.** `releaseExpiredHolds`
  * deletes the `Attendance` rows of lapsed payment holds, and every

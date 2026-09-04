@@ -6,16 +6,10 @@ import { WIB_OFFSET_MS } from './wib';
  * bulk save is allowed to contain, which rows a save actually writes, and when a
  * Session's attendance counts as untaken.
  *
- * Deliberately free of Prisma, `server-only` and React. The register's client
- * component and the bulk route both read it, so a rule cannot be enforced on one
- * side and forgotten on the other, and every rule here is unit-tested.
- *
- * `AttendanceStatus` is imported as a **type**, and the values are written as
- * string literals checked against it: importing the generated enum as a value
- * would drag the Prisma client into the browser bundle for the sake of four
- * strings. The allowed set is an explicitly typed **mutable** array, which is
- * what a Prisma `in` filter takes — never a `readonly` one, and never a `const`
- * assertion; this repository has already been bitten by that.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`): the register's
+ * client component and the bulk route both read it. `AttendanceStatus` is
+ * imported as a type and its values written as literals in a mutable array
+ * (`docs/adr/0009-prisma-enums-as-types.md`).
  */
 
 /**

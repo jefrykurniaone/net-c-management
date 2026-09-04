@@ -34,10 +34,8 @@ import type { SessionQuota } from './recurring-sessions';
  * sentences and every chip label live in the dictionary, so a day carries its
  * situation and its numbers and the surface resolves the words.
  *
- * Session dates are stored as UTC midnight of their WIB calendar day, so every
- * field below is read with the `getUTC*` accessors. A locale-aware formatter
- * would shift the day by whatever zone the server runs in, which is how a
- * Tuesday Session comes to advertise itself as Monday — see `src/lib/wib.ts`.
+ * Every field below is read with the `getUTC*` accessors
+ * (`docs/adr/0007-wib-calendar-day-storage.md`).
  */
 
 /** `Activity.recurringDay` and the dictionary's `days` are both Sunday-first. */

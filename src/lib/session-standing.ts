@@ -40,8 +40,8 @@ import {
  * surface's own dictionary block, exactly as the retired Slot Cell's `full`
  * chip already did.
  *
- * Pure by design: no Prisma, no React, no dictionary. That is what makes every
- * branch of the precedence testable in the Node environment the suite runs in.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`), which is what makes
+ * every branch of the precedence testable in the Node environment.
  */
 
 /** Free Seats and capacity. `free` means free, never taken (`CONTEXT.md`). */

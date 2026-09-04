@@ -22,11 +22,8 @@ import { currentPeriod } from './payment-mode';
  * figures are taken. The Activity's minimum-members floor comes from
  * `getSessionQuotas`, reused rather than reimplemented.
  *
- * Dates are WIB throughout: a Session is stored as UTC midnight of its WIB
- * calendar day, so every day here is built with `Date.UTC` and read with the
- * `getUTC*` accessors. A locale-aware formatter would shift the day by whatever
- * zone the server runs in, which is how a Tuesday Session comes to advertise
- * itself as Monday.
+ * Every day here is built with `Date.UTC` and read with the `getUTC*` accessors
+ * (`docs/adr/0007-wib-calendar-day-storage.md`).
  */
 
 const DAYS_IN_WEEK = 7;

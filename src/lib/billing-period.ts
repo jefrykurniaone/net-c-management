@@ -2,15 +2,12 @@
  * The Billing Period as a comparable key, and the two Periods every surface
  * asks for — this one and the next.
  *
- * These four things were declared in `payment-mode.ts` and are re-exported from
- * it unchanged, so every existing import still resolves. They live here now
- * because that module imports `server-only`: a Period key is a domain primitive
- * that the Admin's Period picker and the Proof upload form need on the client
- * too, and a second copy of `year * 100 + month` — the encoding a stored column
- * holds — is the one duplication this codebase cannot afford. Nothing in this
- * file imports Prisma, `server-only` or React, for the reason `session-lock.ts`
- * gives: rules the route and the form both read cannot sit behind a server
- * boundary.
+ * These four things are re-exported from `payment-mode.ts` unchanged, so every
+ * existing import still resolves. They live here because that module imports
+ * `server-only` and a Period key is a domain primitive the Admin's Period picker
+ * and the Proof upload form need on the client too — a second copy of
+ * `year * 100 + month`, the encoding a stored column holds, is the one
+ * duplication this codebase cannot afford (`docs/adr/0005-pure-rule-modules.md`).
  */
 
 /** Radix for encoding a billing period as YYYYMM (year * 100 + month). */

@@ -11,16 +11,9 @@ import { buildSeatsFilledView } from '../seats-filled-view';
 /**
  * The same arithmetic, run on a server **west of UTC**.
  *
- * Every other file in this suite builds its fixtures as UTC instants and runs
- * on a host east of UTC, where the local and the UTC reading of a stored
- * Session date agree — so a regression swapping `getUTCMonth()` for
- * `getMonth()` or `getUTCDay()` for `getDay()` would pass all of them. That is
- * the one class of bug these three modules exist to prevent (`ActivitySession.date`
- * holds UTC midnight of the WIB calendar day, #197), so it gets a host where
- * the two readings disagree.
- *
- * Vitest isolates each test file in its own process, so setting `TZ` here does
- * not reach any other file; it is restored anyway.
+ * Why this file exists at all, and why a new module that reads a stored Session
+ * date belongs in it as well as in its own suite:
+ * `docs/adr/0007-wib-calendar-day-storage.md`.
  */
 
 const ORIGINAL_TZ = process.env.TZ;

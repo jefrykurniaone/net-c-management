@@ -6,18 +6,13 @@ import type { Session } from 'next-auth';
  * The admission gate. Joining this community is approval-gated: signing in with
  * Google makes you an **Applicant**, and an Admin **admits** or **declines** you.
  *
- * Two columns carry two different facts and are never collapsed into one:
+ * `User.admittedAt` and `User.isActive` carry two different facts and are never
+ * collapsed into one (CONTEXT.md, "User"); their four combinations are the four
+ * states below, which is what lets the roster tell people waiting at the door
+ * from people who were thrown out.
  *
- * - `User.admittedAt` — null means *never admitted*. Set means an Admin let this
- *   person in, and records when.
- * - `User.isActive` — an Admin revoked this person.
- *
- * Their four combinations are the four states below, which is what lets the
- * roster tell three people waiting at the door from two who were thrown out.
- *
- * This module is deliberately free of database and `server-only` imports: it is
- * the one seam every enforcement layer reads (middleware, layout guards, API
- * handlers), and it is unit-tested.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`) — it is the one seam
+ * middleware, layout guards and API handlers all read.
  */
 
 /** What the two columns mean together. */
