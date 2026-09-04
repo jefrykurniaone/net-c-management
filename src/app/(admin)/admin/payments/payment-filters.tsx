@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
+import { FILTER_FIELD_CLASS } from '@/components/admin/filter-bar';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
@@ -20,7 +21,7 @@ const YEAR_SPAN = [-1, 0, 1];
 const DEFAULT_PAGE_SIZE = 10;
 
 /** The row's own sizing, layered onto `Input`/`NativeSelect`'s field treatment. */
-const FIELD_SIZE_CLASS = 'h-11 sm:w-auto';
+const FIELD_SIZE_CLASS = `${FILTER_FIELD_CLASS} sm:w-auto`;
 
 export type PaymentFilterValues = Readonly<{
     month: number | undefined;
@@ -195,19 +196,19 @@ export function PaymentFilters({
     carried: CarriedTableState;
 }>) {
     return (
-        <form className='flex flex-wrap gap-cell' method='GET'>
+        <form className='flex flex-wrap items-center gap-cell' method='GET'>
             <Input
                 name='search'
                 defaultValue={values.search}
                 aria-label={t.admin.filterSearchLabel}
                 placeholder={t.table.search.memberPlaceholder}
                 data-testid='search-input'
-                className='h-11 sm:w-64'
+                className={`${FILTER_FIELD_CLASS} sm:w-64`}
             />
             <PeriodSelects t={t} values={values} thisYear={thisYear} />
             <ScopeSelects t={t} values={values} activities={activities} />
             <CarriedState state={carried} />
-            <Button type='submit' variant='outline'>
+            <Button type='submit' variant='outline' size='lg'>
                 {t.admin.filterBtn}
             </Button>
         </form>

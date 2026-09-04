@@ -5,6 +5,7 @@ import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { isAdminRole } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { FILTER_FIELD_CLASS } from '@/components/admin/filter-bar';
 import { NewActivityButton, ActivityActions } from './activity-actions';
 import {
     ActivityIdentity,
@@ -155,13 +156,13 @@ function ActivitySearchForm({
     pageSize: number | 'all';
 }>) {
     return (
-        <form className='flex flex-wrap gap-2' method='GET'>
+        <form className='flex flex-wrap items-center gap-2' method='GET'>
             <Input
                 name='search'
                 defaultValue={search}
                 placeholder={t.table.search.activityPlaceholder}
                 data-testid='search-input'
-                className='w-full sm:w-72'
+                className={`${FILTER_FIELD_CLASS} w-full sm:w-72`}
             />
             {sortBy !== 'name' && (
                 <input type='hidden' name='sortBy' value={sortBy} />
@@ -176,7 +177,7 @@ function ActivitySearchForm({
                     value={String(pageSize)}
                 />
             )}
-            <Button type='submit' variant='outline'>
+            <Button type='submit' variant='outline' size='lg'>
                 {t.table.search.btn}
             </Button>
         </form>

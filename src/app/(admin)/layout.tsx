@@ -80,7 +80,12 @@ export default async function AdminLayout({
                         </span>
                     </div>
                 </header>
-                <main className='flex-1 overflow-y-auto p-4 md:px-8 md:py-6'>
+                {/* `relative`: this is the page's scroller, so it must also be
+                    the containing block for absolutely positioned descendants.
+                    Without it an `sr-only` span resolves against the initial
+                    containing block, escapes the scroller and grows the
+                    document — a second, page-level scrollbar beside this one. */}
+                <main className='relative flex-1 overflow-y-auto p-4 md:px-8 md:py-6'>
                     {children}
                 </main>
             </div>

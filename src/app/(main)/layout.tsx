@@ -49,7 +49,7 @@ export default async function MainLayout({
                 member surface. A board is not a form, and one cap cannot fit
                 both; each surface declares its own measure from
                 `src/components/layout/measure.ts`. */}
-            <main className='flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6'>
+            <main className='relative flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6'>
                 {children}
             </main>
 

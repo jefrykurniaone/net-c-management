@@ -1,23 +1,29 @@
 import type { ReactNode } from 'react';
+import { Card } from '@/components/ui/card';
 
 /**
- * One named group of Settings rows: a tracked-caps Label-role legend sitting
- * on the card's own face, ruled below it — the Table primitive's own head
- * treatment (DESIGN.md § Components), copied here as token classes rather
- * than imported from `register.tsx`, since a Settings form is a `<fieldset>`,
- * never the register's own `<table>`.
+ * One named group of Settings, as its own card: a Title-role legend over the
+ * settings it names — the role the design system already gives card and section
+ * headings, so the legend outranks the tracked-caps Label the rows beneath it
+ * use. The card's own edge is what separates one group from the next, so
+ * neither the legend nor the rows below it are ruled — a rule per row turned a
+ * four-group form into a ladder of lines.
  */
 const SECTION_HEAD_CLASS =
-    'block w-full px-block py-cell border-b border-border type-label text-muted-foreground';
+    'block w-full px-block pt-block pb-cell type-title text-foreground';
 
 export function SettingsSection({
     title,
     children,
 }: Readonly<{ title: string; children: ReactNode }>) {
     return (
-        <fieldset className='m-0 min-w-0 border-0 p-0'>
-            <legend className={SECTION_HEAD_CLASS}>{title}</legend>
-            {children}
-        </fieldset>
+        <Card className='gap-0 p-0'>
+            <fieldset className='m-0 min-w-0 border-0 p-0'>
+                <legend className={SECTION_HEAD_CLASS}>{title}</legend>
+                <div className='space-y-block px-block pb-block'>
+                    {children}
+                </div>
+            </fieldset>
+        </Card>
     );
 }
