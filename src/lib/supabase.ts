@@ -176,8 +176,56 @@ export async function uploadAvatar(
 }
 
 /**
- * Upload a community logo to Supabase Storage and return the public URL.
- * Always uploads to a fixed path so the old logo is replaced.
+ * Clear everything except `writtenKey` from the `logos` bucket (#303,
+ * `docs/adr/0017-storage-object-retention.md`). `logos` holds one
+ * community-wide file, so the listing is bucket-wide with no owner prefix —
+ * the pattern `clearHeroImageObjects` established for a singleton bucket
+ * (#155), reused here via `selectSupersededObjectKeys`'s empty-prefix case
+ * rather than a second approach.
+ *
+ * Best-effort like `clearSupersededAvatars`: the replacement is already
+ * stored and the admin is waiting on the response, so a failed tidy-up is
+ * logged and swallowed here rather than failing the upload.
+ */
+async function clearSupersededLogos(writtenKey: string): Promise<void> {
+    try {
+        const { data, error } = await supabaseAdmin.storage
+            .from(LOGOS_BUCKET)
+            .list();
+
+        if (error) {
+            throw new Error(`Logo list failed: ${error.message}`);
+        }
+
+        const superseded = selectSupersededObjectKeys(
+            '',
+            (data ?? []).map((object) => object.name),
+            writtenKey,
+        );
+        if (superseded.length === 0) {
+            return;
+        }
+
+        const { error: removeError } = await supabaseAdmin.storage
+            .from(LOGOS_BUCKET)
+            .remove(superseded);
+
+        if (removeError) {
+            throw new Error(`Logo cleanup failed: ${removeError.message}`);
+        }
+    } catch (err) {
+        console.error('[logos] cleanup failed:', err);
+    }
+}
+
+/**
+ * Upload a community logo to Supabase Storage and return the public URL,
+ * then clear whatever else the bucket held.
+ *
+ * The path still carries the image format, so a same-format re-upload
+ * overwrites via `upsert` and a different-format one writes a second
+ * object — `clearSupersededLogos` then removes it, since `logos` holds
+ * exactly one file for the whole community.
  */
 export async function uploadLogo(
     file: Buffer,
@@ -193,6 +241,10 @@ export async function uploadLogo(
     if (error) {
         throw new Error(`Logo upload failed: ${error.message}`);
     }
+
+    // Only once the replacement is stored: clearing first and then failing
+    // the upload would leave the community with no logo at all.
+    await clearSupersededLogos(path);
 
     const { data: urlData } = supabaseAdmin.storage
         .from(LOGOS_BUCKET)
