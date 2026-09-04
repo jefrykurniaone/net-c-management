@@ -104,7 +104,7 @@ function ReasonField({
 }: ReasonFieldProps) {
     return (
         <div className='space-y-hair'>
-            <Label htmlFor={fieldId} className='type-label'>
+            <Label htmlFor={fieldId} typeRole='label'>
                 {t.payments.rejectReason}{' '}
                 <span aria-hidden className='text-destructive'>
                     *
