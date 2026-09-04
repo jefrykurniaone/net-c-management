@@ -64,17 +64,8 @@ const CONTENT_WIDTH = size.width - 160;
  * own 1.0625rem font-size is not copied — it fits a 17px on-screen rail,
  * not a 1200x630 image, so `WORDMARK_RAMP`/`WORDMARK_FLOOR` below still
  * choose the size. `font-stretch`/`font-variation-settings` are not copied
- * either: the role only resets both to `normal`, and `Archivo-900.ttf` is a
+ * either: the role only resets both to `normal`, and `Archivo-700.ttf` is a
  * static weight-only face with no width axis to reset.
- */
-/**
- * The weight below is intent, not output. Only `Archivo-900.ttf` is registered
- * with `ImageResponse`, and it is a static weight-only face, so satori draws
- * those glyphs whatever weight is asked for: `/opengraph-image` rendered at 700
- * and at 900 returned byte-identical PNGs, SHA-256 `CCA4DDAC1D64C24F`, measured
- * 2026-09-04. So the card matches the on-screen wordmark in case, tracking and
- * leading, but is heavier in stroke. #312 carries the weight-700 face that makes
- * this declaration true; until it lands, do not read 700 here as what renders.
  */
 const WORDMARK_FONT_WEIGHT = 700;
 const WORDMARK_LETTER_SPACING = '-0.01em';
@@ -110,11 +101,13 @@ export default async function Image() {
     const communityName = await getPublicCommunityName(DEFAULT_LOCALE);
 
     // A custom face must arrive as bytes — `next/font/google` hands over a CSS
-    // rule, never the binary — so Archivo 900 is committed to the repository and
-    // read from disk. `ImageResponse` caps the whole bundle (markup, styles,
-    // fonts) at 500KB; this file is ~111KB of it.
-    const archivo900 = await readFile(
-        join(process.cwd(), 'assets', 'fonts', 'Archivo-900.ttf'),
+    // rule, never the binary — so a static weight-700 Archivo face is committed
+    // to the repository and read from disk. No static 700 file exists upstream,
+    // so this is the variable font instanced at `wght=700, wdth=100`: OFL 1.1,
+    // `google/fonts`, `ofl/archivo/Archivo[wdth,wght].ttf`. `ImageResponse` caps
+    // the whole bundle (markup, styles, fonts) at 500KB; this file is ~119KB of it.
+    const archivo700 = await readFile(
+        join(process.cwd(), 'assets', 'fonts', 'Archivo-700.ttf'),
     );
     const fontSize = wordmarkFontSize(communityName);
 
@@ -158,9 +151,9 @@ export default async function Image() {
             fonts: [
                 {
                     name: 'Archivo',
-                    data: archivo900,
+                    data: archivo700,
                     style: 'normal',
-                    weight: 900,
+                    weight: 700,
                 },
             ],
         },
