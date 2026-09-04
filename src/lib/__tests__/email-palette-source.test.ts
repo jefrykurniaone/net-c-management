@@ -71,7 +71,7 @@ const ROLE_SOURCES: Record<string, string> = {
 
 /** Constants that name an actual `colors.css` custom property as their source. */
 const TOKEN_SOURCES: Record<string, string> = {
-    HEADER_INK: 'secondary-solid-foreground', // "off-white ink" beside the same "Black Green ground" — colors.css:76
+    HEADER_INK: 'secondary-solid-foreground', // "off-white ink" beside the same "Black Green ground" — colors.css, --secondary-solid-foreground
     MUTED_INK: 'muted-foreground',
     SUBTLE_INK: 'subtle-foreground',
     SETTLED_INK: 'success',

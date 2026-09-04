@@ -32,7 +32,8 @@ import type { BillingPeriod } from './billing-period';
  *  2. **No aggregate people-count, ever.** Not members, not attendance, not
  *     "N reserved this week". A real count is truthful, but conditional
  *     rendering ("only above 20") is evidence-shaped silence — the same lie
- *     `PRODUCT.md:94` exists to prevent. Counts of *activities* are structural
+ *     `PRODUCT.md`'s *Evidence on Hand* exists to prevent. Counts of
+ *     *activities* are structural
  *     rather than social proof and stay permitted; nothing on `/` asks for one,
  *     so no such read exists here.
  *  3. **An unauthenticated GET never mutates and never sends mail.** This file
@@ -45,8 +46,10 @@ import type { BillingPeriod } from './billing-period';
  * The no-list, confirmed and closed. Do not add these back:
  *
  *  - `Activity.bankName`, `bankAccountNumber`, `bankAccountHolder`
- *    (`PRODUCT.md:42`)
- *  - `Activity.adminWhatsapp` and `Settings.adminWhatsapp` (`PRODUCT.md:44`)
+ *    (`PRODUCT.md`, *Operating Context* — the public allow-list bullet, which
+ *    lists all four fields and withholds bank details)
+ *  - `Activity.adminWhatsapp` and `Settings.adminWhatsapp` (the same bullet,
+ *    which withholds WhatsApp numbers)
  *  - every `User` field — name, email, avatar, phone — the admin's included
  *  - every `Payment`, `Membership` and `Attendance` row, and anything derived
  *  - `Activity.maxPlayers` and every capacity-derived number (Rule 3)
@@ -66,8 +69,9 @@ import type { BillingPeriod } from './billing-period';
  * so no prerender is reachable — and the cache therefore sits on the data
  * instead of the page. Everything below is read through `unstable_cache` under
  * one tag and one window, so an anonymous hit costs **zero** Prisma
- * connections, which was the whole of the pool concern (`PRODUCT.md:72`); a
- * crawler storm then costs CPU, not connections.
+ * connections, which was the whole of the pool concern (`PRODUCT.md`,
+ * *Capabilities and Constraints* → **Durable constraints**: 1 connection per
+ * function in production); a crawler storm then costs CPU, not connections.
  *
  * Two consequences bind anything added to this file later:
  *
@@ -75,8 +79,9 @@ import type { BillingPeriod } from './billing-period';
  *    `JSON.stringify(result)` and returns `JSON.parse` on a hit, so a `Date`
  *    comes back a string. Dates cross the boundary as ISO strings and are
  *    revived at the exported edge, so a hit and a miss return the same types.
- *  - **No cookie may be read inside a cache scope** (`unstable_cache.md:29`).
- *    Locale-dependent defaulting therefore happens per request, outside.
+ *  - **No cookie may be read inside a cache scope** (`unstable_cache.md`, its
+ *    *Good to know* callout). Locale-dependent defaulting therefore happens per
+ *    request, outside.
  */
 export const PUBLIC_LANDING_TAG = 'public-landing';
 
@@ -292,8 +297,10 @@ export async function getPublicLandingData(
  *  - `ActivitySession.location`, which can be a one-off private address. The
  *    standing `Activity.defaultLocation` publishes in its place.
  *
- * No `color`, for the same reason as on the board (`DESIGN.md:316`): an
- * admin-chosen hex clears neither contrast nor legibility on both materials, so
+ * No `color`, for the same reason as on the board (`DESIGN.md`, *The
+ * Measured-Pair Rule* — a pair enters the palette by measurement, not by eye;
+ * the column's own note is in `prisma/schema.prisma`, `model Activity`): an
+ * admin-chosen hex clears neither contrast nor legibility on both themes, so
  * the column is gone.
  */
 export const PUBLIC_SESSION_CARD_SELECT = {

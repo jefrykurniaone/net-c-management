@@ -27,7 +27,7 @@ const ALLOWED_TYPES = new Set([
     'image/png',
     'image/webp',
 ]);
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 const MIN_PAYMENT_YEAR = 2020;
 const MAX_FUTURE_YEARS = 1;
 const MIN_MONTH = 1;
@@ -73,7 +73,7 @@ function validateProofFile(file: File | null, t: Dictionary): NextResponse | nul
     if (!ALLOWED_TYPES.has(file.type)) {
         return NextResponse.json({ error: t.validation.fileTypeInvalid }, { status: 400 });
     }
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_PROOF_BYTES) {
         return NextResponse.json({ error: t.validation.fileSizeProof }, { status: 400 });
     }
     return null;

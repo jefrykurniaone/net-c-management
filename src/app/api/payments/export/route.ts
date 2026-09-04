@@ -51,7 +51,6 @@ function toPaymentRow(
     ];
 }
 
-// GET /api/payments/export?month=&year= — CSV export (admin only)
 export async function GET(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {

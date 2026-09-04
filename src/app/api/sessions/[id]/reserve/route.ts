@@ -94,9 +94,8 @@ export async function POST(
     return reserve(sessionId, userId, null, null, t);
   }
 
-  // Paid seat: the effective mode decides which bill the member owes.
-  const effective = await resolveEffectiveMode(userId, activitySession.activityId, activitySession.date);
-  if (effective === null) {
+  const effectiveMode = await resolveEffectiveMode(userId, activitySession.activityId, activitySession.date);
+  if (effectiveMode === null) {
     // A code as well as a message: a caller with no room to put the choice in
     // front of the member (a board row) needs to recognise this one refusal and
     // route them to where the choice lives, without matching a translated string.
@@ -106,13 +105,13 @@ export async function POST(
     );
   }
   const payUrl =
-    effective === PaymentMode.MONTHLY ? '/payments/upload' : `/sessions/${sessionId}/pay`;
+    effectiveMode === PaymentMode.MONTHLY ? '/payments/upload' : `/sessions/${sessionId}/pay`;
   const response = await reserve(sessionId, userId, await holdExpiresAt(), payUrl, t);
   if (response.status === RESERVED_STATUS) {
     queueHoldConfirmationEmail({
       user: session.user,
       activitySession,
-      mode: effective,
+      mode: effectiveMode,
       payUrl,
     });
   }

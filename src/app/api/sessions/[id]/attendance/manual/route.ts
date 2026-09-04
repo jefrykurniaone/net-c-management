@@ -19,8 +19,6 @@ const ADMIN_SETTABLE_STATUSES: AttendanceStatus[] = [
   AttendanceStatus.NO_SHOW,
 ];
 
-// POST /api/sessions/[id]/attendance/manual — admin records one member's
-// attendance: Registered, Present, Opted Out or No-Show.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }

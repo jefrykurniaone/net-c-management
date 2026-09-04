@@ -30,9 +30,11 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
  * a queued rate change behind either.
  *
  * **What never happens here.** No row whose Period has arrived is updated or
- * deleted, by any role. The freeze is checked against `now` — the instant the
- * route started, passed in, never read from a clock inside a rule — and it is
- * checked before the transaction opens, so a refused write costs no lock.
+ * deleted, by any role. The freeze is checked against a `now` read inside the
+ * transaction and under the Activity row lock — never a clock passed in from
+ * the route — so a refused write does hold the lock while it is judged, and is
+ * judged by the Period current when the write actually happens rather than the
+ * one the request started in.
  */
 
 /** The rate columns these rules read. Who set a row and when is not among them. */

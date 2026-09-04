@@ -8,9 +8,10 @@ import { getPublicCommunityName } from '@/lib/public-landing';
  * The link-preview card: the community name as a wordmark on the dark ground,
  * and nothing else (ticket 12 decision 5).
  *
- * Why generated rather than static or absent. `PRODUCT.md:94` bars screenshots,
- * photos and any real-world evidence; `:90` bars sport iconography; `:86` says
- * no brand, wordmark or logo exists. A static image under those three is a
+ * Why generated rather than static or absent. `PRODUCT.md`'s *Evidence on Hand*
+ * bars screenshots, photos and any real-world evidence; its *Brand Commitments*
+ * bars sport iconography and says no brand, wordmark or logo exists — `XClub
+ * Community` is a placeholder. A static image under those three is a
  * neutral rectangle that says nothing, and no image at all leaves the person who
  * was sent a WhatsApp link with a bare card as the only thing they see before
  * deciding to tap. The name is the one asset that is *true* for every
@@ -29,7 +30,8 @@ import { getPublicCommunityName } from '@/lib/public-landing';
  * **This route must stay dynamic.** A generated image file is a Route Handler
  * that Next caches at build time unless it uses a request-time API or dynamic
  * config, and a database read alone does not count as either
- * (`opengraph-image.md:93`). Left static, the community name would be baked at
+ * (`opengraph-image.md`, *Generate images using code*). Left static, the
+ * community name would be baked at
  * build and never move again — a rename would change the page, the `<title>` and
  * nothing else, and the card would keep advertising the old name forever.
  *

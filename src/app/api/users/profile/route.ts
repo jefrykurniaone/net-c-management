@@ -6,7 +6,6 @@ import { getDictionary } from "@/lib/i18n/dictionaries";
 import { buildUpdateProfileSchema } from "@/lib/validations/user";
 import { NextResponse } from "next/server";
 
-// GET /api/users/profile — get current user's full profile
 export async function GET() {
   const session = await auth();
   if (!isAdmittedSession(session)) {
@@ -30,7 +29,6 @@ export async function GET() {
   return NextResponse.json(user);
 }
 
-// PATCH /api/users/profile — update current user's profile
 export async function PATCH(req: Request) {
   const session = await auth();
   if (!isAdmittedSession(session)) {

@@ -12,9 +12,8 @@ const ALLOWED_TYPES = new Set([
     'image/png',
     'image/webp',
 ]);
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 
-// POST /api/settings/logo — upload a new community logo (admin only)
 export async function POST(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {
@@ -39,7 +38,7 @@ export async function POST(req: Request) {
             { status: 400 },
         );
     }
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_LOGO_BYTES) {
         return NextResponse.json(
             { error: 'Maximum file size is 2MB.' },
             { status: 400 },

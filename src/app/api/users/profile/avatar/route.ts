@@ -13,9 +13,8 @@ const ALLOWED_TYPES = new Set([
     'image/png',
     'image/webp',
 ]);
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
-// POST /api/users/profile/avatar — upload avatar image, update user.image
 export async function POST(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {
@@ -40,7 +39,7 @@ export async function POST(req: Request) {
             { status: 400 },
         );
     }
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_AVATAR_BYTES) {
         return NextResponse.json(
             { error: t.validation.fileSizeAvatar },
             { status: 400 },
@@ -48,7 +47,10 @@ export async function POST(req: Request) {
     }
 
     const ext = file.type.split('/')[1];
-    // Use a fixed path per user so re-uploads overwrite the old file (upsert)
+    // A new object name per upload: `randomUUID()` never reuses a path, so a
+    // re-upload never overwrites the previous image. Nothing here deletes the
+    // old object either, so a member's earlier avatars stay in the `avatars`
+    // bucket.
     const storagePath = `${session.user.id}/avatar-${randomUUID()}.${ext}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());

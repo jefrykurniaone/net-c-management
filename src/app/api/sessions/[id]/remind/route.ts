@@ -123,7 +123,9 @@ export async function POST(
         }
     }
 
-    // Update lastReminderAt after successful send
+    // Stamped after the send loop whether or not any mail went out: a batch
+    // where every member lacked an address, or where every send threw, still
+    // arms the 24-hour cooldown above.
     await prisma.activitySession.update({
         where: { id: sessionId },
         data: { lastReminderAt: new Date() },

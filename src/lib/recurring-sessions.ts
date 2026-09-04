@@ -14,8 +14,9 @@ import { syncMonthlyAttendances } from '@/lib/payments';
  *
  * An Activity that offers the Monthly mode and has a recurring weekday set gets
  * its sessions auto-generated for the current month. Generation is lazy and
- * idempotent — called from the sessions pages on load, so no cron is needed on
- * serverless. Sessions are always created and visible; whether the minimum
+ * idempotent — called from the sessions pages on load and by the month-end
+ * `/api/cron/generate-sessions` job, so a month rolls over even when nobody
+ * opens a page. Sessions are always created and visible; whether the minimum
  * member quota is met is surfaced per session (`getSessionQuotas`), never used
  * to block creation — members could not join a session that does not exist.
  */

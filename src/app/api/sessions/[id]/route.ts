@@ -16,7 +16,6 @@ import { invalidatePublicLanding } from '@/lib/public-landing';
 import { isAdminRole } from '@/lib/utils';
 import { NextResponse } from 'next/server';
 
-// GET /api/sessions/[id]
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> },
@@ -144,7 +143,6 @@ async function readJsonBody(req: Request): Promise<unknown> {
     }
 }
 
-// PATCH /api/sessions/[id] — admin only
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> },
@@ -185,7 +183,6 @@ export async function PATCH(
     return NextResponse.json(outcome.session);
 }
 
-// DELETE /api/sessions/[id] — admin only
 export async function DELETE(
     _req: Request,
     { params }: { params: Promise<{ id: string }> },
