@@ -1,6 +1,21 @@
 import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
 import type { Role } from '@prisma/client';
+
+/**
+ * The named steps of the spacing scale in `globals.css` (`--spacing-cell` and
+ * its siblings). tailwind-merge knows only the stock numeric scale, so without
+ * this it reads `py-cell` as a class from some other group than `py-0` and
+ * keeps both — the cascade then decides, and a call site's own padding loses
+ * silently. Observed on the per-page `<select>`: `py-0` did not displace the
+ * primitive's `py-cell`, leaving 20px of vertical padding in a 28px box and
+ * clipping the number.
+ */
+const SPACING_SCALE = ['hair', 'cell', 'block', 'bay', 'band', 'band-lead'];
+
+const twMerge = extendTailwindMerge({
+    extend: { theme: { spacing: SPACING_SCALE } },
+});
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
