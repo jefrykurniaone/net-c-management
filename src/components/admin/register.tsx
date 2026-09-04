@@ -16,37 +16,14 @@ import { RegisterCardHeader, type RegisterHeader } from './register-header';
 
 /**
  * The Register — one row per thing, read at a desk, and the single seam for
- * drawing an admin table anywhere in this app. Six hand-rolled tables drift
- * into six idioms, so there is one.
+ * drawing an admin table anywhere in this app. The card treatment, the
+ * data-never-nodes contract and the collapse-by-axis arrangement are argued in
+ * `docs/adr/0015-register-collapses-by-axis.md`.
  *
- * **A table inside a card.** The card is the object: `--card` face, `12px`
- * radius, `shadow-lift`, and no border of its own (DESIGN.md, *Shape and
- * depth*). Inside it, a header saying what the rows are and how many, the table
- * itself edge to edge, and the pagination under a rule. The ruled lattice that
- * used to bound this component is retired with Papan Jadwal (ADR 0003): rows
- * are ruled, columns are not, because a grid of hairlines on a card face is
- * furniture the card already provides.
- *
- * **Data, never nodes.** A caller describes columns and rows. There is no
- * `children`, no slot prop, no ordering prop and no per-cell class name — see
- * `register-columns.ts` for the one escape there is, a per-column `render` for
- * the *value* a cell holds, and `register-header.tsx` for the one control slot
- * the card header offers.
- *
- * **The collapse is by axis, not by flattening.** At `md` and up this is a real
- * `<table>`: `<th scope="col">` heads, native header association, one rule
- * under each row. Below `md` the table's parts are set to `display: block`,
- * each row stays a rule-bounded block inside the card, and its cells stack
- * inside it under the column's own tracked-caps label. It never becomes an
- * unruled card list, and there is never a second DOM tree for the phone.
- *
- * **Exactly one label source is live at any width.** Setting the parts to
- * `display: block` drops the table role, and `<th scope>` association goes with
- * it, so each cell carries its column's label as real text immediately before
- * its value. That label is `md:hidden` at full width, where the `<thead>` does
- * the work, and the `<thead>` is `hidden` below it, where the inline label
- * does. Nothing is announced twice, and the DOM order is the reading order at
- * both widths.
+ * **Exactly one label source is live at any width, and nothing enforces it.**
+ * `CELL_LABEL_CLASS` is `md:hidden` and the `<thead>` is
+ * `hidden md:table-header-group` — complements. Break the pair and every cell is
+ * announced twice, or loses its column label below `md`.
  */
 
 /** Sort and pagination stay the controls every admin list page already uses. */
