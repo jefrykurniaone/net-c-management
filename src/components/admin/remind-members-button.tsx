@@ -5,7 +5,7 @@ import { Mail, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useLocale } from '@/components/providers/locale-provider';
-import { getDictionary } from '@/lib/i18n/dictionaries';
+import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 import { toast } from 'sonner';
 
 const COOLDOWN_MS = 24 * 60 * 60 * 1000;
@@ -18,6 +18,31 @@ function fill(
         (acc, [k, v]) => acc.split(`{${k}}`).join(String(v)),
         template,
     );
+}
+
+interface RemindOutcome {
+    sent?: number;
+    skipped?: number;
+    reachedAnyone?: boolean;
+}
+
+/**
+ * One toast per remind response, never two — the shapes are mutually
+ * exclusive: nobody reached, a partial batch, or a clean success.
+ */
+function showRemindOutcomeToast(t: Dictionary, data: Readonly<RemindOutcome>): void {
+    const sent = data.sent ?? 0;
+    const skipped = data.skipped ?? 0;
+
+    if (!data.reachedAnyone) {
+        toast.info(t.admin.remindNoneToast);
+        return;
+    }
+    if (skipped > 0) {
+        toast.success(fill(t.admin.remindPartialToast, { sent, skipped }));
+        return;
+    }
+    toast.success(fill(t.admin.remindSuccessToast, { n: sent }));
 }
 
 export function RemindMembersButton({
@@ -50,9 +75,7 @@ export function RemindMembersButton({
             const res = await fetch(`/api/sessions/${sessionId}/remind`, {
                 method: 'POST',
             });
-            const data = (await res.json()) as {
-                sent?: number;
-                skipped?: number;
+            const data = (await res.json()) as RemindOutcome & {
                 remainingHours?: number;
                 error?: string;
             };
@@ -72,16 +95,7 @@ export function RemindMembersButton({
                 return;
             }
 
-            if ((data.sent ?? 0) > 0) {
-                toast.success(
-                    fill(t.admin.remindSuccessToast, { n: data.sent ?? 0 }),
-                );
-            }
-            if ((data.skipped ?? 0) > 0) {
-                toast.info(
-                    fill(t.admin.remindSkippedToast, { n: data.skipped ?? 0 }),
-                );
-            }
+            showRemindOutcomeToast(t, data);
         } catch {
             toast.error(t.admin.remindErrorToast);
         } finally {
