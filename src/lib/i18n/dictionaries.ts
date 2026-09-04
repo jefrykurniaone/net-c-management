@@ -163,16 +163,16 @@ const en = {
             // Standing constraint: it may not name a schedule, sessions, or any
             // other inventory. The community may have nothing posted yet — 07
             // renders the board band neutral in that case — and a snippet
-            // promising what is not there is `PRODUCT.md:94`'s evidence ban one
-            // layer out. It describes the community and the act of joining, and
+            // promising what is not there is `PRODUCT.md`'s *Evidence on Hand*
+            // ban one layer out. It describes the community and the act of joining, and
             // nothing else.
             description:
                 'This is the page for one community and the way to ask to join it. Sign in with Google, and an organizer decides who comes in.',
             // The link-preview image's alt text. It describes the composition
             // rather than naming the community, because the OG image file's
             // `alt` export is static while the name is runtime configuration.
-            // DESIGN.md:309's metaphor ban binds it: no board, tile, rail or
-            // lattice, so the material is named by its colour.
+            // `DESIGN.md`'s *Don't* — the vocabulary-ban bullet — binds it: no
+            // board, tile, rail or lattice, so the material is named by its colour.
             ogAlt: 'The community name, set large in white lettering on dark green.',
         },
         // The two bands #154 added, plus the rail's own control. They sit at
