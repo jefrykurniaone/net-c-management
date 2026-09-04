@@ -16,20 +16,13 @@ import type { SettingsMap } from './use-settings-form';
 import { HeroImageControl, type HeroImageProps } from './hero-image-control';
 
 /**
- * The Settings section where an Admin writes what the public page says (#153)
- * and, since #155, uploads the hero photograph (`HeroImageControl`, in its
- * own file to keep this one under the 300-line cap).
- *
- * Additive: it composes the same `SettingsSection` / `SettingsRow` pair the
- * three sections beside it use, and changes none of them. #167 restyles the
- * whole form.
- *
- * The caps come from `src/lib/public-copy.ts` and nowhere else, so the number
- * the counter counts against, the number in the refusal below a field, and the
- * number in the API's refusal are one constant. Over-cap text is not truncated
- * and typing is not blocked — a `maxLength` swallows a paste silently and
- * explains nothing — so the field says what the rule is and the form refuses to
- * save until it holds.
+ * The Settings section where an Admin writes what the public page says, and
+ * uploads the hero photograph (`HeroImageControl`, in its own file). The caps
+ * come from `src/lib/public-copy.ts` and nowhere else, so the number the counter
+ * counts against, the number in the refusal below a field and the number in the
+ * API's refusal are one constant. Over-cap text is not truncated and typing is
+ * not blocked — a `maxLength` swallows a paste silently and explains nothing —
+ * so the field says what the rule is and refuses to save until it holds.
  */
 
 /** Deep enough for the about paragraph to read as a paragraph before it grows. */

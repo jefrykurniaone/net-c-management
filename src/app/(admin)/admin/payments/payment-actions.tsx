@@ -12,14 +12,12 @@ import type { PaymentFacts } from './payment-facts';
 import { billingPeriodLabel, rupiah } from './payment-format';
 
 /**
- * The Admin's decision on one Payment, taken from its own row. Both acts go
- * through a dialog: this is the surface where the community's money is settled,
- * and the two buttons sit a few pixels apart down forty rows.
- *
- * The controls are plain buttons in the row's DOM order, so Tab reaches them
- * after that row's Proof and Enter presses them. There is no single-key
- * shortcut anywhere here — a one-key Confirm on a money row is a mis-press
- * waiting to happen, and tab order already meets "no mouse".
+ * The Admin's decision on one Payment, taken from its own row; both acts go
+ * through a dialog, because this is where the community's money is settled and
+ * the two buttons sit a few pixels apart down forty rows. The controls are plain
+ * buttons in the row's DOM order, and there is **no single-key shortcut** — a
+ * one-key Confirm on a money row is a mis-press waiting to happen, and tab order
+ * already meets "no mouse".
  */
 
 type Decision = 'CONFIRMED' | 'REJECTED';

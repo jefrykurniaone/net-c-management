@@ -12,12 +12,10 @@ import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
  * The Admin's acts on one member's account: revoke or restore access, and move
- * them between the Member and Admin tiers.
- *
- * An **Owner** row renders none of this. The server refuses every write to an
- * Owner account (docs/owner-role-immutability.md, rule 1), so a disabled
- * control here would only advertise a job that cannot be done; the early return
- * is what makes the row read as immutable rather than as merely locked.
+ * them between the Member and Admin tiers. An **Owner** row renders none of
+ * this — the server refuses every write to an Owner account
+ * (docs/owner-role-immutability.md, rule 1), and absence rather than a disabled
+ * control is what makes the row read as immutable (ADR 0010).
  */
 
 type Member = Readonly<{

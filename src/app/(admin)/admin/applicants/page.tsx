@@ -25,24 +25,13 @@ import {
 } from './applicant-cells';
 
 /**
- * The admission queue — its own surface, not a band on `/admin/members`.
- *
- * This is where new people are let into the community; it should not be
- * something you find by scrolling past a roster, and it is what gives the nav
- * badge somewhere to point. The cost is that on most days it is **empty**, so
- * the empty state is part of the design — and the register draws it, as one
- * ruled row carrying a **neutral** chip and one line.
- *
- * It is the first surface built on the shared register, and the vocabulary is
- * **Admit / Decline** throughout: those are the Admin's acts on a person, and
- * Confirm / Reject are their acts on a Payment. Declining does not delete the
- * Applicant — the same Google account signs in again and reaches the waiting
- * room.
- *
- * The row stays its own row and `/admin/members` is left alone. That roster
- * leads with attendance and payment counts, which are always `0` for an
- * Applicant, and omits `phone` — the one field the Admin actually judges on,
- * since a phone number *is* the identity check in a WhatsApp-run community.
+ * The admission queue — its own surface, not a band on `/admin/members`. Letting
+ * new people in should not be something you find by scrolling past a roster, and
+ * it is what gives the nav badge somewhere to point; on most days it is empty,
+ * so the empty state is part of the design. The roster is left alone because it
+ * leads with attendance and payment counts that are always `0` for an Applicant
+ * and omits `phone`, the one field the Admin actually judges on. The **Admit /
+ * Decline** vocabulary and what declining does are defined in `CONTEXT.md`.
  */
 
 /** Oldest first: a queue is fair when the longest wait is decided first. */

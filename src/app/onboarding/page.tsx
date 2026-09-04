@@ -34,20 +34,12 @@ import {
 } from './field-error-message';
 
 /**
- * The onboarding form, brought onto the board (issue 55).
- *
- * Signing in is signing up: Google login auto-creates the account, and this
- * is the first real screen most members ever see. It is one task — complete
- * your profile — so it takes the 40rem single-task column DESIGN.md gives
- * every such form (Proof upload, sign-in, an Applicant's waiting page), top-
- * anchored under the identity rail like any other board surface rather than
- * vertically centred, since a multi-field form is not the two-affordance
- * interstitial that reservation is for.
- *
- * What it collects and where it redirects on completion are unchanged: the
- * same three fields, POSTed to the same `/api/users/onboarding`, landing on
- * `/dashboard`. Only the treatment — container, field, and error copy — is
- * new.
+ * The onboarding form. Signing in is signing up — Google login auto-creates the
+ * account — so this is the first real screen most members ever see. It is one
+ * task, so it takes the 40rem single-task column DESIGN.md gives every such form
+ * (Proof upload, sign-in, an Applicant's waiting page), top-anchored under the
+ * identity rail rather than vertically centred: a multi-field form is not the
+ * two-affordance interstitial that reservation is for.
  */
 
 function useOnboardingContext(t: Dictionary) {

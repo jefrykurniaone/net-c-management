@@ -33,13 +33,10 @@ import {
 
 /**
  * Taking attendance for one Session: the shared register, one row per Seat, a
- * four-state control on each, and **one Save for the whole list**.
- *
- * The Admin's edits live here and nowhere else until Save. Only the rows they
- * changed are sent, so a Session opened and saved without a touch is unchanged
- * in the database, timestamps included — untaken attendance stays Registered and
- * a No-Show is never implied by saving. "Mark everyone Present" moves controls
- * on this side of the wire and writes nothing on its own.
+ * four-state control on each, and **one Save for the whole list** (ADR 0012).
+ * The Admin's edits live here and nowhere else until Save, and only the rows
+ * they changed are sent. "Mark everyone Present" moves controls on this side of
+ * the wire and writes nothing on its own.
  */
 
 /** How each row reads on screen, and what changing one does. */

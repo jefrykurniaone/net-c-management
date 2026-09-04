@@ -25,16 +25,10 @@ import { MemberSearch } from './member-search';
 
 /**
  * The roster, as a register — one row per member, carrying the three things an
- * Admin is actually asked about: who they are, how to reach them, and where
- * each of their Memberships stands this Billing Period. Answering that used to
- * mean opening four screens.
- *
- * Applicants are not here. They hold Memberships picked while completing their
- * profile and none of them mean anything until an Admin lets them in, so the
- * admission queue keeps its own surface and this one selects on `admittedAt`.
- *
- * The mobile cards this page used to carry below `md` are gone: the register
- * collapses by axis instead, and each row stays a ruled row.
+ * Admin is actually asked about: who they are, how to reach them, and where each
+ * of their Memberships stands this Billing Period. Applicants are not here: this
+ * page selects on `admittedAt` and the admission queue keeps its own surface,
+ * for the reason the **Applicant** entry in `CONTEXT.md` gives.
  */
 
 const DEFAULT_SORT_COL = 'createdAt';

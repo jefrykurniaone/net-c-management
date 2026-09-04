@@ -13,20 +13,11 @@ import {
 
 /**
  * POST /api/sessions/[id]/attendance/bulk — the whole attendance list for one
- * Session, saved as one write.
- *
- * Body: `{ rows: [{ userId, status }] }`, carrying **only** the rows the Admin
- * changed. The same Admin check and the same allowed set as the single-row route
- * apply, so `MAYBE` is refused here exactly as it is there.
- *
- * The whole payload is validated before anything is written: one bad row and
- * nothing is written at all, which is the point of doing this in a transaction
- * rather than as a client fan-out that can half-save on a dropped connection.
- * Rows whose value already matches what is stored are dropped before the write,
- * so a save that changes nothing touches no row — statuses and `updatedAt`
- * timestamps alike. Nothing here derives a status from anything: untaken
- * attendance stays Registered, and a No-Show exists only where an Admin sent one.
- *
+ * Session, saved as one write. Body: `{ rows: [{ userId, status }] }`, carrying
+ * **only** the rows the Admin changed; the same Admin check and the same allowed
+ * set as the single-row route apply, so `MAYBE` is refused here exactly as it is
+ * there. The whole payload is validated before anything is written, rows already
+ * matching what is stored are dropped, and nothing derives a status (ADR 0012).
  * The single-row route stays where it is, for one-off corrections.
  */
 

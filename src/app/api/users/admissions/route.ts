@@ -12,19 +12,14 @@ import { isAdminRole } from '@/lib/utils';
 import { after, NextResponse } from 'next/server';
 
 /**
- * The Admin's act on an Applicant: **admit** or **decline**.
- *
+ * The Admin's act on an Applicant: **admit** or **decline** (`CONTEXT.md`).
  * Admitting sets `User.admittedAt` and emails the Applicant — the only thing
  * that brings back someone who closed the tab. Declining sets `isActive = false`
  * and leaves `admittedAt` null, which drops them out of the queue
- * (`admittedAt IS NULL AND isActive`) and turns their waiting page into a
- * closed door. Nothing is deleted: the record of who asked survives, and the
- * same Google account signing in again would only reappear as the same declined
- * row, so deletion was never a gate.
- *
- * Not folded into `PATCH /api/users`, which owns role and `isActive` for
- * *members*: decline shares that route's write but must not touch `admittedAt`,
- * and admit is a different act with an email behind it.
+ * (`admittedAt IS NULL AND isActive`) and turns their waiting page into a closed
+ * door; nothing is deleted. Not folded into `PATCH /api/users`, which owns role
+ * and `isActive` for *members*: decline must not touch `admittedAt`, and admit
+ * is a different act with an email behind it.
  */
 
 type AdmissionAction = 'admit' | 'decline';

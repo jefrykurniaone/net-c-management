@@ -13,12 +13,10 @@ import type {
 /**
  * What one attendance register is built from: who holds or held a Seat on this
  * Session, how they pay for the Activity, and whether their money for this
- * Session is actually behind them.
- *
- * The read only. Nothing here decides a payment mode or a period — both come
- * from `src/lib/payment-mode.ts`, the one resolver — and nothing here writes.
- * The shapes it returns are `attendance-view.ts`, which the client component
- * reads too; nothing importable from here may ever reach the browser bundle.
+ * Session is actually behind them. The read only — nothing here writes, and
+ * nothing here decides a payment mode or a period (`src/lib/payment-mode.ts` is
+ * the one resolver, ADR 0011). The shapes it returns are `attendance-view.ts`,
+ * and nothing importable from here may ever reach the browser bundle.
  */
 
 /** A member with no Membership row still resolves through the offered set. */

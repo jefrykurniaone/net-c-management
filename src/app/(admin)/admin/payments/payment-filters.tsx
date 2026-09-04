@@ -4,13 +4,11 @@ import { NativeSelect } from '@/components/ui/native-select';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
- * The queue's filters, unchanged in what they do: month, year, standing,
- * Activity and a member search, submitted as a plain `GET` form so every
- * filtered view is a URL somebody can keep.
- *
- * What did change is that each control now carries an accessible name. A bare
- * `<select>` whose only text is its "all" option announces as that option, and
- * five of them in a row announce as five unlabelled controls.
+ * The queue's filters — month, year, standing, Activity and a member search —
+ * submitted as a plain `GET` form, so every filtered view is a URL somebody can
+ * keep. Each control carries an accessible name: a bare `<select>` whose only
+ * text is its "all" option announces as that option, and five of them in a row
+ * announce as five unlabelled controls.
  */
 
 const MONTHS_IN_YEAR = 12;

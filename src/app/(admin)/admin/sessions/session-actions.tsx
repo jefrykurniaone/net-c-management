@@ -13,24 +13,12 @@ import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
 /**
  * The four jobs an Admin does to a Session, from the row they are already
  * reading: take its attendance, edit its facts, open it as a member sees it, and
- * export it. Moving where it stands is the fifth and asks first — it is what a
- * member's board reads as struck.
- *
- * Two moves live here and never both at once. **Cancel** is offered while the
- * Session is open, and **Reopen** — Cancelled back to Scheduled — while its own
- * day has not passed. A Completed Session, and a Cancelled one whose day is
- * over, render neither: the server refuses both writes, so a disabled button
- * would only advertise a job that cannot be done, and its absence is what makes
- * the row read as closed rather than merely locked.
- *
- * Which of the two is offered is decided **server-side** (`session-rows.ts`) and
- * arrives as a boolean. The window turns on the Session's WIB calendar day, and
- * a browser west of Jakarta comparing dates itself would offer the move for
- * seven hours after the rule stopped allowing it.
- *
- * Every control is a real link or button in the row's DOM order, so Tab reaches
- * them in reading order and Enter presses them. Nothing here puts a `tabIndex`
- * on the row itself.
+ * export it. Moving where it stands is the fifth and asks first. **Cancel** and
+ * **Reopen** never appear together, and a Completed Session or a Cancelled one
+ * whose day is over renders neither — by absence rather than a disabled control
+ * (ADR 0010); which of the two is offered is decided server-side in
+ * `session-rows.ts`, on the WIB day (ADR 0011). Every control is a real link or
+ * button in the row's DOM order, never a `tabIndex` on the row itself.
  */
 
 type SessionActionsView = Readonly<{

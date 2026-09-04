@@ -32,19 +32,12 @@ import {
 } from './payment-queue-query';
 
 /**
- * The Payments queue — the surface where the community's money is decided.
- *
- * It used to be a list: an Admin scanned past Confirmed and Rejected rows to
- * find the ones needing them, and confirming meant opening each Proof in a new
- * tab, deciding, coming back and finding their place again. Now the rows
- * awaiting a decision are first, the Proof is on the row at a size forty of
+ * The Payments queue — the surface where the community's money is decided. Rows
+ * awaiting a decision come first, the Proof is on the row at a size forty of
  * them can be scanned at, and both decisions are taken from the row through a
- * dialog that restates what is being decided.
- *
- * The reads and the ordering live in `payment-queue-query.ts`; the columns in
- * `payment-columns.tsx`; the lattice, the sort links, the pagination and the
- * collapse below `768px` belong to the shared register. This file is the
- * surface and nothing else.
+ * dialog that restates it. The reads and the ordering live in
+ * `payment-queue-query.ts`, the columns in `payment-columns.tsx`, the lattice
+ * and pagination in the shared register; this file is the surface, nothing else.
  */
 
 const PAYMENTS_PATH = '/admin/payments';

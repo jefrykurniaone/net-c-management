@@ -17,13 +17,11 @@ import { loadMemberDetail, type MemberDetail } from './member-detail';
 
 /**
  * One member, read at a desk — the same ruled idiom as the roster it is reached
- * from, and the place a conversation with a member is prepared.
- *
- * The per-Activity register is why this page exists in this spec: Present,
- * Opted Out and **No-Show** counted separately, per Activity, beside how that
- * Membership bills and where it stands this Billing Period. The counts are a
- * conversation aid, which is why they live here rather than on the register,
- * where they would be one more thing to scan past.
+ * from, and the place a conversation with a member is prepared. Present, Opted
+ * Out and **No-Show** are counted separately, per Activity, beside how that
+ * Membership bills and where it stands this Billing Period; they live here
+ * rather than on the register because they are a conversation aid, not one more
+ * thing to scan past.
  */
 
 const JOINED_DATE_FORMAT = 'd MMMM yyyy';

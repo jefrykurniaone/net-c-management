@@ -17,17 +17,11 @@ import { currentPeriod, type BillingPeriod } from '@/lib/payment-mode';
 import { prisma } from '@/lib/prisma';
 
 /**
- * Everything one member's detail page reads.
- *
- * The page is where a conversation with a member is prepared, which is why the
- * **No-Show** count lives here and not as a column on the register: the register
- * is scanned, this page is read, and a count of times somebody held a Seat and
- * nobody heard from them is a thing you raise with a person rather than sort a
- * table by.
- *
- * Owner contact withholding is applied here for the same reason as on the
- * register: a value the browser never receives cannot be read out of it
- * (docs/owner-role-immutability.md, rule 2).
+ * Everything one member's detail page reads, its **No-Show** count included —
+ * the page is where a conversation with a member is prepared, and the register
+ * is only scanned. Owner contact withholding is applied here, on the server, for
+ * the same reason as on the register: a value the browser never receives cannot
+ * be read out of it (docs/owner-role-immutability.md, rule 2).
  */
 
 /**

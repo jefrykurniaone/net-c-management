@@ -1,14 +1,11 @@
 /* ─────────────────────────────────────────────────────────────
-   Rally — the motion layer (#151).
+   Rally — the motion layer.
 
    Hover and focus transitions on interactive elements, 150-200ms, per
-   DESIGN.md's Motion section. One utility, `.transition-rally`, so a call
-   site reaches for a token rather than inventing a duration; the duration
-   itself lives in `--duration-rally` for the same reason `--radius` lives in
-   the colour layer rather than at each call site.
-
-   No entrance or scroll animation lives here — the spec is explicit that
-   there is none, and this file only ever grows hover/focus utilities.
+   DESIGN.md's Motion section. One utility, `.transition-rally`, and the
+   duration in `--duration-rally`, so a call site reaches for a token rather
+   than inventing one. No entrance or scroll animation lives here — the spec
+   is explicit that there is none.
    ───────────────────────────────────────────────────────────── */
 
 @theme inline {

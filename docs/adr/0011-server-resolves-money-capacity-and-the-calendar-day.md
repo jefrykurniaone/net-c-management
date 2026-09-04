@@ -1,0 +1,11 @@
+# Anything money, capacity or the calendar day depends on is resolved on the server and reaches the client as a value
+
+A second implementation of a rule the community's money depends on is a second answer to the same question, and the two drift. The decision recorded here is that every such rule has exactly one implementation, it runs on the server, and what crosses the wire to a browser is the answer rather than the inputs to it. The client draws values; it does not derive them.
+
+Three families of rule fall under this. **Money.** A Dues Rate is resolved by the same helper the route enforces with (`docs/adr/0002-dues-rate-history.md`), a Payment Mode by the one resolver in `src/lib/payment-mode.ts`, and a Session's cost-sharing floor by `getSessionQuotas` — reused, never recomputed, because the weighting that makes a per-Session joiner half a monthly member lives there. A form that worked any of these out for itself would be that second answer. **Capacity.** Capacity counts only seat-holding rows, and the lazy hold sweep runs before any figure is taken: an expired hold is not a held Seat, and a figure that said otherwise would send an Admin cancelling a Session that is fuller than it looks.
+
+**The calendar day.** The rules turn on the WIB day, and a browser west of Jakarta comparing dates against its own clock reads a different day for seven hours out of every twenty-four. Whether a Cancelled Session may be reopened is therefore decided on the server, by the same helper the route refuses with, and travels to the row as a boolean; so is whether a Session may be deleted. The same applies to every lock the Session edit form draws: the facts behind them are read on the server and handed down as booleans and a count, and `PATCH /api/sessions/[id]` makes whatever the form drew true.
+
+The consequence for a reviewer is a simple test. If a value in a component could have been computed from data already in the props, and the answer matters to money, to a Seat or to which day it is, it should have arrived resolved instead. The counterpart treatment — how a surface draws a refusal it did not decide — is `docs/adr/0010-surfaces-disclose-servers-enforce.md`.
+
+Status: accepted, 2026-09-04.

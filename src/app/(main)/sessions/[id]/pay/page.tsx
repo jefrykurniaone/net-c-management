@@ -28,11 +28,10 @@ import { validateProofFile } from '@/lib/proof-file';
 
 /**
  * Register-and-pay for one Session, as four cards: the amount (read-only,
- * server-set), the bank account to transfer to, the proof upload, and the
- * submit action — the same shape #159's cards and the monthly-dues upload
- * form (`proof-upload-form.tsx`) already draw a Rally screen in. Behaviour is
- * unchanged: the same endpoint, the same fields, the server the same
- * authority on the amount and the mode.
+ * server-set), the bank account to transfer to, the proof upload, and the submit
+ * action — the same shape the monthly-dues upload form (`proof-upload-form.tsx`)
+ * draws. The server is the authority on both the amount and the Payment Mode
+ * (ADR 0011); nothing here decides either.
  */
 
 /**

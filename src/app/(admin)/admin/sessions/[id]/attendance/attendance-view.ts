@@ -6,13 +6,10 @@ import type {
 } from '@prisma/client';
 
 /**
- * The shape one attendance register crosses the server/client boundary in.
- *
- * Kept apart from the read (`attendance-rows.ts`) on purpose: that module is
- * `server-only` and reaches Prisma, and the client component needs these types
- * and the notice id. A single value imported from a server module drags the
- * database driver into the browser bundle, which is a build error, not a
- * warning — so the shared surface lives here, free of both.
+ * The shape one attendance register crosses the server/client boundary in, kept
+ * apart from the read (`attendance-rows.ts`) on purpose: that module is
+ * `server-only` and reaches Prisma, and a single value imported from it drags
+ * the database driver into the browser bundle — a build error, not a warning.
  */
 
 /**

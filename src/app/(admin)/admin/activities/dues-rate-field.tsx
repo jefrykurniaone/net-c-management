@@ -31,18 +31,11 @@ import type { CreateActivityFormData } from '@/lib/validations/activity';
 
 /**
  * The Dues field on an existing Activity: the amount, the Billing Period it
- * starts from, and the sentence that says what is charged now and what is about
- * to be.
- *
- * Every figure and every month here is decided server-side by
- * `buildDuesRateFieldView`, which reads the same rules the route enforces.
- * Nothing in this file resolves a rate, ranks a Period or decides what is
- * queued — a form that worked those out for itself would be a second answer to
- * the question the money depends on.
- *
- * Creating an Activity keeps its single amount box and no picker: the
- * beginning-of-time rate is written by the create path, so there is no month to
- * choose.
+ * starts from, and the sentence saying what is charged now and what is queued.
+ * Every figure and month is resolved server-side by `buildDuesRateFieldView`;
+ * nothing here resolves a rate, ranks a Period or decides what is queued
+ * (ADR 0011). Creating an Activity keeps a single amount box and no picker — its
+ * beginning-of-time rate is written by the create path (ADR 0002).
  */
 
 const DECIMAL_RADIX = 10;

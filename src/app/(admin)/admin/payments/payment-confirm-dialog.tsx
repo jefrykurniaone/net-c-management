@@ -16,17 +16,10 @@ import { PaymentFactList, type PaymentFacts } from './payment-facts';
 /**
  * Confirming a Payment. It restates the row, and where the amount is short of
  * the Activity's current Dues or the Session's current Fee it says so in plain
- * words — and then lets the Admin Confirm anyway.
- *
- * **It warns; it never blocks.** Admins take partial transfers and cash top-ups
- * today. A dialog that refused a short amount would not stop them accepting it;
- * it would teach them to type a figure that matches, and the ledger would start
- * recording money that was never sent.
- *
- * The shortfall sentence is a disclosure the Confirm label defers to, so it
- * renders at **Body** in Secondary Ink rather than as a caption, and the button
- * points at it with `aria-describedby` (DESIGN.md, Actions). A condition that
- * only reaches sighted readers, in fine print, is not disclosed.
+ * words and then lets the Admin Confirm anyway: **it warns; it never blocks**
+ * (ADR 0010 carries the ledger argument). The shortfall sentence is a disclosure
+ * the Confirm label defers to, so it renders at **Body** in Secondary Ink and
+ * the button points at it with `aria-describedby` (DESIGN.md, Actions).
  */
 
 type ConfirmPaymentDialogProps = Readonly<{

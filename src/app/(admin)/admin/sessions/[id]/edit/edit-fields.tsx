@@ -15,20 +15,12 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { UpdateSessionFormData } from '@/lib/validations/session';
 
 /**
- * One field of the Session edit form, and how a locked one is drawn.
- *
- * A locked field is **read-only**, never disabled: its value still posts, it is
- * still focusable and copyable, and a screen reader announces it as read-only
- * rather than skipping it. It takes the design system's read-only treatment —
- * the beige ground fill (DESIGN.md, Inputs / Fields) — from the shared `Input`
- * itself, which carries `read-only:bg-background`, so no caller class is needed.
- *
- * Every lock carries a sentence at **Body** size tied to the control with
- * `aria-describedby`. A condition disclosed in the fine print is not disclosed,
- * and the courtesy is only ever a courtesy: `PATCH /api/sessions/[id]` refuses
- * the write whatever this form offered. The sentence itself is drawn by
- * `LockNote` in `@/components/ui/lock-note`, which the Post-a-Session form
- * composes too.
+ * One field of the Session edit form, and how a locked one is drawn. A locked
+ * field is **read-only**, never disabled (ADR 0010), and takes the design
+ * system's read-only treatment from the shared `Input` itself, which carries
+ * `read-only:bg-background`, so no caller class is needed. Every lock carries a
+ * sentence tied to the control with `aria-describedby`, drawn by `LockNote` in
+ * `@/components/ui/lock-note`; the refusal is `PATCH /api/sessions/[id]`'s.
  */
 
 /** Zod's own floors: a Session seats at least two, and a free one costs zero. */
