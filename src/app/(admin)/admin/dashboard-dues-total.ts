@@ -40,7 +40,7 @@ export interface DuesTotalActivity {
  * in a Period after it. A caller pricing a settled Period would need it; the
  * chart is that caller and has it.
  */
-function countMonthlyMemberships(
+export function countMonthlyMemberships(
     activity: DuesTotalActivity,
     period: BillingPeriod,
 ): number {

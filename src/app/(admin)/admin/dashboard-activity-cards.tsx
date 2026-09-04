@@ -13,8 +13,15 @@ function ActivityCard({
     activity,
     t,
 }: Readonly<{ activity: ActivityCardData; t: Dictionary }>) {
-    const { name, members, confirmed, attendanceRate, sessionsPerWeek, duesPct } =
-        activity;
+    const {
+        name,
+        members,
+        duesMembers,
+        confirmed,
+        attendanceRate,
+        sessionsPerWeek,
+        duesPct,
+    } = activity;
     return (
         <Card className='gap-3.5 p-5'>
             <div className='flex items-center gap-2.5'>
@@ -49,8 +56,13 @@ function ActivityCard({
                     <span className='type-caption font-medium text-muted-foreground'>
                         {t.admin.duesCollectedLabel}
                     </span>
+                    {/* The pair `duesPct` below is drawn from, so `duesMembers`
+                        and deliberately never the `members` headcount beside
+                        the name: Per-Session and unchosen Memberships owe no
+                        Dues, and dividing by them read as under-collecting
+                        (#273). */}
                     <span className='type-figure text-foreground'>
-                        {confirmed}/{members}
+                        {confirmed}/{duesMembers}
                     </span>
                 </div>
                 <div className='h-[5px] rounded-full bg-muted overflow-hidden'>
