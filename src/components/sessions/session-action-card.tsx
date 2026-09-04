@@ -4,11 +4,9 @@ import { RSVPButton } from './rsvp-button';
 import { WhatsappButton } from './whatsapp-button';
 
 /**
- * The session detail page's action card: claim, withdraw, pay, or — where
- * none of those apply — the sentence saying why (`RSVPButton`'s own disabled
- * states already carry that sentence). Split out of the page itself so the
- * page composes cards rather than drawing one inline, same as the header,
- * facts and players cards.
+ * The session detail page's action card: claim, withdraw, pay, or — where none
+ * of those apply — the sentence saying why (`RSVPButton`'s own disabled states
+ * already carry that sentence).
  */
 
 const CARD_CLASS = 'rounded-xl bg-card shadow-lift p-block space-y-3';

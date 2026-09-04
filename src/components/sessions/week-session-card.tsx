@@ -10,34 +10,12 @@ import { SeatAction } from './seat-action';
 import type { WeekCardData } from './week-strip-view';
 
 /**
- * One Session as a card in the week strip.
+ * One Session as a card in the week strip, and the card that settled the four
+ * conventions every other member Session card mirrors (#159).
  *
- * **This card is the week strip's own, deliberately.** ADR 0003 retired the one
- * shared Slot Cell: each member surface composes its own card markup, and what
- * stays shared is the *deciding* — `resolveSessionStanding` for the state and
- * `slotActionFor` for the action, both already resolved into
- * {@link WeekCardData} before this component is reached. Nothing here works out
- * a colour, a label or a permission.
- *
- * **The conventions every other member Session card mirrors** (#160 dashboard,
- * #161 detail, #162 pay), settled here because this is the first of them:
- *
- * 1. **Information order, top to bottom, always:** start–end time as Figure;
- *    the Activity tile beside the Session title; the venue as Caption; at most
- *    one note under it; then the footer.
- * 2. **The chip sits at the footer's leading edge.** One chip, never two, and
- *    the free-Seat figure stands in its place where the standing is a number.
- * 3. **The action sits at the footer's trailing edge**, and is a **sibling** of
- *    the card's link, never a child of it. A control nested inside a link is
- *    invalid markup, unreachable in the tab order some of the time, and
- *    activated differently by different browsers. Card link and action are two
- *    tab stops, in that order.
- * 4. **The card stacks; it never puts a chip beside a figure on one line.** A
- *    day column is ~174px wide (`STRIP_MEASURE`), and the longest chip label
- *    this product sets is most of it.
- *
- * The whole information area is the link. The footer is not: it holds the chip,
- * which is a state rather than a destination, and the action, which is a button.
+ * The conventions, the shared resolvers behind {@link WeekCardData} and the
+ * sanctioned deviations are in
+ * `docs/adr/0014-member-session-card-conventions.md`.
  */
 
 /** A void Session dims its title. Nothing is ever struck through — DESIGN.md. */

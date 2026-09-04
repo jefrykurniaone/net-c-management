@@ -10,14 +10,8 @@ import {
 
 /**
  * "Your activities" resolved to finished card props — one entry per Activity
- * this member is on, in the order the section draws them.
- *
- * **Why the resolution is here and not in the markup.** Picking this
- * Activity's board out of the batch and flattening it into cards is a
- * derivation, and it used to sit inside the `.map()` of the page's JSX, where
- * it was neither readable nor reachable from a test. The section component
- * that consumes this list now only draws; `activity-card-view.ts` still owns
- * what one card says (ADR 0003).
+ * this member is on, in the order the section draws them. The section that
+ * consumes this list only draws; `activity-card-view.ts` owns what one card says.
  *
  * **Pure**: no database and no clock of its own.
  */

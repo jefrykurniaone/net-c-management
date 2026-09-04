@@ -5,25 +5,15 @@ import { ACTIVITY_ICON_GLYPHS } from './activity-icon-glyphs';
 
 /**
  * The Activity's livery: one tile on the highlight surface, carrying the
- * Activity's chosen icon or — when it has none — its initial.
+ * Activity's chosen icon or — when it has none — its initial. The seam every
+ * surface that names an Activity draws through, so no surface invents a tile of
+ * its own; it takes data and never nodes.
  *
- * This is the seam every surface that names an Activity draws through, so that
- * the register, the Session cards, the public Activity cards and the member
- * dashboard cannot each invent a tile. It takes data and never nodes: a name
- * and the raw `Activity.icon` column, nothing else.
- *
- * **Colour.** `--accent` and `--accent-foreground`, which is Lime carrying
- * Black Green in the light theme and the deep olive carrying Lime in the dark
- * one — `--accent` inverts between themes on purpose (see the note beside it in
- * `colors.css`), and both directions are asserted at 13.68:1 and
- * 10.06:1 by `design-tokens.test.ts`. The `--border` hairline is not
- * decoration: the accent fill is a *hue* step against the ground rather than a
- * lightness one, so The Boundary Rule requires an edge that a reader who
- * cannot see the hue still gets. It clears 3.18:1 on Lime and 3.54:1 on the
- * olive.
- *
- * No shadow. Depth in Rally is a card lifted off the ground, and a 20px marker
- * inside a table row is not a card.
+ * `--accent` on `--accent-foreground` with a `--border` hairline, because the
+ * accent fill is a hue step rather than a lightness one and The Boundary Rule
+ * (DESIGN.md) wants an edge a reader who cannot see the hue still gets. Every
+ * pair here is asserted in `design-tokens.test.ts`. No shadow: depth in Rally is
+ * a card lifted off the ground, and a 20px marker in a table row is not a card.
  */
 
 /**

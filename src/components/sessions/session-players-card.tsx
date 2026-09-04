@@ -3,9 +3,7 @@ import { PlayerList, type PlayerItem } from './player-list';
 
 /**
  * The session detail page's players card: how many Seats are filled, the fill
- * bar, and the roster with each Participant's own attendance chip. Split out
- * of the page itself so the page composes cards rather than drawing one
- * inline — the same reason the header and the facts card are their own files.
+ * bar, and the roster with each Participant's own attendance chip.
  */
 
 const CARD_CLASS = 'rounded-xl bg-card shadow-lift p-block';

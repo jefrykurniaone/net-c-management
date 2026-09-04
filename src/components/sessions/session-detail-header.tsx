@@ -15,23 +15,12 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 import type { SlotCellQuota } from './slot-cell-data';
 
 /**
- * The session detail page's own header card. ADR 0003 retired the one shared
- * Slot Cell this used to compose — every member surface now draws its own
- * card, so this is the detail page's, not a second caller of a retired
- * component. It mirrors #159's `WeekSessionCard` conventions exactly: the
- * time leads the body, the Activity tile sits beside the title, the venue is
- * a Caption line, one note may sit under it, and the one standing (a chip, or
- * the free-Seat figure in its place) lands on the footer's leading edge — the
- * same corner #159 puts it in.
+ * The session detail page's own header card, mirroring #159's conventions.
  *
- * There is no action row here, and that is deliberate, not an omission: the
- * RSVP card further down the page is what claims or withdraws a Seat, so a
- * second control on this card would answer the same question twice. For the
- * same reason the standing is resolved exactly as the retired Slot Cell's
- * `TopRight` resolved it — `holdExpiresAt` is not passed in, so a Seat held on
- * money nobody has verified yet still reads as a plain Registered chip here;
- * the RSVP card below is where that deadline is surfaced. Changing that is a
- * behaviour change this restyle does not make.
+ * It carries no action row and is not passed `holdExpiresAt`, so a Seat held on
+ * unverified money reads here as a plain Registered chip; the RSVP card below is
+ * where the deadline is surfaced. Both are sanctioned deviations, argued in
+ * `docs/adr/0014-member-session-card-conventions.md`.
  */
 
 const CARD_CLASS = 'flex flex-col rounded-xl bg-card shadow-lift';

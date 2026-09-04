@@ -10,18 +10,10 @@ import { ActivityTile } from './activity-tile';
  * community runs, and optionally a single Activity. URL-driven — `?view=`,
  * `?activityId=` — so the board re-reads server-side.
  *
- * There is no Upcoming/Past tab and no pager here any more. A board shows a
- * range and every day in it keeps a cell, so moving through time is the week
- * nav's job. Text search went with them for the same reason: a board that hides
- * the days whose Sessions did not match would draw a neutral chip on them, which
- * says an Admin has not posted — a search result quietly lying about the state
- * of the week.
- *
- * Controls are pills in tracked caps, and the selected one is a filled Lime
- * tile carrying Black Green — the highlight surface, not the action green. It
- * is a *selected option*, and The One Action Rule (DESIGN.md) keeps PBP Green
- * for the thing that writes. Lime is a hue step rather than a lightness one, so
- * every pill carries a `--border` as well, per The Boundary Rule.
+ * There is deliberately no text search, and no pager: a board that hid the days
+ * whose Sessions did not match would draw a neutral chip on them, which says an
+ * Admin has not posted — a search result quietly lying about the state of the
+ * week. A board shows a range, so moving through time is the week nav's job.
  */
 
 export type SessionView = 'mine' | 'all';

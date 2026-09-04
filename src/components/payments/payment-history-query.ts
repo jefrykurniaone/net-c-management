@@ -3,16 +3,12 @@ import { parsePagination, type RawSearchParams } from '@/lib/table-params';
 
 /**
  * The member's Payment history, as the URL asks for it: which standing, which
- * Activity, which page.
+ * Activity, which page. Pure — the search params arrive as a plain record.
  *
  * **Every filter is validated before it reaches Prisma.** A status arriving as
  * anything but one of the three stored values is dropped rather than passed
  * through, because an unrecognised enum value is a Prisma error rather than an
- * empty result. The query-string keys live here as named constants so the
- * `where` clause and the controls that write the URL cannot drift apart.
- *
- * **Pure**: no database and no clock — the search params arrive as a plain
- * record, so the whole read of the URL is one testable function.
+ * empty result.
  */
 
 export const HISTORY_STATUS_KEY = 'historyStatus';

@@ -18,31 +18,10 @@ import type { MoneyByActivityChartView } from '@/lib/money-by-activity-view';
  * This Billing Period's money grouped by Activity, as a donut with the total in
  * its centre (#171).
  *
- * Draws only. Every figure, every colour and every string arrives finished in
- * {@link MoneyByActivityChartView} — this component never sees a Payment, a
- * Session or the dictionary, so a wrong number is a resolver test's failure
- * rather than something an Admin finds. It composes onto #169's
- * {@link ChartFigure}, which carries the title, the caption and the text list
- * of the same figures; a series is never drawn straight onto the page ground,
- * where the chart colours do not clear 3:1 (DESIGN.md, Chart series).
- *
- * **The centre total is HTML, not an SVG label.** The ring is the only thing in
- * its `PieChart`, and `PieChart` centres a pie in its own plot area, so an
- * absolutely-positioned overlay lands exactly on the hole. That buys the
- * product's real type roles — `type-figure` is the role every Rupiah amount in
- * this app takes — instead of an SVG `<text>` that has to restate them.
- *
- * **The colour key is `ChartLegendContent`, given its items explicitly**
- * (#215). Recharts 3.8 only computes a `Legend`'s `payload` when the chart
- * mounts an actual `<Legend>`, and this donut never does — a `Pie`'s own
- * colour key has no `Legend` to introspect. Passing `items` sidesteps that
- * contract instead of relying on it, and the shared row now wraps (`chart.tsx`
- * `ChartLegendContent`), so it no longer overflows 390px at four Activities.
- *
- * Motion: Recharts 3.8 defaults `isAnimationActive` to `'auto'`, which respects
- * `prefers-reduced-motion` and disables the grow-in during SSR. Left at the
- * default rather than pinned, so the honouring cannot be switched off by
- * accident.
+ * Draws only: every figure, colour and string arrives finished in
+ * {@link MoneyByActivityChartView}. The HTML centre total and the explicitly
+ * given `ChartLegendContent` items (#215) are settled in
+ * `docs/adr/0013-rally-charts-draw-only.md`.
  */
 
 /** The hole, wide enough for a seven-digit Rupiah total at `type-figure`. */

@@ -10,22 +10,13 @@ import { SeatAction } from '@/components/sessions/seat-action';
 import type { DashboardCardData } from './activity-card-view';
 
 /**
- * One Session as a compact card inside an Activity's dashboard body.
+ * One Session as a compact card inside an Activity's dashboard body — the
+ * dashboard's own card, mirroring #159's conventions with one addition, the
+ * card's own date on the time line.
  *
- * **This card is the dashboard's own, deliberately (ADR 0003).** What is
- * shared with the week strip's `WeekSessionCard` (#159) — the first card to
- * settle these conventions — is the *deciding*: `resolveSessionStanding` and
- * `slotActionFor`, both already resolved into {@link DashboardCardData} before
- * this component is reached. Nothing here works out a colour, a label or a
- * permission.
- *
- * **The conventions this mirrors, exactly:** start–end time as Figure; the
- * Activity tile beside the title; the venue as Caption; at most one note;
- * then a footer with the chip (or the free-Seat figure) at the leading edge
- * and the action at the trailing edge, the action a sibling of the card's own
- * link rather than nested inside it. The one addition is the card's own date
- * — a Label-role prefix on the time line — because unlike a week-strip card
- * this one carries no day column above it to say which day it is.
+ * The conventions, the shared resolvers behind {@link DashboardCardData} and
+ * why the date is added here are in
+ * `docs/adr/0014-member-session-card-conventions.md`.
  */
 
 const TITLE_CLASS = 'type-title break-words text-card-foreground';
