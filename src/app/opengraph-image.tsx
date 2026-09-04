@@ -56,18 +56,34 @@ const OFF_WHITE_INK = '#F1EEE5';
 const CONTENT_WIDTH = size.width - 160;
 
 /**
- * The wordmark's tracking. Tracked *out* caps read as a name; the Display
- * role's condensed caps are drawn *in* and read as a headline. Two devices
- * that happen to share capitals, and the card wants the first.
+ * Weight, letter-spacing and line-height, copied into inline styles rather
+ * than referenced — satori renders to an image and cannot consume a
+ * Tailwind `@utility`. Copied from `DESIGN.md`'s `type-title` row, which
+ * `src/app/styles/type-roles.css`'s `type-title` utility agrees with
+ * exactly: weight 700, letter-spacing -0.01em, line-height 1.3. The role's
+ * own 1.0625rem font-size is not copied — it fits a 17px on-screen rail,
+ * not a 1200x630 image, so `WORDMARK_RAMP`/`WORDMARK_FLOOR` below still
+ * choose the size. `font-stretch`/`font-variation-settings` are not copied
+ * either: the role only resets both to `normal`, and `Archivo-900.ttf` is a
+ * static weight-only face with no width axis to reset.
  */
-const MARK_TRACKING_EM = 0.14;
+/**
+ * The weight below is intent, not output. Only `Archivo-900.ttf` is registered
+ * with `ImageResponse`, and it is a static weight-only face, so satori draws
+ * those glyphs whatever weight is asked for: `/opengraph-image` rendered at 700
+ * and at 900 returned byte-identical PNGs, SHA-256 `CCA4DDAC1D64C24F`, measured
+ * 2026-09-04. So the card matches the on-screen wordmark in case, tracking and
+ * leading, but is heavier in stroke. #312 carries the weight-700 face that makes
+ * this declaration true; until it lands, do not read 700 here as what renders.
+ */
+const WORDMARK_FONT_WEIGHT = 700;
+const WORDMARK_LETTER_SPACING = '-0.01em';
+const WORDMARK_LINE_HEIGHT = 1.3;
 
 /**
  * The Never-Bleed Rule's first preference, as a ramp: hold the box by shrinking
- * the type before anything wraps. Tracked caps at `0.14em` make this the widest
- * element per character in the system, so a name of unknown length is the first
- * thing to fail here. Character counts are cumulative upper bounds; every step
- * keeps a name inside two lines of the measure above.
+ * the type before anything wraps. Character counts are cumulative upper bounds;
+ * every step keeps a name inside two lines of the measure above.
  */
 const WORDMARK_RAMP: ReadonlyArray<{ maxChars: number; fontSize: number }> = [
     { maxChars: 14, fontSize: 96 },
@@ -75,7 +91,12 @@ const WORDMARK_RAMP: ReadonlyArray<{ maxChars: number; fontSize: number }> = [
     { maxChars: 40, fontSize: 54 },
 ];
 
-/** Past the ramp's last step, the floor — long names wrap and break instead. */
+/**
+ * Past the ramp's last step, the floor — long names wrap and break instead.
+ * #209 caps the community name at 48 characters, which still exceeds this
+ * 40-character threshold, so the floor stays reachable and this branch is
+ * not dead.
+ */
 const WORDMARK_FLOOR = 40;
 
 function wordmarkFontSize(name: string): number {
@@ -119,13 +140,12 @@ export default async function Image() {
                         maxWidth: CONTENT_WIDTH,
                         color: OFF_WHITE_INK,
                         fontSize,
-                        fontWeight: 900,
-                        lineHeight: 1.05,
-                        letterSpacing: fontSize * MARK_TRACKING_EM,
-                        textTransform: 'uppercase',
+                        fontWeight: WORDMARK_FONT_WEIGHT,
+                        lineHeight: WORDMARK_LINE_HEIGHT,
+                        letterSpacing: WORDMARK_LETTER_SPACING,
                         textAlign: 'center',
                         // Wrap at spaces first, break mid-word only as a last
-                        // resort. A mid-word break in a 900-weight slab is a
+                        // resort. A mid-word break in the wordmark is a
                         // visible defect, and that is the point.
                         wordBreak: 'break-word',
                     }}>
