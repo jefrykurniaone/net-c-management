@@ -80,6 +80,31 @@ Declared in `vercel.json`, protected by the `CRON_SECRET` bearer token (auto-inj
 - Branch format: `feat/`, `fix/`, `chore/`, `hotfix/`
 - Commit format: Conventional Commits; no direct push to `main`
 
+## Comments
+
+A comment earns its line when it says something the code cannot.
+
+**Keep**. Where a remove rule reaches the same line, keep wins:
+
+- why obvious code is absent: a platform or ORM limit (`src/lib/holds.ts`)
+- an ordering **or non-ordering** obligation, including a call deliberately *not* made here (`src/lib/seats-filled.ts`)
+- a security or privacy boundary the code does not enforce (`src/lib/supabase.ts`, `src/lib/public-landing.ts`)
+- a storage invariant the column permits but the domain forbids (`src/lib/activity-icons.ts`)
+- a measurement, or a duplication naming what it duplicates (`src/lib/email/layout.ts`)
+- a runtime or deployment fact outside the source tree (`src/lib/prisma.ts`)
+
+**Remove**:
+
+- needed only because a name is poor: rename
+- heading an extractable block: extract it
+- a restatement of the declaration beneath, a section divider, repository history git holds
+
+**Correct, never delete for being wrong.** A `file:line` citation becomes a symbol or document heading; the line survives. An `AD-`/`FR-`/`NFR-` identifier becomes an issue number or `docs/adr/` path once that record exists; until then it and its sentence stay.
+
+**Move before cut.** A rule's only copy moves first: to a type, a test name, `CONTEXT.md`, `docs/adr/`. A header whose argument has nowhere to go stays full length.
+
+Write `TODO(#123)`; the issue number is mandatory. Never commit commented-out code. Doc blocks on exports are optional: only what the signature omits. `src/lib/i18n/dictionaries.ts` keeps per-key notes for the other locale and appends keys, never reorders. `src/components/ui/` is scoped by provenance, not path: vendored files are out, repo-authored ones in.
+
 ## Next.js version note
 
 This project uses **Next.js 16**, which may differ from training data. Read `node_modules/next/dist/docs/` for authoritative API references before writing code that touches routing, middleware, or data-fetching patterns.
