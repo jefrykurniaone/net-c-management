@@ -5,7 +5,6 @@ import { uploadAvatar } from '@/lib/supabase';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary } from '@/lib/i18n/dictionaries';
 import { NextResponse } from 'next/server';
-import { randomUUID } from 'node:crypto';
 
 const ALLOWED_TYPES = new Set([
     'image/jpeg',
@@ -46,15 +45,10 @@ export async function POST(req: Request) {
         );
     }
 
-    const ext = file.type.split('/')[1];
-    // A new object name per upload: `randomUUID()` never reuses a path, so a
-    // re-upload never overwrites the previous image. Nothing here deletes the
-    // old object either, so a member's earlier avatars stay in the `avatars`
-    // bucket.
-    const storagePath = `${session.user.id}/avatar-${randomUUID()}.${ext}`;
-
     const buffer = Buffer.from(await file.arrayBuffer());
-    const imageUrl = await uploadAvatar(buffer, storagePath, file.type);
+    // The member's own id is the only area this may write to or clear from;
+    // `uploadAvatar` names the object under it and collects the rest.
+    const imageUrl = await uploadAvatar(buffer, session.user.id, file.type);
 
     await prisma.user.update({
         where: { id: session.user.id },
