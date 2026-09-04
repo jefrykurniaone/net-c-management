@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
+import { FILTER_FIELD_CLASS } from '@/components/admin/filter-bar';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
 
 /**
@@ -17,7 +18,7 @@ const DEFAULT_SORT_DIR = 'desc';
 const DEFAULT_PAGE_SIZE = 10;
 
 /** The row's own sizing, layered onto `Input`/`NativeSelect`'s field treatment. */
-const FIELD_SIZE_CLASS = 'h-9 w-full';
+const FIELD_SIZE_CLASS = `${FILTER_FIELD_CLASS} w-full`;
 
 const LABEL_CLASS = 'type-label text-muted-foreground';
 
@@ -117,7 +118,7 @@ export function MemberSearch({
                 t={t}
             />
             <PreservedParams filters={filters} />
-            <Button type='submit' variant='outline'>
+            <Button type='submit' variant='outline' size='lg'>
                 {t.admin.searchBtn}
             </Button>
         </form>
