@@ -17,7 +17,6 @@ import { isAdminRole } from '@/lib/utils';
 import { Prisma } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
-// GET /api/activities/[id] — single activity (all authenticated users)
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> },

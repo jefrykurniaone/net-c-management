@@ -46,7 +46,8 @@ const WARM_RANGE_SEGMENTS = 3;
 
 /**
  * The text list's summary row identity (#214). `Activity.name` carries no
- * unique constraint (`prisma/schema.prisma:145` only makes `slug` unique), so
+ * unique constraint (`prisma/schema.prisma`, `model Activity` — only `slug` is
+ * `@unique`), so
  * an Admin can name an Activity "Total" — this constant keeps the summary row
  * distinct from that Activity's own row regardless.
  */

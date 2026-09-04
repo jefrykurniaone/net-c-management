@@ -130,8 +130,6 @@ export async function GET() {
     });
 }
 
-// POST /api/users/memberships — join or leave an activity.
-// body: { activityId: string, action: "join" | "leave" }
 export async function POST(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {

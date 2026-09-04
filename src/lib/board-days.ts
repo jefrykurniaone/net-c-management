@@ -6,7 +6,9 @@ import type { SessionQuota } from './recurring-sessions';
  * One honest answer to "what does a member see on a given day".
  *
  * That answer is **not** "the Sessions that exist". Sessions are generated on
- * demand and never seeded (`ensureRecurringSessions`), so a board driven purely
+ * demand (`ensureRecurringSessions`) and never seeded in production
+ * (`prisma/seed-prod.ts` creates none; the development seeder does), so a board
+ * driven purely
  * by existing `ActivitySession` rows shows nothing on a fresh community — which
  * reads as a bug when it is in fact the default state. The board's planned shape
  * therefore comes from the Activity's recurring day as well as from the rows

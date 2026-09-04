@@ -13,8 +13,9 @@ import { join } from 'node:path';
  * rather than on a screenshot.
  *
  * `Label` composes `type-caption font-medium`, not `type-label`: comment 5523547023
- * on #193 rejected `type-label` there, because `DESIGN.md:363` and the
- * comment above `type-roles.css:91` both scope that role to column heads and
+ * on #193 rejected `type-label` there, because the **Label** bullet under
+ * `DESIGN.md`'s *Hierarchy* and the comment above `@utility type-label` in
+ * `type-roles.css` both scope that role to column heads and
  * chip text (11px, weight 700, 0.1em tracking, uppercase) — a form field
  * label is neither, and composing it would have changed 57 call sites across
  * 16 files.

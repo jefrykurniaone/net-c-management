@@ -38,7 +38,6 @@ function toVisibleUser(user: PaymentUserContact, viewerRole: Role) {
     };
 }
 
-// GET /api/payments — list payments for current user (or all for admin)
 export async function GET(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {
@@ -107,7 +106,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ payments: visiblePayments, total, page, limit });
 }
 
-// POST /api/payments — create payment record (admin only)
 export async function POST(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {

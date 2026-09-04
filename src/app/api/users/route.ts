@@ -36,7 +36,6 @@ function readQuery(searchParams: URLSearchParams) {
     return { page, limit, search: searchParams.get('search') ?? '' };
 }
 
-// GET /api/users — list all members (admin only)
 export async function GET(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {
@@ -75,7 +74,6 @@ export async function GET(req: Request) {
     });
 }
 
-// PATCH /api/users — update role or isActive for a user (admin only)
 export async function PATCH(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {

@@ -109,7 +109,6 @@ function createActivityWithDuesRate(
     });
 }
 
-// POST /api/activities — create activity (admin only)
 export async function POST(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {

@@ -293,7 +293,8 @@ export function resolveSessionRefusal(
  *
  * Money behind it is the first refusal, and the one that was answering with a
  * 500: a Session a live Payment names cannot be deleted at all, because
- * `Payment.session` is `onDelete: Restrict` (`prisma/schema.prisma:280`), so
+ * `Payment.session` is `onDelete: Restrict` (`prisma/schema.prisma`, `model
+ * Payment`), so
  * Prisma throws where the route should be saying no. A held Seat counts as money
  * here for the same reason it freezes the fee. The fix the sentence names is to
  * **cancel** the Session instead, which keeps both the record and the Seats.

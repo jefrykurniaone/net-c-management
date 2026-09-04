@@ -4,7 +4,7 @@
  * `(main)/layout.tsx` used to impose one column width — `max-w-2xl`, 42rem — on
  * every member route at once. That works while every surface is a single
  * column of text and fields, and stops working the moment one of them is a
- * board: the week lattice needs 88rem, so inside 42rem it scrolled at every
+ * board: the week lattice needs 80rem, so inside 42rem it scrolled at every
  * desktop width rather than only where a viewport genuinely could not hold it.
  *
  * So the layout no longer decides. Each surface declares the measure its own

@@ -45,7 +45,7 @@ function getTransporter(): Transporter {
  * Public base URL used for CTA links inside emails. It moved to
  * `src/lib/app-url.ts` when the root layout's `metadataBase` became a second
  * caller (ticket 12 decision 9) — importing it from here would have dragged
- * nodemailer into every page render. Re-exported so the six email templates
+ * nodemailer into every page render. Re-exported so the nine email templates
  * keep their existing import.
  */
 export { getAppUrl } from '../app-url';

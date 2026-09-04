@@ -46,12 +46,11 @@ export async function PATCH(req: Request) {
         );
     }
 
-    // Only allow joining activity that are active.
-    const validActivities = await prisma.activity.findMany({
+    const activeActivities = await prisma.activity.findMany({
         where: { id: { in: activityIds }, isActive: true },
         select: { id: true },
     });
-    if (validActivities.length === 0) {
+    if (activeActivities.length === 0) {
         return NextResponse.json(
             { error: t.validation.activityMembershipRequired },
             { status: 400 },
@@ -60,7 +59,7 @@ export async function PATCH(req: Request) {
 
     const updated = await prisma.$transaction(async (tx) => {
         await tx.membership.createMany({
-            data: validActivities.map((e) => ({ userId, activityId: e.id })),
+            data: activeActivities.map((e) => ({ userId, activityId: e.id })),
             skipDuplicates: true,
         });
         return tx.user.update({

@@ -38,7 +38,6 @@ function toVisibleUser(
     };
 }
 
-// GET /api/payments/[id]
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> },
@@ -65,7 +64,6 @@ export async function GET(
         );
     }
 
-    // Non-admins can only see their own payments
     if (!isAdminRole(session.user.role) && payment.userId !== session.user.id) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -76,7 +74,6 @@ export async function GET(
     });
 }
 
-// PATCH /api/payments/[id] — admin confirms or rejects
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> },

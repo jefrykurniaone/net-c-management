@@ -43,7 +43,6 @@ function toAttendanceRow(
     ];
 }
 
-// GET /api/sessions/[id]/export — export attendance as CSV (admin only)
 export async function GET(
     _req: Request,
     { params }: { params: Promise<{ id: string }> },

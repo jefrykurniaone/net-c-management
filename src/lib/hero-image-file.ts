@@ -20,7 +20,7 @@ const ALLOWED_TYPES = new Set([
     'image/png',
     'image/webp',
 ]);
-const MAX_HERO_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB, the spec's cap
+const MAX_HERO_IMAGE_BYTES = 5 * 1024 * 1024;
 
 export interface HeroImageCandidate {
     readonly type: string;
@@ -41,7 +41,7 @@ export function validateHeroImageFile(
     if (!ALLOWED_TYPES.has(file.type)) {
         return t.validation.fileTypeInvalid;
     }
-    if (file.size > MAX_HERO_IMAGE_SIZE) {
+    if (file.size > MAX_HERO_IMAGE_BYTES) {
         return t.validation.fileSizeProof;
     }
     return null;

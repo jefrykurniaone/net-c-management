@@ -23,7 +23,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         async session({ session, user }) {
             if (session.user) {
                 session.user.id = user.id;
-                // Fetch full user record for role and profile status
                 const dbUser = await prisma.user.findUnique({
                     where: { id: user.id },
                     select: {

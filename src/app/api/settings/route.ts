@@ -15,9 +15,12 @@ import { NextResponse } from "next/server";
 // GET /api/settings — get all settings as a key-value map.
 // Deliberately outside the admission gate: /onboarding reads the community name
 // from here, and an Applicant has to get through onboarding before an Admin has
-// anything to decide on. Everything in this table is community identity —
-// name, logo, default location, the organizer's WhatsApp — which the public
-// route already publishes; no key here is member data.
+// anything to decide on. The exemption rests on no key in this table being
+// *member* data — not on the public route already publishing them. This returns
+// every Settings row to any signed-in session, including keys the public route
+// deliberately withholds (`adminWhatsapp`, `defaultLocation`) and operational
+// ones (`holdDurationMinutes`); `PUBLIC_SETTINGS_KEYS` in
+// `src/lib/public-landing.ts` is the far narrower public allow-list.
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -133,7 +136,6 @@ async function refuseInvalidSettings(
   return null;
 }
 
-// PATCH /api/settings — upsert settings (admin only)
 export async function PATCH(req: Request) {
   const session = await auth();
   if (!isAdmittedSession(session)) {

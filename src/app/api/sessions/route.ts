@@ -12,7 +12,6 @@ import { NextResponse } from 'next/server';
 const MAX_SESSION_LIMIT = 50;
 const DEFAULT_SESSION_LIMIT = 20;
 
-// GET /api/sessions — list sessions (all authenticated users)
 export async function GET(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {
@@ -67,7 +66,6 @@ export async function GET(req: Request) {
     return NextResponse.json({ sessions, total, page, limit });
 }
 
-// POST /api/sessions — create session (admin only)
 export async function POST(req: Request) {
     const session = await auth();
     if (!isAdmittedSession(session)) {

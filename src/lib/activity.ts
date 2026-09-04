@@ -122,8 +122,7 @@ export async function leaveActivity(
             data: { isActive: false },
         });
 
-        // Seats kept: future sessions with a CONFIRMED per-session payment.
-        const confirmed = await tx.payment.findMany({
+        const keptSeatPayments = await tx.payment.findMany({
             where: {
                 userId,
                 activityId,
@@ -134,7 +133,7 @@ export async function leaveActivity(
             select: { sessionId: true },
         });
         const kept = new Set(
-            confirmed
+            keptSeatPayments
                 .map((p) => p.sessionId)
                 .filter((sessionId): sessionId is string => sessionId !== null),
         );

@@ -254,10 +254,6 @@ async function readOwnSeats(
 }
 
 /**
- * Every day of one week, whatever is or is not on them. The hold sweep runs
- * before the figures are read, never after.
- */
-/**
  * The week's Sessions, and whether the community has *ever* had one.
  *
  * The count is deliberately community-wide and unfiltered: the question it
@@ -348,6 +344,10 @@ async function readBoard(
     };
 }
 
+/**
+ * Every day of one week, whatever is or is not on them. The hold sweep runs
+ * before the figures are read, never after.
+ */
 export async function getSessionsBoard(
     params: SessionsBoardParams,
 ): Promise<SessionsBoardData> {
