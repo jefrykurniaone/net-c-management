@@ -7,14 +7,11 @@ import { sessionState } from '@/lib/status-chip';
 import type { SessionRegisterRow } from './session-rows';
 
 /**
- * The values one Session row holds. The register owns where each of these lands
- * and how it rules; these components own only what a single value looks like.
- *
- * Two of them are figures a reader has to be told the sense of: `6/16` does not
- * say which number is the capacity, and `2/6` does not say which is the floor.
- * Each carries the figure for the eye and a spoken sentence beside it for a
- * screen reader, rather than an `aria-label` on a `<span>`, which carries no
- * role to hang one on.
+ * The values one Session row holds; the register owns where each lands and how
+ * it rules. Two are figures a reader has to be told the sense of — `6/16` does
+ * not say which number is the capacity, `2/6` does not say which is the floor —
+ * so each carries the figure for the eye and a spoken sentence beside it, rather
+ * than an `aria-label` on a `<span>`, which carries no role to hang one on.
  */
 
 const DATE_FORMAT = 'd MMM yyyy';

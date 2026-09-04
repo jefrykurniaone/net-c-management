@@ -5,12 +5,10 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { DEFAULT_SORT_COL } from './session-rows';
 
 /**
- * The two filters this surface has always had — a title/venue search and one
- * Activity — kept working across the rebuild. A plain `GET` form, so the
- * filtered view is a URL an Admin can bookmark and hand to somebody else.
- *
- * The sort and page size ride along as hidden fields: filtering is not a reason
- * to throw away the column somebody sorted by.
+ * The two filters this surface has — a title/venue search and one Activity — as
+ * a plain `GET` form, so the filtered view is a URL an Admin can bookmark and
+ * hand to somebody else. The sort and page size ride along as hidden fields:
+ * filtering is not a reason to throw away the column somebody sorted by.
  */
 
 const DEFAULT_SORT_DIR = 'desc';

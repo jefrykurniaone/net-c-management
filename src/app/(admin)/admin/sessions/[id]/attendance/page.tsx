@@ -17,14 +17,10 @@ import {
 
 /**
  * Taking attendance after a game is its own job, so it has its own surface: one
- * Session, every Seat on it, a four-state control per row, and one Save. It used
- * to live inside the Session edit form, which is where a Session's time and
- * venue are changed — a different job at a different moment, and two places to
- * record attendance is how they come to disagree.
- *
- * A Session whose attendance nobody took is an Admin's omission and says so at
- * the top. It is never turned into a No-Show: nobody deciding is precisely what
- * that state means (docs/adr/0001-no-show-attendance-value.md).
+ * Session, every Seat on it, a four-state control per row, and one Save
+ * (ADR 0012). A Session whose attendance nobody took is an Admin's omission and
+ * says so at the top. It is never turned into a No-Show: nobody deciding is
+ * precisely what that state means (docs/adr/0001-no-show-attendance-value.md).
  */
 
 const DATE_FORMAT = 'd MMM yyyy';

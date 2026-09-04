@@ -11,24 +11,12 @@ import {
 } from '@/lib/session-lock';
 
 /**
- * Everything the Sessions register reads, in one place.
- *
- * Capacity counts **only seat-holding rows** (`REGISTERED` / `PRESENT`), the
- * same set the board and the locking rules count, and the lazy hold sweep runs
- * before any figure is taken — an expired hold is not a held Seat, and a row
- * that said otherwise would send an Admin cancelling a Session that is fuller
- * than it looks.
- *
- * The cost-sharing floor is `getSessionQuotas`', reused rather than
- * recomputed: the weighting that makes a per-Session joiner half a monthly
- * member lives there, and a second implementation of it here is a second answer
- * to a question the community's money depends on.
- *
- * Whether a Session can be reopened is decided **here**, by the same helper the
- * route refuses with, and travels to the row as a boolean. A client that
- * compared the Session's date against its own clock would be reading the
- * browser's day, and the rule is the WIB day — the two disagree for seven hours
- * of every one of them.
+ * Everything the Sessions register reads, in one place. Capacity counts **only
+ * seat-holding rows** (`REGISTERED` / `PRESENT`) and the lazy hold sweep runs
+ * before any figure is taken — an expired hold is not a held Seat. The
+ * cost-sharing floor is `getSessionQuotas`', reused rather than recomputed, and
+ * whether a Session can be reopened is decided here by the same helper the route
+ * refuses with and travels to the row as a boolean, on the WIB day (ADR 0011).
  */
 
 /** One Session as the register draws it. */

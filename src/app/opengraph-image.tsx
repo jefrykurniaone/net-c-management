@@ -6,24 +6,12 @@ import { getPublicCommunityName } from '@/lib/public-landing';
 
 /**
  * The link-preview card: the community name as a wordmark on the dark ground,
- * and nothing else (ticket 12 decision 5).
- *
- * Why generated rather than static or absent. `PRODUCT.md`'s *Evidence on Hand*
- * bars screenshots, photos and any real-world evidence; its *Brand Commitments*
- * bars sport iconography and says no brand, wordmark or logo exists — `XClub
- * Community` is a placeholder. A static image under those three is a
- * neutral rectangle that says nothing, and no image at all leaves the person who
- * was sent a WhatsApp link with a bare card as the only thing they see before
- * deciding to tap. The name is the one asset that is *true* for every
- * deployment, and the composition was fixed by ticket 01 and kept by Rally:
- * the dark ground, off-white lettering, the community name as the wordmark,
- * nothing else ever scaled up to stand in for one.
- *
- * It sits at the **root** segment, so every route without its own card inherits
- * it — the auth pages, `/onboarding`, `/s/[id]`, and the authenticated pages
- * (decision 6). One community wordmark is true on all of them, and `/s/[id]`
- * keeps its own text metadata while inheriting this image, which beats the bare
- * card it published before.
+ * and nothing else (ticket 12 decision 5). Generated rather than static or
+ * absent because `PRODUCT.md`'s *Evidence on Hand* bars screenshots, photos and
+ * any real-world evidence, and its *Brand Commitments* bars sport iconography
+ * and says no brand, wordmark or logo exists — the name is the one asset that is
+ * *true* for every deployment. It sits at the **root** segment, so every route
+ * without its own card inherits it, `/s/[id]` included (decision 6).
  */
 
 /**

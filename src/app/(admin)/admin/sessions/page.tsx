@@ -19,14 +19,11 @@ import { SessionFilters } from './session-filters';
 import { DEFAULT_SORT_COL, loadSessions } from './session-rows';
 
 /**
- * The Sessions register (ticket #69) — one row per Session, carrying what an
- * Admin decides on: when it is, what it is, how full it is, whether enough
- * people have committed for it to pay for itself, and where it stands. Posting,
- * editing, cancelling and taking attendance all act from the row or from this
- * heading, so the common jobs are where the Admin is already looking.
- *
- * The mobile cards this page used to fall back to below `md` are gone: the
- * register collapses by axis instead, and each row stays a ruled row.
+ * The Sessions register (#69) — one row per Session, carrying what an Admin
+ * decides on: when it is, what it is, how full it is, whether enough people have
+ * committed for it to pay for itself, and where it stands. Posting, editing,
+ * cancelling and taking attendance all act from the row or from this heading, so
+ * the common jobs are where the Admin is already looking.
  */
 
 /** The whole of what the query string says about this page. */

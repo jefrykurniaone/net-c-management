@@ -6,11 +6,9 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 /**
  * The register's two filters, as a plain GET form: a name-or-email search and
  * one Activity. No client state — a submit is a navigation, so the result is
- * linkable, back-button-safe and works with scripting off.
- *
- * Sort and page size ride along as hidden fields, so filtering does not silently
- * throw away the ordering the Admin chose. Both are omitted at their defaults,
- * which keeps the resulting URL short.
+ * linkable, back-button-safe and works with scripting off. Sort and page size
+ * ride along as hidden fields, so filtering does not silently throw away the
+ * ordering the Admin chose; both are omitted at their defaults.
  */
 
 /** The defaults `parseSort` and `parsePagination` apply when the key is absent. */

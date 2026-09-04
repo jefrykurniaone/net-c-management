@@ -27,13 +27,11 @@ import {
 import type { Prisma } from '@prisma/client';
 
 /**
- * The Activities register (ticket #71) — one row per Activity, an audit in
- * one read: who it is, what it costs, how it's paid for, when it runs, how
- * big it is, its cost-sharing floor, its destination bank account, whether
- * it's live, then the row's own controls. Composes the shared register the
- * way the Applicants surface does; the mobile cards this page used to fall
- * back to below `md` are gone with it — the register collapses by axis on
- * its own.
+ * The Activities register (#71) — one row per Activity, an audit in one read:
+ * who it is, what it costs, how it's paid for, when it runs, how big it is, its
+ * cost-sharing floor, its destination bank account, whether it's live, then the
+ * row's own controls. Composes the shared register the way the Applicants
+ * surface does.
  */
 
 /**

@@ -16,23 +16,14 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
 import { PaymentFactList, type PaymentFacts } from './payment-facts';
 
 /**
- * Rejecting a Payment. Two things have to be said before the Admin commits.
- *
- * **The reason.** It is stored as the Payment's notes and the member reads it
- * on their own payments history — it is the only thing telling them what to do
- * next. Empty is refused here with a message rather than by a dead button,
- * because a disabled control explains nothing; and the route refuses it too, so
- * this dialog is the courtesy and the rule is the rule.
- *
- * **What happens to their Seats.** Rejecting monthly Dues releases every Seat
- * the member is Registered for across that Activity's Sessions in that Billing
- * Period. That is existing behaviour and this ticket does not touch it — it
- * only stops it being a surprise. Sessions they attended or opted out of are
- * untouched, which is why the sentence says so.
- *
- * Both sentences are disclosures the Reject label defers to, so they render at
- * **Body** in Secondary Ink and the button points at the Seat one with
- * `aria-describedby` (DESIGN.md, Actions).
+ * Rejecting a Payment. Two things must be said before the Admin commits. The
+ * **reason** is stored as the Payment's notes and read by the member on their
+ * payments history — the only thing telling them what to do next — so empty is
+ * refused here with a message, and by the route. **Their Seats**: rejecting
+ * monthly Dues releases every Seat they are Registered for across that
+ * Activity's Sessions in that Billing Period, and Sessions they attended or
+ * opted out of are untouched. Both are disclosures the Reject label defers to,
+ * rendered at **Body** in Secondary Ink (ADR 0010; DESIGN.md, Actions).
  */
 
 const REASON_ROWS = 3;

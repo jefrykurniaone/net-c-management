@@ -7,12 +7,11 @@ import type { CreateActivityFormData } from '@/lib/validations/activity';
 import type { ActivityForm, DuesRateFieldProps } from './dues-rate-field';
 
 /**
- * The Dues field's state, and the shape of the save that carries it.
- *
- * Creating an Activity has neither: its beginning-of-time rate is written by the
- * create path from the single amount box, so there is no Billing Period to pick
- * and nothing extra to post. Everything here is therefore optional by
- * construction — `props` absent means "draw the plain amount box".
+ * The Dues field's state, and the shape of the save that carries it. Creating an
+ * Activity has neither — its beginning-of-time rate is written by the create
+ * path from the single amount box (ADR 0002), so there is no Billing Period to
+ * pick and nothing extra to post, and everything here is therefore optional by
+ * construction: `props` absent means "draw the plain amount box".
  */
 
 /**

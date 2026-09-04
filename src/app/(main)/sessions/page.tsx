@@ -22,15 +22,12 @@ import {
 
 /**
  * The sessions surface: the chosen week as a strip of seven day columns on a
- * wide screen, one column on a phone. Every day of the week gets a column
- * whether or not anything is on it — a day with nothing posted carries a
- * neutral chip and says so, so a member knows an Admin has not posted rather
- * than that they are missing something.
- *
- * The page reads and composes; it draws no card of its own. Each member surface
- * composes its own Session card (ADR 0003) and every one of them resolves state
- * through `resolveSessionStanding` and the available action through
- * `slotActionFor`, so behaviour has one source even though drawing does not.
+ * wide screen, one on a phone. Every day gets a column whether or not anything
+ * is on it — a day with nothing posted carries a neutral chip and says so, so a
+ * member knows an Admin has not posted rather than that they are missing
+ * something. The page draws no card of its own: each member surface composes its
+ * own (ADR 0003), resolving state through `resolveSessionStanding` and the
+ * available action through `slotActionFor`.
  */
 
 const SESSIONS_PATH = '/sessions';

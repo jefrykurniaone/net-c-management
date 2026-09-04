@@ -7,17 +7,11 @@ import { currentPeriod, type BillingPeriod } from '@/lib/billing-period';
 import { sumDuesForPeriod } from './dashboard-dues-total';
 
 /**
- * Everything the admin dashboard reads, moved here from the page by ticket
- * #165, which restyled the cards without recomputing a single figure.
- *
- * That move changed nothing. #203 does: the "Dues collected" tile's two money
- * figures did not mean what their labels said, and both are corrected here.
- * `collected` now excludes Confirmed `SESSION` Payments, because a Fee is not a
- * Due; `totalDue` now prices only the Memberships `resolvePaymentMode` calls
- * `MONTHLY` for this Period, instead of every live Membership. So those two are
- * deliberately no longer the figures `main` showed before #203 on the same seed
- * — they are the ones the Dues chart (#170) has always shown. Every other
- * figure below is still the page's own, unchanged.
+ * Everything the admin dashboard reads. The "Dues collected" tile's two money
+ * figures mean exactly this, and did not before #203: `collected` excludes
+ * Confirmed `SESSION` Payments, because a Fee is not a Due; `totalDue` prices
+ * only the Memberships `resolvePaymentMode` calls `MONTHLY` for this Period,
+ * not every live Membership. Both are the figures the Dues chart already shows.
  */
 
 const UNDER_BOOKED_RATIO = 0.6;

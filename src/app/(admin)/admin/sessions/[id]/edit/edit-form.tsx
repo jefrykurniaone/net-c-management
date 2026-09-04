@@ -35,23 +35,13 @@ import { useSessionEditActions } from './use-session-edit-actions';
 
 /**
  * This form is about the Session's own facts — title, time, venue, capacity,
- * fee, notes. Recording who turned up is a different job at a different moment
- * and lives on its own surface, `/admin/sessions/{id}/attendance`; two places to
- * record attendance is how they come to disagree.
- *
- * What it does carry is the two locks, **reflected and never enforced here**:
- * once a Session has a Payment or a held Seat its fee is read-only and its
- * capacity is floored at the Seats already held, and once it is Completed or
- * Cancelled everything but its notes is read-only. The facts behind both are
- * read on the server and handed down as booleans and a count; the refusal itself
- * belongs to `PATCH /api/sessions/[id]`, which makes it whatever this form drew.
- *
- * Delete follows the same shape and one rule further: where the route would
- * refuse the destruction — money behind the Session, or a Completed one — the
- * button is **absent** rather than disabled, the way the register draws no
- * Cancel control on a Closed Session. A control that only ever produces a
- * refusal advertises a job that cannot be done. `canDelete` is resolved on the
- * server by the same helper the route decides with, never worked out here.
+ * fee, notes; recording who turned up lives on its own surface (ADR 0012). The
+ * two locks are **reflected and never enforced here**: a Session with a Payment
+ * or a held Seat has a read-only fee and a capacity floored at the Seats held,
+ * and a Completed or Cancelled one is read-only but for its notes. Delete is
+ * **absent**, not disabled, where the route would refuse it (ADR 0010). Every
+ * fact behind all three is resolved server-side by the same helper the route
+ * decides with (ADR 0011).
  */
 
 /** The Session as this form reads it — no Attendance rows, only the counts. */
