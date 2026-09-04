@@ -35,7 +35,6 @@ interface CopyFieldProps {
     helper?: string;
     value: string;
     isMultiline?: boolean;
-    isLast?: boolean;
     onChange: (key: PublicCopyKey, value: string) => void;
 }
 
@@ -84,7 +83,7 @@ function CopyFieldNote({
     );
 }
 
-/** One ruled row: label, help text, the control, and the note beneath it. */
+/** One row: label, help text, the control, and the note beneath it. */
 function CopyField({
     t,
     settingKey,
@@ -92,7 +91,6 @@ function CopyField({
     helper,
     value,
     isMultiline = false,
-    isLast = false,
     onChange,
 }: Readonly<CopyFieldProps>) {
     const refusal = checkPublicCopyValue(settingKey, value);
@@ -107,11 +105,7 @@ function CopyField({
     };
 
     return (
-        <SettingsRow
-            id={settingKey}
-            label={label}
-            helper={helper}
-            isLast={isLast}>
+        <SettingsRow id={settingKey} label={label} helper={helper}>
             {isMultiline ? (
                 <Textarea
                     {...shared}
@@ -138,7 +132,6 @@ interface FeatureSlotProps {
     t: Dictionary;
     slot: PublicFeatureSlot;
     settings: SettingsMap;
-    isLast: boolean;
     onChange: (key: PublicCopyKey, value: string) => void;
 }
 
@@ -147,7 +140,6 @@ function FeatureSlotRows({
     t,
     slot,
     settings,
-    isLast,
     onChange,
 }: Readonly<FeatureSlotProps>) {
     const position = String(slot.position);
@@ -166,7 +158,6 @@ function FeatureSlotRows({
                 settingKey={slot.lineKey}
                 label={t.publicCopy.featureLineLabel.replace('{n}', position)}
                 value={settings[slot.lineKey] ?? ''}
-                isLast={isLast}
                 onChange={onChange}
             />
         </>
@@ -184,8 +175,6 @@ export function PublicCopySection({
     update: (key: PublicCopyKey, value: string) => void;
     heroImageProps: HeroImageProps;
 }>) {
-    const lastSlot = PUBLIC_FEATURE_SLOTS.length - 1;
-
     return (
         <SettingsSection title={t.publicCopy.sectionTitle}>
             <SettingsRow
@@ -219,13 +208,12 @@ export function PublicCopySection({
                 isMultiline
                 onChange={update}
             />
-            {PUBLIC_FEATURE_SLOTS.map((slot, index) => (
+            {PUBLIC_FEATURE_SLOTS.map((slot) => (
                 <FeatureSlotRows
                     key={slot.titleKey}
                     t={t}
                     slot={slot}
                     settings={settings}
-                    isLast={index === lastSlot}
                     onChange={update}
                 />
             ))}

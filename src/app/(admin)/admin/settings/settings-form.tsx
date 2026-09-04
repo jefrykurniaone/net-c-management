@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import type { RefObject } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Upload } from 'lucide-react';
 import type { Dictionary } from '@/lib/i18n/dictionaries';
@@ -14,9 +13,9 @@ import type { HeroImageProps } from './hero-image-control';
 import type { SettingsMap } from './use-settings-form';
 
 /**
- * The Settings page's ruled body — one frame, three sections, one row per
- * setting. Presentation only: every value, handler and validation rule comes
- * from `useSettingsForm`, unchanged from before this ticket.
+ * The Settings page's body — one card per section, one row per setting.
+ * Presentation only: every value, handler and validation rule comes from
+ * `useSettingsForm`.
  */
 
 interface LogoControlProps {
@@ -196,7 +195,7 @@ export function SettingsForm({
 }>) {
     return (
         <form onSubmit={onSubmit}>
-            <Card className='gap-0 overflow-hidden p-0'>
+            <div className='space-y-bay'>
                 <BasicInfoSection t={t} settings={settings} update={update} logoProps={logoProps} />
                 <ContactSection t={t} settings={settings} update={update} />
                 <PaymentSection
@@ -204,20 +203,25 @@ export function SettingsForm({
                     holdDurationMinutes={settings.holdDurationMinutes ?? defaultHoldDurationMinutes}
                     update={update}
                 />
-                {/* Last in the frame, so it carries the frame's last unruled
-                    row (#153). Added beside the three sections above rather
-                    than inside one of them: nothing here configures how the
-                    community runs, it is what a stranger reads. */}
+                {/* A card of its own beside the three above rather than inside
+                    one of them: nothing here configures how the community runs,
+                    it is what a stranger reads. */}
                 <PublicCopySection
                     t={t}
                     settings={settings}
                     update={update}
                     heroImageProps={heroImageProps}
                 />
-            </Card>
-            <Button type='submit' className='mt-bay w-full' loading={saving}>
-                {t.admin.saveSettings}
-            </Button>
+            </div>
+            {/* The action reads as one more card in the stack rather than a
+                loose control under it: same ground and lift as the sections
+                above, the button centred on it. Full width only where the
+                thumb reaches for it; from `sm` up it sizes to its own label. */}
+            <div className='mt-bay flex justify-center rounded-xl bg-card p-block shadow-lift'>
+                <Button type='submit' className='w-full sm:w-auto' loading={saving}>
+                    {t.admin.saveSettings}
+                </Button>
+            </div>
         </form>
     );
 }
