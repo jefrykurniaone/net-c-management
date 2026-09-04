@@ -8,11 +8,20 @@
 | Tickets | #305, #306, #307, #308 — sub-issues of #303 |
 | Version | v1 (2026-09-04) |
 | Grilled from | [#293](https://github.com/jefrykurniaone/net-c-management/issues/293), orphaned avatar objects, filed out of #248 |
-| Split out | [#302](https://github.com/jefrykurniaone/net-c-management/issues/302) — the settings route writes arbitrary keys and can strand a hero photograph. Found during the grill, deliberately not folded in. **Superseded 2026-09-05:** it stayed outside this spec, but execution map #309 carried it as a ticket of its own in wave 4, and it landed in `d76816f` (PR #315). It was never folded into this spec's four tickets. |
-| Depends on | nothing. The production measurement is outstanding as of 2026-09-04 and gates only the separate purge work, not this spec. Still outstanding at the close of the run on 2026-09-05. |
+| Split out | [#302](https://github.com/jefrykurniaone/net-c-management/issues/302) — the settings route writes arbitrary keys and can strand a hero photograph. Found during the grill, deliberately not folded in. |
+| Depends on | nothing. The production measurement is outstanding as of 2026-09-04 and gates only the separate purge work, not this spec. |
 | Delivered | 2026-09-05, all four tickets closed: #305 `02c353b`, #306 `e501891`, #308 `b4602a9`, #307 `b790f41`. |
 
 This is a verbatim copy of the tracker issue at the time of ticketing. The issue is the live record; this file is the durable one. Below the rule is the issue body.
+
+## Delivery record
+
+Added at the close of run `retention` on 2026-09-05. The body below the rule is unchanged and unrenumbered; what the run falsified or qualified is marked here instead.
+
+- **"The community logo is the same shape and adopts it directly"** (Implementation decisions, the hero-pattern paragraph). True of the *listing* — #307 lists the whole bucket with no owner prefix, exactly as the hero flow does — and not of the ordering or the failure behaviour. The hero flow clears before it writes and lets a failure through; the logo clears after the write and logs and swallows, because the failure split recorded two paragraphs further down puts a replace-path cleanup on the swallow half. The delivered module therefore holds two clearing patterns that differ deliberately.
+- **"#302 … deliberately not folded in"** (header row, and the matching Out of scope line). It stayed outside this spec and was never one of its four tickets, but execution map #309 carried it as a ticket of its own in wave 4 and it landed in `d76816f` (PR #315). Out of scope for the spec, delivered by the run.
+- **"The production measurement is outstanding as of 2026-09-04"** (Depends on, and Further notes). Still outstanding at the close of the run. Nothing that shipped waited on it; it gates only the separate purge of files already stranded in production.
+- Every success criterion was met, and everything else in **Out of scope** stayed out. The spec's completion record is on #303; the run's is on map #309.
 
 ---
 ## Problem statement
@@ -64,7 +73,7 @@ Nobody using the app sees a new screen or a new button. What changes is that the
 
 ## Implementation decisions
 
-**The hero-photograph pattern is the basis, and it does not generalise unchanged.** The existing hero-image flow clears every object in its bucket before writing the new one, so accumulation is impossible regardless of what the file is named or what format it is in. That works because the bucket holds exactly one meaningful file. The community logo is the same shape and adopts it directly. **Qualified by delivery, 2026-09-05:** #307 adopted the hero flow's *listing* shape — bucket-wide, no owner prefix — but not its ordering or its failure behaviour. The hero flow clears before it writes and lets the failure through; the logo clears after the write and swallows the failure, because the failure split recorded below puts a replace-path cleanup on the swallow half. "Adopts it directly" was true of the listing and not of the order. Profile pictures and payment proofs are *not* that shape — each member and each payment owns files — so the same idea is applied scoped to one owner rather than to the whole bucket. **This distinction is the single most important thing to record**, because applying the unscoped version to profile pictures would delete every member's picture.
+**The hero-photograph pattern is the basis, and it does not generalise unchanged.** The existing hero-image flow clears every object in its bucket before writing the new one, so accumulation is impossible regardless of what the file is named or what format it is in. That works because the bucket holds exactly one meaningful file. The community logo is the same shape and adopts it directly. Profile pictures and payment proofs are *not* that shape — each member and each payment owns files — so the same idea is applied scoped to one owner rather than to the whole bucket. **This distinction is the single most important thing to record**, because applying the unscoped version to profile pictures would delete every member's picture.
 
 **Profile pictures clear by owner, not by remembered path.** On upload, the member's own area is listed and everything that is not the file just written is removed. The alternative — storing the path of the current picture on the member record and deleting that one — was rejected: it needs a schema change, and it can only ever clean up files uploaded *after* it ships, leaving every already-stranded file stranded permanently. Clearing by owner collects a member's history the first time they upload again, with no migration.
 
@@ -108,7 +117,7 @@ Behaviour that only exists at the network boundary — a failed removal not brea
 ## Out of scope
 
 - Removing files already stranded in production. Separate work, gated on measuring production.
-- The settings route that writes arbitrary keys and can strand a hero photograph, filed separately. It stayed out of this spec and was delivered under the same run as #302; see the header row.
+- The settings route that writes arbitrary keys and can strand a hero photograph, filed separately.
 - Any retention period, expiry clock, or scheduled sweep. Nothing here runs on a schedule; a sweep is only reconsidered if the production measurement shows the per-upload cleanup cannot catch up.
 - Changing the hero photograph implementation, which is already correct.
 - Cost optimisation, storage tiering, or image compression.
