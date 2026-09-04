@@ -768,7 +768,6 @@ const en = {
         remindSendBtn: 'Send reminders',
         remindSending: 'Sending...',
         remindSuccessToast: 'Reminder sent to {n} member(s).',
-        remindSkippedToast: '{n} member(s) skipped (no email on record).',
         remindErrorToast: 'Failed to send reminders. Please try again.',
         // Shown when the batch reached nobody: every member lacked an address, or
         // every send threw. Distinguishes that outcome from a real success.
@@ -2015,7 +2014,6 @@ const id: typeof en = {
         remindSendBtn: 'Kirim pengingat',
         remindSending: 'Mengirim...',
         remindSuccessToast: 'Pengingat dikirim ke {n} anggota.',
-        remindSkippedToast: '{n} anggota dilewati (tidak ada email).',
         remindErrorToast: 'Gagal mengirim pengingat. Coba lagi.',
         remindNoneToast: 'Tidak ada pengingat terkirim — tidak ada yang bisa dihubungi kali ini.',
         remindPartialToast: 'Pengingat dikirim ke {sent} anggota; {skipped} tidak dapat dihubungi.',
