@@ -6,6 +6,8 @@ Everything downstream follows from that one fact. A day, a week edge or a range 
 
 The weekly charts inherit the same rule through their week edges. A Monday-start week boundary built with `Date.UTC` lines up with the stored dates exactly, and the Monday rule itself lives in `mondayOf` in `src/lib/chart-weeks.ts` and nowhere else, so there is one definition of where a week begins rather than one per chart.
 
+**One test file deliberately runs west of UTC, because the rest of the suite cannot catch this class of bug.** Every other file builds its fixtures as UTC instants and runs on a host east of UTC, where the local and the UTC reading of a stored Session date agree — so a regression swapping `getUTCMonth()` for `getMonth()`, or `getUTCDay()` for `getDay()`, passes all of them. `src/lib/__tests__/chart-timezone.test.ts` therefore sets `TZ` to a zone where the two readings disagree and re-runs the same arithmetic. Vitest isolates each test file in its own process, so that setting reaches no other file; it is restored anyway. A new module that reads a stored Session date belongs in that file as well as in its own.
+
 This record states the encoding and its consequence. It does not decide the display zone of any timestamp that genuinely is an instant — `createdAt`, `holdExpiresAt`, a Payment's own moment — which are ordinary timestamps and are not what this is about.
 
 Status: accepted, 2026-09-04.

@@ -7,9 +7,8 @@ import { CHART_WEEKS, chartWeeks, weekIndexOfDay } from '../chart-weeks';
  * Session credited to the week beside its own still draws a plausible line.
  *
  * Every instant below is written in UTC and every expectation is an ISO string,
- * matching `wib.test.ts` and `seed-session-dates.test.ts`: a Session is stored
- * as UTC midnight of its WIB calendar day, and these are the values the week
- * edges have to line up with.
+ * matching `wib.test.ts` and `seed-session-dates.test.ts`
+ * (`docs/adr/0007-wib-calendar-day-storage.md`).
  */
 
 /** Wednesday 2 September 2026, midday in Jakarta. Its Monday is 31 August. */

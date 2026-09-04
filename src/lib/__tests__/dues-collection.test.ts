@@ -20,8 +20,8 @@ import {
  * collection, so each rule that decides whether a record counts has its own
  * case: owed prices only Monthly Memberships, at the rate the Period was frozen
  * with; collected counts only Confirmed Dues Payments carrying that Period's
- * month and year. Pending, Rejected and Fees are excluded here, in the code the
- * loader runs, rather than in a `where` clause no test can reach.
+ * month and year. Pending, Rejected and Fees are excluded in the code the loader
+ * runs (`docs/adr/0005-pure-rule-modules.md`).
  */
 
 /** 15 August 2026, local — so the window is March through August 2026. */
