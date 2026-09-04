@@ -9,6 +9,7 @@ import {
   checkPublicCopyPatch,
   longestWordLength,
   publicCopyRefusalMessage,
+  PUBLIC_COPY_KEYS,
 } from "@/lib/public-copy";
 import { NextResponse } from "next/server";
 
@@ -80,6 +81,46 @@ function badRequest(error: string): NextResponse {
 }
 
 /**
+ * Every `Settings` key the application declares: the identity and
+ * operational fields the Admin form edits directly, plus the
+ * Admin-authored public copy (#153, `PUBLIC_COPY_KEYS`). PATCH treats this
+ * as its allow-list (#302) — a key outside it is refused before anything
+ * is written, rather than upserted sight unseen.
+ */
+const DECLARED_SETTINGS_KEYS = [
+  "communityName",
+  "defaultLocation",
+  "adminWhatsapp",
+  "logoUrl",
+  "heroImageUrl",
+  "holdDurationMinutes",
+  ...PUBLIC_COPY_KEYS,
+] as const;
+
+/**
+ * Declared keys a dedicated route owns end to end — the `Settings` row and
+ * a Storage bucket object kept in step (`POST`/`DELETE
+ * /api/settings/hero-image`, `POST /api/settings/logo`; #155). PATCH still
+ * accepts a body carrying either without refusing the request, because the
+ * Admin Settings form always echoes both back unchanged
+ * (`use-settings-form.ts:184`) — refusing them would break every ordinary
+ * Save. It just never lets either reach the table, so a direct
+ * `{"heroImageUrl": ...}` call can no longer strand the bucket object the
+ * dedicated route manages.
+ */
+const ROUTE_OWNED_SETTINGS_KEYS = new Set(["logoUrl", "heroImageUrl"]);
+
+/** The first key in `body` the application does not declare, or `undefined`
+ *  when every key is declared. */
+function findUndeclaredSettingsKey(
+  body: Record<string, string>,
+): string | undefined {
+  return Object.keys(body).find(
+    (key) => !(DECLARED_SETTINGS_KEYS as readonly string[]).includes(key),
+  );
+}
+
+/**
  * The three community-name refusals, in the order the Admin meets them. Word
  * length is measured by the same {@link longestWordLength} the headline rule
  * uses, so a hyphenated token counts as one word — conservative in the only
@@ -118,6 +159,11 @@ async function refuseInvalidSettings(
 ): Promise<NextResponse | null> {
   const t = getDictionary(await getLocale());
 
+  const undeclaredKey = findUndeclaredSettingsKey(body);
+  if (undeclaredKey) {
+    return badRequest(`Unknown settings key: ${undeclaredKey}`);
+  }
+
   if ("communityName" in body) {
     const named = refuseCommunityName(String(body.communityName ?? ""), t);
     if (named) {
@@ -153,13 +199,15 @@ export async function PATCH(req: Request) {
   }
 
   await Promise.all(
-    Object.entries(body).map(([key, value]) =>
-      prisma.settings.upsert({
-        where: { key },
-        create: { key, value: String(value) },
-        update: { value: String(value) },
-      })
-    )
+    Object.entries(body)
+      .filter(([key]) => !ROUTE_OWNED_SETTINGS_KEYS.has(key))
+      .map(([key, value]) =>
+        prisma.settings.upsert({
+          where: { key },
+          create: { key, value: String(value) },
+          update: { value: String(value) },
+        })
+      )
   );
 
   // A rename moves the public hero *and* the <title> and OG card (ticket 12).
