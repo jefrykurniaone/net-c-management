@@ -11,21 +11,14 @@ import { wibDayStart } from './wib';
  * second place for the boundary to be wrong. `duesChartPeriods` in
  * `dues-collection.ts` is the precedent, and this is its weekly sibling.
  *
- * **Pure, and free of `server-only`** — no clock (`now` is a parameter), no
- * database, no dictionary. It sits here rather than beside either loader so a
- * member-side module can import it without pulling an admin read in with it.
- *
- * **Every edge is the WIB calendar day**, never a raw UTC or server-local one.
- * A Session is stored as UTC midnight of its WIB day
- * (`ActivitySession.date`, and #197), so a week edge built with `Date.UTC` and
- * read with the `getUTC*` accessors lines up with the stored dates exactly;
- * a locale-aware formatter or `getDay()` would shift the Monday by whatever
- * zone the server happens to run in.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`), sitting here rather
+ * than beside either loader so a member-side module can import it without
+ * pulling an admin read in with it. Every edge is the WIB calendar day
+ * (`docs/adr/0007-wib-calendar-day-storage.md`).
  *
  * The Monday rule lives here, in {@link mondayOf}, and nowhere else.
- * `src/lib/sessions-board.ts` is `server-only` and Prisma-bound, so it cannot
- * be the shared home for a pure rule; instead it imports {@link mondayOf} from
- * here, which is why this module must stay free of `server-only` and Prisma.
+ * `src/lib/sessions-board.ts` is `server-only` and Prisma-bound, so it imports
+ * {@link mondayOf} from here rather than being the shared home for it.
  */
 
 /**

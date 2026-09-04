@@ -12,10 +12,8 @@ import { resolveDuesRate, type DuesRateRow } from './dues-rate';
  * Payment is judged by that Session's own Fee, which the Session has always
  * carried frozen — nothing here changes for it.
  *
- * Pure, and free of `server-only`, Prisma and React, in the shape
- * `dues-rate.ts` and `session-lock.ts` established: the queue's cells are drawn
- * on the client and the rule they draw belongs with the rules, not with a
- * component.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`): the queue's cells
+ * are drawn on the client and the rule they draw belongs with the rules.
  */
 
 /**

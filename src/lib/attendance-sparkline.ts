@@ -13,11 +13,9 @@ import { chartWeeks, weekIndexOfDay, type ChartWeek } from './chart-weeks';
  * `REGISTERED` (a held Seat, no attendance yet), `MAYBE`, `ABSENT` (Opted Out)
  * and `NO_SHOW` all leave a row out of the count here.
  *
- * **Status is filtered here, not in the loader's query**, mirroring
- * `SEAT_HOLDING` in `seats-filled.ts`: which rows count is a domain rule, and
- * a rule enforced only in a Prisma `where` clause is a rule no unit test
- * reaches. `src/lib/attendance-sparkline-data.ts` fetches every status for
- * the window and lets this module decide.
+ * **Status is filtered here, not in the loader's query**
+ * (`docs/adr/0005-pure-rule-modules.md`): `src/lib/attendance-sparkline-data.ts`
+ * fetches every status for the window and lets this module decide.
  *
  * **Every week is a real number, never a gap.** Unlike the Seats-filled line,
  * there is no "nothing posted" state to distinguish here: a week the member
@@ -29,11 +27,10 @@ import { chartWeeks, weekIndexOfDay, type ChartWeek } from './chart-weeks';
  * line, or shows the neutral empty state instead, is a card-level decision
  * made in `src/lib/attendance-sparkline-view.ts`, not here.
  *
- * **Pure**: no clock, no database. `now` is a parameter, and which `userId`
- * the rows belong to is never a concept this module holds — the loader scopes
- * the query to one member before a row ever reaches here, so a scoping
- * mistake would show up as a wrong loader test, not as arithmetic this module
- * could paper over.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`). Which `userId` the
+ * rows belong to is never a concept it holds — the loader scopes the query to
+ * one member before a row ever reaches here, so a scoping mistake shows up as a
+ * wrong loader test, not as arithmetic this module could paper over.
  */
 
 /** One Attendance row as this chart reads it, with its status left in to be judged. */

@@ -10,13 +10,10 @@ import {
  * A Membership's **standing** — its Dues state for the Billing Period in force,
  * as the Members register draws it.
  *
- * Purely derivative, the way `membership-mode-view.ts` is: nothing here resolves
- * a mode, mints a period key or ranks two Payments against each other. It reads
- * `resolvePaymentMode` for the effective mode and the already-picked Payment
- * status for the period (`pickPeriodPaymentStatus`), and turns the pair into the
- * one fact the register shows. Keeping it out of the page is what makes it
- * testable; keeping it derivative is what stops the register disagreeing with
- * the member's own profile.
+ * A view module (`docs/adr/0006-view-modules.md`) reading `resolvePaymentMode`
+ * for the effective mode and `pickPeriodPaymentStatus` for the period's already
+ * picked Payment status, and turning the pair into the one fact the register
+ * shows.
  *
  * Standing is a property of a **monthly** Membership only. A per-Session
  * Membership has no recurring obligation, so there is nothing for it to be in

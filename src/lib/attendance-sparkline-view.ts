@@ -10,9 +10,8 @@ import type { Dictionary } from './i18n/dictionaries';
  * points, the current week's headline count, and the text list that carries
  * the same figures to anyone who cannot see the line.
  *
- * Purely presentational over `src/lib/attendance-sparkline.ts`, in the shape
- * `seats-filled-view.ts` established: nothing here counts a Present row or
- * reads a clock, it turns one finished series into sentences.
+ * A view module over `src/lib/attendance-sparkline.ts`
+ * (`docs/adr/0006-view-modules.md`).
  *
  * **The empty-history decision.** The resolver always returns eight real
  * numbers, never a gap — but eight weeks of zero is a member who has not

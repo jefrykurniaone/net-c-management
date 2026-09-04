@@ -12,8 +12,8 @@ import { wibDayStart } from '@/lib/wib';
  * Cancelled Session is history rather than a plan. Both rules are enforced in
  * `PATCH /api/sessions/[id]` and merely *reflected* in the edit form — a
  * read-only control is a courtesy, the refusal is the rule — so the rules
- * themselves live here, free of Prisma, `server-only` and React, and are read by
- * the route and the form alike.
+ * themselves live here, in a pure module the route and the form both read
+ * (`docs/adr/0005-pure-rule-modules.md`).
  *
  * **The one exception to Closed** is a reopening: a **Cancelled** Session whose
  * WIB calendar day has not passed may be sent back to `SCHEDULED`, and nothing
@@ -21,21 +21,15 @@ import { wibDayStart } from '@/lib/wib';
  * Cancelled Session whose day has passed stays cancelled, and a body that also
  * renames or reprices the Session is not a reopening — it is the edit the Closed
  * rule refuses. The day is the **WIB** day (`wibDayStart`), never the server's
- * own: a Session is stored at UTC midnight of its WIB calendar day, so a server
- * running in UTC would call a Session past from 07:00 WIB, mid-morning of the
- * day it happens on. `now` is a parameter for the same reason the counts are —
- * these rules read no clock and no database of their own.
+ * own (`docs/adr/0007-wib-calendar-day-storage.md`).
  *
  * **Destroying a Session** is the same facts read for a different write, and has
  * its own resolver, `resolveDeleteRefusal`: money behind it refuses, Completed
  * refuses, and a Cancelled Session with nothing behind it may go.
  *
- * `AttendanceStatus`, `PaymentStatus` and `SessionStatus` are imported as
- * **types** and the values written as string literals checked against them:
- * importing the generated enums as values would drag the Prisma client into the
- * browser bundle for the sake of a handful of strings. Each set is an explicitly
- * typed **mutable** array, which is what a Prisma `in` filter takes — never a
- * `readonly` one and never a `const` assertion.
+ * `AttendanceStatus`, `PaymentStatus` and `SessionStatus` are imported as types
+ * and their values written as literals in mutable arrays
+ * (`docs/adr/0009-prisma-enums-as-types.md`).
  */
 
 /**

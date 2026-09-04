@@ -16,29 +16,15 @@ import {
  * reservation, each inside one short transaction holding the Session's own row
  * lock.
  *
- * `PATCH` used to read the held-Seat count and write the new `maxPlayers` in two
- * separate statements with nothing between them. A reservation committing in
- * that window — under its own `SELECT … FOR UPDATE` in `src/lib/payments.ts`
- * (`registerAndPaySession`, `reserveSeat`) — could leave `maxPlayers` one below
- * the Seats actually held, which is the one invariant capacity has. Taking the
- * **same** row lock, in the same statement shape, is what makes the two writes
- * queue instead of interleave: whichever arrives second reads the other's
- * committed count.
+ * The lock, what stays outside the transaction, and why a refusal is returned
+ * rather than thrown are all
+ * `docs/adr/0008-row-locks-on-capacity-and-money-writes.md`. It is the same row
+ * lock `registerAndPaySession` and `reserveSeat` take in `src/lib/payments.ts`,
+ * so an Admin's `PATCH` and a member's reservation queue instead of interleave.
  *
- * `DELETE` takes it for the same reason: its refusal turns on the same counts,
- * and a Seat claimed between the count and the delete would be destroyed along
- * with the row it was claimed on.
- *
- * What is deliberately **outside** the transaction, and stays outside:
- * `releaseExpiredHolds()` — its caller sweeps first, so the counts are taken
- * after it, and the sweep is its own write with emails queued behind it —
- * `auth()`, the dictionary, `invalidatePublicLanding()` and every send.
- * Production caps the pool at one connection per function instance
- * (`src/lib/prisma.ts`), so a transaction that waited on anything but this row
- * would be holding the only connection there is while it waited.
- *
- * A refusal is a **returned value**, never a throw: the route answers it with a
- * 409, and a thrown refusal would roll the transaction back into a 500 instead.
+ * `DELETE` takes it because its refusal turns on the same counts, and a Seat
+ * claimed between the count and the delete would be destroyed along with the row
+ * it was claimed on.
  */
 
 /**

@@ -33,9 +33,8 @@ import { currentPeriod } from './payment-mode';
  * start from differ (`DashboardSessionRow` here, `BoardSessionRow` there) and
  * neither file owns the other.
  *
- * Dates are WIB throughout, for the reason `sessions-board.ts` gives: a
- * Session is stored as UTC midnight of its WIB calendar day, so the range is
- * built from `wibDayStart` rather than the server's own midnight.
+ * The range is built from `wibDayStart` rather than the server's own midnight
+ * (`docs/adr/0007-wib-calendar-day-storage.md`).
  */
 
 /** Today through the sixth day after it — a week, starting from today. */

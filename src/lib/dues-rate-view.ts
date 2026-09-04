@@ -16,17 +16,12 @@ import type { Dictionary } from './i18n/dictionaries';
  * The Admin's Dues field, in the Admin's own words: what the Activity charges
  * now, what it is about to charge, and which Periods a change may start from.
  *
- * Purely presentational over `src/lib/dues-rate.ts`, in the shape
- * `membership-mode-view.ts` established over the payment-mode resolver: nothing
- * here compares a Period to a rate row, mints a Period key, or decides what is
- * queued — it reads the rules and turns their answers into sentences. Free of
- * `server-only`, Prisma and React, because the field it describes is a client
- * component and the route enforcing the same rules is not.
- *
- * **No clock.** `now` is a parameter, and the caller passes the *server's*
- * instant: the picker must offer exactly the Periods the route will accept, and
- * an Admin whose laptop clock is a month out would otherwise be shown a month
- * their save is refused for.
+ * A view module over `src/lib/dues-rate.ts` (`docs/adr/0006-view-modules.md`),
+ * pure and free of `server-only` because the field it describes is a client
+ * component (`docs/adr/0005-pure-rule-modules.md`). The caller passes the
+ * *server's* instant as `now`: the picker must offer exactly the Periods the
+ * route will accept, and an Admin whose laptop clock is a month out would
+ * otherwise be shown a month their save is refused for.
  */
 
 /** Rupiah, written the way every other surface in this app writes it. */

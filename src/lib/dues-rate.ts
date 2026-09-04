@@ -18,17 +18,11 @@ import {
  * created the table, by the Activity create path and by both seeders, so every
  * Period — however far back — resolves to an amount.
  *
- * **Pure, and free of `server-only`, Prisma and React** — the shape
- * `session-lock.ts` uses and for the same reason: the Admin's Period picker and
- * the Proof upload form are client components that have to answer "what does
- * this month charge?" from the same rules the routes enforce, and a rule behind
- * a server boundary gets copied instead of read. That is also why `toPeriodKey`
- * and `BillingPeriod` are imported from `billing-period.ts` rather than from
- * `payment-mode.ts`, which re-exports them but imports `server-only`.
- *
- * **No clock.** The Period is always a parameter. Which Period a surface is
- * about — this month, the month a member picked, the month a Payment is for —
- * is the caller's question; this file only answers what that Period charges.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`), which is why
+ * `toPeriodKey` and `BillingPeriod` are imported from `billing-period.ts` rather
+ * than from `payment-mode.ts`, which re-exports them but imports `server-only`.
+ * Which Period a surface is about is the caller's question; this file only
+ * answers what that Period charges.
  */
 
 /**

@@ -29,12 +29,9 @@ import { currentPeriod, type BillingPeriod } from './billing-period';
  *   — it is the authoritative one, read at the source instead of through a
  *   copy that a later edit could leave behind.
  *
- * **Pure**: no clock, no database, no logging. `now` is a parameter and the
- * records arrive as plain objects, so every exclusion below is one unit test
- * away (`src/lib/__tests__/money-by-activity.test.ts`) rather than one browser
- * away. The one thing it cannot do purely — saying a Fee carries no Session —
- * it hands back as {@link MoneyByActivitySeries.unplacedFees} for the loader to
- * log, in the shape #170 gave a skipped Dues Rate.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`): a Fee carrying no
+ * Session comes back as {@link MoneyByActivitySeries.unplacedFees} for the
+ * loader to log, in the shape #170 gave a skipped Dues Rate.
  */
 
 /** The Activities the ring lists even when they took nothing. */

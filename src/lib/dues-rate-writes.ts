@@ -16,13 +16,11 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
  * The two Admin writes that change what an Activity charges for Dues, each
  * inside one short transaction holding the **Activity's own row lock**.
  *
- * The lock is what makes "at most one queued change per Activity" true rather
- * than merely intended. Two Admins saving a new rate at the same instant would
- * otherwise both read "nothing queued", both insert, and leave two future rows
- * that no disclosure can name and no Withdraw can reach. Taking
- * `SELECT ... FOR UPDATE` on the Activity before reading its rate rows — the
- * same shape `src/lib/payments.ts` and `src/lib/session-writes.ts` use on a
- * Session — makes the second save read the first one's committed rows.
+ * The lock is `docs/adr/0008-row-locks-on-capacity-and-money-writes.md`, and it
+ * is what makes "at most one queued change per Activity" true rather than merely
+ * intended: two Admins saving a new rate at the same instant would otherwise
+ * both read "nothing queued", both insert, and leave two future rows that no
+ * disclosure can name and no Withdraw can reach.
  *
  * The Activity's own fields are written under the same lock and in the same
  * transaction as its rate row: an Admin's save is one act, so a refused rate
@@ -30,11 +28,7 @@ import type { Dictionary } from '@/lib/i18n/dictionaries';
  * a queued rate change behind either.
  *
  * **What never happens here.** No row whose Period has arrived is updated or
- * deleted, by any role. The freeze is checked against a `now` read inside the
- * transaction and under the Activity row lock — never a clock passed in from
- * the route — so a refused write does hold the lock while it is judged, and is
- * judged by the Period current when the write actually happens rather than the
- * one the request started in.
+ * deleted, by any role.
  */
 
 /** The rate columns these rules read. Who set a row and when is not among them. */

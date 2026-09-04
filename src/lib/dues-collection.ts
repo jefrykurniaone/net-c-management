@@ -17,17 +17,13 @@ import { resolvePaymentMode } from './payment-mode';
  * Mode a Membership is on in a Period, and this module consumes that too. No
  * money rule is restated here.
  *
- * **Pure**: no clock, no database, no logging. `now` is a parameter and the
- * records arrive as plain objects, so every figure below is a unit test away
- * (`src/lib/__tests__/dues-collection.test.ts`) rather than a browser away. The
- * one thing it cannot do purely — telling somebody an Activity has no covering
- * rate — it hands back as {@link DuesCollectionSeries.skipped} for the loader to
- * log, which is also what makes the skip assertable in a test.
- *
- * It is *not* free of `server-only`: `resolvePaymentMode` lives behind that
- * marker, and consuming the one payment-mode rule matters more than being
- * importable from the browser. Nothing needs it there — the chart component is
- * handed a finished series.
+ * Otherwise a pure rule module (`docs/adr/0005-pure-rule-modules.md`): `now` is
+ * a parameter, the records arrive as plain objects, and an Activity with no
+ * covering rate comes back as {@link DuesCollectionSeries.skipped} for the
+ * loader to log. It is *not* free of `server-only`, which is that record's named
+ * exception — `resolvePaymentMode` lives behind the marker, and consuming the
+ * one payment-mode rule matters more than being importable from a browser that
+ * is handed a finished series anyway.
  */
 
 /**

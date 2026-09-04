@@ -28,9 +28,8 @@ import {
  * That is why the first day of the new month needs no write, no cron and no
  * cleanup: the notice was never a row.
  *
- * Free of `prisma`, React and a clock — `now` is a parameter, the way
- * `dues-rate.ts` takes its Period — so the rule that decides who hears about a
- * price is unit-tested rather than inferred from a page.
+ * A pure rule module (`docs/adr/0005-pure-rule-modules.md`), so the rule that
+ * decides who hears about a price is unit-tested rather than inferred from a page.
  */
 
 /** The Payment Mode that is billed monthly, and so the only one a Dues change concerns. */

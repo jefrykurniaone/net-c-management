@@ -9,16 +9,9 @@ import type { ActivityMoneySlice, MoneyByActivitySeries } from './money-by-activ
  * its centre, the colour key, and the text list that carries the same figures
  * to anyone who cannot see them.
  *
- * Purely presentational over `src/lib/money-by-activity.ts`, in the shape
- * `dues-collection-view.ts` established: nothing here decides what counts,
- * places a Payment in a Period or reads a clock — it turns one finished series
- * into sentences. Both the ring and the list are built from the same `slices`
- * in the same order in one pass, which is what makes them impossible to
- * disagree.
- *
- * It runs on the server. The chart component is handed the finished view and
- * never sees the dictionary, so an English and an Indonesian dashboard ship the
- * same component and different strings.
+ * A view module over `src/lib/money-by-activity.ts` — it decides nothing, and
+ * the ring and the list are one pass over the same `slices`
+ * (`docs/adr/0006-view-modules.md`).
  */
 
 /**

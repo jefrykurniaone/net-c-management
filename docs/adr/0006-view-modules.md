@@ -1,0 +1,13 @@
+# A `-view` module turns one finished series into sentences and decides nothing
+
+Every chart and every standing chip in this product has two modules behind it: a resolver that works out the figures, and a `-view` module that says what they mean. `dues-collection-view.ts` sits over `dues-collection.ts`, `seats-filled-view.ts` over `seats-filled.ts`, `money-by-activity-view.ts` over `money-by-activity.ts`, `attendance-sparkline-view.ts` over `attendance-sparkline.ts`, `dues-rate-view.ts` over `dues-rate.ts`, `membership-mode-view.ts` and `member-standing.ts` over `payment-mode.ts`. The split is always the same one and this record states it once, so that each of those files can name its resolver and stop.
+
+A view counts nothing, prices nothing, excludes nothing, places no Payment in a Period, resolves no mode and reads no clock. It reads the finished output of exactly one resolver and turns it into the words and the ordered lists a surface draws. That is what stops a register disagreeing with the profile page it is a summary of, and it is what makes the view's own decisions — which sentence, which chip, which order — testable without a database.
+
+**The drawn thing and its text alternative are one pass over one array.** The bars and the sentence list, the ring and the colour key, the line and the spoken figures are all built from the same `points` or `slices`, in the same order, in the same traversal. An accessible alternative computed a second way is an alternative that can be wrong; built this way the two are impossible to disagree, and the text list is not a courtesy bolted on afterwards but the same data read out.
+
+**A view runs where its resolver runs, and the component it feeds never sees the dictionary.** The view resolves the locale's strings and hands the component a finished object, so an English and an Indonesian dashboard ship the same component and different strings, and no chart component holds a translation. Where a view is instead free of `server-only` it is for the reason `docs/adr/0005-pure-rule-modules.md` gives: `dues-rate-view.ts` describes a field that is itself a client component, so the words and the rules behind them have to reach the browser.
+
+**The one figure a view may compute is one the data forces rather than one it decides.** `seats-filled-view.ts` works out the axis ceiling, because the resolver reports a week above 100 per cent rather than clamping it and the axis has to be able to hold what it reports. Computing it in the view rather than inside Recharts keeps it a number a unit test can assert. That is the limit: a consequence of the series, never a judgement about it.
+
+Status: accepted, 2026-09-04.

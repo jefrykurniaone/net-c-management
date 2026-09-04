@@ -8,16 +8,9 @@ import type { Dictionary } from './i18n/dictionaries';
  * legend, and the text list that carries the same numbers to anyone who cannot
  * see them.
  *
- * Purely presentational over `src/lib/dues-collection.ts`, in the shape
- * `dues-rate-view.ts` established over the Dues Rate resolver: nothing here
- * decides what is owed or collected, prices a Period or reads a clock — it
- * turns one finished series into sentences. That is what makes the drawn bars
- * and the text list impossible to disagree: both are built from the same
- * `points`, in the same order, in one pass.
- *
- * It runs on the server. The chart component is handed the finished view and
- * never sees the dictionary, so an English and an Indonesian dashboard ship the
- * same component and different strings.
+ * A view module over `src/lib/dues-collection.ts` — it decides nothing, and the
+ * bars and the list are one pass over the same `points`
+ * (`docs/adr/0006-view-modules.md`).
  */
 
 /** Rupiah, written the way every other surface in this app writes it. */
