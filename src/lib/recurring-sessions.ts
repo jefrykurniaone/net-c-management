@@ -13,10 +13,10 @@ import { syncMonthlyAttendances } from '@/lib/payments';
  * Weekly recurring sessions + cost-sharing quota (viability) helpers.
  *
  * An Activity that offers the Monthly mode and has a recurring weekday set gets
- * its sessions auto-generated for the current month. Generation is lazy and
- * idempotent — called from the sessions pages on load and by the month-end
- * `/api/cron/generate-sessions` job, so a month rolls over even when nobody
- * opens a page. Sessions are always created and visible; whether the minimum
+ * its sessions auto-generated for the current month. Generation is idempotent
+ * and triggered only by the month-end `/api/cron/generate-sessions` job, so a
+ * month rolls over on schedule even when nobody opens a page. Sessions are
+ * always created and visible; whether the minimum
  * member quota is met is surfaced per session (`getSessionQuotas`), never used
  * to block creation — members could not join a session that does not exist.
  */
