@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`email shell (#157), rendered text unchanged in both locales > admission — en 1`] = `
-"You are in at XClub Community
+"You are in: XClub Community
 XClub Community You Are In Hi Nadia , An organizer has let you in to XClub Community. You can now see the schedule, claim a seat in a session, and handle your dues. Open the Community XClub Community · this message was sent by your community admin"
 `;
 
