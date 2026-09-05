@@ -21,7 +21,7 @@ import { monthDayLabel } from '@/components/sessions/day-labels';
  * action for, unlike the sessions board's "all" view.
  */
 
-export type DashboardCardNote = 'unposted' | 'optedOut' | null;
+export type DashboardCardNote = 'optedOut' | null;
 
 /** Everything one dashboard Session card draws. Data only, like `WeekCardData`. */
 export type DashboardCardData = Readonly<{
@@ -31,9 +31,8 @@ export type DashboardCardData = Readonly<{
     location: string;
     activityName: string;
     activityIcon: string | null;
-    href: string | null;
-    /** `null` means unposted, and dims nothing: there is no Session to void. */
-    status: SessionStatus | null;
+    href: string;
+    status: SessionStatus;
     standing: SessionStanding;
     note: DashboardCardNote;
     action: SlotCellAction | null;
@@ -69,7 +68,7 @@ function dayHeading(day: BoardDay, t: Dictionary): string {
 }
 
 function postedCard(
-    slot: Extract<BoardSlot, { kind: 'posted' }>,
+    slot: BoardSlot,
     day: BoardDay,
     context: DashboardCardContext,
 ): DashboardCardData {
@@ -113,47 +112,6 @@ function postedCard(
 }
 
 /**
- * A standing weekly slot with nothing on it. No Session to open and no title
- * of its own — the Activity names it, and the neutral chip says an Admin has
- * not posted it yet.
- */
-function unpostedCard(
-    slot: Extract<BoardSlot, { kind: 'unposted' }>,
-    day: BoardDay,
-    t: Dictionary,
-): DashboardCardData {
-    return {
-        title: slot.activity.name,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        location: slot.location,
-        activityName: slot.activity.name,
-        activityIcon: slot.activity.icon ?? null,
-        href: null,
-        status: null,
-        standing: resolveSessionStanding({ status: null, ownStatus: null, seats: null }),
-        note: 'unposted',
-        action: null,
-        dateLabel: dateLabelOf(day, t),
-        dayLabel: dayHeading(day, t),
-    };
-}
-
-function slotView(
-    slot: BoardSlot,
-    day: BoardDay,
-    context: DashboardCardContext,
-): DashboardCardView {
-    if (slot.kind === 'posted') {
-        return { key: slot.session.id, card: postedCard(slot, day, context) };
-    }
-    return {
-        key: `${day.dayKey}:${slot.activity.id}`,
-        card: unpostedCard(slot, day, context.t),
-    };
-}
-
-/**
  * This Activity's next Sessions, in day-then-start-time order — the order
  * `days` already carries. A day with no slots contributes nothing: see this
  * module's header for why the dashboard drops the board's "every day gets a
@@ -166,7 +124,10 @@ export function dashboardActivityCards(
     const views: DashboardCardView[] = [];
     for (const day of days) {
         for (const slot of day.slots) {
-            views.push(slotView(slot, day, context));
+            views.push({
+                key: slot.session.id,
+                card: postedCard(slot, day, context),
+            });
         }
     }
     return views;

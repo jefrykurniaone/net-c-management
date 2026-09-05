@@ -110,9 +110,6 @@ function CardStanding({
 }
 
 function CardTitleLine({ card }: Readonly<{ card: DashboardCardData }>) {
-    if (card.status === null) {
-        return <h3 className={TITLE_CLASS}>{card.title}</h3>;
-    }
     return (
         <h3>
             <StatusValue state={sessionState(card.status)} className={TITLE_CLASS}>
@@ -123,7 +120,6 @@ function CardTitleLine({ card }: Readonly<{ card: DashboardCardData }>) {
 }
 
 const NOTE_COPY = {
-    unposted: (t: Dictionary) => t.sessions.boardNotPosted,
     optedOut: (t: Dictionary) => t.sessions.boardOptedOut,
 } as const;
 
@@ -165,16 +161,10 @@ export function ActivitySessionCard({
         .replace('{status}', copy.spoken);
 
     return (
-        <article className={cn(CARD_CLASS, card.href !== null && CARD_LINKED)}>
-            {card.href === null ? (
-                <div className={BODY_CLASS}>
-                    <CardBody card={card} t={t} />
-                </div>
-            ) : (
-                <Link href={card.href} aria-label={aria} className={BODY_CLASS}>
-                    <CardBody card={card} t={t} />
-                </Link>
-            )}
+        <article className={cn(CARD_CLASS, CARD_LINKED)}>
+            <Link href={card.href} aria-label={aria} className={BODY_CLASS}>
+                <CardBody card={card} t={t} />
+            </Link>
             <div className={FOOTER_CLASS}>
                 <CardStanding standing={card.standing} copy={copy} t={t} />
                 {card.action !== null && (
