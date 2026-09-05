@@ -6,6 +6,29 @@ Its own run falsifies claims written here; whoever closes the run marks them in 
 section rather than editing this body. Citations address the code as it stood on 2026-09-05 and
 are never renumbered.
 
+## Delivery record — 2026-09-05, marked at the close of run `sessions-by-activity`
+
+Run `sessions-by-activity` closed on 2026-09-05. The body below is unchanged and stays unchanged; this section marks the claims delivery falsified or settled. Nothing below is deleted, and no `path:line` citation has been renumbered.
+
+Delivered by #334 alone (merged `31e4d61`), after #333 had already removed one of the two placeholder builders.
+
+| Claim in the body | State at close |
+|---|---|
+| "both the sessions page and the dashboard invent a card on every matching calendar day" | **Half of it was already gone by the time the ticket ran.** #333, in the sibling spec, deleted `week-strip-view.ts` and the whole week strip, taking the sessions page's placeholder builder with it. #334 therefore removed `unpostedSlots` from `src/lib/board-days.ts` and the dashboard's `unpostedCard`, not two page-level builders. The blocking edge #334-blocked-by-#333 was recorded for exactly this reason and held. |
+| "The synthesising function is deleted outright, not gated behind a caller flag" | **Confirmed, and it took more with it than the body predicted.** `BoardDayKind` narrows to `'posted' \| 'empty'`, `BoardSlot` to its posted shape, and the dashboard's `slotView` dispatcher was inlined because it had one branch left. `DashboardCardData.href` and `.status` stopped being nullable, and `activity-session-card.tsx` lost both null branches. Five files, 53 insertions and 221 deletions. |
+| "A second, unrelated producer of the same chip stays" — `src/lib/session-standing.ts:135` | **Confirmed, with a consequence the body does not state.** The `status: null → UNPOSTED` branch is untouched, and it is `reads:` for the ticket, so the executor correctly refused to widen. After this run no member surface passes `status: null`, so that branch is now reachable only through the public landing page's seats path. It is not dead, and it is not a defect; it is narrower than it was. |
+| "the dying copy key is `sessions.boardNotPosted`… the already-dead key is `sessions.boardNothingOnDay`" | **Confirmed.** Both removed from `en` and `id`. `chips.unposted` is untouched in both locales, still asserted by `status-chip.test.ts` and still drawn by `src/components/landing/activities-band.tsx`. |
+| "the affected test cases are in `src/lib/__tests__/board-days.test.ts` at `:89-102`, `:119-136`, `:138-149`, `:236-241`, `:243-249` and `:251-273`" | **Confirmed, and the one addition the body asked for was made.** A recurring weekday with nothing posted now asserts empty days. The case keeping a `CANCELLED` session as a posted slot still passes, so a cancelled session still draws the card it had. |
+
+**Success criteria, verified at merge on `main` rather than taken from the ticket.** Playwright MCP against the dev server, signed in at `/auth/dev` as `member@xclub.local`, a member of four activities. No fixture had to be created and the dev database was read and never written: Basket (`recurringDay` 2, next occurrence 2026-09-08) and Tennis (`recurringDay` 4, next occurrence 2026-09-10) both fall inside the next seven days and carry no session rows at all.
+
+- `/sessions` — Basket and Tennis show `0 upcoming` and "No upcoming sessions yet." with zero `article` elements. Both would have drawn a placeholder card before.
+- `/dashboard` — both blocks show their existing "No upcoming sessions." sentence and no card. Its layout is unchanged, as the non-goal requires.
+- A posted session still carries its seat figure and the two surfaces agree: Futsal on 7 September reads "10 free of 12" on the sessions page and "10 of 12 seats free" on its detail page. The dashboard's UPCOMING counter reads 5, matching the five real sessions and counting no phantom.
+- Zero console errors on `/sessions` and on `/dashboard`.
+
+**One thing a reader of this body might expect to be gone and is not.** The `UNPOSTED` chip still appears on the dashboard's activity blocks. It comes from `activity-summary-card.tsx` through `chips.unposted` and states that the *activity* has nothing scheduled; it is not a session card, and the body's own decision that this key must survive is what preserves it.
+
 ---
 ## Problem statement
 

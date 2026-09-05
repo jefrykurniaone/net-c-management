@@ -6,6 +6,34 @@ Its own run falsifies claims written here; whoever closes the run marks them in 
 section rather than editing this body. Citations address the code as it stood on 2026-09-05 and
 are never renumbered.
 
+## Delivery record — 2026-09-05, marked at the close of run `sessions-by-activity`
+
+Run `sessions-by-activity` closed on 2026-09-05. The body below is unchanged and stays unchanged; this section marks the claims delivery falsified or settled. Nothing below is deleted, and no `path:line` citation has been renumbered.
+
+Delivered by #328 (the grouping module, merged `c516919`), #329 (the glossary, merged `a964b9d`), #332 (the card and ADR-0018, merged `8eff6e6`) and #333 (the page rewrite, merged `af75bd9`).
+
+| Claim in the body | State at close |
+|---|---|
+| "Section ordering: soonest upcoming session ascending, joined activities before others" | **Delivered with joined-before-others demoted to a tie-break.** `src/lib/sessions-by-activity.ts` orders sections by soonest upcoming session ascending and uses joined-before-unjoined only to break a same-day tie. Read as a primary key it would contradict this body's own reading at lines 16 and 31, where the thing happening next is at the top of the page; a joined activity meeting next week would then outrank an unjoined one meeting today. Activities with no upcoming session still sort last. |
+| "A section with more than six upcoming sessions shows six and a link to the rest" | **Not exercised at runtime, and this is the one success criterion the walk could not settle.** No activity in the dev database has more than three upcoming sessions, and the run created no fixture to manufacture one. It is covered instead by #328's own cases (`caps a section at six cards and reports the true total`, `does not cap or truncate when a single Activity is selected`), and the page routes `isTruncated` to the see-all link at `?activityId=`, where `isSingleActivitySelected` lifts the cap. The wiring is proved; a member seeing seven dates is not. |
+| "Week navigation and the `week` query parameter are removed entirely… No email, no landing page and no test reads it" | **Confirmed, and the enumerated reader list was complete.** `week-strip.tsx`, `week-strip-view.ts`, `week-session-card.tsx` and `board-week-nav.tsx` are deleted with nothing importing them; `resolveWeekStart`, `weekKeys`, `buildBoardDays`, `mondayOf` and `wibDayStartFromKey` are out of `src/lib/sessions-board.ts`, which now reads `date: { gte: today }`. `/sessions?view=all&week=2026-01-05` renders text-identical markup to `/sessions?view=all`, and no `week=` link exists anywhere on the page. |
+| "The grid class string matches the existing precedent" | **Confirmed character for character** against `src/app/(admin)/admin/dashboard-activity-cards.tsx:86`: `grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`, with `loading.tsx` mirroring it. |
+| "The card conventions record is amended, not silently broken" | **Confirmed.** `docs/adr/0018-session-cards-outside-a-week.md` supersedes exactly two parts of ADR 0014 — the stacking convention justified by the 174px week-strip day column, and the paragraph requiring the strip to draw every day including empty ones — and restates what still binds. `docs/adr/0014` shows an empty diff; it was never opened for edit. |
+| "The existing day-range builder is kept, not deleted" | **Confirmed, and it is now the dashboard's alone.** It kept the timezone rules of ADR-0007 and #334 later narrowed it in the sibling spec; `src/lib/dashboard-sessions.ts` is its one production caller. |
+| "The glossary contradiction is resolved" | **Confirmed by rewording rather than by a new term.** The `CONTEXT.md` Activity entry now reads "weekly schedule"; the Seat entry still bans "slot" as a synonym, and "slot" survives in that file only inside the ban. |
+
+**Success criteria, verified at merge on `main` rather than taken from the tickets.** Playwright MCP against the dev server, signed in at `/auth/dev` as a member joined to more than one activity.
+
+- Section order on `/sessions?view=all`: Badminton (soonest 5 September, 3 upcoming), Futsal (7 September, 2 upcoming), then Basket and Tennis at 0 upcoming, last, each drawing the empty sentence and no cards. Cards inside a section read in date order.
+- `getComputedStyle(grid).gridTemplateColumns` gave three tracks at 1280px, two at 768px and one at 390px, measured rather than eyeballed.
+- At 390px `document.documentElement.scrollWidth` is 390 and no element exceeds the viewport.
+- Seats agree across surfaces: the first Badminton card reads `18 free of 20` and its detail page reads `Players 2/20`.
+- Zero console errors on reload. One transient `504` on `/_next/image` for the community logo on a cold load did not reproduce and the object returns `200` on a direct fetch; environmental, not this run.
+
+**Two calls this body did not name, both accepted at verification.** `titleBySession` is handed to the section alongside the cards, because the card from #332 carries no title of its own while ADR-0018 requires the title in the accessible name and `ActivitySection.cards` is `readonly`. `StripNotice` died with `week-strip.tsx` and was redrawn inline as `BoardNotice`; without it a member who has joined nothing gets a blank page in the Mine view, which no criterion here asks for.
+
+**Two things left standing, deliberately.** The card reuses the dictionary keys `weekSeatsFigure`, `weekSeatHeld`, `weekHoldPayBy`, `weekCardAria` and `boardSeatsAria`, whose names still say "week" although the surface is no longer one; renaming them was outside every ticket's write surface and outside the run's scope note on dictionary keys. And four comments in files no ticket owned still cite what this run deleted — filed as **#343** rather than fixed opportunistically, per the run's own rule that a defect outside a ticket's surface becomes its own item.
+
 ---
 ## Problem statement
 

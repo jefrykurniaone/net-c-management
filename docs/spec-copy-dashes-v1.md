@@ -6,6 +6,29 @@ Its own run falsifies claims written here; whoever closes the run marks them in 
 section rather than editing this body. Citations address the code as it stood on 2026-09-05 and
 are never renumbered.
 
+## Delivery record — 2026-09-05, marked at the close of run `sessions-by-activity`
+
+Run `sessions-by-activity` closed on 2026-09-05. The body below is unchanged and stays unchanged; this section marks the claims delivery falsified or settled. Nothing below is deleted, and no `path:line` citation has been renumbered.
+
+Delivered by #330 (email templates, merged `d063e5d`), #331 (the stale comment, merged `19f9f73`) and #335 (the dictionary, merged `155eb1e`).
+
+| Claim in the body | State at close |
+|---|---|
+| "prose em dashes number 48 there and 23 across `src/lib/email/`" | **Confirmed, both figures exactly.** The 48 survived #333 and #334 editing the dictionary in the same run and were counted again on the branch before merging: 24 English strings and 24 Indonesian. 23 came out of nine email template files; `dues-change-withdrawn.ts` held no rendered dash and was not touched. |
+| "The public landing copy is included, but constrained… where a dash cannot be removed without breaking one of them, the string is left as it is" | **Falsified, and the constraint never bound.** `landing.hero.pitch` and `landing.hero.lead` carry no em dash in either locale, so no landing string was rewritten and nothing was at risk against `pitch-budget.test.ts`. Its limits are unchanged because nothing needed them raised. The two authored rules — no sport named, the approval gate disclosed before the sign-in click — are intact for the same reason: the copy they govern was never opened. |
+| "Two strings are asserted literally by a test… the community-name validation messages" | **Falsified as the risk, and the real one was elsewhere.** Neither `validation.communityNameTooLong` nor `validation.communityNameWordTooLong` carried an em dash, so `community-name-length.test.ts:163,169` is not in the diff at all. The literal-assertion trap the audit missed is `src/lib/__tests__/seats-filled-view.test.ts`, which asserts the rendered `insights.fillValueRow` character for character at four places rather than naming the dictionary key. The executor stopped rather than widening its write surface, #335's `writes:` was widened by the orchestrator, and the four assertions moved with the string in the same commit. |
+| "the range separators including `boardWeekOf` at `dictionaries.ts:537` and `:1809`" | **Overtaken by this run's own first spec.** `boardWeekOf` no longer exists: #333 deleted it with the week navigation. The claim was true when written and the key it names is gone, not rewritten. The other range separators it lists are untouched. |
+| "the voice rule is recorded at `dictionaries.ts:187`" and "The dictionary already carries its own voice rule in a comment" | **Confirmed and left alone.** 46 developer comment lines in the dictionary carry em dashes and all 46 survive. They are the record of the plain-voice rule, not user-facing copy, and the non-goal "Rewriting comments, code identifiers or documentation" covers them. After #335 no string value in either locale carries a prose em dash. |
+
+**Claims delivery confirmed, unchanged.**
+
+- Every load-bearing dash is byte-identical: the `EM_DASH` placeholder constants, `TIME_RANGE_DASH`, the inline time ranges including `src/lib/email/day-reminder.ts:52` which still renders `19:00 - 21:00` in both locales, and the payment description separator at `src/app/api/payments/[id]/route.ts:220-221`. None of them lived inside any ticket's write surface.
+- Both locales still carry the same key set and no key ships empty. #335 added, renamed and reordered nothing; the key changes in this run are #333's and #334's, which the body already excepts as "the removals another spec in this run owns".
+- The email snapshot was regenerated deliberately and its diff is 30 insertions and 30 deletions, all wording: no subject line, link, recipient, tag or template structure moved.
+- No lint rule or test banning a character was added, per the testing decision that argued against one.
+
+**One rewrite was handed back during verification, and the record is worth keeping.** #330's English admission subject first became "You are in at ${communityName}", which is not English a person writes. It shipped as "You are in: ${communityName}", matching the label-colon subject form six other templates already use and keeping the parallel to the untouched Indonesian `Kamu diterima di ${communityName}`. The spec's premise that reviewing the snapshot diff is how these rewrites are actually checked is what caught it.
+
 ---
 ## Problem statement
 
