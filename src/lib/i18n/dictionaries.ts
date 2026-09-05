@@ -239,8 +239,8 @@ const en = {
         // Both name the cap, because a refusal that does not say the number
         // leaves the Admin deleting characters until it stops complaining. The
         // same two strings are used by the form and by the API.
-        lengthCapRefusal: 'Too long — {max} characters at most.',
-        wordCapRefusal: 'One word is too long — {max} letters at most.',
+        lengthCapRefusal: 'Too long. {max} characters at most.',
+        wordCapRefusal: 'One word is too long. {max} letters at most.',
         // The hero image control (#155): preview, upload, remove, in the same
         // section as the text fields above. The mime/size refusal itself
         // reuses `validation.fileTypeInvalid` / `validation.fileSizeProof`
@@ -259,7 +259,7 @@ const en = {
     },
     auth: {
         signInTitle: 'Sign In',
-        signInSubtitle: 'Sessions, RSVPs and dues for your whole community — in one place.',
+        signInSubtitle: 'Sessions, RSVPs and dues for your whole community, in one place.',
         signInButton: 'Continue with Google',
         // The other door, and it discloses the same gate `/` does — a member
         // signing back in is unaffected, and a stranger who found this page
@@ -296,7 +296,7 @@ const en = {
             'Enter a WhatsApp number with at least 9 digits, for example 628123456789.',
         phoneErrorTooLong: 'Enter a WhatsApp number with 15 digits or fewer.',
         phoneErrorInvalidChars:
-            'Use digits only for your WhatsApp number — remove spaces, dashes, or letters.',
+            'Use digits only for your WhatsApp number, and remove spaces, dashes, or letters.',
         activityErrorRequired: 'Select at least one activity to continue.',
     },
     /**
@@ -316,21 +316,21 @@ const en = {
         waitingMark: 'Waiting',
         waitingTitle: 'An organizer is reviewing your request',
         waitingLead:
-            'You asked to join. Someone who runs this community has to let you in — usually within a day or two. We will email you the moment they do.',
+            'You asked to join. Someone who runs this community has to let you in, usually within a day or two. We will email you the moment they do.',
         declinedMark: 'Declined',
         declinedTitle: 'You have not been let in',
         // WhatsApp is the recourse, and saying so is honest: the organizer
         // decided and the organizer can change their mind. There is no appeal
         // button and no re-apply flow.
         declinedLead:
-            'An organizer reviewed your request and did not admit you. If you think that is a mistake, message them — they decide, and they can change their mind.',
+            'An organizer reviewed your request and did not admit you. If you think that is a mistake, message them. They decide, and they can change their mind.',
         // The fourth admission state: admitted once, then revoked. It lands on
         // this route like an Applicant does, but "we did not admit you" would be
         // false for someone who was already in.
         revokedMark: 'Removed',
         revokedTitle: 'Your place in this community was removed',
         revokedLead:
-            'An organizer took you off the register, so the community is no longer yours to see. Message them if you want to come back — they decide, and they can change their mind.',
+            'An organizer took you off the register, so the community is no longer yours to see. Message them if you want to come back. They decide, and they can change their mind.',
         whatsapp: 'Message an organizer',
         signOut: 'Sign out',
     },
@@ -411,7 +411,7 @@ const en = {
         fillSeriesLabel: 'Seats filled',
         fillAxisDate: '{month} {day}',
         fillWeekLabel: 'Week of {month} {day}, {year}',
-        fillValueRow: '{percent}% — {seats} of {capacity} seats held',
+        fillValueRow: '{percent}%, {seats} of {capacity} seats held',
         fillNoSessions: 'No Sessions',
         // A week whose Sessions offered no capacity at all. Distinct from the
         // line above: a week that ran must never be reported as one that did not.
@@ -432,7 +432,7 @@ const en = {
         duesEmptyMessage: 'No data for this period yet.',
         moneyEmptyMessage: 'No data for this period yet.',
         fillEmptyMessage: 'No Sessions in these eight weeks yet.',
-        attendanceEmptyMessage: 'Nothing yet — this fills in as you play.',
+        attendanceEmptyMessage: 'Nothing yet. This fills in as you play.',
     },
     sessions: {
         title: 'Sessions',
@@ -478,12 +478,12 @@ const en = {
         toastRegisterSuccess: 'Successfully registered!',
         toastCancelSuccess: 'Registration cancelled.',
         toastModeSwitched: 'Payment mode updated.',
-        toastModeQueued: '{mode} takes effect from {period} — the current period is already paid, so its price is unchanged.',
+        toastModeQueued: '{mode} takes effect from {period}. The current period is already paid, so its price is unchanged.',
         modeSwitchPending: 'Switching to {mode} from {period}',
         toastRegisterError: 'Failed to register',
         toastCancelError: 'Failed to cancel registration',
         registerAndPay: 'Register & pay',
-        payRequired: 'Payment required — register & pay for this session.',
+        payRequired: 'Payment required. Register & pay for this session.',
         notFound: 'Session not found.',
         notRegisterable: 'This session is not open for registration.',
         registeredPending: 'Registered · awaiting confirmation',
@@ -496,17 +496,17 @@ const en = {
         joinDialogDesc:
             'Joining this session also joins its activity. Pick a payment option:',
         joinMonthlyDesc:
-            'Pay monthly dues once — auto-registered for every session this month',
+            'Pay monthly dues once, and you are auto-registered for every session this month',
         joinPerSessionDesc: 'Pay only for the sessions you join',
         payMonthlyFirst: 'Pay monthly dues first',
         paymentRejected: 'Payment rejected · upload again',
         changePaymentMode: 'Change payment mode',
         cancelBlockedConfirmed:
-            "A confirmed payment can't be self-cancelled — contact an admin.",
+            "A confirmed payment can't be self-cancelled. Contact an admin.",
         viewMine: 'My activities',
         viewAll: 'All activities',
         noJoinedActivities:
-            "You haven't joined any activities yet — switch to All to explore.",
+            "You haven't joined any activities yet. Switch to All to explore.",
         chooseModeFirst: 'Choose a payment option first.',
         reservedPayWithin: 'Reserved · pay within {time}',
         holdExpired: 'Reservation expired',
@@ -541,7 +541,7 @@ const en = {
         boardWithdraw: 'Withdraw',
         boardWithdrawAria: 'Withdraw from {title}',
         boardClaimed: 'Seat claimed.',
-        boardWithdrawn: 'Seat released — somebody else can take it now.',
+        boardWithdrawn: 'Seat released. Somebody else can take it now.',
         // Dues buy availability for the month, not this Session, so releasing a
         // Seat forfeits it. Said plainly, so nobody waits for money back.
         boardForfeited:
@@ -621,7 +621,7 @@ const en = {
         inReview: 'In review',
         transferTo: 'Transfer to',
         noBankInfo:
-            'No bank account is configured for this activity — contact the admin for payment details.',
+            'No bank account is configured for this activity. Contact the admin for payment details.',
         owedFor: 'Monthly dues for {activity} · {month} {year}',
         notMonthlyMode: "You're not on monthly billing for this activity this period.",
         noMonthlyFee: 'This activity has no Dues set for this month.',
@@ -660,7 +660,7 @@ const en = {
         proofMissing:
             'No proof attached. Choose a photo or screenshot of your transfer, then submit again.',
         proofFileFix:
-            'Attach a photo or screenshot of the transfer — JPG, PNG, or WebP, up to 5MB.',
+            'Attach a photo or screenshot of the transfer in JPG, PNG, or WebP, up to 5MB.',
         // Payments history (#58): every amount says which of the two it
         // settles, matching the wording profile settled for the same pair
         // (#56) so the two surfaces agree.
@@ -750,10 +750,10 @@ const en = {
         needReview: 'need review',
         needsAttentionTitle: 'Needs attention',
         itemsCount: '{n} items',
-        allClear: 'All clear — nothing needs your attention right now.',
+        allClear: 'All clear. Nothing needs your attention right now.',
         pendingProofsItem: '{n} payment proofs waiting for review',
         pendingProofsSub: 'Review and confirm to keep dues on track',
-        underBookedItem: '{title} is under-booked — {n} of {max}',
+        underBookedItem: '{title} is under-booked, {n} of {max}',
         rsvpClosesInDays: 'RSVP closes in {n} days',
         remindMembers: 'Remind members',
         remindSectionTitle: 'Remind members',
@@ -768,7 +768,7 @@ const en = {
         remindErrorToast: 'Failed to send reminders. Please try again.',
         // Shown when the batch reached nobody: every member lacked an address, or
         // every send threw. Distinguishes that outcome from a real success.
-        remindNoneToast: 'No reminders were sent — nobody was reachable this time.',
+        remindNoneToast: 'No reminders were sent. Nobody was reachable this time.',
         remindPartialToast: 'Reminder sent to {sent} member(s); {skipped} could not be reached.',
         shareSession: 'Share session',
         shareSessionDesc: 'Share this link to invite new members',
@@ -913,7 +913,7 @@ const en = {
         // "once members have registered" no longer states the rule.
         feeLocked:
             'This fee cannot be changed: this session already has a payment or a held seat.',
-        sessionCreateHint: 'Activity and fee have restrictions after creation — see below.',
+        sessionCreateHint: 'Activity and fee have restrictions after creation. See below.',
         memberUpdated: 'Successfully updated',
         memberUpdateFailed: 'Failed to update',
         paymentConfirmed: 'Payment confirmed',
@@ -1027,7 +1027,7 @@ const en = {
         // Names the surface for a screen reader; never drawn on screen.
         attendanceCaption: 'Attendance for this session',
         attendanceUntaken:
-            'This session has ended and no attendance has been recorded. Everyone here is still Registered — nobody becomes a No-Show until you record one.',
+            'This session has ended and no attendance has been recorded. Everyone here is still Registered, and nobody becomes a No-Show until you record one.',
         attendanceEmpty: 'Nobody holds a seat on this session.',
         attendanceEmptyMark: 'Empty',
         colParticipant: 'Participant',
@@ -1079,7 +1079,7 @@ const en = {
         rejectSeatConsequence:
             'Every seat this member is Registered for in {activity} sessions in {period} is released. Seats they attended or opted out of are untouched.',
         rejectReasonMissing:
-            'No reason given. Write why you are rejecting this payment — the member sees it.',
+            'No reason given. Write why you are rejecting this payment. The member sees it.',
         filterSearchLabel: 'Search by member name or email',
         filterMonthLabel: 'Filter by month',
         filterYearLabel: 'Filter by year',
@@ -1170,7 +1170,7 @@ const en = {
          * sentence names cancelling as the move that was meant.
          */
         refusedSessionHasMoney:
-            'This session has a payment or a held seat behind it, so it cannot be deleted. Cancel the session instead — the seats already held stay held.',
+            'This session has a payment or a held seat behind it, so it cannot be deleted. Cancel the session instead. The seats already held stay held.',
         refusedDeleteCompleted:
             'This session is completed, so it is part of the record and cannot be deleted.',
         /** A reopening refused because the day it was set for is over. */
@@ -1580,8 +1580,8 @@ const id: typeof en = {
         featureHelper: 'Kartu tanpa judul tidak ditampilkan.',
         counter: '{count} / {max}',
         counterLabel: 'Karakter terpakai',
-        lengthCapRefusal: 'Terlalu panjang — maksimal {max} karakter.',
-        wordCapRefusal: 'Ada kata yang terlalu panjang — maksimal {max} huruf.',
+        lengthCapRefusal: 'Terlalu panjang. Maksimal {max} karakter.',
+        wordCapRefusal: 'Ada kata yang terlalu panjang. Maksimal {max} huruf.',
         heroImageLabel: 'Gambar Hero',
         heroImageHelper:
             'JPG, PNG, WebP · Maks 5MB. Bagian tengah foto adalah yang tetap terlihat di layar HP, jadi letakkan bagian penting di sana.',
@@ -1595,7 +1595,7 @@ const id: typeof en = {
     },
     auth: {
         signInTitle: 'Masuk',
-        signInSubtitle: 'Sesi, RSVP, dan iuran untuk seluruh komunitasmu — dalam satu tempat.',
+        signInSubtitle: 'Sesi, RSVP, dan iuran untuk seluruh komunitasmu, dalam satu tempat.',
         signInButton: 'Lanjutkan dengan Google',
         signInNote:
             'Lanjut dengan Google akan membuatkan akunmu saat pertama kali kamu memakainya, dan mengajukan permintaanmu ke pengelola. Dengan masuk, kamu menyetujui aturan klub.',
@@ -1623,22 +1623,22 @@ const id: typeof en = {
             'Isi nomor WhatsApp kamu minimal 9 digit, misalnya 628123456789.',
         phoneErrorTooLong: 'Isi nomor WhatsApp kamu maksimal 15 digit.',
         phoneErrorInvalidChars:
-            'Gunakan angka saja untuk nomor WhatsApp kamu — hapus spasi, tanda hubung, atau huruf.',
+            'Gunakan angka saja untuk nomor WhatsApp kamu, dan hapus spasi, tanda hubung, atau huruf.',
         activityErrorRequired: 'Pilih minimal satu aktivitas untuk melanjutkan.',
     },
     pending: {
         waitingMark: 'Menunggu',
         waitingTitle: 'Pengelola sedang meninjau permintaanmu',
         waitingLead:
-            'Kamu sudah mengajukan diri untuk bergabung. Salah satu pengelola komunitas ini harus menerimamu dulu — biasanya dalam satu sampai dua hari. Kami akan mengirim email begitu itu terjadi.',
+            'Kamu sudah mengajukan diri untuk bergabung. Salah satu pengelola komunitas ini harus menerimamu dulu, biasanya dalam satu sampai dua hari. Kami akan mengirim email begitu itu terjadi.',
         declinedMark: 'Ditolak',
         declinedTitle: 'Kamu belum diterima masuk',
         declinedLead:
-            'Pengelola sudah meninjau permintaanmu dan belum menerimamu. Kalau menurutmu ini keliru, hubungi mereka — keputusan ada di tangan mereka, dan mereka bisa berubah pikiran.',
+            'Pengelola sudah meninjau permintaanmu dan belum menerimamu. Kalau menurutmu ini keliru, hubungi mereka. Keputusan ada di tangan mereka, dan mereka bisa berubah pikiran.',
         revokedMark: 'Dikeluarkan',
         revokedTitle: 'Tempatmu di komunitas ini sudah dicabut',
         revokedLead:
-            'Pengelola mengeluarkanmu dari daftar anggota, jadi komunitas ini tidak lagi bisa kamu lihat. Hubungi mereka kalau kamu ingin kembali — keputusan ada di tangan mereka, dan mereka bisa berubah pikiran.',
+            'Pengelola mengeluarkanmu dari daftar anggota, jadi komunitas ini tidak lagi bisa kamu lihat. Hubungi mereka kalau kamu ingin kembali. Keputusan ada di tangan mereka, dan mereka bisa berubah pikiran.',
         whatsapp: 'Hubungi pengelola',
         signOut: 'Keluar',
     },
@@ -1697,7 +1697,7 @@ const id: typeof en = {
         fillSeriesLabel: 'Kursi terisi',
         fillAxisDate: '{day} {month}',
         fillWeekLabel: 'Minggu {day} {month} {year}',
-        fillValueRow: '{percent}% — {seats} dari {capacity} kursi terisi',
+        fillValueRow: '{percent}%, {seats} dari {capacity} kursi terisi',
         fillNoSessions: 'Tidak ada Sesi',
         fillNoCapacity: 'Tidak ada kursi ditawarkan',
         fillAxisPercent: '{n}%',
@@ -1711,7 +1711,7 @@ const id: typeof en = {
         duesEmptyMessage: 'Belum ada data untuk periode ini.',
         moneyEmptyMessage: 'Belum ada data untuk periode ini.',
         fillEmptyMessage: 'Belum ada Sesi dalam delapan minggu ini.',
-        attendanceEmptyMessage: 'Belum ada apa-apa — ini akan terisi seiring kamu bermain.',
+        attendanceEmptyMessage: 'Belum ada apa-apa. Ini akan terisi seiring kamu bermain.',
     },
     sessions: {
         title: 'Sesi',
@@ -1757,12 +1757,12 @@ const id: typeof en = {
         toastRegisterSuccess: 'Berhasil mendaftar sesi!',
         toastCancelSuccess: 'Pendaftaran dibatalkan.',
         toastModeSwitched: 'Metode pembayaran diperbarui.',
-        toastModeQueued: '{mode} berlaku mulai {period} — periode berjalan sudah dibayar, jadi harganya tidak berubah.',
+        toastModeQueued: '{mode} berlaku mulai {period}. Periode berjalan sudah dibayar, jadi harganya tidak berubah.',
         modeSwitchPending: 'Beralih ke {mode} mulai {period}',
         toastRegisterError: 'Gagal mendaftar',
         toastCancelError: 'Gagal membatalkan pendaftaran',
         registerAndPay: 'Daftar & bayar',
-        payRequired: 'Perlu pembayaran — daftar & bayar untuk sesi ini.',
+        payRequired: 'Perlu pembayaran. Daftar & bayar untuk sesi ini.',
         notFound: 'Sesi tidak ditemukan.',
         notRegisterable: 'Sesi ini tidak dibuka untuk pendaftaran.',
         registeredPending: 'Terdaftar · menunggu konfirmasi',
@@ -1775,17 +1775,17 @@ const id: typeof en = {
         joinDialogDesc:
             'Bergabung di sesi ini otomatis bergabung ke aktivitasnya. Pilih opsi pembayaran:',
         joinMonthlyDesc:
-            'Bayar iuran bulanan sekali — otomatis terdaftar di semua sesi bulan ini',
+            'Bayar iuran bulanan sekali, dan kamu otomatis terdaftar di semua sesi bulan ini',
         joinPerSessionDesc: 'Bayar hanya sesi yang kamu ikuti',
         payMonthlyFirst: 'Bayar iuran bulanan dulu',
         paymentRejected: 'Pembayaran ditolak · upload ulang',
         changePaymentMode: 'Ganti metode pembayaran',
         cancelBlockedConfirmed:
-            'Pembayaran yang sudah dikonfirmasi tidak bisa dibatalkan sendiri — hubungi admin.',
+            'Pembayaran yang sudah dikonfirmasi tidak bisa dibatalkan sendiri. Hubungi admin.',
         viewMine: 'Aktivitas saya',
         viewAll: 'Semua aktivitas',
         noJoinedActivities:
-            'Kamu belum bergabung ke aktivitas apa pun — beralih ke Semua untuk menjelajah.',
+            'Kamu belum bergabung ke aktivitas apa pun. Beralih ke Semua untuk menjelajah.',
         chooseModeFirst: 'Pilih opsi pembayaran dulu.',
         reservedPayWithin: 'Dipesan · bayar dalam {time}',
         holdExpired: 'Reservasi kedaluwarsa',
@@ -1808,7 +1808,7 @@ const id: typeof en = {
         boardWithdraw: 'Batal ikut',
         boardWithdrawAria: 'Batal ikut {title}',
         boardClaimed: 'Kursi diambil.',
-        boardWithdrawn: 'Kursi dilepas — anggota lain bisa mengambilnya sekarang.',
+        boardWithdrawn: 'Kursi dilepas. Anggota lain bisa mengambilnya sekarang.',
         boardForfeited:
             'Kursi dilepas. Iuranmu menanggung satu bulan, bukan sesi ini, jadi tidak ada pengembalian dana.',
         boardChooseMode: 'Pilih dulu cara pembayaran untuk aktivitas ini.',
@@ -1871,7 +1871,7 @@ const id: typeof en = {
         inReview: 'Ditinjau',
         transferTo: 'Transfer ke',
         noBankInfo:
-            'Rekening pembayaran belum diatur untuk aktivitas ini — hubungi admin untuk info pembayaran.',
+            'Rekening pembayaran belum diatur untuk aktivitas ini. Hubungi admin untuk info pembayaran.',
         owedFor: 'Iuran bulanan {activity} · {month} {year}',
         notMonthlyMode:
             'Kamu tidak menggunakan pembayaran bulanan untuk aktivitas ini pada periode ini.',
@@ -1907,7 +1907,7 @@ const id: typeof en = {
         proofMissing:
             'Bukti belum dilampirkan. Pilih foto atau tangkapan layar bukti transfer kamu, lalu kirim lagi.',
         proofFileFix:
-            'Lampirkan foto atau tangkapan layar bukti transfer — JPG, PNG, atau WebP, maksimal 5MB.',
+            'Lampirkan foto atau tangkapan layar bukti transfer dalam format JPG, PNG, atau WebP, maksimal 5MB.',
         duesLabel: 'Iuran',
         feeLabel: 'Biaya Sesi',
     },
@@ -1990,10 +1990,10 @@ const id: typeof en = {
         needReview: 'perlu ditinjau',
         needsAttentionTitle: 'Perlu perhatian',
         itemsCount: '{n} item',
-        allClear: 'Aman — tidak ada yang perlu perhatian saat ini.',
+        allClear: 'Aman. Tidak ada yang perlu perhatian saat ini.',
         pendingProofsItem: '{n} bukti pembayaran menunggu ditinjau',
         pendingProofsSub: 'Tinjau dan konfirmasi agar iuran tetap lancar',
-        underBookedItem: '{title} kurang peserta — {n} dari {max}',
+        underBookedItem: '{title} kurang peserta, {n} dari {max}',
         rsvpClosesInDays: 'RSVP tutup dalam {n} hari',
         remindMembers: 'Ingatkan anggota',
         remindSectionTitle: 'Ingatkan anggota',
@@ -2006,7 +2006,7 @@ const id: typeof en = {
         remindSending: 'Mengirim...',
         remindSuccessToast: 'Pengingat dikirim ke {n} anggota.',
         remindErrorToast: 'Gagal mengirim pengingat. Coba lagi.',
-        remindNoneToast: 'Tidak ada pengingat terkirim — tidak ada yang bisa dihubungi kali ini.',
+        remindNoneToast: 'Tidak ada pengingat terkirim. Tidak ada yang bisa dihubungi kali ini.',
         remindPartialToast: 'Pengingat dikirim ke {sent} anggota; {skipped} tidak dapat dihubungi.',
         shareSession: 'Bagikan sesi',
         shareSessionDesc: 'Bagikan tautan ini untuk mengundang member baru',
@@ -2145,7 +2145,7 @@ const id: typeof en = {
         activityLocked: 'Aktivitas tidak bisa diubah setelah sesi dibuat.',
         feeLocked:
             'Biaya ini tidak bisa diubah: sesi ini sudah punya pembayaran atau kursi yang dipegang.',
-        sessionCreateHint: 'Aktivitas dan iuran memiliki batasan setelah sesi dibuat — lihat di bawah.',
+        sessionCreateHint: 'Aktivitas dan iuran memiliki batasan setelah sesi dibuat. Lihat di bawah.',
         memberUpdated: 'Berhasil diperbarui',
         memberUpdateFailed: 'Gagal memperbarui',
         paymentConfirmed: 'Pembayaran dikonfirmasi',
@@ -2246,7 +2246,7 @@ const id: typeof en = {
         attendanceTitle: 'Kehadiran',
         attendanceCaption: 'Kehadiran untuk sesi ini',
         attendanceUntaken:
-            'Sesi ini sudah berakhir dan kehadiran belum dicatat. Semua di sini masih Terdaftar — tidak ada yang menjadi Tidak Hadir sampai kamu mencatatnya.',
+            'Sesi ini sudah berakhir dan kehadiran belum dicatat. Semua di sini masih Terdaftar, dan tidak ada yang menjadi Tidak Hadir sampai kamu mencatatnya.',
         attendanceEmpty: 'Belum ada yang memegang kursi di sesi ini.',
         attendanceEmptyMark: 'Kosong',
         colParticipant: 'Peserta',
@@ -2287,7 +2287,7 @@ const id: typeof en = {
         rejectSeatConsequence:
             'Semua kursi yang Terdaftar atas nama anggota ini di sesi {activity} pada {period} akan dilepas. Kursi yang sudah dihadiri atau dibatalkan tidak terpengaruh.',
         rejectReasonMissing:
-            'Alasan belum diisi. Tulis alasan kamu menolak pembayaran ini — anggota akan membacanya.',
+            'Alasan belum diisi. Tulis alasan kamu menolak pembayaran ini. Anggota akan membacanya.',
         filterSearchLabel: 'Cari nama atau email anggota',
         filterMonthLabel: 'Saring menurut bulan',
         filterYearLabel: 'Saring menurut tahun',
@@ -2332,7 +2332,7 @@ const id: typeof en = {
         closedFieldsLocked:
             'Sesi ini sudah selesai atau dibatalkan, jadi hanya catatannya yang bisa diubah di sini.',
         refusedSessionHasMoney:
-            'Sesi ini punya pembayaran atau kursi yang dipegang, jadi tidak bisa dihapus. Batalkan sesinya saja — kursi yang sudah dipegang tetap dipegang.',
+            'Sesi ini punya pembayaran atau kursi yang dipegang, jadi tidak bisa dihapus. Batalkan sesinya saja. Kursi yang sudah dipegang tetap dipegang.',
         refusedDeleteCompleted:
             'Sesi ini sudah selesai, jadi sudah menjadi catatan dan tidak bisa dihapus.',
         refusedSessionPast:
