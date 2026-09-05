@@ -22,8 +22,8 @@ export async function sendDuesChangeQueued(p: DuesChangeParams): Promise<void> {
     const amount = formatRupiah(p.amount);
 
     const subject = isId
-        ? `Perubahan iuran: ${p.activityName} — ${from}`
-        : `Dues change: ${p.activityName} — ${from}`;
+        ? `Perubahan iuran: ${p.activityName} mulai ${from}`
+        : `Dues change: ${p.activityName} from ${from}`;
 
     const message = isId
         ? `Iuran <strong>${p.activityName}</strong> berubah menjadi

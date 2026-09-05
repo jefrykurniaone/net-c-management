@@ -33,15 +33,15 @@ export async function sendSessionReminder(
     const isId = p.locale === 'id';
     const dateShort = formatShortDate(p.sessionDate, p.locale);
     const subject = isId
-        ? `Pengingat: ${p.sessionTitle} — ${dateShort}`
-        : `Reminder: ${p.sessionTitle} — ${dateShort}`;
+        ? `Pengingat: ${p.sessionTitle} pada ${dateShort}`
+        : `Reminder: ${p.sessionTitle} on ${dateShort}`;
 
     const spotsLeft = p.max - p.registered;
     const message = isId
         ? `Sesi <strong>${p.sessionTitle}</strong> masih membutuhkan peserta. Masih ada
-            <strong>${spotsLeft} tempat tersisa</strong> — yuk daftar sebelum penuh!`
+            <strong>${spotsLeft} tempat tersisa</strong>. Yuk daftar sebelum penuh!`
         : `The <strong>${p.sessionTitle}</strong> session still needs more players. There are
-            <strong>${spotsLeft} spots left</strong> — join before it fills up!`;
+            <strong>${spotsLeft} spots left</strong>. Join before it fills up!`;
 
     const html = renderEmailHtml({
         lang: p.locale,

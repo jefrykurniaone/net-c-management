@@ -40,9 +40,9 @@ export async function sendPaymentStatus(p: PaymentStatusParams): Promise<void> {
 
     const approvedMsg = isId
         ? `Pembayaranmu untuk <strong>${p.billedFor}</strong> telah
-            <strong>disetujui</strong> oleh admin. Tempat/iuranmu sudah terkonfirmasi — terima kasih!`
+            <strong>disetujui</strong> oleh admin. Tempat/iuranmu sudah terkonfirmasi. Terima kasih!`
         : `Your payment for <strong>${p.billedFor}</strong> has been
-            <strong>approved</strong> by the admin. Your seat/dues are confirmed — thank you!`;
+            <strong>approved</strong> by the admin. Your seat/dues are confirmed. Thank you!`;
     const rejectedMsg = isId
         ? `Pembayaranmu untuk <strong>${p.billedFor}</strong>
             <strong>ditolak</strong> oleh admin. Registrasi yang terkait telah dilepas.

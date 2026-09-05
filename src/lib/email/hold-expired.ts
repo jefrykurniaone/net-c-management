@@ -28,8 +28,8 @@ export async function sendHoldExpired(p: HoldExpiredParams): Promise<void> {
     const isId = p.locale === 'id';
     const dateShort = formatShortDate(p.sessionDate, p.locale);
     const subject = isId
-        ? `Registrasi kedaluwarsa: ${p.sessionTitle} — ${dateShort}`
-        : `Registration expired: ${p.sessionTitle} — ${dateShort}`;
+        ? `Registrasi kedaluwarsa: ${p.sessionTitle} pada ${dateShort}`
+        : `Registration expired: ${p.sessionTitle} on ${dateShort}`;
 
     const message = isId
         ? `Registrasimu untuk sesi <strong>${p.sessionTitle}</strong> telah

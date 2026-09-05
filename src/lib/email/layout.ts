@@ -170,6 +170,6 @@ export function adminFooter(lang: EmailLocale): string {
 /** Footer line for automated notifications (no human sender). */
 export function autoFooter(lang: EmailLocale): string {
     return lang === 'id'
-        ? 'notifikasi otomatis — tidak perlu dibalas'
-        : 'automated notification — no reply needed';
+        ? 'notifikasi otomatis, tidak perlu dibalas'
+        : 'automated notification, no reply needed';
 }
