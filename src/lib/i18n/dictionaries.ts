@@ -524,20 +524,12 @@ const en = {
         shareViaTwitter: 'Share on X',
         copyLink: 'Copy link',
         linkCopied: 'Copied!',
-        // The sessions board. The day label *inside* a cell is the short form:
-        // the full name is the column head, and the cell's own label has to
-        // clear the column floor the fixed positions were measured against.
-        // Sunday-first, so it indexes `BoardDay.weekday` directly.
+        // The short weekday a Session card leads with, beside its date. The full
+        // name goes into the card's accessible name instead, where nothing has
+        // to fit. Sunday-first, so it indexes a UTC `getUTCDay()` directly.
         boardDaysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-        boardLabel: 'Sessions by day',
-        boardWeekNavLabel: 'Change week',
-        boardPrevWeek: 'Previous week',
-        boardThisWeek: 'This week',
-        boardNextWeek: 'Next week',
-        boardWeekOf: '{start} – {end}',
         // A day nobody planned anything on, as opposed to one an Admin still
-        // owes a Session. Both draw a neutral chip; only the second is late.
-        boardNothingMark: 'None',
+        // owes a Session — `boardNotPosted`, which is the late one.
         boardNothingOnDay: 'Nothing on this day.',
         boardNotPosted: 'An Admin has not posted this session yet.',
         boardNeverPosted:
@@ -562,9 +554,9 @@ const en = {
         boardOptedOut: 'You released this Seat.',
         duesForfeited:
             'You opted out of this Session. Your Dues cover the month, not this Session, so nothing is refunded.',
-        // The week strip. The footer figure is spelled out rather than left as
-        // `n/max`: a card has the room a fixed cell did not, and "free of" is
-        // what stops the pair being read as taken-of-total.
+        // The fill figure is spelled out rather than left as `n/max`: a card has
+        // the room a fixed cell did not, and "free of" is what stops the pair
+        // being read as taken-of-total.
         weekSeatsFigure: '{n} free of {max}',
         // A Seat claimed against money nobody has confirmed yet. "Reserved" is
         // the word the Session page already uses for this state; the deadline
@@ -575,6 +567,15 @@ const en = {
         // time, the Activity and its status without the reader tabbing through
         // four fragments. The chip's own label is in the footer beside it.
         weekCardAria: '{day}, {time}, {activity}: {title}, {venue}. {status}',
+        // An Activity's section header on the sessions page, and the way past
+        // its six-card cap. Both counts are the Activity's true total, never the
+        // number of cards drawn, so following the link is never a surprise.
+        activityUpcomingCount: '{n} upcoming',
+        activitySeeAll: 'See all {n} sessions',
+        // An Activity in scope with nothing posted ahead of it. Its section is
+        // drawn last rather than dropped, so a member reads "no dates yet"
+        // rather than wondering whether they were removed from the Activity.
+        activityNoUpcoming: 'No upcoming sessions yet.',
     },
     payments: {
         title: 'Monthly Dues',
@@ -1801,13 +1802,6 @@ const id: typeof en = {
         copyLink: 'Salin tautan',
         linkCopied: 'Tersalin!',
         boardDaysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-        boardLabel: 'Sesi per hari',
-        boardWeekNavLabel: 'Ganti minggu',
-        boardPrevWeek: 'Minggu sebelumnya',
-        boardThisWeek: 'Minggu ini',
-        boardNextWeek: 'Minggu berikutnya',
-        boardWeekOf: '{start} – {end}',
-        boardNothingMark: 'Kosong',
         boardNothingOnDay: 'Tidak ada apa pun di hari ini.',
         boardNotPosted: 'Admin belum mengumumkan sesi ini.',
         boardNeverPosted:
@@ -1831,6 +1825,9 @@ const id: typeof en = {
         weekSeatHeld: 'Dipesan',
         weekHoldPayBy: 'Bayar sebelum {time}',
         weekCardAria: '{day}, {time}, {activity}: {title}, {venue}. {status}',
+        activityUpcomingCount: '{n} akan datang',
+        activitySeeAll: 'Lihat semua {n} sesi',
+        activityNoUpcoming: 'Belum ada sesi mendatang.',
     },
     payments: {
         title: 'Iuran Bulanan',

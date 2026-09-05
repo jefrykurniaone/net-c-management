@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { STRIP_MEASURE } from '@/components/layout/measure';
+import { Chip } from '@/components/ui/chip';
 import { auth } from '@/lib/auth';
 import { getLocale } from '@/lib/i18n/locale';
 import { getDictionary, type Dictionary } from '@/lib/i18n/dictionaries';
@@ -9,25 +10,31 @@ import {
     type SessionsBoardView,
 } from '@/lib/sessions-board';
 import {
+    buildSessionsByActivity,
+    type ActivitySection,
+    type SectionActivity,
+    type SessionCard,
+} from '@/lib/sessions-by-activity';
+import { resolveSessionStanding } from '@/lib/session-standing';
+import {
     SessionsFilter,
     type SessionView,
 } from '@/components/activity/sessions-filter';
-import { StripNotice, WeekStrip } from '@/components/sessions/week-strip';
-import { BoardWeekNav } from '@/components/sessions/board-week-nav';
-import { weekStripDays } from '@/components/sessions/week-strip-view';
 import {
-    monthDayLabel,
-    monthDayYearLabel,
-} from '@/components/sessions/day-labels';
+    ActivitySessionSection,
+    type ActivitySectionView,
+} from '@/components/sessions/activity-session-section';
+import type { SessionGridCardData } from '@/components/sessions/session-grid-card';
+import { slotActionFor } from '@/components/sessions/slot-action';
+import { monthDayLabel } from '@/components/sessions/day-labels';
 
 /**
- * The sessions surface: the chosen week as a strip of seven day columns on a
- * wide screen, one on a phone. Every day gets a column whether or not anything
- * is on it — a day with nothing posted carries a neutral chip and says so, so a
- * member knows an Admin has not posted rather than that they are missing
- * something. The page draws no card of its own: each member surface composes its
- * own (ADR 0003), resolving state through `resolveSessionStanding` and the
- * available action through `slotActionFor`.
+ * The sessions surface: one section per Activity, each holding that Activity's
+ * upcoming Sessions as cards. It is no longer a week — there is no range to
+ * steer, so the page reads every Session from today forward and the soonest
+ * Activity leads. The page draws no card of its own: each member surface
+ * composes its own (ADR 0003), resolving state through `resolveSessionStanding`
+ * and the available action through `slotActionFor`.
  */
 
 const SESSIONS_PATH = '/sessions';
@@ -39,25 +46,96 @@ function first(params: RawParams, key: string): string | undefined {
     return Array.isArray(value) ? value[0] : value;
 }
 
-/** The reader's scope, carried onto every week link so it survives navigation. */
-function scopeParams(view: SessionView, activityId?: string): URLSearchParams {
+/** The filter this page already has, which is also the way past a section's cap. */
+function activityHref(activityId: string, view: SessionsBoardView): string {
     const params = new URLSearchParams();
-    if (activityId) params.set('activityId', activityId);
-    if (view === 'all') params.set('view', 'all');
-    return params;
-}
-
-function weekHref(scope: URLSearchParams, week: string): string {
-    const params = new URLSearchParams(scope);
-    params.set('week', week);
+    params.set('activityId', activityId);
+    if (view === 'all') {
+        params.set('view', 'all');
+    }
     return `${SESSIONS_PATH}?${params.toString()}`;
 }
 
+/** "Tue 18 August" — the card's own heading, and the only thing that varies
+ *  between two cards in one section. */
+function dateLabelOf(date: Date, t: Dictionary): string {
+    return `${t.sessions.boardDaysShort[date.getUTCDay()]} ${monthDayLabel(date, t)}`;
+}
+
+/** "Tuesday 18 August" — spoken into the card's accessible name, never drawn. */
+function dayLabelOf(date: Date, t: Dictionary): string {
+    return `${t.days[date.getUTCDay()]} ${monthDayLabel(date, t)}`;
+}
+
+function gridCardOf(
+    session: SessionCard,
+    activity: SectionActivity,
+    board: SessionsBoardData,
+    t: Dictionary,
+): SessionGridCardData {
+    const ownStatus = session.ownStatus ?? null;
+    const seats = session.seats;
+    return {
+        dateLabel: dateLabelOf(session.date, t),
+        dayLabel: dayLabelOf(session.date, t),
+        startTime: session.startTime,
+        endTime: session.endTime,
+        location: session.location,
+        seats,
+        title: board.titleBySession.get(session.id) ?? activity.name,
+        activityName: activity.name,
+        href: `${SESSIONS_PATH}/${session.id}`,
+        status: session.status,
+        standing: resolveSessionStanding({
+            status: session.status,
+            ownStatus,
+            holdExpiresAt: session.holdExpiresAt ?? null,
+            seats,
+        }),
+        note: ownStatus === 'ABSENT' ? 'optedOut' : null,
+        // Claiming a Seat is the common action, so it is offered where the
+        // member already is. What the server will allow is re-checked there
+        // under a row lock; this only decides what to put in front of them.
+        action: slotActionFor({
+            sessionId: session.id,
+            status: session.status,
+            date: session.date,
+            startTime: session.startTime,
+            fee: session.fee,
+            ownStatus,
+            seats,
+            isJoined: board.joinedActivityIds.has(session.activityId),
+            hasLiveDues: session.isDuesCovered,
+        }),
+    };
+}
+
+function sectionViewOf(
+    section: ActivitySection,
+    board: SessionsBoardData,
+    view: SessionsBoardView,
+    t: Dictionary,
+): ActivitySectionView {
+    return {
+        key: section.activity.id,
+        activityName: section.activity.name,
+        activityIcon: section.activity.icon ?? null,
+        total: section.total,
+        cards: section.cards.map((card) => ({
+            key: card.id,
+            card: gridCardOf(card, section.activity, board, t),
+        })),
+        seeAllHref: section.isTruncated
+            ? activityHref(section.activity.id, view)
+            : null,
+    };
+}
+
 /**
- * The surface's own designed states, both of them a neutral-chipped card above a
- * strip that still draws every day. Neutral means *expected but not yet placed*,
- * which is the honest state of a community that has just been set up — and a
- * dropped surface would read as broken rather than as quiet.
+ * The surface's own designed states, both a neutral-chipped card above whatever
+ * sections there are. Neutral means *expected but not yet placed*, which is the
+ * honest state of a community that has just been set up — and a dropped surface
+ * would read as broken rather than as quiet.
  */
 function noticeFor(
     board: SessionsBoardData,
@@ -76,44 +154,28 @@ function noticeFor(
     return null;
 }
 
-/** Which week is on screen, and the way to the weeks either side of it. */
-function WeekNav({
-    board,
-    scope,
-    t,
-}: Readonly<{
-    board: SessionsBoardData;
-    scope: URLSearchParams;
-    t: Dictionary;
-}>) {
+function BoardNotice({ label, body }: Readonly<{ label: string; body: string }>) {
     return (
-        <BoardWeekNav
-            caption={t.sessions.boardWeekOf
-                .replace('{start}', monthDayLabel(board.weekStart, t))
-                .replace('{end}', monthDayYearLabel(board.weekEnd, t))}
-            prevHref={weekHref(scope, board.prevWeekKey)}
-            thisHref={weekHref(scope, board.thisWeekKey)}
-            nextHref={weekHref(scope, board.nextWeekKey)}
-            t={t}
-        />
+        <div className='flex flex-wrap items-center gap-cell rounded-xl bg-card p-block shadow-lift'>
+            <Chip variant='neutral' label={label} />
+            <p className='type-caption text-secondary-foreground'>{body}</p>
+        </div>
     );
 }
 
 /**
- * The board's filters. A single offered Activity is no choice at all, so the
+ * The page's filters. A single offered Activity is no choice at all, so the
  * Activity chips only appear once there is more than one to choose between.
  */
 function BoardFilters({
     board,
     view,
     activityId,
-    week,
     t,
 }: Readonly<{
     board: SessionsBoardData;
     view: SessionView;
     activityId?: string;
-    week?: string;
     t: Dictionary;
 }>) {
     const hasChoice = board.offered.length > 1;
@@ -122,7 +184,6 @@ function BoardFilters({
             activities={hasChoice ? board.offered : []}
             selected={hasChoice ? activityId : undefined}
             view={view}
-            week={week}
             labels={{
                 all: t.sessions.chipAll,
                 viewMine: t.sessions.viewMine,
@@ -140,55 +201,51 @@ export default async function SessionsPage({
         getLocale(),
         searchParams,
     ]);
-    if (!session?.user?.id) redirect('/auth/signin');
+    if (!session?.user?.id) {
+        redirect('/auth/signin');
+    }
 
     const t = getDictionary(locale);
     const view: SessionsBoardView =
         first(params, 'view') === 'all' ? 'all' : 'mine';
     const activityId = first(params, 'activityId');
-    const week = first(params, 'week');
 
     const board = await getSessionsBoard({
         userId: session.user.id,
         view,
         activityId,
-        weekKey: week,
     });
 
     return (
-        <StripSurface
+        <SessionsSurface
             board={board}
             view={view}
             activityId={activityId}
-            week={week}
             t={t}
         />
     );
 }
 
 /** The sessions surface itself, once the page has read what it draws. */
-function StripSurface({
+function SessionsSurface({
     board,
     view,
     activityId,
-    week,
     t,
 }: Readonly<{
     board: SessionsBoardData;
     view: SessionsBoardView;
     activityId?: string;
-    week?: string;
     t: Dictionary;
 }>) {
     const notice = noticeFor(board, view, t);
-    const days = weekStripDays(board.days, {
-        t,
-        seatsBySession: board.seatsBySession,
-        ownBySession: board.ownBySession,
-        holdBySession: board.holdBySession,
+    const sections = buildSessionsByActivity({
+        today: board.today,
+        activities: board.activities,
+        sessions: board.sessions,
         joinedActivityIds: board.joinedActivityIds,
-        duesCoveredSessionIds: board.duesCoveredSessionIds,
-    });
+        isSingleActivitySelected: board.isSingleActivitySelected,
+    }).map((section) => sectionViewOf(section, board, view, t));
 
     return (
         <div className={`${STRIP_MEASURE} flex flex-col gap-bay`}>
@@ -197,16 +254,16 @@ function StripSurface({
                 board={board}
                 view={view}
                 activityId={activityId}
-                week={week}
                 t={t}
             />
-            <WeekNav
-                board={board}
-                scope={scopeParams(view, activityId)}
-                t={t}
-            />
-            {notice && <StripNotice label={notice.label} body={notice.body} />}
-            <WeekStrip days={days} t={t} />
+            {notice && <BoardNotice label={notice.label} body={notice.body} />}
+            {sections.map((section) => (
+                <ActivitySessionSection
+                    key={section.key}
+                    section={section}
+                    t={t}
+                />
+            ))}
         </div>
     );
 }

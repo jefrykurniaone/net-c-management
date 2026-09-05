@@ -6,14 +6,14 @@ import { cn } from '@/lib/utils';
 import { ActivityTile } from './activity-tile';
 
 /**
- * What the board is scoped to: the reader's own Activities or every one the
+ * What the page is scoped to: the reader's own Activities or every one the
  * community runs, and optionally a single Activity. URL-driven — `?view=`,
- * `?activityId=` — so the board re-reads server-side.
+ * `?activityId=` — so the page re-reads server-side.
  *
- * There is deliberately no text search, and no pager: a board that hid the days
- * whose Sessions did not match would draw a neutral chip on them, which says an
- * Admin has not posted — a search result quietly lying about the state of the
- * week. A board shows a range, so moving through time is the week nav's job.
+ * Selecting a single Activity is also the way past a section's six-card cap, so
+ * these chips are the only navigation the surface has. There is deliberately no
+ * text search and no pager: the page shows every upcoming Session, so there is
+ * nothing to page through and nothing a search could reach that a chip cannot.
  */
 
 export type SessionView = 'mine' | 'all';
@@ -34,7 +34,7 @@ const CHIP_OFF =
 /** One row of pills, each sized to its own content and wrapping rather than scrolling. */
 const CHIP_GROUP = 'flex w-fit flex-wrap items-center gap-cell self-start';
 
-/** Builds the href for one filter state, holding the rest of the board's. */
+/** Builds the href for one filter state, holding the rest of the page's. */
 type HrefFor = (next: { activityId?: string; view?: SessionView }) => string;
 
 /**
@@ -121,8 +121,6 @@ type SessionsFilterProps = Readonly<{
     activities: readonly Activity[];
     selected?: string;
     view: SessionView;
-    /** The week the board is on, carried so a filter change stays on it. */
-    week?: string;
     labels: Readonly<{ all: string; viewMine: string; viewAll: string }>;
 }>;
 
@@ -130,7 +128,6 @@ export function SessionsFilter({
     activities,
     selected,
     view,
-    week,
     labels,
 }: SessionsFilterProps) {
     const pathname = usePathname();
@@ -141,7 +138,6 @@ export function SessionsFilter({
         const params = new URLSearchParams();
         if (activityId) params.set('activityId', activityId);
         if (nextView === 'all') params.set('view', 'all');
-        if (week) params.set('week', week);
         const qs = params.toString();
         return qs ? `${pathname}?${qs}` : pathname;
     };
