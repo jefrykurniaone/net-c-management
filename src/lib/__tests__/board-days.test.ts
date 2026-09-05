@@ -10,15 +10,12 @@ import type { SessionQuota } from '../recurring-sessions';
 
 /**
  * The board's day range. What is worth testing is the module's own laws rather
- * than any markup: every day of the range gets an entry, a day the Admin was
- * expected to post on is told apart from a day nobody planned anything for, and
- * a stored calendar day is read as itself whatever zone the runner sits in.
+ * than any markup: every day of the range gets an entry, only a posted Session
+ * ever turns a day's kind away from empty, and a stored calendar day is read as
+ * itself whatever zone the runner sits in.
  */
 
-const SUNDAY = 0;
-const MONDAY = 1;
 const TUESDAY = 2;
-const THURSDAY = 4;
 
 const DAYS_IN_WEEK = 7;
 
@@ -86,19 +83,18 @@ function kindsOf(days: readonly BoardDay[]): string {
 const EMPTY_WEEK = 'empty empty empty empty empty empty empty';
 
 describe('buildBoardDays', () => {
-    it('marks the recurring day unposted across a week with no Sessions', () => {
+    it('yields no entries for a recurring weekday with nothing posted, Monthly billing off or not', () => {
+        // `unpostedSlots` used to invent a card from `recurringDay` alone, a
+        // rule wider than `ensureRecurringSessions`'s own (`recurringDay` AND
+        // Monthly billing, `recurring-sessions.ts`) — an Activity with Monthly
+        // billing off got a phantom card here forever, since nothing about
+        // that Activity's billing mode reaches `BoardActivity`. The producer
+        // is gone, so this reads empty whichever way that Activity is billed.
         const days = board();
 
         expect(days).toHaveLength(DAYS_IN_WEEK);
-        expect(kindsOf(days)).toBe('empty empty unposted empty empty empty empty');
-        const tuesday = days[TUESDAY];
-        expect(tuesday.dayKey).toBe(TUE_25_AUG);
-        expect(tuesday.weekday).toBe(TUESDAY);
-        expect(tuesday.slots).toHaveLength(1);
-        expect(tuesday.slots[0].kind).toBe('unposted');
-        // The standing weekly slot supplies the line's time and venue.
-        expect(tuesday.slots[0].startTime).toBe('19:00');
-        expect(tuesday.slots[0].location).toBe('GOR Cendrawasih');
+        expect(kindsOf(days)).toBe(EMPTY_WEEK);
+        expect(days.every((day) => day.slots.length === 0)).toBe(true);
     });
 
     it('returns every day of the range in order, none skipped', () => {
@@ -114,38 +110,6 @@ describe('buildBoardDays', () => {
             SAT_29_AUG,
         ]);
         expect(days.map((day) => day.weekday)).toEqual([0, 1, 2, 3, 4, 5, 6]);
-    });
-
-    it('tells the posted recurring day from the unposted ones', () => {
-        const days = board({
-            activities: [
-                activity({ id: 'a1', name: 'Badminton', recurringDay: MONDAY }),
-                activity({ id: 'a2', name: 'Futsal', recurringDay: TUESDAY }),
-                activity({ id: 'a3', name: 'Tenis', recurringDay: THURSDAY }),
-            ],
-            // Only the Tuesday Activity has had its Session posted.
-            sessions: [session({ id: 's2', activityId: 'a2' })],
-        });
-
-        expect(kindsOf(days)).toBe(
-            'empty unposted posted empty unposted empty empty',
-        );
-        const posted = days[TUESDAY].slots[0];
-        expect(posted.activity.name).toBe('Futsal');
-        expect(posted.kind === 'posted' && posted.session.id).toBe('s2');
-    });
-
-    it('a community with no Sessions at all still has planned days', () => {
-        const days = board({
-            activities: [
-                activity({ id: 'a1', recurringDay: SUNDAY }),
-                activity({ id: 'a2', recurringDay: TUESDAY }),
-            ],
-        });
-
-        expect(kindsOf(days)).toBe(
-            'unposted empty unposted empty empty empty empty',
-        );
     });
 
     it('crosses a month boundary without dropping or renumbering a day', () => {
@@ -233,43 +197,12 @@ describe('buildBoardDays', () => {
         expect(early.kind === 'posted' && early.quota).toBeNull();
     });
 
-    it('keeps an Activity off the unposted list once it has a Session', () => {
-        const days = board({ sessions: [session()] });
-
-        expect(days[TUESDAY].slots).toHaveLength(1);
-        expect(days[TUESDAY].slots[0].kind).toBe('posted');
-    });
-
     it('carries a cancelled Session rather than calling the day unposted', () => {
         const days = board({ sessions: [session({ status: 'CANCELLED' })] });
 
         const [slot] = days[TUESDAY].slots;
         expect(days[TUESDAY].kind).toBe('posted');
         expect(slot.kind === 'posted' && slot.session.status).toBe('CANCELLED');
-    });
-
-    it('reads a day by the clock, earliest line first', () => {
-        const days = board({
-            activities: [
-                activity({ id: 'a1', name: 'Badminton' }),
-                activity({
-                    id: 'a2',
-                    name: 'Futsal',
-                    recurringStartTime: '06:00',
-                    recurringEndTime: '08:00',
-                }),
-            ],
-            sessions: [session()],
-        });
-
-        expect(days[TUESDAY].slots.map((slot) => slot.startTime)).toEqual([
-            '06:00',
-            '19:00',
-        ]);
-        expect(days[TUESDAY].slots.map((slot) => slot.kind)).toEqual([
-            'unposted',
-            'posted',
-        ]);
     });
 
     it('ignores a Session whose Activity was not supplied', () => {

@@ -528,10 +528,6 @@ const en = {
         // name goes into the card's accessible name instead, where nothing has
         // to fit. Sunday-first, so it indexes a UTC `getUTCDay()` directly.
         boardDaysShort: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-        // A day nobody planned anything on, as opposed to one an Admin still
-        // owes a Session — `boardNotPosted`, which is the late one.
-        boardNothingOnDay: 'Nothing on this day.',
-        boardNotPosted: 'An Admin has not posted this session yet.',
         boardNeverPosted:
             'Sessions have not been posted yet. They appear here as soon as an Admin posts one.',
         boardSeatsFree: 'Free',
@@ -1802,8 +1798,6 @@ const id: typeof en = {
         copyLink: 'Salin tautan',
         linkCopied: 'Tersalin!',
         boardDaysShort: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-        boardNothingOnDay: 'Tidak ada apa pun di hari ini.',
-        boardNotPosted: 'Admin belum mengumumkan sesi ini.',
         boardNeverPosted:
             'Belum ada sesi yang diumumkan. Sesi akan muncul di sini begitu Admin mengumumkan satu.',
         boardSeatsFree: 'Sisa',
