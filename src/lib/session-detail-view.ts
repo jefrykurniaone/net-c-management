@@ -22,7 +22,7 @@ import type { Dictionary } from './i18n/dictionaries';
 
 /**
  * Every derived fact the session detail page's cards need, resolved once and
- * pure — the page reads and composes, this decides (mirrors `week-strip-view.ts`).
+ * pure — the page reads and composes, this decides (mirrors `sessions-by-activity.ts`).
  */
 
 export interface SessionDetailAttendee {

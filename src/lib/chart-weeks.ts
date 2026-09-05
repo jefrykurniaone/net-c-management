@@ -16,9 +16,9 @@ import { wibDayStart } from './wib';
  * pulling an admin read in with it. Every edge is the WIB calendar day
  * (`docs/adr/0007-wib-calendar-day-storage.md`).
  *
- * The Monday rule lives here, in {@link mondayOf}, and nowhere else.
- * `src/lib/sessions-board.ts` is `server-only` and Prisma-bound, so it imports
- * {@link mondayOf} from here rather than being the shared home for it.
+ * The Monday rule lives here, in {@link mondayOf}, and nowhere else. It is used
+ * only within this module (`thisMonday` below) — `src/lib/sessions-board.ts`
+ * resolves its own week window and no longer imports {@link mondayOf}.
  */
 
 /**
