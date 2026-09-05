@@ -1,7 +1,7 @@
 # Spec mirror: member sessions grouped by activity
 
 Point-in-time copy of issue #324, written 2026-09-05, before any of its tickets ran.
-Delivery run `sessions-by-activity`. Map: to be added when the map item is published.
+Delivery run `sessions-by-activity`. Map: #336.
 Its own run falsifies claims written here; whoever closes the run marks them in a Delivery record
 section rather than editing this body. Citations address the code as it stood on 2026-09-05 and
 are never renumbered.
