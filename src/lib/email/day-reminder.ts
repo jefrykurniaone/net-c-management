@@ -28,14 +28,14 @@ export interface DayReminderParams {
 export async function sendDayReminder(p: DayReminderParams): Promise<void> {
     const isId = p.locale === 'id';
     const subject = isId
-        ? `Hari ini: ${p.sessionTitle} — ${p.startTime}`
-        : `Today: ${p.sessionTitle} — ${p.startTime}`;
+        ? `Hari ini: ${p.sessionTitle} jam ${p.startTime}`
+        : `Today: ${p.sessionTitle} at ${p.startTime}`;
 
     const message = isId
         ? `Sesi <strong>${p.sessionTitle}</strong> berlangsung <strong>hari ini</strong>
-            dan kamu sudah terdaftar. Sampai jumpa di lokasi — datang tepat waktu ya!`
+            dan kamu sudah terdaftar. Sampai jumpa di lokasi. Datang tepat waktu ya!`
         : `The <strong>${p.sessionTitle}</strong> session is happening <strong>today</strong>
-            and you are registered. See you there — please arrive on time!`;
+            and you are registered. See you there. Please arrive on time!`;
 
     const html = renderEmailHtml({
         lang: p.locale,

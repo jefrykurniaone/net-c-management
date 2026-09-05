@@ -29,7 +29,7 @@ export async function sendAdmission(p: AdmissionParams): Promise<void> {
     const isId = p.locale === 'id';
     const subject = isId
         ? `Kamu diterima di ${p.communityName}`
-        : `You are in — ${p.communityName}`;
+        : `You are in: ${p.communityName}`;
 
     const message = isId
         ? `Pengelola sudah <strong>menerimamu</strong> di ${p.communityName}.

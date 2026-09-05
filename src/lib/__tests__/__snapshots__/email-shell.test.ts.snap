@@ -1,7 +1,7 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`email shell (#157), rendered text unchanged in both locales > admission — en 1`] = `
-"You are in — XClub Community
+"You are in: XClub Community
 XClub Community You Are In Hi Nadia , An organizer has let you in to XClub Community. You can now see the schedule, claim a seat in a session, and handle your dues. Open the Community XClub Community · this message was sent by your community admin"
 `;
 
@@ -11,86 +11,86 @@ XClub Community Kamu Diterima Hei Nadia , Pengelola sudah menerimamu di XClub Co
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > day-reminder — en 1`] = `
-"Today: Badminton — 19:00
-XClub Community See You Today! 🏷️ Session Badminton 📅 Date Saturday, 12 September 2026 ⏰ Time 19:00 – 21:00 📍 Location Court 3 Hi Nadia , The Badminton session is happening today and you are registered. See you there — please arrive on time! View Session Details XClub Community · automated notification — no reply needed"
+"Today: Badminton at 19:00
+XClub Community See You Today! 🏷️ Session Badminton 📅 Date Saturday, 12 September 2026 ⏰ Time 19:00 – 21:00 📍 Location Court 3 Hi Nadia , The Badminton session is happening today and you are registered. See you there. Please arrive on time! View Session Details XClub Community · automated notification, no reply needed"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > day-reminder — id 1`] = `
-"Hari ini: Badminton — 19:00
-XClub Community Sampai Jumpa Hari Ini! 🏷️ Sesi Badminton 📅 Tanggal Sabtu, 12 September 2026 ⏰ Waktu 19:00 – 21:00 📍 Lokasi Court 3 Hei Nadia , Sesi Badminton berlangsung hari ini dan kamu sudah terdaftar. Sampai jumpa di lokasi — datang tepat waktu ya! Lihat Detail Sesi XClub Community · notifikasi otomatis — tidak perlu dibalas"
+"Hari ini: Badminton jam 19:00
+XClub Community Sampai Jumpa Hari Ini! 🏷️ Sesi Badminton 📅 Tanggal Sabtu, 12 September 2026 ⏰ Waktu 19:00 – 21:00 📍 Lokasi Court 3 Hei Nadia , Sesi Badminton berlangsung hari ini dan kamu sudah terdaftar. Sampai jumpa di lokasi. Datang tepat waktu ya! Lihat Detail Sesi XClub Community · notifikasi otomatis, tidak perlu dibalas"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > dues-change-queued — en 1`] = `
-"Dues change: Badminton — October 2026
-XClub Community Dues Change Coming 🏷️ Activity Badminton 💸 New Dues Rp 200.000 📅 From October 2026 Hi Nadia , Dues for Badminton change to Rp 200.000 from October 2026 . Nothing changes until that month arrives. View My Payments XClub Community · automated notification — no reply needed"
+"Dues change: Badminton from October 2026
+XClub Community Dues Change Coming 🏷️ Activity Badminton 💸 New Dues Rp 200.000 📅 From October 2026 Hi Nadia , Dues for Badminton change to Rp 200.000 from October 2026 . Nothing changes until that month arrives. View My Payments XClub Community · automated notification, no reply needed"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > dues-change-queued — id 1`] = `
-"Perubahan iuran: Badminton — Oktober 2026
-XClub Community Perubahan Iuran 🏷️ Aktivitas Badminton 💸 Iuran baru Rp 200.000 📅 Mulai Oktober 2026 Hei Nadia , Iuran Badminton berubah menjadi Rp 200.000 mulai Oktober 2026 . Sampai bulan itu tiba, tidak ada yang berubah. Lihat Pembayaran Saya XClub Community · notifikasi otomatis — tidak perlu dibalas"
+"Perubahan iuran: Badminton mulai Oktober 2026
+XClub Community Perubahan Iuran 🏷️ Aktivitas Badminton 💸 Iuran baru Rp 200.000 📅 Mulai Oktober 2026 Hei Nadia , Iuran Badminton berubah menjadi Rp 200.000 mulai Oktober 2026 . Sampai bulan itu tiba, tidak ada yang berubah. Lihat Pembayaran Saya XClub Community · notifikasi otomatis, tidak perlu dibalas"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > dues-change-replaced — en 1`] = `
-"Updated Dues change: Badminton — October 2026
-XClub Community Dues Change Updated 🏷️ Activity Badminton 💸 New Dues Rp 220.000 📅 From October 2026 Hi Nadia , The upcoming Dues change for Badminton was updated: Dues become Rp 220.000 from October 2026 . This figure replaces the one you were told before. View My Payments XClub Community · automated notification — no reply needed"
+"Updated Dues change: Badminton from October 2026
+XClub Community Dues Change Updated 🏷️ Activity Badminton 💸 New Dues Rp 220.000 📅 From October 2026 Hi Nadia , The upcoming Dues change for Badminton was updated: Dues become Rp 220.000 from October 2026 . This figure replaces the one you were told before. View My Payments XClub Community · automated notification, no reply needed"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > dues-change-replaced — id 1`] = `
-"Perubahan iuran diperbarui: Badminton — Oktober 2026
-XClub Community Perubahan Iuran Diperbarui 🏷️ Aktivitas Badminton 💸 Iuran baru Rp 220.000 📅 Mulai Oktober 2026 Hei Nadia , Perubahan iuran Badminton yang akan datang diperbarui: iuran menjadi Rp 220.000 mulai Oktober 2026 . Angka inilah yang berlaku, bukan yang dikabarkan sebelumnya. Lihat Pembayaran Saya XClub Community · notifikasi otomatis — tidak perlu dibalas"
+"Perubahan iuran diperbarui: Badminton mulai Oktober 2026
+XClub Community Perubahan Iuran Diperbarui 🏷️ Aktivitas Badminton 💸 Iuran baru Rp 220.000 📅 Mulai Oktober 2026 Hei Nadia , Perubahan iuran Badminton yang akan datang diperbarui: iuran menjadi Rp 220.000 mulai Oktober 2026 . Angka inilah yang berlaku, bukan yang dikabarkan sebelumnya. Lihat Pembayaran Saya XClub Community · notifikasi otomatis, tidak perlu dibalas"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > dues-change-withdrawn — en 1`] = `
 "Dues change cancelled: Badminton
-XClub Community Dues Change Cancelled 🏷️ Activity Badminton 💸 Dues stay at Rp 150.000 📅 Cancelled for October 2026 Hi Nadia , The Dues change for Badminton planned for October 2026 is cancelled. Dues stay at Rp 150.000 . View My Payments XClub Community · automated notification — no reply needed"
+XClub Community Dues Change Cancelled 🏷️ Activity Badminton 💸 Dues stay at Rp 150.000 📅 Cancelled for October 2026 Hi Nadia , The Dues change for Badminton planned for October 2026 is cancelled. Dues stay at Rp 150.000 . View My Payments XClub Community · automated notification, no reply needed"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > dues-change-withdrawn — id 1`] = `
 "Perubahan iuran dibatalkan: Badminton
-XClub Community Perubahan Iuran Dibatalkan 🏷️ Aktivitas Badminton 💸 Iuran tetap Rp 150.000 📅 Dibatalkan untuk Oktober 2026 Hei Nadia , Perubahan iuran Badminton untuk Oktober 2026 dibatalkan. Iuran tetap Rp 150.000 . Lihat Pembayaran Saya XClub Community · notifikasi otomatis — tidak perlu dibalas"
+XClub Community Perubahan Iuran Dibatalkan 🏷️ Aktivitas Badminton 💸 Iuran tetap Rp 150.000 📅 Dibatalkan untuk Oktober 2026 Hei Nadia , Perubahan iuran Badminton untuk Oktober 2026 dibatalkan. Iuran tetap Rp 150.000 . Lihat Pembayaran Saya XClub Community · notifikasi otomatis, tidak perlu dibalas"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > hold-confirmation — en 1`] = `
-"Complete your payment: Badminton — 12 Sep 2026
-XClub Community Confirm Your Payment 🏷️ Session Badminton 📅 Date Saturday, 12 September 2026 ⏰ Time 19:00 📍 Location Court 3 💸 Amount due Rp 50.000 Hi Nadia , Your spot in Badminton is reserved. Complete your payment within 60 minutes — otherwise your registration expires and the seat is released to other members. Pay Now XClub Community · automated notification — no reply needed"
+"Complete your payment: Badminton on 12 Sep 2026
+XClub Community Confirm Your Payment 🏷️ Session Badminton 📅 Date Saturday, 12 September 2026 ⏰ Time 19:00 📍 Location Court 3 💸 Amount due Rp 50.000 Hi Nadia , Your spot in Badminton is reserved. Complete your payment within 60 minutes . Otherwise your registration expires and the seat is released to other members. Pay Now XClub Community · automated notification, no reply needed"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > hold-confirmation — id 1`] = `
-"Selesaikan pembayaran: Badminton — 12 Sep 2026
-XClub Community Konfirmasi Pembayaran 🏷️ Sesi Badminton 📅 Tanggal Sabtu, 12 September 2026 ⏰ Waktu 19:00 📍 Lokasi Court 3 💸 Tagihan Rp 50.000 Hei Nadia , Tempatmu di sesi Badminton sudah dipesan. Selesaikan pembayaran dalam 60 menit — jika tidak, registrasimu akan kedaluwarsa dan tempatmu dilepas untuk member lain. Bayar Sekarang XClub Community · notifikasi otomatis — tidak perlu dibalas"
+"Selesaikan pembayaran: Badminton pada 12 Sep 2026
+XClub Community Konfirmasi Pembayaran 🏷️ Sesi Badminton 📅 Tanggal Sabtu, 12 September 2026 ⏰ Waktu 19:00 📍 Lokasi Court 3 💸 Tagihan Rp 50.000 Hei Nadia , Tempatmu di sesi Badminton sudah dipesan. Selesaikan pembayaran dalam 60 menit . Jika tidak, registrasimu akan kedaluwarsa dan tempatmu dilepas untuk member lain. Bayar Sekarang XClub Community · notifikasi otomatis, tidak perlu dibalas"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > hold-expired — en 1`] = `
-"Registration expired: Badminton — 12 Sep 2026
-XClub Community Registration Expired 🏷️ Session Badminton 📅 Date Saturday, 12 September 2026 ⏰ Time 19:00 Hi Nadia , Your registration for Badminton has expired because we did not receive your payment in time. Your seat has been released. If you still want to join, please register again while seats are available. Register Again XClub Community · automated notification — no reply needed"
+"Registration expired: Badminton on 12 Sep 2026
+XClub Community Registration Expired 🏷️ Session Badminton 📅 Date Saturday, 12 September 2026 ⏰ Time 19:00 Hi Nadia , Your registration for Badminton has expired because we did not receive your payment in time. Your seat has been released. If you still want to join, please register again while seats are available. Register Again XClub Community · automated notification, no reply needed"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > hold-expired — id 1`] = `
-"Registrasi kedaluwarsa: Badminton — 12 Sep 2026
-XClub Community Registrasi Kedaluwarsa 🏷️ Sesi Badminton 📅 Tanggal Sabtu, 12 September 2026 ⏰ Waktu 19:00 Hei Nadia , Registrasimu untuk sesi Badminton telah kedaluwarsa karena pembayaran belum kami terima dalam batas waktu. Tempatmu sudah dilepas. Jika masih ingin ikut, silakan lakukan registrasi ulang selama tempat masih tersedia. Daftar Ulang XClub Community · notifikasi otomatis — tidak perlu dibalas"
+"Registrasi kedaluwarsa: Badminton pada 12 Sep 2026
+XClub Community Registrasi Kedaluwarsa 🏷️ Sesi Badminton 📅 Tanggal Sabtu, 12 September 2026 ⏰ Waktu 19:00 Hei Nadia , Registrasimu untuk sesi Badminton telah kedaluwarsa karena pembayaran belum kami terima dalam batas waktu. Tempatmu sudah dilepas. Jika masih ingin ikut, silakan lakukan registrasi ulang selama tempat masih tersedia. Daftar Ulang XClub Community · notifikasi otomatis, tidak perlu dibalas"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > payment-status — en 1`] = `
 "Payment approved: Badminton — September 2026
-XClub Community Payment Approved 🧾 Billed for Badminton — September 2026 💸 Amount Rp 150.000 📋 Status ✅ Approved Hi Nadia , Your payment for Badminton — September 2026 has been approved by the admin. Your seat/dues are confirmed — thank you! View My Payments XClub Community · automated notification — no reply needed"
+XClub Community Payment Approved 🧾 Billed for Badminton — September 2026 💸 Amount Rp 150.000 📋 Status ✅ Approved Hi Nadia , Your payment for Badminton — September 2026 has been approved by the admin. Your seat/dues are confirmed. Thank you! View My Payments XClub Community · automated notification, no reply needed"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > payment-status — id 1`] = `
 "Pembayaran diterima: Badminton — September 2026
-XClub Community Pembayaran Disetujui 🧾 Tagihan Badminton — September 2026 💸 Nominal Rp 150.000 📋 Status ✅ Disetujui Hei Nadia , Pembayaranmu untuk Badminton — September 2026 telah disetujui oleh admin. Tempat/iuranmu sudah terkonfirmasi — terima kasih! Lihat Pembayaran Saya XClub Community · notifikasi otomatis — tidak perlu dibalas"
+XClub Community Pembayaran Disetujui 🧾 Tagihan Badminton — September 2026 💸 Nominal Rp 150.000 📋 Status ✅ Disetujui Hei Nadia , Pembayaranmu untuk Badminton — September 2026 telah disetujui oleh admin. Tempat/iuranmu sudah terkonfirmasi. Terima kasih! Lihat Pembayaran Saya XClub Community · notifikasi otomatis, tidak perlu dibalas"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > session-reminder — en 1`] = `
-"Reminder: Badminton — 12 Sep 2026
-XClub Community Badminton 📅 Date Saturday, 12 September 2026 ⏰ Time 19:00 📍 Location Court 3 👥 Players 8 / 12 registered Hi Nadia , The Badminton session still needs more players. There are 4 spots left — join before it fills up! View & Join Session XClub Community · this message was sent by your community admin"
+"Reminder: Badminton on 12 Sep 2026
+XClub Community Badminton 📅 Date Saturday, 12 September 2026 ⏰ Time 19:00 📍 Location Court 3 👥 Players 8 / 12 registered Hi Nadia , The Badminton session still needs more players. There are 4 spots left . Join before it fills up! View & Join Session XClub Community · this message was sent by your community admin"
 `;
 
 exports[`email shell (#157), rendered text unchanged in both locales > session-reminder — id 1`] = `
-"Pengingat: Badminton — 12 Sep 2026
-XClub Community Badminton 📅 Tanggal Sabtu, 12 September 2026 ⏰ Waktu 19:00 📍 Lokasi Court 3 👥 Peserta 8 / 12 terdaftar Hei Nadia , Sesi Badminton masih membutuhkan peserta. Masih ada 4 tempat tersisa — yuk daftar sebelum penuh! Lihat & Daftar Sesi XClub Community · pesan ini dikirim oleh admin komunitas"
+"Pengingat: Badminton pada 12 Sep 2026
+XClub Community Badminton 📅 Tanggal Sabtu, 12 September 2026 ⏰ Waktu 19:00 📍 Lokasi Court 3 👥 Peserta 8 / 12 terdaftar Hei Nadia , Sesi Badminton masih membutuhkan peserta. Masih ada 4 tempat tersisa . Yuk daftar sebelum penuh! Lihat & Daftar Sesi XClub Community · pesan ini dikirim oleh admin komunitas"
 `;
 
 exports[`email shell (#157), the status chip does not touch payment-status wording > keeps the rejected wording when the chip variant flips to void 1`] = `
 "Payment rejected: Badminton — September 2026
-XClub Community Payment Rejected 🧾 Billed for Badminton — September 2026 💸 Amount Rp 150.000 📋 Status ❌ Rejected 📝 Admin note Blurry proof Hi Nadia , Your payment for Badminton — September 2026 was rejected by the admin. Any linked registration has been released. Please check your payment proof and re-upload if needed. View My Payments XClub Community · automated notification — no reply needed"
+XClub Community Payment Rejected 🧾 Billed for Badminton — September 2026 💸 Amount Rp 150.000 📋 Status ❌ Rejected 📝 Admin note Blurry proof Hi Nadia , Your payment for Badminton — September 2026 was rejected by the admin. Any linked registration has been released. Please check your payment proof and re-upload if needed. View My Payments XClub Community · automated notification, no reply needed"
 `;

@@ -36,15 +36,15 @@ export async function sendHoldConfirmation(
     const isId = p.locale === 'id';
     const dateShort = formatShortDate(p.sessionDate, p.locale);
     const subject = isId
-        ? `Selesaikan pembayaran: ${p.sessionTitle} — ${dateShort}`
-        : `Complete your payment: ${p.sessionTitle} — ${dateShort}`;
+        ? `Selesaikan pembayaran: ${p.sessionTitle} pada ${dateShort}`
+        : `Complete your payment: ${p.sessionTitle} on ${dateShort}`;
 
     const message = isId
         ? `Tempatmu di sesi <strong>${p.sessionTitle}</strong> sudah dipesan. Selesaikan
-            pembayaran dalam <strong>${p.holdMinutes} menit</strong> — jika tidak,
+            pembayaran dalam <strong>${p.holdMinutes} menit</strong>. Jika tidak,
             registrasimu akan <strong>kedaluwarsa</strong> dan tempatmu dilepas untuk member lain.`
         : `Your spot in <strong>${p.sessionTitle}</strong> is reserved. Complete your
-            payment within <strong>${p.holdMinutes} minutes</strong> — otherwise your
+            payment within <strong>${p.holdMinutes} minutes</strong>. Otherwise your
             registration <strong>expires</strong> and the seat is released to other members.`;
 
     const html = renderEmailHtml({
