@@ -45,7 +45,7 @@ _Avoid_: approve, accept, authorise, grant, deny, reject, ban
 ### Activities and sessions
 
 **Activity**:
-Something the community does on a recurring basis, with its own price, weekly slot, capacity, and destination bank account.
+Something the community does on a recurring basis, with its own price, weekly schedule, capacity, and destination bank account.
 _Avoid_: sport, class, program, club, ekskul
 
 **Session**:
