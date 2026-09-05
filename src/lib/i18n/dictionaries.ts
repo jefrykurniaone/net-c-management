@@ -411,7 +411,7 @@ const en = {
         fillSeriesLabel: 'Seats filled',
         fillAxisDate: '{month} {day}',
         fillWeekLabel: 'Week of {month} {day}, {year}',
-        fillValueRow: '{percent}% — {seats} of {capacity} seats held',
+        fillValueRow: '{percent}%, {seats} of {capacity} seats held',
         fillNoSessions: 'No Sessions',
         // A week whose Sessions offered no capacity at all. Distinct from the
         // line above: a week that ran must never be reported as one that did not.
@@ -1697,7 +1697,7 @@ const id: typeof en = {
         fillSeriesLabel: 'Kursi terisi',
         fillAxisDate: '{day} {month}',
         fillWeekLabel: 'Minggu {day} {month} {year}',
-        fillValueRow: '{percent}% — {seats} dari {capacity} kursi terisi',
+        fillValueRow: '{percent}%, {seats} dari {capacity} kursi terisi',
         fillNoSessions: 'Tidak ada Sesi',
         fillNoCapacity: 'Tidak ada kursi ditawarkan',
         fillAxisPercent: '{n}%',

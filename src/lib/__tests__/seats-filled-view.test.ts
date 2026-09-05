@@ -73,20 +73,20 @@ describe('the drawn line and the text list', () => {
         const view = buildSeatsFilledView(EIGHT_WEEKS, getDictionary('en'));
 
         expect(view.dots[4].percent).toBe(0);
-        expect(view.values[4].value).toBe('0% — 0 of 20 seats held');
+        expect(view.values[4].value).toBe('0%, 0 of 20 seats held');
     });
 
     it('carries the exact Seats and capacity beside the rounded percentage', () => {
         const view = buildSeatsFilledView(EIGHT_WEEKS, getDictionary('en'));
 
-        expect(view.values[0].value).toBe('60% — 12 of 20 seats held');
-        expect(view.values[3].value).toBe('100% — 20 of 20 seats held');
+        expect(view.values[0].value).toBe('60%, 12 of 20 seats held');
+        expect(view.values[3].value).toBe('100%, 20 of 20 seats held');
     });
 
     it('says the same in Indonesian', () => {
         const view = buildSeatsFilledView(EIGHT_WEEKS, getDictionary('id'));
 
-        expect(view.values[0].value).toBe('60% — 12 dari 20 kursi terisi');
+        expect(view.values[0].value).toBe('60%, 12 dari 20 kursi terisi');
         expect(view.values[2].value).toBe('Tidak ada Sesi');
     });
 
