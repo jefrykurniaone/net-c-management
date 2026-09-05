@@ -58,8 +58,8 @@ export function ActivitySummaryCard({
 /**
  * This Activity's body when its next-Sessions list is empty — nothing posted
  * and no standing weekly slot landing in the range. A sentence beside the
- * neutral chip, drawn directly rather than through `StripNotice`
- * (`sessions/week-strip.tsx`): that component is its own `bg-card
+ * neutral chip, drawn directly rather than through `BoardNotice`
+ * (`src/app/(main)/sessions/page.tsx`): that component is its own `bg-card
  * shadow-lift` box, and nesting one inside this card's would double the
  * shadow rather than reading as one card with one sentence in it.
  */
